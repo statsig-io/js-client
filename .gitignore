@@ -1,0 +1,25 @@
+### VSCode
+
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# Local History for Visual Studio Code
+.history/
+
+# Dependency directories
+node_modules/
+
+# Builds
+dist/
+
+# Optional npm cache directory
+.npm
+
+.DS_Store
+
+# JSDoc output
+out/

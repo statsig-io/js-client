@@ -1,0 +1,54 @@
+{
+  "name": "statsig-js-client-sdk",
+  "version": "1.0.17",
+  "description": "Statsig javascript client SDK",
+  "main": "dist/statsig-prod-node-client-sdk.js",
+  "scripts": {
+    "build": "webpack",
+    "test": "jest",
+    "types": "npx tsc",
+    "docs": "jsdoc2md index.js src/typedefs.js src/DynamicConfig.js > docs/generated.md"
+  },
+  "files": [
+    "index.d.ts",
+    "dist/statsig-prod-node-client-sdk.js",
+    "dist/statsig-prod-web-sdk.js"
+  ],
+  "jsdelivr": "dist/statsig-prod-web-sdk.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/statsig-io/statsig-js-client-sdk.git"
+  },
+  "author": "Statsig, Inc.",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/statsig-io/statsig-js-client-sdk/issues"
+  },
+  "keywords": [
+    "feature gate",
+    "feature flag",
+    "continuous deployment",
+    "ci",
+    "ab test"
+  ],
+  "homepage": "https://www.statsig.com",
+  "devDependencies": {
+    "@babel/core": "^7.13.1",
+    "@babel/preset-env": "^7.13.5",
+    "@types/jest": "^26.0.20",
+    "babel-loader": "^8.2.2",
+    "jest": "^26.6.3",
+    "jsdoc": "^3.6.6",
+    "jsdoc-to-markdown": "^7.0.0",
+    "terser-webpack-plugin": "^5.1.1",
+    "typescript": "^4.2.2",
+    "webpack": "^5.24.2",
+    "webpack-cli": "^4.5.0"
+  },
+  "dependencies": {
+    "crypto-js": "^4.0.0",
+    "uuid": "^8.3.2",
+    "whatwg-fetch": "^3.6.2"
+  },
+  "types": "dist/main.js"
+}
