@@ -16,27 +16,23 @@ function DynamicConfig(configName, value, groupName) {
   this._groupName = groupName;
 }
 
-DynamicConfig.prototype.normalizeDefault = function (
+DynamicConfig.prototype.validateDefault = function (
   defaultValue,
   expectedType,
 ) {
   if (defaultValue == null) {
-    console.warn(
-      'Please provide a valid default value to be used when offline.',
+    throw new Error(
+      'You must provide a valid default value to check config parameters',
     );
   }
   if (typeof defaultValue !== expectedType) {
-    console.warn(
+    throw new Error(
       'Expected type of ' +
         expectedType +
         ' but got ' +
         typeof defaultValue +
         ' for the default value.',
     );
-    if (expectedType === 'string') return '';
-    if (expectedType === 'number') return 0;
-    if (expectedType === 'boolean') return false;
-    if (expectedType === 'object') return {};
   }
   return defaultValue;
 };
@@ -46,10 +42,11 @@ DynamicConfig.prototype.normalizeDefault = function (
  * @param {string} name - The name of the parameter to check
  * @param {boolean} [defaultValue=false] - The default value of the parameter to return in cases where the parameter is not found or is not the correct type.
  * @returns {boolean}
+ * @throws Error if the defaultValue is null or not a boolean
  * @memberof DynamicConfig
  */
-DynamicConfig.prototype.getBool = function (name, defaultValue) {
-  defaultValue = this.normalizeDefault(defaultValue, 'boolean');
+DynamicConfig.prototype.getBool = function (name, defaultValue = false) {
+  defaultValue = this.validateDefault(defaultValue, 'boolean');
   if (!name || this.value[name] == null) {
     console.warn(
       'name does not exist on the DynamicConfig, returning the default value.',
@@ -70,10 +67,11 @@ DynamicConfig.prototype.getBool = function (name, defaultValue) {
  * @param {string} name - The name of the parameter to check
  * @param {string} [defaultValue=''] - The default value of the parameter to return in cases where the parameter is not found or is not the correct type.
  * @returns {string}
+ * @throws Error if the defaultValue is null or not a string
  * @memberof DynamicConfig
  */
-DynamicConfig.prototype.getString = function (name, defaultValue) {
-  defaultValue = this.normalizeDefault(defaultValue, 'string');
+DynamicConfig.prototype.getString = function (name, defaultValue = '') {
+  defaultValue = this.validateDefault(defaultValue, 'string');
   if (!name || this.value[name] == null) {
     console.warn(
       'name does not exist on the DynamicConfig, returning the default value.',
@@ -101,10 +99,11 @@ DynamicConfig.prototype.getString = function (name, defaultValue) {
  * @param {string} name - The name of the parameter to check
  * @param {number} [defaultValue=0] - The default value of the parameter to return in cases where the parameter is not found or is not the correct type.
  * @returns {number}
+ * @throws Error if the defaultValue is null or not a number
  * @memberof DynamicConfig
  */
-DynamicConfig.prototype.getNumber = function (name, defaultValue) {
-  defaultValue = this.normalizeDefault(defaultValue, 'number');
+DynamicConfig.prototype.getNumber = function (name, defaultValue = 0) {
+  defaultValue = this.validateDefault(defaultValue, 'number');
   if (!name || this.value[name] == null) {
     console.warn(
       'name does not exist on the DynamicConfig, returning the default value.',
@@ -125,10 +124,11 @@ DynamicConfig.prototype.getNumber = function (name, defaultValue) {
  * @param {string} name - The name of the parameter to check
  * @param {object} [defaultValue={}] - The default value of the parameter to return in cases where the parameter is not found or is not the correct type.
  * @returns {DynamicConfig}
+ * @throws Error if the defaultValue is null or not an object
  * @memberof DynamicConfig
  */
-DynamicConfig.prototype.getObject = function (name, defaultValue) {
-  defaultValue = this.normalizeDefault(defaultValue, 'object');
+DynamicConfig.prototype.getObject = function (name, defaultValue = {}) {
+  defaultValue = this.validateDefault(defaultValue, 'object');
   if (!name || this.value[name] == null) {
     console.warn(
       'name does not exist on the DynamicConfig, returning the default value.',

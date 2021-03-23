@@ -1,4 +1,5 @@
 const { default: DynamicConfig } = require('../DynamicConfig');
+const { getBoolValue } = require('../utils/core');
 
 describe('Verify behavior of DynamicConfig', () => {
   const testConfig = new DynamicConfig('test_config', {
@@ -31,8 +32,12 @@ describe('Verify behavior of DynamicConfig', () => {
   test('Test strings', () => {
     expect(testConfig.getString('boolStr1', '123')).toStrictEqual('true');
     expect(testConfig.getString('number', '123')).toStrictEqual('2');
-    // @ts-ignore
-    expect(testConfig.getString('key_not_found', false)).toStrictEqual('');
+    expect(() => {
+      // @ts-ignore
+      testConfig.getString('key_not_found', false);
+    }).toThrowError(
+      'Expected type of string but got boolean for the default value.',
+    );
     expect(testConfig.getString('key_not_found', 'lorem ipsum')).toStrictEqual(
       'lorem ipsum',
     );
@@ -45,8 +50,12 @@ describe('Verify behavior of DynamicConfig', () => {
     expect(testConfig.getNumber('numberStr1')).toStrictEqual(3);
     expect(testConfig.getNumber('numberStr2')).toStrictEqual(3.3);
     expect(testConfig.getNumber('numberStr3')).toStrictEqual(0);
-    // @ts-ignore
-    expect(testConfig.getNumber('key_not_found', false)).toStrictEqual(0);
+    expect(() => {
+      // @ts-ignore
+      expect(testConfig.getNumber('key_not_found', false)).toStrictEqual(0);
+    }).toThrowError(
+      'Expected type of number but got boolean for the default value.',
+    );
     expect(testConfig.getNumber('key_not_found', 456.2)).toStrictEqual(456.2);
   });
 
@@ -56,14 +65,29 @@ describe('Verify behavior of DynamicConfig', () => {
     expect(testConfig.getBool('boolStr1')).toStrictEqual(true);
     expect(testConfig.getBool('boolStr2')).toStrictEqual(false);
     expect(testConfig.getBool('key_not_found', false)).toStrictEqual(false);
-    // @ts-ignore
-    expect(testConfig.getBool('key_not_found', '123')).toStrictEqual(false);
+    expect(() => {
+      // @ts-ignore
+      expect(testConfig.getBool('key_not_found', '123')).toStrictEqual(false);
+    }).toThrowError(
+      'Expected type of boolean but got string for the default value.',
+    );
   });
 
   test('Test objects', () => {
-    expect(testConfig.getObject('number', null).getRawValue()).toStrictEqual(
-      {},
+    expect(() => {
+      expect(testConfig.getObject('number', null).getRawValue()).toStrictEqual(
+        {},
+      );
+    }).toThrowError(
+      'You must provide a valid default value to check config parameters',
     );
+    expect(() => {
+      // @ts-ignore
+      expect(testConfig.getObject('key_not_found', '123')).toStrictEqual(false);
+    }).toThrowError(
+      'Expected type of object but got string for the default value.',
+    );
+    expect(testConfig.getObject('number', {}).getRawValue()).toStrictEqual({});
     expect(testConfig.getObject('number').getRawValue()).toStrictEqual({});
     expect(testConfig.getObject('object').getRawValue()).toStrictEqual({
       key: 'value',
@@ -72,9 +96,6 @@ describe('Verify behavior of DynamicConfig', () => {
     expect(testConfig.getObject('key_not_found').getRawValue()).toStrictEqual(
       {},
     );
-    expect(
-      testConfig.getObject('key_not_found', false).getRawValue(),
-    ).toStrictEqual({});
     expect(
       testConfig.getObject('key_not_found', { test: true }).getRawValue(),
     ).toStrictEqual({ test: true });

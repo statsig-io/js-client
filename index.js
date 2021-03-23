@@ -67,13 +67,17 @@ const statsig = {
    * Checks the value of a gate for the current user
    * @param {string} gateName - the name of the gate to check
    * @returns {boolean} - value of a gate for the user. Gates are "off" (return false) by default
+   * @throws Error if gateName is not a string
    */
   checkGate: function (gateName) {
     if (statsig._store == null) {
-      console.warn(
+      console.error(
         'Call and wait for initialize() to finish first. Returning false as the default value.',
       );
       return false;
+    }
+    if (typeof gateName !== 'string') {
+      throw new Error('Must pass a valid string as a gateName to check');
     }
     return statsig._store.checkGate(gateName);
   },
@@ -82,6 +86,7 @@ const statsig = {
    * Checks the value of a config for the current user
    * @param {string} configName - the name of the config to get
    * @returns {DynamicConfig} - value of a config for the user
+   * @throws Error if configName is not a string
    */
   getConfig: function (configName) {
     if (statsig._store == null) {
@@ -89,6 +94,9 @@ const statsig = {
         'Call and wait for initialize() to finish first. Returning a dummy config with only default values.',
       );
       return fallbackConfig();
+    }
+    if (typeof configName !== 'string') {
+      throw new Error('Must pass a valid string as a configName to check');
     }
     return statsig._store.getConfig(configName);
   },

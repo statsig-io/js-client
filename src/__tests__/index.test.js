@@ -52,6 +52,46 @@ describe('Verify behavior of top level index functions', () => {
     expect(ready).toBe(false);
   });
 
+  test('Verify checkGate throws with no gate name', () => {
+    const statsigSDK = require('../../index').default;
+    return statsigSDK.initialize('client-key', null).then(() => {
+      expect(() => {
+        // @ts-ignore
+        statsigSDK.checkGate();
+      }).toThrowError('Must pass a valid string as a gateName to check');
+    });
+  });
+
+  test('Verify checkGate throws with wrong type as gate name', () => {
+    const statsigSDK = require('../../index').default;
+    return statsigSDK.initialize('client-key', null).then(() => {
+      expect(() => {
+        // @ts-ignore
+        statsigSDK.checkGate(false);
+      }).toThrowError('Must pass a valid string as a gateName to check');
+    });
+  });
+
+  test('Verify getConfig throws with no gate name', () => {
+    const statsigSDK = require('../../index').default;
+    return statsigSDK.initialize('client-key', null).then(() => {
+      expect(() => {
+        // @ts-ignore
+        statsigSDK.getConfig();
+      }).toThrowError('Must pass a valid string as a configName to check');
+    });
+  });
+
+  test('Verify getConfig throws with wrong type as gate name', () => {
+    const statsigSDK = require('../../index').default;
+    return statsigSDK.initialize('client-key', null).then(() => {
+      expect(() => {
+        // @ts-ignore
+        statsigSDK.getConfig(12);
+      }).toThrowError('Must pass a valid string as a configName to check');
+    });
+  });
+
   test('Verify getConfig returns an empty object for nonexistent config', () => {
     const statsigSDK = require('../../index').default;
     const result = statsigSDK.getConfig('config_that_doesnt_exist');

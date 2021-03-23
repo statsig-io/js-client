@@ -75,6 +75,10 @@ A class for fetching the json data configured for a DynamicConfig in the statsig
 Returns the boolean value of the given parameter, or the defaultValue if not found.
 
 **Kind**: instance method of [<code>DynamicConfig</code>](#DynamicConfig)  
+**Throws**:
+
+- Error if the defaultValue is null or not a boolean
+
 
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -87,6 +91,10 @@ Returns the boolean value of the given parameter, or the defaultValue if not fou
 Returns the string value of the given parameter, or the defaultValue if not found.
 
 **Kind**: instance method of [<code>DynamicConfig</code>](#DynamicConfig)  
+**Throws**:
+
+- Error if the defaultValue is null or not a string
+
 
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -99,6 +107,10 @@ Returns the string value of the given parameter, or the defaultValue if not foun
 Returns the number value of the given parameter, or the defaultValue if not found.
 
 **Kind**: instance method of [<code>DynamicConfig</code>](#DynamicConfig)  
+**Throws**:
+
+- Error if the defaultValue is null or not a number
+
 
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -111,6 +123,10 @@ Returns the number value of the given parameter, or the defaultValue if not foun
 Returns the object value of the given parameter as another DynamicConfig, or a DynamicConfig representing the defaultValue if not found.
 
 **Kind**: instance method of [<code>DynamicConfig</code>](#DynamicConfig)  
+**Throws**:
+
+- Error if the defaultValue is null or not an object
+
 
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -164,6 +180,10 @@ Checks the value of a gate for the current user
 
 **Kind**: static method of [<code>statsig</code>](#statsig)  
 **Returns**: <code>boolean</code> - - value of a gate for the user. Gates are "off" (return false) by default  
+**Throws**:
+
+- Error if gateName is not a string
+
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -176,6 +196,10 @@ Checks the value of a config for the current user
 
 **Kind**: static method of [<code>statsig</code>](#statsig)  
 **Returns**: [<code>DynamicConfig</code>](#DynamicConfig) - - value of a config for the user  
+**Throws**:
+
+- Error if configName is not a string
+
 
 | Param | Type | Description |
 | --- | --- | --- |
