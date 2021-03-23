@@ -4,7 +4,7 @@ import InternalStore from '../InternalStore';
 import Identity from '../Identity';
 
 describe('Verify behavior of InternalStore', () => {
-  const sdkKey = 'sdk_key';
+  const sdkKey = 'test-internalstorekey';
   const gates = {
     'AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=': true,
   };

@@ -79,7 +79,7 @@ describe('Verify behavior of top level index functions', () => {
 
   test('Check test gatekeeper', () => {
     const statsigSDK = require('../../index').default;
-    return statsigSDK.initialize('sdk_key', null).then(() => {
+    return statsigSDK.initialize('client-key', null).then(() => {
       const ready = statsigSDK.isReady();
       expect(ready).toBe(true);
 
@@ -99,7 +99,7 @@ describe('Verify behavior of top level index functions', () => {
 
   test('Initialize, switch, sdk ready', () => {
     const statsigSDK = require('../../index').default;
-    return statsigSDK.initialize('sdk_key', null).then(() => {
+    return statsigSDK.initialize('client-key', null).then(() => {
       return statsigSDK.switchUser({ userID: 123 }).then(() => {
         const ready = statsigSDK.isReady();
         expect(ready).toBe(true);
@@ -107,10 +107,29 @@ describe('Verify behavior of top level index functions', () => {
     });
   });
 
+  test('Initialize rejects invalid SDK Key', () => {
+    const statsigSDK = require('../../index').default;
+    // @ts-ignore
+    return expect(statsigSDK.initialize()).rejects.toEqual(
+      new Error(
+        'Invalid key provided.  You must use a Client or Test SDK Key from the Statsig console with the js-client-sdk',
+      ),
+    );
+  });
+
+  test('Initialize rejects Secret Key', () => {
+    const statsigSDK = require('../../index').default;
+    return expect(statsigSDK.initialize('secret-key', null)).rejects.toEqual(
+      new Error(
+        'Invalid key provided.  You must use a Client or Test SDK Key from the Statsig console with the js-client-sdk',
+      ),
+    );
+  });
+
   test('Verify DynamicConfigs fetch', () => {
     const statsigSDK = require('../../index').default;
 
-    return statsigSDK.initialize('sdk_key', null).then(() => {
+    return statsigSDK.initialize('client-key', null).then(() => {
       const ready = statsigSDK.isReady();
       expect(ready).toBe(true);
 
@@ -144,7 +163,7 @@ describe('Verify behavior of top level index functions', () => {
     }
     expect(str_1k.length).toBe(1024);
     return statsigSDK
-      .initialize('sdk_key', {
+      .initialize('client-key', {
         userID: str_64 + 'more',
         email: 'jest@statsig.com',
         custom: { extradata: str_1k },

@@ -131,7 +131,7 @@ The global statsig class for interacting with gates, configs, experiments config
 **Kind**: global constant  
 
 * [statsig](#statsig)
-    * [.initialize(sdkKey, [user], [options])](#statsig.initialize) ⇒ <code>Promise.&lt;boolean&gt;</code>
+    * [.initialize(sdkKey, [user], [options])](#statsig.initialize) ⇒ <code>Promise.&lt;void&gt;</code>
     * [.checkGate(gateName)](#statsig.checkGate) ⇒ <code>boolean</code>
     * [.getConfig(configName)](#statsig.getConfig) ⇒ [<code>DynamicConfig</code>](#DynamicConfig)
     * [.logEvent(eventName, [value], [metadata])](#statsig.logEvent) ⇒ <code>void</code>
@@ -141,11 +141,15 @@ The global statsig class for interacting with gates, configs, experiments config
 
 <a name="statsig.initialize"></a>
 
-### statsig.initialize(sdkKey, [user], [options]) ⇒ <code>Promise.&lt;boolean&gt;</code>
+### statsig.initialize(sdkKey, [user], [options]) ⇒ <code>Promise.&lt;void&gt;</code>
 Initializes the statsig SDK.  This must be called and complete before checking gates/configs or logging.
 
 **Kind**: static method of [<code>statsig</code>](#statsig)  
-**Returns**: <code>Promise.&lt;boolean&gt;</code> - - a promise which *always resolves*.  The return value will specify success or failure of the initialization call.  
+**Returns**: <code>Promise.&lt;void&gt;</code> - - a promise which rejects only if you fail to provide a proper SDK Key  
+**Throws**:
+
+- Error if an invalid SDK Key is provided
+
 
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |

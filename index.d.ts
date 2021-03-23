@@ -7,13 +7,14 @@ declare namespace statsig {
    * @param {string} sdkKey - a SDK key, generated from the statsig developer console
    * @param {typedefs.StatsigUser} [user={}] - an object containing user attributes.  Pass a stable identifier as the key when possible, and any other attributes you have (ip, country, etc.) in order to use advanced gate conditions
    * @param {typedefs.StatsigOptions} [options={}] - manual sdk configuration for advanced setup
-   * @returns {Promise<boolean>} - a promise which *always resolves*.  The return value will specify success or failure of the initialization call.
+   * @returns {Promise<void>} - a promise which rejects only if you fail to provide a proper SDK Key
+   * @throws Error if an invalid SDK Key is provided
    */
   function initialize(
     sdkKey: string,
     user?: StatsigUser | null,
     options?: StatsigOptions | null,
-  ): Promise<boolean>;
+  ): Promise<void>;
 
   /**
    * Checks the value of a gate for the current user
