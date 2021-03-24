@@ -24,8 +24,8 @@ Initializes the statsig SDK.  This must be called and complete before checking g
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
 | sdkKey | <code>string</code> |  | a SDK key, generated from the statsig developer console |
-| [user] | [<code>StatsigUser</code>](#typedefs.StatsigUser) | <code>{}</code> | an object containing user attributes.  Pass a stable identifier as the key when possible, and any other attributes you have (ip, country, etc.) in order to use advanced gate conditions |
-| [options] | [<code>StatsigOptions</code>](#typedefs.StatsigOptions) | <code>{}</code> | manual sdk configuration for advanced setup |
+| [user] | [<code>StatsigUser</code>](#StatsigUser) | <code>{}</code> | an object containing user attributes.  Pass a stable identifier as the key when possible, and any other attributes you have (ip, country, etc.) in order to use advanced gate conditions |
+| [options] | [<code>StatsigOptions</code>](#StatsigOptions) | <code>{}</code> | manual sdk configuration for advanced setup |
 
 <a name="statsig.checkGate"></a>
 
@@ -72,7 +72,7 @@ Switches the user associated with calls to fetch gates/configs from statsig. Thi
 
 | Param | Type | Description |
 | --- | --- | --- |
-| newUser | [<code>StatsigUser</code>](#typedefs.StatsigUser) | a set of user attributes identifying the new user |
+| newUser | [<code>StatsigUser</code>](#StatsigUser) | a set of user attributes identifying the new user |
 
 <a name="statsig.isReady"></a>
 
@@ -137,6 +137,7 @@ A class for fetching the json data configured for a DynamicConfig in the statsig
     * [.getBool(name, [defaultValue])](#DynamicConfig+getBool) ⇒ <code>boolean</code>
     * [.getString(name, [defaultValue])](#DynamicConfig+getString) ⇒ <code>string</code>
     * [.getNumber(name, [defaultValue])](#DynamicConfig+getNumber) ⇒ <code>number</code>
+    * [.getArray(name, [defaultValue])](#DynamicConfig+getArray) ⇒ <code>Array.&lt;any&gt;</code>
     * [.getObject(name, [defaultValue])](#DynamicConfig+getObject) ⇒ [<code>DynamicConfig</code>](#DynamicConfig)
     * [.getRawValue()](#DynamicConfig+getRawValue) ⇒ <code>any</code>
 
@@ -187,6 +188,22 @@ Returns the number value of the given parameter, or the defaultValue if not foun
 | --- | --- | --- | --- |
 | name | <code>string</code> |  | The name of the parameter to check |
 | [defaultValue] | <code>number</code> | <code>0</code> | The default value of the parameter to return in cases where the parameter is not found or is not the correct type. |
+
+<a name="DynamicConfig+getArray"></a>
+
+### dynamicConfig.getArray(name, [defaultValue]) ⇒ <code>Array.&lt;any&gt;</code>
+Returns the Array value of the given parameter, or the defaultValue if not found.
+
+**Kind**: instance method of [<code>DynamicConfig</code>](#DynamicConfig)  
+**Throws**:
+
+- Error if the defaultValue is null or not an Array
+
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| name | <code>string</code> |  | The name of the parameter to check |
+| [defaultValue] | <code>Array.&lt;any&gt;</code> | <code>[]</code> | The default value of the parameter to return in cases where the parameter is not found or is not the correct type. |
 
 <a name="DynamicConfig+getObject"></a>
 

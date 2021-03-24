@@ -95,6 +95,7 @@ declare namespace statsig {
     getBool: (name: string, defaultValue: boolean) => boolean;
     getNumber: (name: string, defaultValue: number) => number;
     getString: (name: string, defaultValue: string) => string;
+    getArray: (name: string, defaultValue: Array<any>) => Array<any>;
     getObject: (name: string, defaultValue: object) => DynamicConfig;
   };
 }
