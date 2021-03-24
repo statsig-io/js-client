@@ -36,10 +36,12 @@ An object of properties relating to the current user
 | Name | Type |
 | --- | --- |
 | [userID] | <code>string</code> \| <code>number</code> | 
+| [email] | <code>string</code> | 
 | [ip] | <code>string</code> | 
 | [userAgent] | <code>string</code> | 
 | [country] | <code>string</code> | 
-| [email] | <code>string</code> | 
+| [locale] | <code>string</code> | 
+| [clientVersion] | <code>string</code> | 
 | [name] | <code>string</code> | 
 | [custom] | <code>object</code> | 
 

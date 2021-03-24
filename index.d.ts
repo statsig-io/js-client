@@ -70,11 +70,12 @@ declare namespace statsig {
    */
   export type StatsigUser = {
     userID?: string | number;
+    email?: string;
     ip?: string;
     userAgent?: string;
-    name?: string;
     country?: string;
-    email?: string;
+    locale?: string;
+    clientVersion?: string;
     custom?: Record<string, string>;
   };
 

@@ -6,10 +6,12 @@
  * An object of properties relating to the current user
  * @typedef {Object<string, *>} StatsigUser
  * @property {string | number} [userID]
+ * @property {string} [email]
  * @property {string} [ip]
  * @property {string} [userAgent]
  * @property {string} [country]
- * @property {string} [email]
+ * @property {string} [locale]
+ * @property {string} [clientVersion]
  * @property {string} [name]
  * @property {object} [custom]
  * @memberof typedefs

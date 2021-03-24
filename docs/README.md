@@ -106,10 +106,12 @@ An object of properties relating to the current user
 | Name | Type |
 | --- | --- |
 | [userID] | <code>string</code> \| <code>number</code> | 
+| [email] | <code>string</code> | 
 | [ip] | <code>string</code> | 
 | [userAgent] | <code>string</code> | 
 | [country] | <code>string</code> | 
-| [email] | <code>string</code> | 
+| [locale] | <code>string</code> | 
+| [clientVersion] | <code>string</code> | 
 | [name] | <code>string</code> | 
 | [custom] | <code>object</code> | 
 
@@ -144,6 +146,10 @@ A class for fetching the json data configured for a DynamicConfig in the statsig
 Returns the boolean value of the given parameter, or the defaultValue if not found.
 
 **Kind**: instance method of [<code>DynamicConfig</code>](#DynamicConfig)  
+**Throws**:
+
+- Error if the defaultValue is null or not a boolean
+
 
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -156,6 +162,10 @@ Returns the boolean value of the given parameter, or the defaultValue if not fou
 Returns the string value of the given parameter, or the defaultValue if not found.
 
 **Kind**: instance method of [<code>DynamicConfig</code>](#DynamicConfig)  
+**Throws**:
+
+- Error if the defaultValue is null or not a string
+
 
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -168,6 +178,10 @@ Returns the string value of the given parameter, or the defaultValue if not foun
 Returns the number value of the given parameter, or the defaultValue if not found.
 
 **Kind**: instance method of [<code>DynamicConfig</code>](#DynamicConfig)  
+**Throws**:
+
+- Error if the defaultValue is null or not a number
+
 
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
