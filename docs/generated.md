@@ -43,7 +43,7 @@ An object of properties relating to the current user
 | [locale] | <code>string</code> | 
 | [clientVersion] | <code>string</code> | 
 | [name] | <code>string</code> | 
-| [custom] | <code>object</code> | 
+| [custom] | <code>Object.&lt;string, \*&gt;</code> | 
 
 <a name="typedefs.StatsigOptions"></a>
 
@@ -170,7 +170,7 @@ The global statsig class for interacting with gates, configs, experiments config
     * [.checkGate(gateName)](#statsig.checkGate) ⇒ <code>boolean</code>
     * [.getConfig(configName)](#statsig.getConfig) ⇒ [<code>DynamicConfig</code>](#DynamicConfig)
     * [.logEvent(eventName, [value], [metadata])](#statsig.logEvent) ⇒ <code>void</code>
-    * [.switchUser(newUser)](#statsig.switchUser) ⇒ <code>Promise.&lt;boolean&gt;</code>
+    * [.updateUser(updatedUser)](#statsig.updateUser) ⇒ <code>Promise.&lt;boolean&gt;</code>
     * [.isReady()](#statsig.isReady) ⇒ <code>boolean</code>
     * [.shutdown()](#statsig.shutdown)
 
@@ -237,17 +237,17 @@ Log an event for data analysis and alerting or to measure the impact of an exper
 | [value] | <code>string</code> \| <code>number</code> | <code>null</code> | the value associated with the event (value = 10) |
 | [metadata] | <code>object</code> | <code></code> | other attributes associated with this event (metadata = {items: 2, currency: USD}) |
 
-<a name="statsig.switchUser"></a>
+<a name="statsig.updateUser"></a>
 
-### statsig.switchUser(newUser) ⇒ <code>Promise.&lt;boolean&gt;</code>
-Switches the user associated with calls to fetch gates/configs from statsig. This client SDK is intended for single user environments, but its possible a user was unknown previously and then logged in, or logged out and switched to a different account.  Use this function to update the gates/configs and associate event logs with the new user.
+### statsig.updateUser(updatedUser) ⇒ <code>Promise.&lt;boolean&gt;</code>
+Updates the user associated with calls to fetch gates/configs from statsig. This client SDK is intended for single user environments, but its possible a user was unknown previously and then logged in, or logged out and switched to a different account.  Use this function to update the gates/configs and associate event logs with the user.
 
 **Kind**: static method of [<code>statsig</code>](#statsig)  
 **Returns**: <code>Promise.&lt;boolean&gt;</code> - - a promise which *always resolves* to a value which indicates success or failure  
 
 | Param | Type | Description |
 | --- | --- | --- |
-| newUser | [<code>StatsigUser</code>](#typedefs.StatsigUser) | a set of user attributes identifying the new user |
+| updatedUser | [<code>StatsigUser</code>](#typedefs.StatsigUser) | a set of user attributes identifying the user |
 
 <a name="statsig.isReady"></a>
 

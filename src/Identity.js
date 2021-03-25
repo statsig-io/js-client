@@ -11,10 +11,10 @@ export default function Identity(initialUser) {
   };
 
   identity.setUser = function (newUser) {
-    if (newUser == null || newUser?.userID === user?.userID) {
-      return false;
-    }
     user = utils.clone(newUser);
+    if (user == null) {
+      user = {};
+    }
     statsigMetadata.sessionID = utils.getSessionID(true);
     return true;
   };

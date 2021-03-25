@@ -44,11 +44,11 @@ declare namespace statsig {
   ): void;
 
   /**
-   * Switches the user associated with calls to fetch gates/configs from statsig. This client SDK is intended for single user environments, but its possible a user was unknown previously and then logged in, or logged out and switched to a different account.  Use this function to update the gates/configs and associate event logs with the new user.
-   * @param {typedefs.StatsigUser} newUser - a set of user attributes identifying the new user
+   * Updates the user associated with calls to fetch gates/configs from statsig. This client SDK is intended for single user environments, but its possible a user was unknown previously and then logged in, or logged out and switched to a different account.  Use this function to update the gates/configs and associate event logs with the user.
+   * @param {typedefs.StatsigUser} updatedUser - a set of user attributes identifying the user
    * @returns {Promise<boolean>} - a promise which *always resolves* to a value which indicates success or failure
    */
-  function switchUser(newUser: StatsigUser): Promise<boolean>;
+  function updateUser(newUser: StatsigUser): Promise<boolean>;
 
   /**
    * Checks to see if the SDK is in a ready state to check gates and configs
@@ -76,7 +76,7 @@ declare namespace statsig {
     country?: string;
     locale?: string;
     clientVersion?: string;
-    custom?: Record<string, string>;
+    custom?: Record<string, any>;
   };
 
   /**

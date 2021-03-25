@@ -19,6 +19,20 @@ describe('Verify behavior of Identity module', () => {
   });
 
   test('Test setUser', () => {
-    expect(1).toBe(1);
+    const id = Identity({ userID: 'test_user' });
+    expect(id.getUser()).toStrictEqual({ userID: 'test_user' });
+    const previousSessionID = id.getStatsigMetadata().sessionID;
+    id.setUser(null);
+    expect(id.getStatsigMetadata().getSessionID).not.toStrictEqual(
+      previousSessionID,
+    );
+    expect(id.getUser()).toStrictEqual({});
+    id.setUser({ userID: 'test_user2' });
+    expect(id.getUser()).toStrictEqual({ userID: 'test_user2' });
+    id.setUser({ userID: 'test_user2', locale: 'en_US' });
+    expect(id.getUser()).toStrictEqual({
+      userID: 'test_user2',
+      locale: 'en_US',
+    });
   });
 });

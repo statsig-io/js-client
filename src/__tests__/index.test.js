@@ -110,9 +110,9 @@ describe('Verify behavior of top level index functions', () => {
     expect(ready).toBe(false);
   });
 
-  test('Verify switchUser rejects before initialize()', () => {
+  test('Verify updateUser rejects before initialize()', () => {
     const statsigSDK = require('../../index').default;
-    return statsigSDK.switchUser({}).then((result) => {
+    return statsigSDK.updateUser({}).then((result) => {
       expect(result).toStrictEqual(false);
     });
   });
@@ -128,9 +128,9 @@ describe('Verify behavior of top level index functions', () => {
     });
   });
 
-  test('Switching users before initialize does not ready the sdk', () => {
+  test('Updating users before initialize does not ready the sdk', () => {
     const statsigSDK = require('../../index').default;
-    return statsigSDK.switchUser({ userID: 123 }).then((result) => {
+    return statsigSDK.updateUser({ userID: 123 }).then((result) => {
       expect(result).toStrictEqual(false);
       const ready = statsigSDK.isReady();
       expect(ready).toBe(false);
@@ -140,7 +140,7 @@ describe('Verify behavior of top level index functions', () => {
   test('Initialize, switch, sdk ready', () => {
     const statsigSDK = require('../../index').default;
     return statsigSDK.initialize('client-key', null).then(() => {
-      return statsigSDK.switchUser({ userID: 123 }).then(() => {
+      return statsigSDK.updateUser({ userID: 123 }).then(() => {
         const ready = statsigSDK.isReady();
         expect(ready).toBe(true);
       });

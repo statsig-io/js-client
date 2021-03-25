@@ -13,7 +13,7 @@
  * @property {string} [locale]
  * @property {string} [clientVersion]
  * @property {string} [name]
- * @property {object} [custom]
+ * @property {Object<string, *>} [custom]
  * @memberof typedefs
  */
 
