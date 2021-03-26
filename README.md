@@ -1,6 +1,6 @@
 # Statsig
 
-[![npm version](https://badge.fury.io/js/statsig-client-js-server-sdk.svg)](https://badge.fury.io/js/statsig-client-js-server-sdk)
+[![npm version](https://badge.fury.io/js/statsig-js-client-sdk.svg)](https://badge.fury.io/js/statsig-js-client-sdk)
 [![jsdelivr](https://data.jsdelivr.com/v1/package/npm/statsig-js-client-sdk/badge)](https://www.jsdelivr.com/package/npm/statsig-js-client-sdk)
 
 ## Statsig Javascript Client SDK
