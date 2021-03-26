@@ -1,6 +1,6 @@
 {
   "name": "statsig-js-client-sdk",
-  "version": "1.0.17",
+  "version": "1.0.18",
   "description": "Statsig javascript client SDK",
   "main": "dist/statsig-prod-node-client-sdk.js",
   "scripts": {
@@ -12,7 +12,9 @@
   "files": [
     "index.d.ts",
     "dist/statsig-prod-node-client-sdk.js",
-    "dist/statsig-prod-web-sdk.js"
+    "dist/statsig-prod-web-sdk.js",
+    "dist/statsig-dev-node-client-sdk.js",
+    "dist/statsig-dev-web-sdk.js"
   ],
   "jsdelivr": "dist/statsig-prod-web-sdk.js",
   "repository": {
