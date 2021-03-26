@@ -19,31 +19,31 @@ describe('Verify behavior of core utility functions', () => {
   });
 
   test('Test Device ID and storage APIs', () => {
-    expect(localGet('STATSIG_KEY_DEVICE_ID')).toBeNull();
+    expect(localGet('statsig_stable_id')).toBeNull();
     const deviceID = getDeviceID();
     expect(deviceID).not.toBeNull();
     expect(getDeviceID()).toStrictEqual(deviceID);
-    localRemove('STATSIG_KEY_DEVICE_ID');
+    localRemove('statsig_stable_id');
     let otherDeviceID = getDeviceID();
     expect(otherDeviceID).not.toBeNull();
     expect(otherDeviceID).not.toStrictEqual(deviceID);
 
-    localSet('STATSIG_KEY_DEVICE_ID', '123');
+    localSet('statsig_stable_id', '123');
     expect(getDeviceID()).toStrictEqual('123');
   });
 
   test('Test Session ID and storage APIs', () => {
-    expect(sessionGet('STATSIG_KEY_SESSION_ID')).toBeNull();
+    expect(sessionGet('statsig_session_id')).toBeNull();
     const sessionID = getSessionID();
     expect(sessionID).not.toBeNull();
     expect(getSessionID()).toStrictEqual(sessionID);
-    localRemove('STATSIG_KEY_SESSION_ID');
+    localRemove('statsig_session_id');
     let otherSessionID = getSessionID();
     expect(otherSessionID).not.toBeNull();
     // Session ID is not affected by localRemove
     expect(otherSessionID).toStrictEqual(sessionID);
 
-    sessionSet('STATSIG_KEY_SESSION_ID', '123');
+    sessionSet('statsig_session_id', '123');
     expect(getSessionID()).toStrictEqual('123');
   });
 
