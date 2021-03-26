@@ -12,7 +12,26 @@ export default function InternalStore(identity, logger) {
   let localCache = localGet(localStorageKey);
   if (localCache) {
     try {
-      store.cache = JSON.parse(localCache);
+      let jsonCache = JSON.parse(localCache);
+      if (jsonCache != null) {
+        for (const [user, data] of Object.entries(jsonCache)) {
+          store.cache[user] = {
+            gates: data.gates,
+            configs: {},
+          };
+          if (data.configs != null) {
+            for (const [configName, configData] of Object.entries(
+              data.configs,
+            )) {
+              store.cache[user].configs[configName] = new DynamicConfig(
+                configData.name,
+                configData.value,
+                configData._groupName,
+              );
+            }
+          }
+        }
+      }
     } catch (e) {
       // Cached value corrupted, remove cache
       localRemove(localStorageKey);
