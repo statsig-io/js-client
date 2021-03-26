@@ -16,7 +16,7 @@ export function generateID() {
   return uuidv4();
 }
 
-export function getDeviceID() {
+export function getStableID() {
   let deviceID = localGet(STATSIG_KEY_STABLE_ID);
   if (deviceID) {
     return deviceID;

@@ -1,7 +1,7 @@
 import {
   clone,
   getBoolValue,
-  getDeviceID,
+  getStableID,
   getNumericValue,
   getSessionID,
 } from '../core';
@@ -20,16 +20,16 @@ describe('Verify behavior of core utility functions', () => {
 
   test('Test Device ID and storage APIs', () => {
     expect(localGet('statsig_stable_id')).toBeNull();
-    const deviceID = getDeviceID();
+    const deviceID = getStableID();
     expect(deviceID).not.toBeNull();
-    expect(getDeviceID()).toStrictEqual(deviceID);
+    expect(getStableID()).toStrictEqual(deviceID);
     localRemove('statsig_stable_id');
-    let otherDeviceID = getDeviceID();
+    let otherDeviceID = getStableID();
     expect(otherDeviceID).not.toBeNull();
     expect(otherDeviceID).not.toStrictEqual(deviceID);
 
     localSet('statsig_stable_id', '123');
-    expect(getDeviceID()).toStrictEqual('123');
+    expect(getStableID()).toStrictEqual('123');
   });
 
   test('Test Session ID and storage APIs', () => {
