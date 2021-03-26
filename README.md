@@ -1,5 +1,8 @@
 # Statsig
 
+[![npm version](https://badge.fury.io/js/statsig-client-js-server-sdk.svg)](https://badge.fury.io/js/statsig-client-js-server-sdk)
+[![jsdelivr](https://data.jsdelivr.com/v1/package/npm/statsig-js-client-sdk/badge)](https://www.jsdelivr.com/package/npm/statsig-js-client-sdk)
+
 ## Statsig Javascript Client SDK
 
 The javascript SDK for client environments.  If you're looking for a nodejs server SDK, try [https://github.com/statsig-io/node-js-server-sdk](https://github.com/statsig-io/node-js-server-sdk).
