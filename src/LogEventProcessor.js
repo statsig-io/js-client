@@ -68,8 +68,7 @@ export default function LogEventProcessor(identity, options, sdkKey) {
     queue = [];
 
     fetcher
-      .post(options.api + '/log_event', {
-        sdkKey: sdkKey,
+      .post(options.api + '/log_event', sdkKey, {
         statsigMetadata: identity.getStatsigMetadata(),
         events: oldQueue,
       })

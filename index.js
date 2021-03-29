@@ -7,7 +7,6 @@ import { getNumericValue } from './src/utils/core';
 import LogEvent from './src/LogEvent';
 import LogEventProcessor from './src/LogEventProcessor';
 import StatsigOptions from './src/StatsigOptions';
-import 'whatwg-fetch';
 import DynamicConfig from './src/DynamicConfig';
 
 const typedefs = require('./src/typedefs');
@@ -153,7 +152,7 @@ const statsig = {
     }
     statsig._ready = false;
     updatedUser = trimUserObjIfNeeded(updatedUser);
-    const isNewUser = statsig._identity.setUser(updatedUser);
+    statsig._identity.setUser(updatedUser);
     statsig._logger.switchUser();
     return statsig
       ._fetchValues()
@@ -239,8 +238,8 @@ const statsig = {
     const url = new URL(statsig._options.api + '/initialize');
     return fetcher.postWithTimeout(
       url.toString(),
+      statsig._sdkKey,
       {
-        sdkKey: statsig._sdkKey,
         user: statsig._identity.getUser(),
         statsigMetadata: statsig._identity.getStatsigMetadata(),
       },
@@ -270,51 +269,8 @@ const statsig = {
         }
       },
       3000, // timeout for early return
-      10, // retires
+      10, // retries
     );
-  },
-
-  /**
-   * @ignore
-   * @param {function} subscribeCallback
-   * @returns {Promise<void>}
-   */
-  _subscribeToChange: function (subscribeCallback) {
-    const url = new URL(statsig._options.api + '/subscribe');
-    const params = {
-      sdkKey: statsig._sdkKey,
-      user: JSON.stringify(statsig._identity.getUser()),
-      statsigMetadata: JSON.stringify(statsig._identity.getStatsigMetadata()),
-    };
-    url.search = new URLSearchParams(params).toString();
-
-    return fetch(url.toString())
-      .then((response) => {
-        if (response.ok) {
-          return response.json();
-        }
-        throw new Error('' + response.status);
-      })
-      .then((responseJSON) => {
-        if (responseJSON == null || !responseJSON.shouldInvalidateCache) {
-          return this._subscribeToChange(subscribeCallback);
-        }
-        return this._fetchValues(() => {
-          subscribeCallback();
-        }).finally(function () {
-          return statsig._subscribeToChange(subscribeCallback);
-        });
-      })
-      .catch((e) => {
-        setTimeout(function () {
-          // Retry on error while backing out on delays to avoid too many retries.
-          statsig.pollingDelay = Math.min(
-            statsig.pollingDelay * 2,
-            statsig.pollingDelay,
-          );
-          return statsig._subscribeToChange(subscribeCallback);
-        }, statsig.pollingDelay);
-      });
   },
 };
 
