@@ -138,6 +138,7 @@ const statsig = {
     let event = new LogEvent(eventName);
     event.setValue(value);
     event.setMetadata(metadata);
+    event.setUser(statsig._identity.getUser());
     statsig._logger.log(event);
   },
 
@@ -255,9 +256,15 @@ const statsig = {
         }
       },
       (e) => {
-        logStatsigInternal(statsig._logger, 'fetch_values_failed', null, {
-          error: e.message,
-        });
+        logStatsigInternal(
+          statsig._logger,
+          statsig._identity.getUser(),
+          'fetch_values_failed',
+          null,
+          {
+            error: e.message,
+          },
+        );
         if (typeof rejectCallback === 'function') {
           rejectCallback(e);
         }

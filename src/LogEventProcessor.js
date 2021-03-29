@@ -70,7 +70,6 @@ export default function LogEventProcessor(identity, options, sdkKey) {
     fetcher
       .post(options.api + '/log_event', {
         sdkKey: sdkKey,
-        user: identity.getUser(),
         statsigMetadata: identity.getStatsigMetadata(),
         events: oldQueue,
       })
@@ -91,7 +90,7 @@ export default function LogEventProcessor(identity, options, sdkKey) {
           // Drop oldest events so that the queue has 10 less than the max amount of events we allow
           queue = queue.slice(queue.length - maxEventQueueSize + 10);
         }
-        logStatsigInternal(this, 'log_event_failed', null, {
+        logStatsigInternal(this, identity.getUser(), 'log_event_failed', null, {
           error: e.message,
         });
       })

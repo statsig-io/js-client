@@ -4,15 +4,15 @@ const CONFIG_EXPOSURE_EVENT = 'config_exposure';
 const GATE_EXPOSURE_EVENT = 'gate_exposure';
 const INTERNAL_EVENT_PREFIX = 'statsig::';
 
-export function logGateExposure(eventProcessor, gateName, gateValue) {
-  logStatsigInternal(eventProcessor, GATE_EXPOSURE_EVENT, null, {
+export function logGateExposure(eventProcessor, user, gateName, gateValue) {
+  logStatsigInternal(eventProcessor, user, GATE_EXPOSURE_EVENT, null, {
     gate: gateName,
     gateValue: gateValue,
   });
 }
 
-export function logConfigExposure(eventProcessor, configName, groupName) {
-  logStatsigInternal(eventProcessor, CONFIG_EXPOSURE_EVENT, null, {
+export function logConfigExposure(eventProcessor, user, configName, groupName) {
+  logStatsigInternal(eventProcessor, user, CONFIG_EXPOSURE_EVENT, null, {
     config: configName,
     configGroup: groupName,
   });
@@ -20,6 +20,7 @@ export function logConfigExposure(eventProcessor, configName, groupName) {
 
 export function logStatsigInternal(
   eventProcessor,
+  user,
   eventName,
   value = null,
   metadata = {},
@@ -33,7 +34,7 @@ export function logStatsigInternal(
     metadata = {};
   }
   event.setMetadata(metadata);
-
+  event.setUser(user);
   if (metadata.error != null) {
     eventProcessor.log(event, eventName + metadata.error);
   } else {

@@ -30,6 +30,10 @@ class LogEvent {
     this.metadata = metadata;
   }
 
+  setUser(user) {
+    this.user = user;
+  }
+
   validate() {
     return typeof this.eventName === 'string' && this.eventName.length > 0;
   }
@@ -40,6 +44,7 @@ class LogEvent {
       eventName: this.eventName,
       value: this.value,
       metadata: this.metadata,
+      user: this.user,
     };
   }
 }

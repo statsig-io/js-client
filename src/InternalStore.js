@@ -82,7 +82,7 @@ export default function InternalStore(identity, logger) {
     if (userID && store.cache[userID]?.gates[gateNameHash]) {
       value = store.cache[userID].gates[gateNameHash];
     }
-    logGateExposure(logger, gateName, value);
+    logGateExposure(logger, identity.getUser(), gateName, value);
     return value;
   };
 
@@ -99,7 +99,12 @@ export default function InternalStore(identity, logger) {
     let value = fallbackConfig();
     if (userID && store.cache[userID]?.configs[configNameHash]) {
       value = store.cache[userID].configs[configNameHash];
-      logConfigExposure(logger, configName, value.getGroupName());
+      logConfigExposure(
+        logger,
+        identity.getUser(),
+        configName,
+        value.getGroupName(),
+      );
     }
     return value;
   };
