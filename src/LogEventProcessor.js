@@ -13,6 +13,18 @@ export default function LogEventProcessor(identity, options, sdkKey) {
   let flushTimer = null;
   let loggedErrors = new Set();
 
+  if (typeof window !== 'undefined') {
+    window.addEventListener('blur', () => processor.flush());
+    window.addEventListener('beforeunload', () => processor.flush());
+  }
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState !== 'visible') {
+        processor.flush();
+      }
+    });
+  }
+
   processor.setFlushInterval = function (interval) {
     flushInterval = interval;
   };
@@ -45,13 +57,6 @@ export default function LogEventProcessor(identity, options, sdkKey) {
     }
 
     queue.push(event);
-    // window is often undefined, so we check whenever an event is logged until it's defined.
-    // Also we do not want to override predefined onblur function by developers so check for null here.
-    if (typeof window !== 'undefined' && window.onblur == null) {
-      window.onblur = function () {
-        processor.flush();
-      };
-    }
     // flush every N events
     if (queue.length >= flushBatchSize) {
       processor.flush();
