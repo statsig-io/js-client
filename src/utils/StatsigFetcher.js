@@ -1,3 +1,5 @@
+const retryCodes = [408, 500, 502, 503, 504, 522, 524, 599];
+
 const fetcher = {
   init: function () {
     if (fetcher.leakyBucket == null) {
@@ -74,12 +76,15 @@ const fetcher = {
     };
     return fetch(url, params)
       .then((res) => {
-        if (!res.ok && retries > 0) {
-          throw new Error(
-            'Request to ' + url + ' failed with status ' + res.statusText,
-          );
+        if (res.ok) {
+          return Promise.resolve(res);
         }
-        return Promise.resolve(res);
+        if (!retryCodes.includes(res.status)) {
+          retries = 0;
+        }
+        return Promise.reject(
+          'Request to ' + url + ' failed with status ' + res.statusText,
+        );
       })
       .catch((e) => {
         if (retries > 0) {

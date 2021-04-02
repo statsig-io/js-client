@@ -159,7 +159,8 @@ const statsig = {
       .then(() => {
         return Promise.resolve(true);
       })
-      .catch(() => {
+      .catch((e) => {
+        console.error(e);
         return Promise.resolve(false);
       })
       .finally(() => {
