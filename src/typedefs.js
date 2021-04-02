@@ -19,7 +19,7 @@
 
 /**
  * An object of properties for initializing the sdk with advanced options
- * @typedef {Object} StatsigOptions
+ * @typedef {Object.<string, *>} StatsigOptions
  * @property {string} [api]
  * @memberof typedefs
  */

@@ -23,7 +23,7 @@
 
 * [typedefs](#typedefs) : <code>object</code>
     * [.StatsigUser](#typedefs.StatsigUser) : <code>Object.&lt;string, \*&gt;</code>
-    * [.StatsigOptions](#typedefs.StatsigOptions) : <code>Object</code>
+    * [.StatsigOptions](#typedefs.StatsigOptions) : <code>Object.&lt;string, \*&gt;</code>
 
 <a name="typedefs.StatsigUser"></a>
 
@@ -47,7 +47,7 @@ An object of properties relating to the current user
 
 <a name="typedefs.StatsigOptions"></a>
 
-### typedefs.StatsigOptions : <code>Object</code>
+### typedefs.StatsigOptions : <code>Object.&lt;string, \*&gt;</code>
 An object of properties for initializing the sdk with advanced options
 
 **Kind**: static typedef of [<code>typedefs</code>](#typedefs)  

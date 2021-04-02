@@ -95,7 +95,7 @@ so the SDK can clean up internal state
 
 
 * [.StatsigUser](#StatsigUser) : <code>Object.&lt;string, \*&gt;</code>
-* [.StatsigOptions](#StatsigOptions) : <code>Object</code>
+* [.StatsigOptions](#StatsigOptions) : <code>Object.&lt;string, \*&gt;</code>
 * [.DynamicConfig](#DynamicConfig) : <code>Object</code>
 
 <a name="StatsigUser"></a>
@@ -119,7 +119,7 @@ An object of properties relating to the current user
 
 <a name="StatsigOptions"></a>
 
-### StatsigOptions : <code>Object</code>
+### StatsigOptions : <code>Object.&lt;string, \*&gt;</code>
 An object of properties for initializing the sdk with advanced options
 
 **Properties**
