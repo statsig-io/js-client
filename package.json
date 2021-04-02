@@ -1,6 +1,6 @@
 {
   "name": "statsig-js-client-sdk",
-  "version": "1.0.19",
+  "version": "1.0.20",
   "description": "Statsig javascript client SDK",
   "main": "dist/statsig-prod-node-client-sdk.js",
   "scripts": {
