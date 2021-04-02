@@ -104,7 +104,7 @@ const statsig = {
    * Log an event for data analysis and alerting or to measure the impact of an experiment
    * @param {string} eventName - the name of the event (eventName = 'Purchase')
    * @param {?string|number} [value=null] - the value associated with the event (value = 10)
-   * @param {?Record<string, string>} [metadata=null] - other attributes associated with this event (metadata = {items: 2, currency: USD})
+   * @param {?Record<string, string>} [metadata=null] - other attributes associated with this event (metadata = {item_name: 'banana', currency: 'USD'})
    * @returns {void}
    */
   logEvent: function (eventName, value = null, metadata = null) {
