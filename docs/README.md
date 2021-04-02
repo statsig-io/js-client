@@ -62,7 +62,7 @@ Log an event for data analysis and alerting or to measure the impact of an exper
 | --- | --- | --- | --- |
 | eventName | <code>string</code> |  | the name of the event (eventName = 'Purchase') |
 | [value] | <code>string</code> \| <code>number</code> | <code>null</code> | the value associated with the event (value = 10) |
-| [metadata] | <code>object</code> | <code></code> | other attributes associated with this event (metadata = {items: 2, currency: USD}) |
+| [metadata] | <code>Record.&lt;string, string&gt;</code> | <code></code> | other attributes associated with this event (metadata = {items: 2, currency: USD}) |
 
 <a name="statsig.updateUser"></a>
 
@@ -95,7 +95,7 @@ so the SDK can clean up internal state
 
 
 * [.StatsigUser](#StatsigUser) : <code>Object.&lt;string, \*&gt;</code>
-* [.StatsigOptions](#StatsigOptions) : <code>Object</code>
+* [.StatsigOptions](#StatsigOptions) : <code>Object.&lt;string, \*&gt;</code>
 * [.DynamicConfig](#DynamicConfig) : <code>Object</code>
 
 <a name="StatsigUser"></a>
@@ -115,11 +115,11 @@ An object of properties relating to the current user
 | [locale] | <code>string</code> | 
 | [clientVersion] | <code>string</code> | 
 | [name] | <code>string</code> | 
-| [custom] | <code>Object.&lt;string, \*&gt;</code> | 
+| [custom] | <code>Object.&lt;string, (string\|number\|boolean\|Array.&lt;string&gt;)&gt;</code> | 
 
 <a name="StatsigOptions"></a>
 
-### StatsigOptions : <code>Object</code>
+### StatsigOptions : <code>Object.&lt;string, \*&gt;</code>
 An object of properties for initializing the sdk with advanced options
 
 **Properties**
