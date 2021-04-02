@@ -4,7 +4,7 @@
 
 /**
  * An object of properties relating to the current user
- * @typedef {Object<string, *>} StatsigUser
+ * @typedef {Object.<string, *>} StatsigUser
  * @property {string | number} [userID]
  * @property {string} [email]
  * @property {string} [ip]
@@ -13,7 +13,7 @@
  * @property {string} [locale]
  * @property {string} [clientVersion]
  * @property {string} [name]
- * @property {Object<string, string | number | boolean | Array<string>>} [custom]
+ * @property {Object.<string, string | number | boolean | Array<string>>} [custom]
  * @memberof typedefs
  */
 
