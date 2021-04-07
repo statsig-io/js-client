@@ -5,7 +5,7 @@ import { localGet, localSet, localRemove } from './utils/storage';
 import { fallbackConfig } from './utils/defaults';
 import DynamicConfig from './DynamicConfig';
 
-export default function InternalStore(identity, logger) {
+export default function InternalStore(identity, logger, asyncStorage) {
   let store = {};
   store.cache = {};
   const localStorageKey = 'STATSIG_LOCAL_STORE';

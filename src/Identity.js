@@ -5,7 +5,7 @@ export default function Identity(initialUser) {
   let user = {};
   let statsigMetadata = {
     stableID: utils.getStableID(),
-    sessionID: utils.getSessionID(),
+    sessionID: utils.generateID(),
     sdkType: utils.getSDKType(),
     sdkVersion: utils.getSDKVersion(),
   };
@@ -15,7 +15,7 @@ export default function Identity(initialUser) {
     if (user == null) {
       user = {};
     }
-    statsigMetadata.sessionID = utils.getSessionID(true);
+    statsigMetadata.sessionID = utils.generateID();
     return true;
   };
 

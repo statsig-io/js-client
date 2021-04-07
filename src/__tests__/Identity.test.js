@@ -23,7 +23,7 @@ describe('Verify behavior of Identity module', () => {
     expect(id.getUser()).toStrictEqual({ userID: 'test_user' });
     const previousSessionID = id.getStatsigMetadata().sessionID;
     id.setUser(null);
-    expect(id.getStatsigMetadata().getSessionID).not.toStrictEqual(
+    expect(id.getStatsigMetadata().sessionID).not.toStrictEqual(
       previousSessionID,
     );
     expect(id.getUser()).toStrictEqual({});
