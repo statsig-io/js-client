@@ -1,8 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
-import { localGet, localSet, sessionGet, sessionSet } from './storage';
+import { localGet, localSet } from './storage';
 
 const STATSIG_KEY_STABLE_ID = 'statsig_stable_id';
-const STATSIG_KEY_SESSION_ID = 'statsig_session_id';
 
 export function getSDKVersion() {
   return require('../../package.json')?.version ?? '';
@@ -24,20 +23,6 @@ export function getStableID() {
   deviceID = generateID();
   localSet(STATSIG_KEY_STABLE_ID, deviceID);
   return deviceID;
-}
-
-export function getSessionID(createNew) {
-  let sessionID = null;
-  if (!createNew) {
-    sessionID = sessionGet(STATSIG_KEY_SESSION_ID);
-    if (sessionID) {
-      return sessionID;
-    }
-  }
-
-  sessionID = generateID();
-  sessionSet(STATSIG_KEY_SESSION_ID, sessionID);
-  return sessionID;
 }
 
 export function clone(obj) {

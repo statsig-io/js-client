@@ -30,25 +30,3 @@ export function localRemove(key) {
   }
   window.localStorage.removeItem(key);
 }
-
-export function sessionGet(key) {
-  if (
-    typeof Storage === 'undefined' ||
-    typeof window === 'undefined' ||
-    !window.sessionStorage
-  ) {
-    return;
-  }
-  return window.sessionStorage.getItem(key);
-}
-
-export function sessionSet(key, value) {
-  if (
-    typeof Storage === 'undefined' ||
-    typeof window === 'undefined' ||
-    !window.sessionStorage
-  ) {
-    return;
-  }
-  window.sessionStorage.setItem(key, value);
-}

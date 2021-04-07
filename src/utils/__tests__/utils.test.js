@@ -1,17 +1,5 @@
-import {
-  clone,
-  getBoolValue,
-  getStableID,
-  getNumericValue,
-  getSessionID,
-} from '../core';
-import {
-  localRemove,
-  localGet,
-  localSet,
-  sessionGet,
-  sessionSet,
-} from '../storage';
+import { clone, getBoolValue, getStableID, getNumericValue } from '../core';
+import { localRemove, localGet, localSet } from '../storage';
 
 describe('Verify behavior of core utility functions', () => {
   beforeEach(() => {
@@ -30,21 +18,6 @@ describe('Verify behavior of core utility functions', () => {
 
     localSet('statsig_stable_id', '123');
     expect(getStableID()).toStrictEqual('123');
-  });
-
-  test('Test Session ID and storage APIs', () => {
-    expect(sessionGet('statsig_session_id')).toBeNull();
-    const sessionID = getSessionID();
-    expect(sessionID).not.toBeNull();
-    expect(getSessionID()).toStrictEqual(sessionID);
-    localRemove('statsig_session_id');
-    let otherSessionID = getSessionID();
-    expect(otherSessionID).not.toBeNull();
-    // Session ID is not affected by localRemove
-    expect(otherSessionID).toStrictEqual(sessionID);
-
-    sessionSet('statsig_session_id', '123');
-    expect(getSessionID()).toStrictEqual('123');
   });
 
   test('Test clone', () => {
