@@ -13,11 +13,17 @@ export default function LogEventProcessor(identity, options, sdkKey) {
   let flushTimer = null;
   let loggedErrors = new Set();
 
-  if (typeof window !== 'undefined') {
+  if (
+    typeof window !== 'undefined' &&
+    typeof window.addEventListener === 'function'
+  ) {
     window.addEventListener('blur', () => processor.flush());
     window.addEventListener('beforeunload', () => processor.flush());
   }
-  if (typeof document !== 'undefined') {
+  if (
+    typeof document !== 'undefined' &&
+    typeof document.addEventListener === 'function'
+  ) {
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState !== 'visible') {
         processor.flush();
