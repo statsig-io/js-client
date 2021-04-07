@@ -1,5 +1,5 @@
 {
-  "include": ["src/**/*", "./index.js"],
+  "include": ["src/**/*", "./index.js", "react-native/**/*"],
   "compilerOptions": {
     "allowJs": true,
     "checkJs": true,

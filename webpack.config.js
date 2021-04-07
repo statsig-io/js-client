@@ -2,6 +2,7 @@ const path = require('path');
 const TerserPlugin = require('terser-webpack-plugin');
 
 const BUILD_DIR = path.resolve(__dirname, './dist');
+const RN_BUILD_DIR = path.resolve(__dirname, './react-native/lib');
 
 const baseConfig = {
   entry: __dirname + '/index.js',
@@ -81,4 +82,24 @@ const webProd = Object.assign(
   },
 );
 
-module.exports = [nodeDebug, nodeProd, webDebug, webProd];
+const reactNative = Object.assign(
+  {},
+  baseConfig,
+  {
+    output: {
+      filename: 'statsig-react-native-sdk.js',
+      globalObject: 'this',
+      library: 'statsig',
+      libraryExport: 'default',
+      libraryTarget: 'umd',
+      path: RN_BUILD_DIR,
+    },
+  },
+  prodOptimization,
+  {
+    target: 'web',
+    mode: 'production',
+  },
+);
+
+module.exports = [nodeDebug, nodeProd, webDebug, webProd, reactNative];

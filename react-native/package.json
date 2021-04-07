@@ -1,0 +1,37 @@
+{
+  "name": "statsig-react-native-sdk",
+  "version": "1.0.10",
+  "description": "Statsig React Native SDK",
+  "main": "index.js",
+  "files": [
+    "index.d.ts",
+    "index.js",
+    "lib/statsig-react-native-sdk.js"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/statsig-io/statsig-js-client-sdk.git"
+  },
+  "author": "Statsig, Inc.",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/statsig-io/statsig-js-client-sdk/issues"
+  },
+  "keywords": [
+    "feature gate",
+    "feature flag",
+    "continuous deployment",
+    "ci",
+    "ab test"
+  ],
+  "homepage": "https://www.statsig.com",
+  "dependencies": {
+    "crypto-js": "^3.1.9-1",
+    "react-native-get-random-values": "^1.6.0",
+    "uuid": "^8.3.2"
+  },
+  "peerDependencies": {
+    "react-native": ">=0.60.0"
+  },
+  "types": "index.d.ts"
+}
