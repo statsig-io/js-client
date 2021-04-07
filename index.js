@@ -236,23 +236,18 @@ const statsig = {
    * @returns {Promise<void>}
    */
   _fetchValues: function (resolveCallback = null, rejectCallback = null) {
-    const url = new URL(statsig._options.api + '/initialize');
     return fetcher.postWithTimeout(
-      url.toString(),
+      statsig._options.api + '/initialize',
       statsig._sdkKey,
       {
         user: statsig._identity.getUser(),
         statsigMetadata: statsig._identity.getStatsigMetadata(),
       },
-      (res) => {
-        if (res.ok) {
-          res.json().then((json) => {
-            statsig._store.save(json.gates, json.configs);
-            statsig._configure(json.sdkParams);
-          });
-        }
+      (resJSON) => {
+        statsig._store.save(resJSON.gates, resJSON.configs);
+        statsig._configure(resJSON.sdkParams);
         if (typeof resolveCallback === 'function') {
-          resolveCallback(res);
+          resolveCallback(resJSON);
         }
       },
       (e) => {
