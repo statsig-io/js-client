@@ -28,10 +28,17 @@ const fetcher = {
     }
     const fetchPromise = this.post(url, sdkKey, body, retries, backout)
       .then((res) => {
-        if (typeof resolveCallback === 'function') {
-          resolveCallback(res);
+        if (res.ok) {
+          return res.json().then((json) => {
+            if (typeof resolveCallback === 'function') {
+              resolveCallback(json);
+            }
+            return Promise.resolve(json);
+          });
         }
-        return Promise.resolve(res);
+        return Promise.reject(
+          'Request to ' + url + ' failed with status ' + res.status,
+        );
       })
       .catch((e) => {
         if (typeof rejectCallback === 'function') {
@@ -83,7 +90,7 @@ const fetcher = {
           retries = 0;
         }
         return Promise.reject(
-          'Request to ' + url + ' failed with status ' + res.statusText,
+          'Request to ' + url + ' failed with status ' + res.status,
         );
       })
       .catch((e) => {
