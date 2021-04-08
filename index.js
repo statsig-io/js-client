@@ -15,8 +15,10 @@ const typedefs = require('./src/typedefs');
 const MAX_VALUE_SIZE = 64;
 const MAX_OBJ_SIZE = 1024;
 
-// async storage for react native
-let _asyncStorage;
+// for react native
+let _AsyncStorage;
+let _AppState;
+let _currentAppState;
 
 /**
  * The global statsig class for interacting with gates, configs, experiments configured in the statsig developer console.  Also used for event logging to view in the statsig console, or for analyzing experiment impacts using pulse.
@@ -49,14 +51,20 @@ const statsig = {
     statsig._sdkKey = sdkKey;
     statsig._options = StatsigOptions(options);
     statsig._identity = Identity(trimUserObjIfNeeded(user));
-    localStorage.init(_asyncStorage);
+    localStorage.init(_AsyncStorage);
 
     return statsig._identity.setStableIDAsync().finally(() => {
       statsig._logger = LogEventProcessor(
         statsig._identity,
         statsig._options,
         sdkKey,
+        _AppState,
       );
+
+      if (_AppState && typeof _AppState.addEventListener === 'function') {
+        _currentAppState = _AppState?.currentState;
+        _AppState?.addEventListener('change', statsig._handleAppStateChange);
+      }
       statsig._store = InternalStore(statsig._identity, statsig._logger);
       return statsig._store.loadFromLocalStorage().finally(() => {
         return this._fetchValues()
@@ -191,14 +199,28 @@ const statsig = {
    * so the SDK can clean up internal state
    */
   shutdown: function () {
-    if (statsig._logger == null) {
-      return;
+    statsig._logger?.flush();
+    if (_AppState && typeof _AppState.removeEventListener === 'function') {
+      _AppState.removeEventListener('change', this._handleAppStateChange);
     }
-    statsig._logger.flush();
   },
 
   _setAsyncStorage: function (asyncStorage) {
-    _asyncStorage = asyncStorage;
+    _AsyncStorage = asyncStorage;
+  },
+
+  _setAppState: function (appState) {
+    _AppState = appState;
+  },
+
+  _handleAppStateChange: function (nextAppState) {
+    if (
+      _currentAppState === 'active' &&
+      nextAppState.match(/inactive|background/)
+    ) {
+      statsig._logger?.flush();
+    }
+    _currentAppState = nextAppState;
   },
 
   /**
