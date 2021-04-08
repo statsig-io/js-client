@@ -1,23 +1,41 @@
-import { clone, getBoolValue, getStableID, getNumericValue } from '../core';
-import { localRemove, localGet, localSet } from '../storage';
+import {
+  clone,
+  getBoolValue,
+  getStableIDAsync,
+  getNumericValue,
+} from '../core';
+import storage from '../storage';
 
 describe('Verify behavior of core utility functions', () => {
   beforeEach(() => {
     expect.hasAssertions();
   });
 
-  test('Test Device ID and storage APIs', () => {
-    expect(localGet('statsig_stable_id')).toBeNull();
-    const deviceID = getStableID();
-    expect(deviceID).not.toBeNull();
-    expect(getStableID()).toStrictEqual(deviceID);
-    localRemove('statsig_stable_id');
-    let otherDeviceID = getStableID();
-    expect(otherDeviceID).not.toBeNull();
-    expect(otherDeviceID).not.toStrictEqual(deviceID);
+  test('Test stable ID is the same across multiple gets', () => {
+    expect.assertions(3);
+    storage.init();
+    return storage
+      .getItemAsync('STATSIG_LOCAL_STORAGE_STABLE_ID')
+      .then((localData) => {
+        expect(localData).toBeNull();
+        return getStableIDAsync().then((data) => {
+          expect(data).not.toBeNull();
+          return getStableIDAsync().then((data2) => {
+            expect(data).toStrictEqual(data2);
+          });
+        });
+      });
+  });
 
-    localSet('statsig_stable_id', '123');
-    expect(getStableID()).toStrictEqual('123');
+  test('Test setting stable ID', () => {
+    storage.init();
+    return storage
+      .setItemAsync('STATSIG_LOCAL_STORAGE_STABLE_ID', '123')
+      .then(() => {
+        return getStableIDAsync().then((data) => {
+          expect(data).toStrictEqual('123');
+        });
+      });
   });
 
   test('Test clone', () => {

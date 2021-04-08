@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
-import { localGet, localSet } from './storage';
+import localStorage from './storage';
 
-const STATSIG_KEY_STABLE_ID = 'statsig_stable_id';
+const STATSIG_STABLE_ID_KEY = 'STATSIG_LOCAL_STORAGE_STABLE_ID';
 
 export function getSDKVersion() {
   return require('../../package.json')?.version ?? '';
@@ -15,14 +15,20 @@ export function generateID() {
   return uuidv4();
 }
 
-export function getStableID() {
-  let deviceID = localGet(STATSIG_KEY_STABLE_ID);
-  if (deviceID) {
-    return deviceID;
-  }
-  deviceID = generateID();
-  localSet(STATSIG_KEY_STABLE_ID, deviceID);
-  return deviceID;
+export function getStableIDAsync() {
+  return localStorage
+    .getItemAsync(STATSIG_STABLE_ID_KEY)
+    .then((data) => {
+      if (data) {
+        return Promise.resolve(data);
+      }
+      throw new Error('No stable ID found in local storage.');
+    })
+    .catch(() => {
+      const newStableID = generateID();
+      localStorage.setItemAsync(STATSIG_STABLE_ID_KEY, newStableID);
+      return Promise.resolve(newStableID);
+    });
 }
 
 export function clone(obj) {

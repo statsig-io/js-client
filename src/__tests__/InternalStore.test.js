@@ -2,6 +2,7 @@ import DynamicConfig from '../DynamicConfig';
 import { fallbackConfig } from '../utils/defaults';
 import InternalStore from '../InternalStore';
 import Identity from '../Identity';
+import storage from '../utils/storage';
 
 describe('Verify behavior of InternalStore', () => {
   const sdkKey = 'test-internalstorekey';
@@ -56,15 +57,20 @@ describe('Verify behavior of InternalStore', () => {
     const ident = Identity({ userID: 'user_key' });
     const spyOnSet = jest.spyOn(window.localStorage.__proto__, 'setItem');
     const spyOnGet = jest.spyOn(window.localStorage.__proto__, 'getItem');
+    storage.init();
     const store = InternalStore(ident);
-
-    store.save(gates, configs);
-    expect(store.cache['user_key']).toEqual({
-      gates: gates,
-      configs: { 'RMv0YJlLOBe7cY7HgZ3Jox34R0Wrk7jLv3DZyBETA7I=': config_obj },
+    return store.loadFromLocalStorage().then(() => {
+      return store.save(gates, configs).then(() => {
+        expect(store.cache['user_key']).toEqual({
+          gates: gates,
+          configs: {
+            'RMv0YJlLOBe7cY7HgZ3Jox34R0Wrk7jLv3DZyBETA7I=': config_obj,
+          },
+        });
+        expect(spyOnSet).toHaveBeenCalledTimes(1);
+        expect(spyOnGet).toHaveBeenCalledTimes(1);
+      });
     });
-    expect(spyOnSet).toHaveBeenCalledTimes(1);
-    expect(spyOnGet).toHaveBeenCalledTimes(1);
   });
 
   test('Verify checkGate returns false when gateName is invalid.', () => {
