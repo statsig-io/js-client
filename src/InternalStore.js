@@ -1,42 +1,15 @@
 import sha256 from 'crypto-js/sha256';
 import Base64 from 'crypto-js/enc-base64';
 import { logConfigExposure, logGateExposure } from './utils/logging';
-import { localGet, localSet, localRemove } from './utils/storage';
+import localStorage from './utils/storage';
 import { fallbackConfig } from './utils/defaults';
 import DynamicConfig from './DynamicConfig';
 
-export default function InternalStore(identity, logger, asyncStorage) {
+const INTERNAL_STORE_KEY = 'STATSIG_LOCAL_STORAGE_INTERNAL_STORE';
+
+export default function InternalStore(identity, logger) {
   let store = {};
   store.cache = {};
-  const localStorageKey = 'STATSIG_LOCAL_STORE';
-  let localCache = localGet(localStorageKey);
-  if (localCache) {
-    try {
-      let jsonCache = JSON.parse(localCache);
-      if (jsonCache != null) {
-        for (const [user, data] of Object.entries(jsonCache)) {
-          store.cache[user] = {
-            gates: data.gates,
-            configs: {},
-          };
-          if (data.configs != null) {
-            for (const [configName, configData] of Object.entries(
-              data.configs,
-            )) {
-              store.cache[user].configs[configName] = new DynamicConfig(
-                configData.name,
-                configData.value,
-                configData._groupName,
-              );
-            }
-          }
-        }
-      }
-    } catch (e) {
-      // Cached value corrupted, remove cache
-      localRemove(localStorageKey);
-    }
-  }
 
   function parseConfigs(configs) {
     if (typeof configs !== 'object' || configs == null) {
@@ -55,17 +28,62 @@ export default function InternalStore(identity, logger, asyncStorage) {
     return parsed;
   }
 
+  store.loadFromLocalStorage = function () {
+    return localStorage
+      .getItemAsync(INTERNAL_STORE_KEY)
+      .then((data) => {
+        if (data) {
+          try {
+            let jsonCache = JSON.parse(data);
+            if (jsonCache != null) {
+              for (const [user, data] of Object.entries(jsonCache)) {
+                store.cache[user] = {
+                  gates: data.gates,
+                  configs: {},
+                };
+                if (data.configs != null) {
+                  for (const [configName, configData] of Object.entries(
+                    data.configs,
+                  )) {
+                    store.cache[user].configs[configName] = new DynamicConfig(
+                      configData.name,
+                      configData.value,
+                      configData._groupName,
+                    );
+                  }
+                }
+              }
+            }
+          } catch (e) {
+            // Cached value corrupted, remove cache
+            localStorage.removeItemAsync(INTERNAL_STORE_KEY);
+          }
+        }
+        return Promise.resolve();
+      })
+      .catch((e) => {
+        // Never reject when local storage fails to load
+        return Promise.resolve();
+      });
+  };
+
   store.save = function (gates, configs) {
     const userID = identity.getUserID();
     if (!userID) {
       console.error('Cannot save for user without a valid user ID');
       return;
     }
+    // saves to in memory cache
     store.cache[userID] = {
       gates: gates ?? {},
       configs: parseConfigs(configs),
     };
-    localSet(localStorageKey, JSON.stringify(store.cache));
+
+    return localStorage
+      .setItemAsync(INTERNAL_STORE_KEY, JSON.stringify(store.cache))
+      .catch(() => {
+        return Promise.resolve();
+      });
   };
 
   store.checkGate = function (gateName) {

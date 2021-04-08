@@ -82,7 +82,27 @@ const webProd = Object.assign(
   },
 );
 
-const reactNative = Object.assign(
+const reactNativeDebug = Object.assign(
+  {},
+  baseConfig,
+  {
+    output: {
+      filename: 'dev-statsig-react-native-sdk.js',
+      globalObject: 'this',
+      library: 'statsig',
+      libraryExport: 'default',
+      libraryTarget: 'umd',
+      path: RN_BUILD_DIR,
+    },
+  },
+  {},
+  {
+    target: 'web',
+    mode: 'development',
+  },
+);
+
+const reactNativeProd = Object.assign(
   {},
   baseConfig,
   {
@@ -102,4 +122,11 @@ const reactNative = Object.assign(
   },
 );
 
-module.exports = [nodeDebug, nodeProd, webDebug, webProd, reactNative];
+module.exports = [
+  nodeDebug,
+  nodeProd,
+  webDebug,
+  webProd,
+  reactNativeDebug,
+  reactNativeProd,
+];

@@ -1,6 +1,6 @@
 {
   "name": "statsig-react-native-sdk",
-  "version": "1.0.10",
+  "version": "1.0.12",
   "description": "Statsig React Native SDK",
   "main": "index.js",
   "files": [
@@ -26,6 +26,7 @@
   ],
   "homepage": "https://www.statsig.com",
   "dependencies": {
+    "@react-native-async-storage/async-storage": "^1.15.2",
     "crypto-js": "^3.1.9-1",
     "react-native-get-random-values": "^1.6.0",
     "uuid": "^8.3.2"

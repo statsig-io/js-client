@@ -1,32 +1,56 @@
-export function localGet(key) {
-  if (
-    typeof Storage === 'undefined' ||
-    typeof window === 'undefined' ||
-    !window.localStorage
-  ) {
-    return;
-  }
-  return window.localStorage.getItem(key);
-}
+const storage = {
+  init: function (asyncStorage = null) {
+    if (
+      !storage.local &&
+      typeof Storage !== 'undefined' &&
+      window != null &&
+      window.localStorage != null
+    ) {
+      storage.local = window.localStorage;
+    }
 
-export function localSet(key, value) {
-  if (
-    typeof Storage === 'undefined' ||
-    typeof window === 'undefined' ||
-    !window.localStorage
-  ) {
-    return;
-  }
-  window.localStorage.setItem(key, value);
-}
+    if (
+      !storage.async &&
+      asyncStorage != null &&
+      typeof asyncStorage.getItem === 'function' &&
+      typeof asyncStorage.setItem === 'function' &&
+      typeof asyncStorage.removeItem === 'function'
+    ) {
+      storage.async = asyncStorage;
+    }
+  },
 
-export function localRemove(key) {
-  if (
-    typeof Storage === 'undefined' ||
-    typeof window === 'undefined' ||
-    !window.localStorage
-  ) {
-    return;
-  }
-  window.localStorage.removeItem(key);
-}
+  getItemAsync: function (key) {
+    if (storage.local) {
+      return Promise.resolve(storage.local.getItem(key));
+    }
+    if (storage.async) {
+      return storage.async.getItem(key);
+    }
+    return Promise.resolve();
+  },
+
+  setItemAsync: function (key, value) {
+    if (storage.local) {
+      storage.local.setItem(key, value);
+      return Promise.resolve();
+    }
+    if (storage.async) {
+      return storage.async.setItem(key, value);
+    }
+    return Promise.resolve();
+  },
+
+  removeItemAsync: function (key) {
+    if (storage.local) {
+      storage.local.removeItem(key);
+      return Promise.resolve();
+    }
+    if (storage.async) {
+      return storage.async.removeItem(key);
+    }
+    return Promise.resolve();
+  },
+};
+
+export default storage;

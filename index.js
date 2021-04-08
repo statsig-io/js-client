@@ -8,11 +8,15 @@ import LogEvent from './src/LogEvent';
 import LogEventProcessor from './src/LogEventProcessor';
 import StatsigOptions from './src/StatsigOptions';
 import DynamicConfig from './src/DynamicConfig';
+import localStorage from './src/utils/storage';
 
 const typedefs = require('./src/typedefs');
 
 const MAX_VALUE_SIZE = 64;
 const MAX_OBJ_SIZE = 1024;
+
+// async storage for react native
+let _asyncStorage;
 
 /**
  * The global statsig class for interacting with gates, configs, experiments configured in the statsig developer console.  Also used for event logging to view in the statsig console, or for analyzing experiment impacts using pulse.
@@ -42,24 +46,29 @@ const statsig = {
       );
     }
     statsig._ready = false;
-    statsig._identity = Identity(trimUserObjIfNeeded(user));
     statsig._sdkKey = sdkKey;
     statsig._options = StatsigOptions(options);
-    statsig._logger = LogEventProcessor(
-      statsig._identity,
-      statsig._options,
-      sdkKey,
-    );
-    statsig._store = InternalStore(statsig._identity, statsig._logger);
+    statsig._identity = Identity(trimUserObjIfNeeded(user));
+    localStorage.init(_asyncStorage);
 
-    return this._fetchValues()
-      .catch((e) => {
-        console.error(e);
-        return Promise.resolve();
-      })
-      .finally(() => {
-        statsig._ready = true;
+    return statsig._identity.setStableIDAsync().finally(() => {
+      statsig._logger = LogEventProcessor(
+        statsig._identity,
+        statsig._options,
+        sdkKey,
+      );
+      statsig._store = InternalStore(statsig._identity, statsig._logger);
+      return statsig._store.loadFromLocalStorage().finally(() => {
+        return this._fetchValues()
+          .catch((e) => {
+            console.error(e);
+            return Promise.resolve();
+          })
+          .finally(() => {
+            statsig._ready = true;
+          });
       });
+    });
   },
 
   /**
@@ -186,6 +195,10 @@ const statsig = {
       return;
     }
     statsig._logger.flush();
+  },
+
+  _setAsyncStorage: function (asyncStorage) {
+    _asyncStorage = asyncStorage;
   },
 
   /**

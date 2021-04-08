@@ -4,10 +4,21 @@ export default function Identity(initialUser) {
   const identity = {};
   let user = {};
   let statsigMetadata = {
-    stableID: utils.getStableID(),
     sessionID: utils.generateID(),
     sdkType: utils.getSDKType(),
     sdkVersion: utils.getSDKVersion(),
+  };
+
+  identity.setStableIDAsync = function () {
+    return utils
+      .getStableIDAsync()
+      .then((data) => {
+        statsigMetadata.stableID = data;
+        return Promise.resolve();
+      })
+      .catch(() => {
+        return Promise.resolve();
+      });
   };
 
   identity.setUser = function (newUser) {
