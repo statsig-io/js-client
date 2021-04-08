@@ -58,7 +58,6 @@ const statsig = {
         statsig._identity,
         statsig._options,
         sdkKey,
-        _AppState,
       );
 
       if (_AppState && typeof _AppState.addEventListener === 'function') {
