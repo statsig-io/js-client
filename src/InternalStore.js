@@ -54,7 +54,6 @@ export default function InternalStore(identity, logger) {
                 }
               }
             }
-            console.log(jsonCache);
           } catch (e) {
             // Cached value corrupted, remove cache
             localStorage.removeItemAsync(INTERNAL_STORE_KEY);

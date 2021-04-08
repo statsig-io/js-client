@@ -9,13 +9,14 @@ export default function Identity(initialUser) {
     sdkVersion: utils.getSDKVersion(),
   };
 
-  identity.loadFromLocalStorage = function () {
+  identity.setStableIDAsync = function () {
     return utils
       .getStableIDAsync()
       .then((data) => {
         statsigMetadata.stableID = data;
+        return Promise.resolve();
       })
-      .finally(() => {
+      .catch(() => {
         return Promise.resolve();
       });
   };

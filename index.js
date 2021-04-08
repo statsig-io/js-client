@@ -51,7 +51,7 @@ const statsig = {
     statsig._identity = Identity(trimUserObjIfNeeded(user));
     localStorage.init(_asyncStorage);
 
-    return statsig._identity.loadFromLocalStorage().finally(() => {
+    return statsig._identity.setStableIDAsync().finally(() => {
       statsig._logger = LogEventProcessor(
         statsig._identity,
         statsig._options,
@@ -62,10 +62,10 @@ const statsig = {
         return this._fetchValues()
           .catch((e) => {
             console.error(e);
+            return Promise.resolve();
           })
           .finally(() => {
             statsig._ready = true;
-            return Promise.resolve();
           });
       });
     });

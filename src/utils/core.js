@@ -26,8 +26,14 @@ export function getStableIDAsync() {
     })
     .catch(() => {
       const newStableID = generateID();
-      localStorage.setItemAsync(STATSIG_STABLE_ID_KEY, newStableID);
-      return Promise.resolve(newStableID);
+      return localStorage
+        .setItemAsync(STATSIG_STABLE_ID_KEY, newStableID)
+        .then(() => {
+          return Promise.resolve(newStableID);
+        })
+        .catch(() => {
+          return Promise.resolve(newStableID);
+        });
     });
 }
 
