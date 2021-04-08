@@ -61,8 +61,8 @@ const statsig = {
       );
 
       if (_AppState && typeof _AppState.addEventListener === 'function') {
-        _currentAppState = _AppState?.currentState;
-        _AppState?.addEventListener('change', statsig._handleAppStateChange);
+        _currentAppState = _AppState.currentState;
+        _AppState.addEventListener('change', statsig._handleAppStateChange);
       }
       statsig._store = InternalStore(statsig._identity, statsig._logger);
       return statsig._store.loadFromLocalStorage().finally(() => {
