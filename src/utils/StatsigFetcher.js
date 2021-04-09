@@ -58,10 +58,18 @@ const fetcher = {
     return fetchPromise;
   },
 
-  post: function (url, sdkKey, body, retries = 0, backoff = 1000) {
+  post: function (
+    url,
+    sdkKey,
+    body,
+    retries = 0,
+    backoff = 1000,
+    disableRateLimit = false,
+  ) {
     this.init();
+    console.log(url);
     const counter = fetcher.leakyBucket[url];
-    if (counter != null && counter >= 10) {
+    if (counter != null && counter >= 100) {
       return Promise.reject(
         new Error(
           'Request failed because you are making the same request too frequently.',

@@ -79,6 +79,9 @@ export default function LogEventProcessor(identity, options, sdkKey) {
 
   processor.flush = function (shutdown = false) {
     if (queue.length === 0) {
+      if (shutdown) {
+        processor.saveFailedRequests();
+      }
       return;
     }
     const oldQueue = queue;
@@ -123,18 +126,26 @@ export default function LogEventProcessor(identity, options, sdkKey) {
             queue = [];
           }
 
-          if (failedLoggingRequests.length > 0) {
-            storage
-              .setItemAsync(
-                STATSIG_LOCAL_STORAGE_LOGGING_REQUEST_KEY,
-                JSON.stringify(failedLoggingRequests),
-              )
-              .catch();
-          }
+          processor.saveFailedRequests();
         } else {
           resetFlushTimeout();
         }
       });
+  };
+
+  processor.saveFailedRequests = function () {
+    if (failedLoggingRequests.length > 0) {
+      storage
+        .setItemAsync(
+          STATSIG_LOCAL_STORAGE_LOGGING_REQUEST_KEY,
+          JSON.stringify(failedLoggingRequests),
+        )
+        .then(() => {
+          // clean up requests after saving into local storage
+          failedLoggingRequests = [];
+        })
+        .catch();
+    }
   };
 
   processor.switchUser = function () {

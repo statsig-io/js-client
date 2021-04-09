@@ -230,6 +230,11 @@ const statsig = {
       nextAppState.match(/inactive|background/)
     ) {
       statsig._logger?.flush(true);
+    } else if (
+      _currentAppState.match(/inactive|background/) &&
+      nextAppState === 'active'
+    ) {
+      statsig._logger?.sendLocalStorageRequests();
     }
     _currentAppState = nextAppState;
   },
