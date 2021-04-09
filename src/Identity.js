@@ -1,6 +1,10 @@
 import * as utils from './utils/core';
 
-export default function Identity(initialUser) {
+export default function Identity(
+  initialUser,
+  Device = null,
+  Localization = null,
+) {
   const identity = {};
   let user = {};
   let statsigMetadata = {
@@ -8,6 +12,21 @@ export default function Identity(initialUser) {
     sdkType: utils.getSDKType(),
     sdkVersion: utils.getSDKVersion(),
   };
+
+  if (Device != null) {
+    statsigMetadata.manufacturer = Device.manufacturer ?? ''; // e.g. google, xiaomi, Apple
+    statsigMetadata.systemVersion = Device.osVersion ?? ''; // Android: "4.0.3"; iOS: "12.3.1"
+    statsigMetadata.systemName = Device.osName ?? ''; // e.g. Android, iOS, iPadOS
+    statsigMetadata.deviceModelName = Device.modelName ?? ''; // e.g. Pixel 2, iPhone XS
+    // iOS only
+    statsigMetadata.deviceModel = Device.modelId ?? ''; // e.g. iPhone7,2
+  }
+
+  if (Localization != null) {
+    statsigMetadata.locale = Localization.locale ?? ''; // e.g. en-US
+    statsigMetadata.region = Localization.region ?? ''; // e.g. US
+    statsigMetadata.timezone = Localization.timezone ?? ''; // e.g. America/Los_Angeles
+  }
 
   identity.setStableIDAsync = function () {
     return utils

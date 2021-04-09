@@ -19,6 +19,8 @@ const MAX_OBJ_SIZE = 1024;
 let _AsyncStorage;
 let _AppState;
 let _currentAppState;
+let _Device;
+let _Localization;
 
 /**
  * The global statsig class for interacting with gates, configs, experiments configured in the statsig developer console.  Also used for event logging to view in the statsig console, or for analyzing experiment impacts using pulse.
@@ -47,10 +49,15 @@ const statsig = {
         ),
       );
     }
+
     statsig._ready = false;
     statsig._sdkKey = sdkKey;
     statsig._options = StatsigOptions(options);
-    statsig._identity = Identity(trimUserObjIfNeeded(user));
+    statsig._identity = Identity(
+      trimUserObjIfNeeded(user),
+      _Device,
+      _Localization,
+    );
     localStorage.init(_AsyncStorage);
 
     return statsig._identity.setStableIDAsync().finally(() => {
@@ -204,12 +211,16 @@ const statsig = {
     }
   },
 
-  _setAsyncStorage: function (asyncStorage) {
-    _AsyncStorage = asyncStorage;
-  },
-
-  _setAppState: function (appState) {
-    _AppState = appState;
+  _setReactNativeDependencies: function (
+    AsyncStorage,
+    AppState,
+    Device,
+    Localization,
+  ) {
+    _AsyncStorage = AsyncStorage;
+    _AppState = AppState;
+    _Device = Device;
+    _Localization = Localization;
   },
 
   _handleAppStateChange: function (nextAppState) {
