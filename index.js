@@ -18,9 +18,11 @@ const MAX_OBJ_SIZE = 1024;
 // for react native
 let _AsyncStorage;
 let _AppState;
-let _currentAppState;
+let _Constants;
 let _Device;
 let _Localization;
+
+let _currentAppState;
 
 /**
  * The global statsig class for interacting with gates, configs, experiments configured in the statsig developer console.  Also used for event logging to view in the statsig console, or for analyzing experiment impacts using pulse.
@@ -55,6 +57,7 @@ const statsig = {
     statsig._options = StatsigOptions(options);
     statsig._identity = Identity(
       trimUserObjIfNeeded(user),
+      _Constants,
       _Device,
       _Localization,
     );
@@ -214,11 +217,13 @@ const statsig = {
   _setReactNativeDependencies: function (
     AsyncStorage,
     AppState,
+    Constants,
     Device,
     Localization,
   ) {
     _AsyncStorage = AsyncStorage;
     _AppState = AppState;
+    _Constants = Constants;
     _Device = Device;
     _Localization = Localization;
   },

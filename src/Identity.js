@@ -2,6 +2,7 @@ import * as utils from './utils/core';
 
 export default function Identity(
   initialUser,
+  Constants = null,
   Device = null,
   Localization = null,
 ) {
@@ -12,6 +13,11 @@ export default function Identity(
     sdkType: utils.getSDKType(),
     sdkVersion: utils.getSDKVersion(),
   };
+
+  if (Constants != null) {
+    statsigMetadata.appVersion =
+      Constants.nativeAppVersion ?? Constants.nativeBuildVersion ?? ''; // e.g. 1.0.1
+  }
 
   if (Device != null) {
     statsigMetadata.manufacturer = Device.manufacturer ?? ''; // e.g. google, xiaomi, Apple
