@@ -69,7 +69,7 @@ const fetcher = {
     this.init();
     console.log(url);
     const counter = fetcher.leakyBucket[url];
-    if (counter != null && counter >= 100) {
+    if (counter != null && counter >= 30) {
       return Promise.reject(
         new Error(
           'Request failed because you are making the same request too frequently.',

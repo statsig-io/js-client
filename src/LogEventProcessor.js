@@ -135,16 +135,14 @@ export default function LogEventProcessor(identity, options, sdkKey) {
 
   processor.saveFailedRequests = function () {
     if (failedLoggingRequests.length > 0) {
+      const requestsCopy = failedLoggingRequests;
+      failedLoggingRequests = [];
       storage
         .setItemAsync(
           STATSIG_LOCAL_STORAGE_LOGGING_REQUEST_KEY,
-          JSON.stringify(failedLoggingRequests),
+          JSON.stringify(requestsCopy),
         )
-        .then(() => {
-          // clean up requests after saving into local storage
-          failedLoggingRequests = [];
-        })
-        .catch();
+        .catch(() => {});
     }
   };
 
