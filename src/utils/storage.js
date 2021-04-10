@@ -41,13 +41,16 @@ const storage = {
     return Promise.resolve();
   },
 
+  // should always resolve - fire and forget
   removeItemAsync: function (key) {
     if (storage.local) {
       storage.local.removeItem(key);
       return Promise.resolve();
     }
     if (storage.async) {
-      return storage.async.removeItem(key);
+      return storage.async.removeItem(key).catch(() => {
+        return Promise.resolve();
+      });
     }
     return Promise.resolve();
   },

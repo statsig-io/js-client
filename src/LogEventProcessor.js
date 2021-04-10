@@ -1,6 +1,10 @@
 import fetcher from './utils/StatsigFetcher';
 import LogEvent from './LogEvent';
 import { logStatsigInternal } from './utils/logging';
+import storage from './utils/storage';
+
+const STATSIG_LOCAL_STORAGE_LOGGING_REQUEST_KEY =
+  'STATSIG_LOCAL_STORAGE_LOGGING_REQUEST';
 
 export default function LogEventProcessor(identity, options, sdkKey) {
   const processor = {};
@@ -8,17 +12,19 @@ export default function LogEventProcessor(identity, options, sdkKey) {
   let flushInterval = 10 * 1000;
   // The max size of event queue until we start trim older events
   let maxEventQueueSize = 1000;
+  let requestURL = options.api + '/log_event';
 
   let queue = [];
   let flushTimer = null;
   let loggedErrors = new Set();
+  let failedLoggingRequests = [];
 
   if (
     typeof window !== 'undefined' &&
     typeof window.addEventListener === 'function'
   ) {
-    window.addEventListener('blur', () => processor.flush());
-    window.addEventListener('beforeunload', () => processor.flush());
+    window.addEventListener('blur', () => processor.flush(true));
+    window.addEventListener('beforeunload', () => processor.flush(true));
   }
   if (
     typeof document !== 'undefined' &&
@@ -26,7 +32,7 @@ export default function LogEventProcessor(identity, options, sdkKey) {
   ) {
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState !== 'visible') {
-        processor.flush();
+        processor.flush(true);
       }
     });
   }
@@ -71,21 +77,24 @@ export default function LogEventProcessor(identity, options, sdkKey) {
     resetFlushTimeout();
   };
 
-  processor.flush = function () {
+  processor.flush = function (shutdown = false) {
     if (queue.length === 0) {
+      if (shutdown) {
+        processor.saveFailedRequests();
+      }
       return;
     }
     const oldQueue = queue;
     queue = [];
 
     fetcher
-      .post(options.api + '/log_event', sdkKey, {
+      .post(requestURL, sdkKey, {
         statsigMetadata: identity.getStatsigMetadata(),
         events: oldQueue,
       })
       .then((response) => {
         if (!response.ok) {
-          throw Error(response.statusText);
+          throw Error(response.status);
         }
       })
       .catch((e) => {
@@ -105,12 +114,76 @@ export default function LogEventProcessor(identity, options, sdkKey) {
         });
       })
       .finally(() => {
-        resetFlushTimeout();
+        if (shutdown) {
+          if (queue.length > 0) {
+            let requestBody = {
+              statsigMetadata: identity.getStatsigMetadata(),
+              events: queue,
+            };
+
+            // on app background/window blur, save unsent events as a request and clean up the queue (in case app foregrounds)
+            failedLoggingRequests.push(requestBody);
+            queue = [];
+          }
+
+          processor.saveFailedRequests();
+        } else {
+          resetFlushTimeout();
+        }
       });
   };
 
+  processor.saveFailedRequests = function () {
+    if (failedLoggingRequests.length > 0) {
+      const requestsCopy = failedLoggingRequests;
+      failedLoggingRequests = [];
+      storage
+        .setItemAsync(
+          STATSIG_LOCAL_STORAGE_LOGGING_REQUEST_KEY,
+          JSON.stringify(requestsCopy),
+        )
+        .catch(() => {});
+    }
+  };
+
   processor.switchUser = function () {
-    processor.flush();
+    processor.flush(true);
+  };
+
+  processor.sendLocalStorageRequests = function () {
+    storage
+      .getItemAsync(STATSIG_LOCAL_STORAGE_LOGGING_REQUEST_KEY)
+      .then((requestsJSON) => {
+        let requests = JSON.parse(requestsJSON);
+        for (const requestBody of requests) {
+          if (isRequestObjectValid(requestBody)) {
+            fetcher
+              .post(requestURL, sdkKey, requestBody)
+              .then((response) => {
+                if (!response.ok) {
+                  throw Error(response.status);
+                }
+              })
+              .catch((e) => {
+                failedLoggingRequests.push(requestBody);
+              });
+          }
+        }
+      })
+      .catch((e) => {
+        logStatsigInternal(
+          this,
+          identity.getUser(),
+          'get_local_storage_requests_failed',
+          null,
+          {
+            error: e.message,
+          },
+        );
+      })
+      .finally(() => {
+        storage.removeItemAsync(STATSIG_LOCAL_STORAGE_LOGGING_REQUEST_KEY);
+      });
   };
 
   function resetFlushTimeout() {
@@ -121,6 +194,13 @@ export default function LogEventProcessor(identity, options, sdkKey) {
     flushTimer = setTimeout(function () {
       processor.flush();
     }, flushInterval);
+  }
+
+  function isRequestObjectValid(request) {
+    if (request == null || typeof request !== 'object') {
+      return false;
+    }
+    return request.events != null && Array.isArray(request.events);
   }
 
   return processor;

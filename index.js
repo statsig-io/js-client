@@ -83,6 +83,7 @@ const statsig = {
           })
           .finally(() => {
             statsig._ready = true;
+            statsig._logger.sendLocalStorageRequests();
           });
       });
     });
@@ -208,7 +209,7 @@ const statsig = {
    * so the SDK can clean up internal state
    */
   shutdown: function () {
-    statsig._logger?.flush();
+    statsig._logger?.flush(true);
     if (_AppState && typeof _AppState.removeEventListener === 'function') {
       _AppState.removeEventListener('change', this._handleAppStateChange);
     }
@@ -233,7 +234,12 @@ const statsig = {
       _currentAppState === 'active' &&
       nextAppState.match(/inactive|background/)
     ) {
-      statsig._logger?.flush();
+      statsig._logger?.flush(true);
+    } else if (
+      _currentAppState.match(/inactive|background/) &&
+      nextAppState === 'active'
+    ) {
+      statsig._logger?.sendLocalStorageRequests();
     }
     _currentAppState = nextAppState;
   },
