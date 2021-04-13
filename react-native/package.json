@@ -6,7 +6,8 @@
   "files": [
     "index.d.ts",
     "index.js",
-    "lib/statsig-react-native-sdk.js"
+    "dist/statsig-react-native-sdk.js",
+    "dist/dev-statsig-react-native-sdk.js"
   ],
   "repository": {
     "type": "git",

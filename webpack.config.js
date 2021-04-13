@@ -2,7 +2,7 @@ const path = require('path');
 const TerserPlugin = require('terser-webpack-plugin');
 
 const BUILD_DIR = path.resolve(__dirname, './dist');
-const RN_BUILD_DIR = path.resolve(__dirname, './react-native/lib');
+const RN_BUILD_DIR = path.resolve(__dirname, './react-native/dist');
 
 const baseConfig = {
   entry: __dirname + '/index.js',
@@ -82,19 +82,24 @@ const webProd = Object.assign(
   },
 );
 
+function reactNativeOutput(prefix) {
+  return {
+    output: {
+      path: RN_BUILD_DIR,
+      filename: (prefix ?? '') + 'statsig-react-native-sdk.js',
+      library: 'statsig',
+      libraryTarget: 'umd',
+      libraryExport: 'default',
+      globalObject: 'this',
+      uniqueName: prefix + 'statsig-react-native-sdk',
+    },
+  };
+}
+
 const reactNativeDebug = Object.assign(
   {},
   baseConfig,
-  {
-    output: {
-      filename: 'dev-statsig-react-native-sdk.js',
-      globalObject: 'this',
-      library: 'statsig',
-      libraryExport: 'default',
-      libraryTarget: 'umd',
-      path: RN_BUILD_DIR,
-    },
-  },
+  reactNativeOutput('dev-'),
   {},
   {
     target: 'web',
@@ -105,16 +110,7 @@ const reactNativeDebug = Object.assign(
 const reactNativeProd = Object.assign(
   {},
   baseConfig,
-  {
-    output: {
-      filename: 'statsig-react-native-sdk.js',
-      globalObject: 'this',
-      library: 'statsig',
-      libraryExport: 'default',
-      libraryTarget: 'umd',
-      path: RN_BUILD_DIR,
-    },
-  },
+  reactNativeOutput(),
   prodOptimization,
   {
     target: 'web',
