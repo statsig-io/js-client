@@ -1,13 +1,13 @@
 {
-  "name": "statsig-react-native-sdk",
-  "version": "1.0.14",
-  "description": "Statsig React Native SDK for apps using Expo",
+  "name": "statsig-react-native-vanilla-sdk",
+  "version": "1.0.5",
+  "description": "Statsig SDK for vanilla react native (non-Expo)",
   "main": "index.js",
   "files": [
     "index.d.ts",
     "index.js",
-    "dist/statsig-react-native-sdk.js",
-    "dist/dev-statsig-react-native-sdk.js"
+    "dist/statsig-react-native-vanilla-sdk.js",
+    "dist/dev-statsig-react-native-vanilla-sdk.js"
   ],
   "repository": {
     "type": "git",
@@ -27,16 +27,14 @@
   ],
   "homepage": "https://www.statsig.com",
   "dependencies": {
-    "@react-native-async-storage/async-storage": "^1.15.2",
     "crypto-js": "^3.1.9-1",
-    "expo-constants": "^9.3.5",
-    "expo-device": "^3.1.1",
-    "react-native-get-random-values": "^1.6.0",
-    "react-native-unimodules": "^0.12.0",
-    "uuid": "^8.3.2"
+    "uuid": "^3.4.0"
   },
   "peerDependencies": {
-    "react-native": ">=0.60.0"
+    "@react-native-async-storage/async-storage": "^1.15.2",
+    "react-native": ">=0.60.0",
+    "react-native-device-info": "^8.1.0",
+    "react-native-get-random-values": "^1.6.0"
   },
   "types": "index.d.ts"
 }

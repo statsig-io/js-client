@@ -2,9 +2,12 @@ import * as utils from './utils/core';
 
 export default function Identity(
   initialUser,
-  Constants = null,
-  Device = null,
-  Localization = null,
+  // For react native SDKs only:
+  NativeModules = null,
+  Platform = null,
+  RNDeviceInfo = null,
+  ExpoConstants = null,
+  ExpoDevice = null,
 ) {
   const identity = {};
   let user = {};
@@ -14,24 +17,36 @@ export default function Identity(
     sdkVersion: utils.getSDKVersion(),
   };
 
-  if (Constants != null) {
-    statsigMetadata.appVersion =
-      Constants.nativeAppVersion ?? Constants.nativeBuildVersion ?? ''; // e.g. 1.0.1
+  if (Platform != null && NativeModules != null) {
+    // e.g. en_US
+    if (Platform.OS?.toLocaleLowerCase() === 'android') {
+      statsigMetadata.locale = NativeModules?.I18nManager?.localeIdentifier;
+    } else if (Platform.OS?.toLocaleLowerCase() === 'ios') {
+      statsigMetadata.locale =
+        NativeModules?.SettingsManager?.settings?.AppleLocale ||
+        NativeModules?.SettingsManager?.settings?.AppleLanguages[0];
+    }
   }
 
-  if (Device != null) {
-    statsigMetadata.manufacturer = Device.manufacturer ?? ''; // e.g. google, xiaomi, Apple
-    statsigMetadata.systemVersion = Device.osVersion ?? ''; // Android: "4.0.3"; iOS: "12.3.1"
-    statsigMetadata.systemName = Device.osName ?? ''; // e.g. Android, iOS, iPadOS
-    statsigMetadata.deviceModelName = Device.modelName ?? ''; // e.g. Pixel 2, iPhone XS
-    // iOS only
-    statsigMetadata.deviceModel = Device.modelId ?? ''; // e.g. iPhone7,2
-  }
-
-  if (Localization != null) {
-    statsigMetadata.locale = Localization.locale ?? ''; // e.g. en-US
-    statsigMetadata.region = Localization.region ?? ''; // e.g. US
-    statsigMetadata.timezone = Localization.timezone ?? ''; // e.g. America/Los_Angeles
+  if (RNDeviceInfo != null) {
+    statsigMetadata.appVersion = RNDeviceInfo.getVersion() ?? ''; // e.g. 1.0.1
+    statsigMetadata.systemVersion = RNDeviceInfo.getSystemVersion() ?? ''; // Android: "4.0.3"; iOS: "12.3.1"
+    statsigMetadata.systemName = RNDeviceInfo.getSystemName() ?? ''; // e.g. Android, iOS, iPadOS
+    statsigMetadata.deviceModelName = RNDeviceInfo.getModel() ?? ''; // e.g. Pixel 2, iPhone XS
+    statsigMetadata.deviceModel = RNDeviceInfo.getDeviceId() ?? ''; // e.g. iPhone7,2
+  } else {
+    if (ExpoConstants != null) {
+      statsigMetadata.appVersion =
+        ExpoConstants.nativeAppVersion ??
+        ExpoConstants.nativeBuildVersion ??
+        ''; // e.g. 1.0.1
+    }
+    if (ExpoDevice != null) {
+      statsigMetadata.systemVersion = ExpoDevice.osVersion ?? ''; // Android: "4.0.3"; iOS: "12.3.1"
+      statsigMetadata.systemName = ExpoDevice.osName ?? ''; // e.g. Android, iOS, iPadOS
+      statsigMetadata.deviceModelName = ExpoDevice.modelName ?? ''; // e.g. Pixel 2, iPhone XS
+      statsigMetadata.deviceModel = ExpoDevice.modelId ?? ''; // e.g. iPhone7,2
+    }
   }
 
   identity.setStableIDAsync = function () {

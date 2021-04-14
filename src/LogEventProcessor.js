@@ -154,19 +154,21 @@ export default function LogEventProcessor(identity, options, sdkKey) {
     storage
       .getItemAsync(STATSIG_LOCAL_STORAGE_LOGGING_REQUEST_KEY)
       .then((requestsJSON) => {
-        let requests = JSON.parse(requestsJSON);
-        for (const requestBody of requests) {
-          if (isRequestObjectValid(requestBody)) {
-            fetcher
-              .post(requestURL, sdkKey, requestBody)
-              .then((response) => {
-                if (!response.ok) {
-                  throw Error(response.status);
-                }
-              })
-              .catch((e) => {
-                failedLoggingRequests.push(requestBody);
-              });
+        if (requestsJSON) {
+          let requests = JSON.parse(requestsJSON);
+          for (const requestBody of requests) {
+            if (isRequestObjectValid(requestBody)) {
+              fetcher
+                .post(requestURL, sdkKey, requestBody)
+                .then((response) => {
+                  if (!response.ok) {
+                    throw Error(response.status);
+                  }
+                })
+                .catch((e) => {
+                  failedLoggingRequests.push(requestBody);
+                });
+            }
           }
         }
       })
