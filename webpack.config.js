@@ -3,6 +3,10 @@ const TerserPlugin = require('terser-webpack-plugin');
 
 const BUILD_DIR = path.resolve(__dirname, './dist');
 const RN_BUILD_DIR = path.resolve(__dirname, './react-native/dist');
+const RN_VANILLA_BUILD_DIR = path.resolve(
+  __dirname,
+  './react-native-vanilla/dist',
+);
 
 const baseConfig = {
   entry: __dirname + '/index.js',
@@ -118,6 +122,42 @@ const reactNativeProd = Object.assign(
   },
 );
 
+function reactNativeVanillaOutput(prefix) {
+  return {
+    output: {
+      path: RN_VANILLA_BUILD_DIR,
+      filename: (prefix ?? '') + 'statsig-react-native-vanilla-sdk.js',
+      library: 'statsig',
+      libraryTarget: 'umd',
+      libraryExport: 'default',
+      globalObject: 'this',
+      uniqueName: prefix + 'statsig-react-native-vanilla-sdk',
+    },
+  };
+}
+
+const reactNativeVanillaDebug = Object.assign(
+  {},
+  baseConfig,
+  reactNativeVanillaOutput('dev-'),
+  {},
+  {
+    target: 'web',
+    mode: 'development',
+  },
+);
+
+const reactNativeVanillaProd = Object.assign(
+  {},
+  baseConfig,
+  reactNativeVanillaOutput(),
+  prodOptimization,
+  {
+    target: 'web',
+    mode: 'production',
+  },
+);
+
 module.exports = [
   nodeDebug,
   nodeProd,
@@ -125,4 +165,6 @@ module.exports = [
   webProd,
   reactNativeDebug,
   reactNativeProd,
+  reactNativeVanillaDebug,
+  reactNativeVanillaProd,
 ];
