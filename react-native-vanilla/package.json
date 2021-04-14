@@ -1,7 +1,7 @@
 {
   "name": "statsig-react-native-vanilla-sdk",
-  "version": "1.0.3",
-  "description": "Statsig React Native SDK",
+  "version": "1.0.4",
+  "description": "Statsig SDK for vanilla react native (non-Expo)",
   "main": "index.js",
   "files": [
     "index.d.ts",
@@ -35,5 +35,6 @@
     "react-native": ">=0.60.0",
     "react-native-device-info": "^8.1.0",
     "react-native-get-random-values": "^1.6.0"
-  }
+  },
+  "types": "index.d.ts"
 }

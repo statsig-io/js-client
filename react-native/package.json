@@ -1,7 +1,7 @@
 {
   "name": "statsig-react-native-sdk",
-  "version": "1.0.13",
-  "description": "Statsig React Native SDK",
+  "version": "1.0.14",
+  "description": "Statsig React Native SDK for apps using Expo",
   "main": "index.js",
   "files": [
     "index.d.ts",
