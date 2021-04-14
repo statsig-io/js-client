@@ -30,7 +30,7 @@ export default function Identity(
 
   if (RNDeviceInfo != null) {
     statsigMetadata.appVersion = RNDeviceInfo.getVersion() ?? ''; // e.g. 1.0.1
-    statsigMetadata.systemVersion = RNDeviceInfo.systemVersion() ?? ''; // Android: "4.0.3"; iOS: "12.3.1"
+    statsigMetadata.systemVersion = RNDeviceInfo.getSystemVersion() ?? ''; // Android: "4.0.3"; iOS: "12.3.1"
     statsigMetadata.systemName = RNDeviceInfo.getSystemName() ?? ''; // e.g. Android, iOS, iPadOS
     statsigMetadata.deviceModelName = RNDeviceInfo.getModel() ?? ''; // e.g. Pixel 2, iPhone XS
     statsigMetadata.deviceModel = RNDeviceInfo.getDeviceId() ?? ''; // e.g. iPhone7,2
