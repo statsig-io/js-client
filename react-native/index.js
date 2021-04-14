@@ -1,17 +1,17 @@
 import 'react-native-get-random-values';
 import statsig from './dist/statsig-react-native-sdk';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AppState } from 'react-native';
+import { AppState, NativeModules, Platform } from 'react-native';
 import Constants from 'expo-constants';
-import * as Device from 'expo-device';
-import * as Localization from 'expo-localization';
+import * as ExpoDevice from 'expo-device';
 
 statsig._setReactNativeDependencies(
   AsyncStorage,
   AppState,
+  NativeModules,
+  Platform,
+  null,
   Constants,
-  Device,
-  Localization,
+  ExpoDevice,
 );
-
 export default statsig;

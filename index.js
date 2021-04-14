@@ -16,13 +16,19 @@ const MAX_VALUE_SIZE = 64;
 const MAX_OBJ_SIZE = 1024;
 
 // for react native
+let _currentAppState;
+
 let _AsyncStorage;
 let _AppState;
-let _Constants;
-let _Device;
-let _Localization;
+let _NativeModules;
+let _Platform;
 
-let _currentAppState;
+// for expo
+let _ExpoConstants;
+let _ExpoDevice;
+
+// for vanilla react native
+let _RNDeviceInfo;
 
 /**
  * The global statsig class for interacting with gates, configs, experiments configured in the statsig developer console.  Also used for event logging to view in the statsig console, or for analyzing experiment impacts using pulse.
@@ -57,9 +63,11 @@ const statsig = {
     statsig._options = StatsigOptions(options);
     statsig._identity = Identity(
       trimUserObjIfNeeded(user),
-      _Constants,
-      _Device,
-      _Localization,
+      _NativeModules,
+      _Platform,
+      _RNDeviceInfo,
+      _ExpoConstants,
+      _ExpoDevice,
     );
     localStorage.init(_AsyncStorage);
 
@@ -218,15 +226,19 @@ const statsig = {
   _setReactNativeDependencies: function (
     AsyncStorage,
     AppState,
-    Constants,
-    Device,
-    Localization,
+    NativeModules,
+    Platform,
+    RNDeviceInfo,
+    ExpoConstants,
+    ExpoDevice,
   ) {
     _AsyncStorage = AsyncStorage;
     _AppState = AppState;
-    _Constants = Constants;
-    _Device = Device;
-    _Localization = Localization;
+    _NativeModules = NativeModules;
+    _Platform = Platform;
+    _RNDeviceInfo = RNDeviceInfo;
+    _ExpoConstants = ExpoConstants;
+    _ExpoDevice = ExpoDevice;
   },
 
   _handleAppStateChange: function (nextAppState) {
