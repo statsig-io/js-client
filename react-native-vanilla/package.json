@@ -1,6 +1,6 @@
 {
   "name": "statsig-react-native-vanilla-sdk",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Statsig React Native SDK",
   "main": "index.js",
   "files": [
