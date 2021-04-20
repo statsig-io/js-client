@@ -53,25 +53,36 @@ function output(prefix) {
   return {
     output: {
       path: BUILD_DIR,
-      filename: (prefix ?? '') + 'statsig-js-client-sdk.js',
+      filename: 'statsig-' + prefix + '-sdk.js',
       library: 'statsig',
       libraryTarget: 'umd',
       libraryExport: 'default',
       globalObject: 'this',
-      uniqueName: (prefix ?? '') + 'statsig-js-client-sdk',
     },
   };
 }
 
-const debug = Object.assign({}, baseConfig, output('dev-'), debugOptimization, {
-  target: 'web',
-  mode: 'development',
-});
+const debug = Object.assign(
+  {},
+  baseConfig,
+  output('dev-web'),
+  debugOptimization,
+  {
+    target: 'web',
+    mode: 'development',
+  },
+);
 
-const prod = Object.assign({}, baseConfig, output(), prodOptimization, {
-  target: 'web',
-  mode: 'production',
-});
+const prod = Object.assign(
+  {},
+  baseConfig,
+  output('prod-web'),
+  prodOptimization,
+  {
+    target: 'web',
+    mode: 'production',
+  },
+);
 
 function reactNativeOutput(prefix) {
   return {

@@ -2,7 +2,7 @@
   "name": "statsig-js-client-sdk",
   "version": "1.0.21",
   "description": "Statsig javascript client SDK",
-  "main": "dist/statsig-js-client-sdk.js",
+  "main": "dist/statsig-prod-web-sdk.js",
   "scripts": {
     "build": "webpack",
     "test": "jest",
@@ -11,10 +11,10 @@
   },
   "files": [
     "index.d.ts",
-    "dist/statsig-js-client-sdk.js",
-    "dist/dev-statsig-js-client-sdk.js"
+    "dist/statsig-prod-web-sdk.js",
+    "dist/statsig-dev-web-sdk.js"
   ],
-  "jsdelivr": "dist/statsig-js-client-sdk.js",
+  "jsdelivr": "dist/statsig-prod-web-sdk.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/statsig-io/statsig-js-client-sdk.git"
