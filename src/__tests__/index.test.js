@@ -223,6 +223,7 @@ describe('Verify behavior of top level index functions', () => {
         const trimmedEvent = new LogEvent(str_64.substring(0, 64));
         trimmedEvent.setValue(str_64.substring(0, 64));
         trimmedEvent.setMetadata({ error: 'not logged due to size too large' });
+        trimmedEvent.addStatsigMetadata('currentPage', 'http://localhost/');
         trimmedEvent.setUser(user);
         expect(spy).toBeCalledWith(trimmedEvent);
       });

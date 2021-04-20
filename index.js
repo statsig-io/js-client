@@ -173,6 +173,19 @@ const statsig = {
     event.setValue(value);
     event.setMetadata(metadata);
     event.setUser(statsig._identity.getUser());
+
+    if (
+      window != null &&
+      window.location != null &&
+      window.location.href != null
+    ) {
+      // https://stackoverflow.com/questions/6257463/how-to-get-the-url-without-any-parameters-in-javascript
+      const parts = window.location.href.split(/[?#]/);
+      if (parts.length > 0) {
+        event.addStatsigMetadata('currentPage', parts[0]);
+      }
+    }
+
     statsig._logger.log(event);
   },
 

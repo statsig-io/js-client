@@ -6,6 +6,7 @@ class LogEvent {
     }
     this.time = Date.now();
     this.eventName = eventName;
+    this.statsigMetadata = {};
   }
 
   setValue(value) {
@@ -34,17 +35,25 @@ class LogEvent {
     this.user = user;
   }
 
+  addStatsigMetadata(key, value) {
+    if (key == null) {
+      return;
+    }
+    this.statsigMetadata[key] = value;
+  }
+
   validate() {
     return typeof this.eventName === 'string' && this.eventName.length > 0;
   }
 
   toObject() {
     return {
-      time: this.time,
       eventName: this.eventName,
-      value: this.value,
       metadata: this.metadata,
+      statsigMetadata: this.statsigMetadata,
+      time: this.time,
       user: this.user,
+      value: this.value,
     };
   }
 }
