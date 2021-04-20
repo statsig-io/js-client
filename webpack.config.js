@@ -19,8 +19,15 @@ const baseConfig = {
       },
     ],
   },
-  resolve: {
-    fallback: { crypto: false },
+};
+
+const debugOptimization = {
+  optimization: {
+    minimizer: [
+      new TerserPlugin({
+        extractComments: false,
+      }),
+    ],
   },
 };
 
@@ -28,6 +35,7 @@ const prodOptimization = {
   optimization: {
     minimizer: [
       new TerserPlugin({
+        extractComments: false,
         terserOptions: {
           compress: {
             drop_console: true,
@@ -45,46 +53,25 @@ function output(prefix) {
   return {
     output: {
       path: BUILD_DIR,
-      filename: 'statsig-' + prefix + '-sdk.js',
+      filename: (prefix ?? '') + 'statsig-js-client-sdk.js',
       library: 'statsig',
       libraryTarget: 'umd',
       libraryExport: 'default',
       globalObject: 'this',
+      uniqueName: (prefix ?? '') + 'statsig-js-client-sdk',
     },
   };
 }
 
-const nodeDebug = Object.assign({}, baseConfig, output('dev-node-client'), {
-  target: 'node',
-  mode: 'development',
-});
-
-const nodeProd = Object.assign(
-  {},
-  baseConfig,
-  prodOptimization,
-  output('prod-node-client'),
-  {
-    target: 'node',
-    mode: 'production',
-  },
-);
-
-const webDebug = Object.assign({}, baseConfig, output('dev-web'), {
+const debug = Object.assign({}, baseConfig, output('dev-'), debugOptimization, {
   target: 'web',
   mode: 'development',
 });
 
-const webProd = Object.assign(
-  {},
-  baseConfig,
-  output('prod-web'),
-  prodOptimization,
-  {
-    target: 'web',
-    mode: 'production',
-  },
-);
+const prod = Object.assign({}, baseConfig, output(), prodOptimization, {
+  target: 'web',
+  mode: 'production',
+});
 
 function reactNativeOutput(prefix) {
   return {
@@ -95,7 +82,7 @@ function reactNativeOutput(prefix) {
       libraryTarget: 'umd',
       libraryExport: 'default',
       globalObject: 'this',
-      uniqueName: prefix + 'statsig-react-native-sdk',
+      uniqueName: (prefix ?? '') + 'statsig-react-native-sdk',
     },
   };
 }
@@ -131,7 +118,7 @@ function reactNativeVanillaOutput(prefix) {
       libraryTarget: 'umd',
       libraryExport: 'default',
       globalObject: 'this',
-      uniqueName: prefix + 'statsig-react-native-vanilla-sdk',
+      uniqueName: (prefix ?? '') + 'statsig-react-native-vanilla-sdk',
     },
   };
 }
@@ -140,7 +127,7 @@ const reactNativeVanillaDebug = Object.assign(
   {},
   baseConfig,
   reactNativeVanillaOutput('dev-'),
-  {},
+  debugOptimization,
   {
     target: 'web',
     mode: 'development',
@@ -159,10 +146,8 @@ const reactNativeVanillaProd = Object.assign(
 );
 
 module.exports = [
-  nodeDebug,
-  nodeProd,
-  webDebug,
-  webProd,
+  debug,
+  prod,
   reactNativeDebug,
   reactNativeProd,
   reactNativeVanillaDebug,
