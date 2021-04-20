@@ -11,15 +11,8 @@
   },
   "files": [
     "index.d.ts",
-<<<<<<< Updated upstream
-    "dist/statsig-prod-node-client-sdk.js",
-    "dist/statsig-prod-web-sdk.js",
-    "dist/statsig-dev-node-client-sdk.js",
-    "dist/statsig-dev-web-sdk.js"
-=======
     "dist/statsig-js-client-sdk.js",
     "dist/dev-statsig-js-client-sdk.js"
->>>>>>> Stashed changes
   ],
   "jsdelivr": "dist/statsig-js-client-sdk.js",
   "repository": {
