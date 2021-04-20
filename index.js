@@ -224,13 +224,13 @@ const statsig = {
   },
 
   _setReactNativeDependencies: function (
-    AsyncStorage,
-    AppState,
-    NativeModules,
-    Platform,
-    RNDeviceInfo,
-    ExpoConstants,
-    ExpoDevice,
+    AsyncStorage = null,
+    AppState = null,
+    NativeModules = null,
+    Platform = null,
+    RNDeviceInfo = null,
+    ExpoConstants = null,
+    ExpoDevice = null,
   ) {
     _AsyncStorage = AsyncStorage;
     _AppState = AppState;

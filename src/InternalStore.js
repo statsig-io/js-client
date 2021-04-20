@@ -1,9 +1,9 @@
-import sha256 from 'crypto-js/sha256';
-import Base64 from 'crypto-js/enc-base64';
+import { Base64 } from './utils/Base64';
+import DynamicConfig from './DynamicConfig';
+import { fallbackConfig } from './utils/defaults';
 import { logConfigExposure, logGateExposure } from './utils/logging';
 import localStorage from './utils/storage';
-import { fallbackConfig } from './utils/defaults';
-import DynamicConfig from './DynamicConfig';
+import { sha256 } from 'js-sha256';
 
 const INTERNAL_STORE_KEY = 'STATSIG_LOCAL_STORAGE_INTERNAL_STORE';
 
@@ -93,8 +93,9 @@ export default function InternalStore(identity, logger) {
       );
       return false;
     }
-    let hash = sha256(gateName);
-    let gateNameHash = Base64.stringify(hash);
+
+    let buffer = sha256.create().update(gateName).arrayBuffer();
+    var gateNameHash = Base64.encodeArrayBuffer(buffer);
     const userID = identity.getUserID();
     let value = false;
     if (userID && store.cache[userID]?.gates[gateNameHash]) {
@@ -111,8 +112,9 @@ export default function InternalStore(identity, logger) {
       );
       return fallbackConfig();
     }
-    let hash = sha256(configName);
-    let configNameHash = Base64.stringify(hash);
+
+    let buffer = sha256.create().update(configName).arrayBuffer();
+    var configNameHash = Base64.encodeArrayBuffer(buffer);
     const userID = identity.getUserID();
     let value = fallbackConfig();
     if (userID && store.cache[userID]?.configs[configNameHash]) {

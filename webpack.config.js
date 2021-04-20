@@ -19,8 +19,15 @@ const baseConfig = {
       },
     ],
   },
-  resolve: {
-    fallback: { crypto: false },
+};
+
+const debugOptimization = {
+  optimization: {
+    minimizer: [
+      new TerserPlugin({
+        extractComments: false,
+      }),
+    ],
   },
 };
 
@@ -28,6 +35,7 @@ const prodOptimization = {
   optimization: {
     minimizer: [
       new TerserPlugin({
+        extractComments: false,
         terserOptions: {
           compress: {
             drop_console: true,
@@ -54,28 +62,18 @@ function output(prefix) {
   };
 }
 
-const nodeDebug = Object.assign({}, baseConfig, output('dev-node-client'), {
-  target: 'node',
-  mode: 'development',
-});
-
-const nodeProd = Object.assign(
+const debug = Object.assign(
   {},
   baseConfig,
-  prodOptimization,
-  output('prod-node-client'),
+  output('dev-web'),
+  debugOptimization,
   {
-    target: 'node',
-    mode: 'production',
+    target: 'web',
+    mode: 'development',
   },
 );
 
-const webDebug = Object.assign({}, baseConfig, output('dev-web'), {
-  target: 'web',
-  mode: 'development',
-});
-
-const webProd = Object.assign(
+const prod = Object.assign(
   {},
   baseConfig,
   output('prod-web'),
@@ -95,7 +93,7 @@ function reactNativeOutput(prefix) {
       libraryTarget: 'umd',
       libraryExport: 'default',
       globalObject: 'this',
-      uniqueName: prefix + 'statsig-react-native-sdk',
+      uniqueName: (prefix ?? '') + 'statsig-react-native-sdk',
     },
   };
 }
@@ -131,7 +129,7 @@ function reactNativeVanillaOutput(prefix) {
       libraryTarget: 'umd',
       libraryExport: 'default',
       globalObject: 'this',
-      uniqueName: prefix + 'statsig-react-native-vanilla-sdk',
+      uniqueName: (prefix ?? '') + 'statsig-react-native-vanilla-sdk',
     },
   };
 }
@@ -140,7 +138,7 @@ const reactNativeVanillaDebug = Object.assign(
   {},
   baseConfig,
   reactNativeVanillaOutput('dev-'),
-  {},
+  debugOptimization,
   {
     target: 'web',
     mode: 'development',
@@ -159,10 +157,8 @@ const reactNativeVanillaProd = Object.assign(
 );
 
 module.exports = [
-  nodeDebug,
-  nodeProd,
-  webDebug,
-  webProd,
+  debug,
+  prod,
   reactNativeDebug,
   reactNativeProd,
   reactNativeVanillaDebug,

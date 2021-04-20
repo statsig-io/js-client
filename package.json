@@ -2,7 +2,7 @@
   "name": "statsig-js-client-sdk",
   "version": "1.0.21",
   "description": "Statsig javascript client SDK",
-  "main": "dist/statsig-prod-node-client-sdk.js",
+  "main": "dist/statsig-prod-web-sdk.js",
   "scripts": {
     "build": "webpack",
     "test": "jest",
@@ -11,9 +11,7 @@
   },
   "files": [
     "index.d.ts",
-    "dist/statsig-prod-node-client-sdk.js",
     "dist/statsig-prod-web-sdk.js",
-    "dist/statsig-dev-node-client-sdk.js",
     "dist/statsig-dev-web-sdk.js"
   ],
   "jsdelivr": "dist/statsig-prod-web-sdk.js",
@@ -48,7 +46,7 @@
     "webpack-cli": "^4.5.0"
   },
   "dependencies": {
-    "crypto-js": "^4.0.0",
+    "js-sha256": "^0.9.0",
     "uuid": "^8.3.2",
     "whatwg-fetch": "^3.6.2"
   },
