@@ -3,6 +3,7 @@ import * as utils from './utils/core';
 export default function Identity(
   initialUser,
   // For react native SDKs only:
+  SDKPackageInfo = null,
   NativeModules = null,
   Platform = null,
   RNDeviceInfo = null,
@@ -13,8 +14,8 @@ export default function Identity(
   let user = {};
   let statsigMetadata = {
     sessionID: utils.generateID(),
-    sdkType: utils.getSDKType(),
-    sdkVersion: utils.getSDKVersion(),
+    sdkType: SDKPackageInfo.sdkType ?? utils.getSDKType(),
+    sdkVersion: SDKPackageInfo.sdkVersion ?? utils.getSDKVersion(),
   };
 
   if (Platform != null && NativeModules != null) {

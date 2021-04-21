@@ -64,6 +64,21 @@ declare namespace statsig {
   function shutdown(): void;
 
   /**
+   * DO NOT CALL DIRECTLY.
+   * Used to polyfill react native specific dependencies.
+   */
+  function _setReactNativeDependencies(
+    SDKPackageInfo: _SDKPackageInfo,
+    AsyncStorage: object | null,
+    AppState: object | null,
+    NativeModules: object | null,
+    Platform: object | null,
+    RNDevice: object | null,
+    Constants: object | null,
+    ExpoDevice: object | null,
+  ): void;
+
+  /**
    * An object of properties relating to the current user
    * Provide as many as possible to take advantage of advanced conditions in the statsig console
    * A dictionary of additional fields can be provided under the "custom" field
@@ -97,6 +112,11 @@ declare namespace statsig {
     getString: (name: string, defaultValue: string) => string;
     getArray: (name: string, defaultValue: Array<any>) => Array<any>;
     getObject: (name: string, defaultValue: object) => DynamicConfig;
+  };
+
+  export type _SDKPackageInfo = {
+    sdkType: string;
+    sdkVersion: string;
   };
 }
 

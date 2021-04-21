@@ -8,7 +8,7 @@ export function getSDKVersion() {
 }
 
 export function getSDKType() {
-  return 'statsig-js-client-sdk';
+  return require('../../package.json')?.name ?? '';
 }
 
 export function generateID() {
