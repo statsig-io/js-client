@@ -14,8 +14,8 @@ export default function Identity(
   let user = {};
   let statsigMetadata = {
     sessionID: utils.generateID(),
-    sdkType: SDKPackageInfo.sdkType ?? utils.getSDKType(),
-    sdkVersion: SDKPackageInfo.sdkVersion ?? utils.getSDKVersion(),
+    sdkType: SDKPackageInfo?.sdkType ?? utils.getSDKType(),
+    sdkVersion: SDKPackageInfo?.sdkVersion ?? utils.getSDKVersion(),
   };
 
   if (Platform != null && NativeModules != null) {
