@@ -17,12 +17,12 @@
   "jsdelivr": "dist/statsig-prod-web-sdk.js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/statsig-io/statsig-js.git"
+    "url": "git+https://github.com/statsig-io/js-client-sdk.git"
   },
   "author": "Statsig, Inc.",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/statsig-io/statsig-js/issues"
+    "url": "https://github.com/statsig-io/js-client-sdk/issues"
   },
   "keywords": [
     "feature gate",

@@ -1,7 +1,7 @@
 # Statsig
 
-[![npm version](https://badge.fury.io/js/statsig-js-client-sdk.svg)](https://badge.fury.io/js/statsig-js-client-sdk)
-[![jsdelivr](https://data.jsdelivr.com/v1/package/npm/statsig-js-client-sdk/badge)](https://www.jsdelivr.com/package/npm/statsig-js-client-sdk)
+[![npm version](https://badge.fury.io/js/statsig-js.svg)](https://badge.fury.io/js/statsig-js)
+[![jsdelivr](https://data.jsdelivr.com/v1/package/npm/statsig-js/badge)](https://www.jsdelivr.com/package/npm/statsig-js)
 
 ## Statsig JavaScript Client SDK
 
@@ -12,4 +12,4 @@ If you're looking to use Statsig in a multi-user server environment, try our [No
 Statsig helps you move faster with Feature Gates and Dynamic Configs.  If you're new to Statsig, create an account at [statsig.com](https://www.statsig.com).
 
 ## Getting Started
-Visit our [getting started guide](https://www.statsig.com/docs/js-client), or check out the [SDK Documentation](https://github.com/statsig-io/js-client-sdk/blob/main/docs/README.md)
+Visit our [getting started guide](https://www.statsig.com/docs/js-client), or check out the [SDK Documentation](https://github.com/statsig-io/js-client/blob/main/docs/README.md)
