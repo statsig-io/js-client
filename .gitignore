@@ -15,8 +15,6 @@ node_modules/
 
 # Builds
 dist/
-react-native/lib/
-react-native/dist/
 
 # Optional npm cache directory
 .npm
