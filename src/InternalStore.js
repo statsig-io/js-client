@@ -1,7 +1,6 @@
 import { Base64 } from './utils/Base64';
 import DynamicConfig from './DynamicConfig';
 import { fallbackConfig } from './utils/defaults';
-import { logConfigExposure, logGateExposure } from './utils/logging';
 import localStorage from './utils/storage';
 import { sha256 } from 'js-sha256';
 
@@ -101,7 +100,7 @@ export default function InternalStore(identity, logger) {
     if (userID && store.cache[userID]?.gates[gateNameHash]) {
       value = store.cache[userID].gates[gateNameHash];
     }
-    logGateExposure(logger, identity.getUser(), gateName, value);
+    logger.logGateExposure(identity.getUser(), gateName, value);
     return value;
   };
 
@@ -119,8 +118,7 @@ export default function InternalStore(identity, logger) {
     let value = fallbackConfig();
     if (userID && store.cache[userID]?.configs[configNameHash]) {
       value = store.cache[userID].configs[configNameHash];
-      logConfigExposure(
-        logger,
+      logger.logConfigExposure(
         identity.getUser(),
         configName,
         value.getGroupName(),

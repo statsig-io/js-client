@@ -1,10 +1,13 @@
 import fetcher from './utils/StatsigFetcher';
 import LogEvent from './LogEvent';
-import { logStatsigInternal } from './utils/logging';
 import storage from './utils/storage';
 
 const STATSIG_LOCAL_STORAGE_LOGGING_REQUEST_KEY =
   'STATSIG_LOCAL_STORAGE_LOGGING_REQUEST';
+
+const CONFIG_EXPOSURE_EVENT = 'config_exposure';
+const GATE_EXPOSURE_EVENT = 'gate_exposure';
+const INTERNAL_EVENT_PREFIX = 'statsig::';
 
 export default function LogEventProcessor(identity, options, sdkKey) {
   const processor = {};
@@ -18,6 +21,10 @@ export default function LogEventProcessor(identity, options, sdkKey) {
   let flushTimer = null;
   let loggedErrors = new Set();
   let failedLoggingRequests = [];
+  let exposures = {
+    configs: {},
+    gates: {},
+  };
 
   if (
     typeof window !== 'undefined' &&
@@ -109,7 +116,7 @@ export default function LogEventProcessor(identity, options, sdkKey) {
           // Drop oldest events so that the queue has 10 less than the max amount of events we allow
           queue = queue.slice(queue.length - maxEventQueueSize + 10);
         }
-        logStatsigInternal(this, identity.getUser(), 'log_event_failed', null, {
+        this.logInternal(identity.getUser(), 'log_event_failed', null, {
           error: e.message,
         });
       })
@@ -148,6 +155,52 @@ export default function LogEventProcessor(identity, options, sdkKey) {
 
   processor.switchUser = function () {
     processor.flush(true);
+    exposures = {
+      configs: {},
+      gates: {},
+    };
+  };
+
+  processor.logGateExposure = function (user, gateName, gateValue) {
+    if (exposures.configs[gateName]) {
+      return;
+    }
+    exposures.configs[gateName] = true;
+    this.logInternal(user, GATE_EXPOSURE_EVENT, null, {
+      gate: gateName,
+      gateValue: gateValue,
+    });
+  };
+
+  processor.logConfigExposure = function (user, configName, groupName) {
+    if (exposures.configs[configName]) {
+      return;
+    }
+    exposures.configs[configName] = true;
+    this.logInternal(user, CONFIG_EXPOSURE_EVENT, null, {
+      config: configName,
+      configGroup: groupName,
+    });
+  };
+
+  processor.logInternal = function (
+    user,
+    eventName,
+    value = null,
+    metadata = {},
+  ) {
+    let event = new LogEvent(INTERNAL_EVENT_PREFIX + eventName);
+    event.setValue(value);
+    if (metadata == null) {
+      metadata = {};
+    }
+    event.setMetadata(metadata);
+    event.setUser(user);
+    if (metadata.error != null) {
+      this.log(event, eventName + metadata.error);
+    } else {
+      this.log(event);
+    }
   };
 
   processor.sendLocalStorageRequests = function () {
@@ -173,8 +226,7 @@ export default function LogEventProcessor(identity, options, sdkKey) {
         }
       })
       .catch((e) => {
-        logStatsigInternal(
-          this,
+        this.logInternal(
           identity.getUser(),
           'get_local_storage_requests_failed',
           null,

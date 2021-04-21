@@ -1,4 +1,3 @@
-import { logStatsigInternal } from './src/utils/logging';
 import { fallbackConfig } from './src/utils/defaults';
 import fetcher from './src/utils/StatsigFetcher';
 import Identity from './src/Identity';
@@ -336,8 +335,7 @@ const statsig = {
         }
       },
       (e) => {
-        logStatsigInternal(
-          statsig._logger,
+        statsig._logger.logInternal(
           statsig._identity.getUser(),
           'fetch_values_failed',
           null,
