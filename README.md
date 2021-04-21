@@ -3,9 +3,11 @@
 [![npm version](https://badge.fury.io/js/statsig-js-client-sdk.svg)](https://badge.fury.io/js/statsig-js-client-sdk)
 [![jsdelivr](https://data.jsdelivr.com/v1/package/npm/statsig-js-client-sdk/badge)](https://www.jsdelivr.com/package/npm/statsig-js-client-sdk)
 
-## Statsig Javascript Client SDK
+## Statsig JavaScript Client SDK
 
-The javascript SDK for client environments.  If you're looking for a nodejs server SDK, try [https://github.com/statsig-io/node-js-server-sdk](https://github.com/statsig-io/node-js-server-sdk).
+The JavaScript SDK for single user client environments. For usage in React Native, check out our [Expo SDK](https://github.com/statsig-io/react-native-expo), or [React Native SDK](https://github.com/statsig-io/react-native) if you are not using Expo, both of which are based on this JavaScript SDK.
+
+If you're looking to use Statsig in a multi-user server environment, try our [Node.js SDK](https://github.com/statsig-io/node-js-server-sdk).
 
 Statsig helps you move faster with Feature Gates and Dynamic Configs.  If you're new to Statsig, create an account at [statsig.com](https://www.statsig.com).
 
