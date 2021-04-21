@@ -18,6 +18,7 @@ const MAX_OBJ_SIZE = 1024;
 // for react native
 let _currentAppState;
 
+let _SDKPackageInfo;
 let _AsyncStorage;
 let _AppState;
 let _NativeModules;
@@ -63,6 +64,7 @@ const statsig = {
     statsig._options = StatsigOptions(options);
     statsig._identity = Identity(
       trimUserObjIfNeeded(user),
+      _SDKPackageInfo,
       _NativeModules,
       _Platform,
       _RNDeviceInfo,
@@ -237,6 +239,7 @@ const statsig = {
   },
 
   _setReactNativeDependencies: function (
+    SDKPackageInfo,
     AsyncStorage = null,
     AppState = null,
     NativeModules = null,
@@ -245,6 +248,7 @@ const statsig = {
     ExpoConstants = null,
     ExpoDevice = null,
   ) {
+    _SDKPackageInfo = SDKPackageInfo;
     _AsyncStorage = AsyncStorage;
     _AppState = AppState;
     _NativeModules = NativeModules;
