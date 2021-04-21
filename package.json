@@ -1,7 +1,7 @@
 {
-  "name": "statsig-js-client-sdk",
-  "version": "1.0.25",
-  "description": "Statsig javascript client SDK",
+  "name": "statsig-js",
+  "version": "1.0.0",
+  "description": "Statsig JavaScript client SDK for single user environments.",
   "main": "dist/statsig-prod-web-sdk.js",
   "scripts": {
     "build": "webpack",
@@ -17,12 +17,12 @@
   "jsdelivr": "dist/statsig-prod-web-sdk.js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/statsig-io/statsig-js-client-sdk.git"
+    "url": "git+https://github.com/statsig-io/statsig-js.git"
   },
   "author": "Statsig, Inc.",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/statsig-io/statsig-js-client-sdk/issues"
+    "url": "https://github.com/statsig-io/statsig-js/issues"
   },
   "keywords": [
     "feature gate",
@@ -50,5 +50,5 @@
     "uuid": "^8.3.2",
     "whatwg-fetch": "^3.6.2"
   },
-  "types": "dist/main.js"
+  "types": "index.d.ts"
 }
