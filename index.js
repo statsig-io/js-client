@@ -1,4 +1,3 @@
-import { fallbackConfig } from './src/utils/defaults';
 import fetcher from './src/utils/StatsigFetcher';
 import Identity from './src/Identity';
 import InternalStore from './src/InternalStore';
@@ -120,7 +119,7 @@ const statsig = {
   /**
    * Checks the value of a config for the current user
    * @param {string} configName - the name of the config to get
-   * @returns {DynamicConfig} - value of a config for the user
+   * @returns {DynamicConfig | null} - value of a config for the user
    * @throws Error if configName is not a string
    */
   getConfig: function (configName) {
@@ -128,7 +127,7 @@ const statsig = {
       console.warn(
         'Call and wait for initialize() to finish first. Returning a dummy config with only default values.',
       );
-      return fallbackConfig();
+      return null;
     }
     if (typeof configName !== 'string') {
       throw new Error('Must pass a valid string as a configName to check');

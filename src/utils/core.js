@@ -55,15 +55,3 @@ export function getNumericValue(num) {
   }
   return null;
 }
-
-// Return the boolean value of the input if it can be casted into a boolean, null otherwise
-export function getBoolValue(val) {
-  if (val == null) {
-    return null;
-  } else if (val.toString().toLowerCase() === 'true') {
-    return true;
-  } else if (val.toString().toLowerCase() === 'false') {
-    return false;
-  }
-  return null;
-}

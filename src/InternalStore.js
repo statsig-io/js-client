@@ -109,7 +109,7 @@ export default function InternalStore(identity, logger) {
       console.error(
         'configName must be a valid string. The config will only return default values.',
       );
-      return fallbackConfig();
+      return null;
     }
 
     let buffer = sha256.create().update(configName).arrayBuffer();

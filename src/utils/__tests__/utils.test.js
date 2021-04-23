@@ -1,9 +1,4 @@
-import {
-  clone,
-  getBoolValue,
-  getStableIDAsync,
-  getNumericValue,
-} from '../core';
+import { clone, getStableIDAsync, getNumericValue } from '../core';
 import storage from '../storage';
 
 describe('Verify behavior of core utility functions', () => {
@@ -54,19 +49,5 @@ describe('Verify behavior of core utility functions', () => {
     expect(getNumericValue(false)).toStrictEqual(0);
     expect(getNumericValue(true)).toStrictEqual(1);
     expect(getNumericValue('13.1')).toStrictEqual(13.1);
-  });
-
-  test('Test getBoolValue', () => {
-    expect(getBoolValue(null)).toBeNull();
-    expect(getBoolValue()).toBeNull();
-    expect(getBoolValue(10)).toBeNull();
-    expect(getBoolValue({})).toBeNull();
-    expect(getBoolValue('20')).toBeNull();
-    expect(getBoolValue(10.0)).toBeNull();
-    expect(getBoolValue(false)).toStrictEqual(false);
-    expect(getBoolValue(true)).toStrictEqual(true);
-    expect(getBoolValue('true')).toStrictEqual(true);
-    expect(getBoolValue('false 123')).toBeNull();
-    expect(getBoolValue('false')).toStrictEqual(false);
   });
 });
