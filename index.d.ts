@@ -28,7 +28,7 @@ declare namespace statsig {
    * @param {string} configName - the name of the config to get
    * @returns {DynamicConfig} - value of a config for the user
    */
-  function getConfig(configName: string): DynamicConfig;
+  function getConfig(configName: string): DynamicConfig | null;
 
   /**
    * Log an event for data analysis and alerting or to measure the impact of an experiment
@@ -106,12 +106,14 @@ declare namespace statsig {
    */
   export type DynamicConfig = {
     value: any;
-    getRawValue: () => string | number | boolean | Record<string, any>;
-    getBool: (name: string, defaultValue: boolean) => boolean;
-    getNumber: (name: string, defaultValue: number) => number;
-    getString: (name: string, defaultValue: string) => string;
-    getArray: (name: string, defaultValue: Array<any>) => Array<any>;
-    getObject: (name: string, defaultValue: object) => DynamicConfig;
+    getValue(
+      key: String,
+      defaultValue: any | null,
+    ): boolean | number | string | object | Array<any> | null;
+    get<T extends boolean | number | string | object | Array<any>>(
+      key: String,
+      defaultValue: T,
+    ): T;
   };
 
   export type _SDKPackageInfo = {

@@ -1,5 +1,4 @@
 import DynamicConfig from '../DynamicConfig';
-import { fallbackConfig } from '../utils/defaults';
 import InternalStore from '../InternalStore';
 import Identity from '../Identity';
 import storage from '../utils/storage';
@@ -116,13 +115,13 @@ describe('Verify behavior of InternalStore', () => {
       const store = statsigSDK._store;
       // @ts-ignore
       const spy = jest.spyOn(statsigSDK._logger, 'log');
-      expect(store.getConfig()).toEqual(fallbackConfig());
-      expect(store.getConfig(null)).toEqual(fallbackConfig());
-      expect(store.getConfig(undefined)).toEqual(fallbackConfig());
-      expect(store.getConfig('')).toEqual(fallbackConfig());
-      expect(store.getConfig(1)).toEqual(fallbackConfig());
-      expect(store.getConfig({ obj: 'obj' })).toEqual(fallbackConfig());
-      expect(store.getConfig(true)).toEqual(fallbackConfig());
+      expect(store.getConfig()).toEqual(null);
+      expect(store.getConfig(null)).toEqual(null);
+      expect(store.getConfig(undefined)).toEqual(null);
+      expect(store.getConfig('')).toEqual(null);
+      expect(store.getConfig(1)).toEqual(null);
+      expect(store.getConfig({ obj: 'obj' })).toEqual(null);
+      expect(store.getConfig(true)).toEqual(null);
       expect(spy).not.toHaveBeenCalled();
     });
   });

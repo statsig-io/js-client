@@ -1,5 +1,3 @@
-import { fallbackConfig } from '../utils/defaults';
-
 describe('Verify behavior of top level index functions', () => {
   // @ts-ignore
   global.fetch = jest.fn(() =>
@@ -95,7 +93,7 @@ describe('Verify behavior of top level index functions', () => {
   test('Verify getConfig returns an empty object for nonexistent config', () => {
     const statsigSDK = require('../../index').default;
     const result = statsigSDK.getConfig('config_that_doesnt_exist');
-    expect(result).toEqual(fallbackConfig());
+    expect(result).toEqual(null);
     const ready = statsigSDK.isReady();
     expect(ready).toBe(false);
   });
