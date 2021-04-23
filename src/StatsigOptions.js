@@ -1,5 +1,3 @@
-import { getBoolValue } from './utils/core';
-
 const typedefs = require('./typedefs');
 
 const DEFAULT_API = 'https://api.statsig.com/v1';
@@ -28,7 +26,7 @@ export default function StatsigOptions(inputOptions) {
   }
 
   function getBool(key) {
-    return getBoolValue(inputOptions[key]) ?? false;
+    return inputOptions[key] === true;
   }
 
   return statsigOptions;
