@@ -1,5 +1,5 @@
 class LogEvent {
-  constructor(eventName) {
+  constructor(eventName, disableCurrentPageLogging = false) {
     if (eventName == null || typeof eventName !== 'string') {
       console.error('EventName needs to be a string.');
       eventName = '';
@@ -7,6 +7,19 @@ class LogEvent {
     this.time = Date.now();
     this.eventName = eventName;
     this.statsigMetadata = {};
+
+    if (
+      disableCurrentPageLogging === false &&
+      window != null &&
+      window.location != null &&
+      window.location.href != null
+    ) {
+      // https://stackoverflow.com/questions/6257463/how-to-get-the-url-without-any-parameters-in-javascript
+      const parts = window.location.href.split(/[?#]/);
+      if (parts?.length > 0) {
+        this.addStatsigMetadata('currentPage', parts[0]);
+      }
+    }
   }
 
   setValue(value) {

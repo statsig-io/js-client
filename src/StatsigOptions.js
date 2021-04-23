@@ -8,22 +8,25 @@ const DEFAULT_API = 'https://api.statsig.com/v1';
  * @returns {typedefs.StatsigOptions}
  */
 export default function StatsigOptions(inputOptions) {
-  if (inputOptions == null || inputOptions == {}) {
-    return {
-      api: DEFAULT_API,
-    };
+  if (inputOptions == null) {
+    inputOptions = {};
   }
 
   const statsigOptions = {
     api: getString('api', DEFAULT_API),
+    disableCurrentPageLogging: getBool('disableCurrentPageLogging'),
   };
 
-  function getString(index, defaultValue) {
-    const str = inputOptions[index];
+  function getString(key, defaultValue) {
+    const str = inputOptions[key];
     if (str == null || typeof str !== 'string') {
       return defaultValue;
     }
     return str;
+  }
+
+  function getBool(key) {
+    return inputOptions[key] === true;
   }
 
   return statsigOptions;

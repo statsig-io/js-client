@@ -5,8 +5,8 @@ import storage from './utils/storage';
 const STATSIG_LOCAL_STORAGE_LOGGING_REQUEST_KEY =
   'STATSIG_LOCAL_STORAGE_LOGGING_REQUEST';
 
-const CONFIG_EXPOSURE_EVENT = 'config_exposure';
-const GATE_EXPOSURE_EVENT = 'gate_exposure';
+const CONFIG_EXPOSURE_EVENT = 'statsig::config_exposure';
+const GATE_EXPOSURE_EVENT = 'statsig::gate_exposure';
 const INTERNAL_EVENT_PREFIX = 'statsig::';
 
 export default function LogEventProcessor(identity, options, sdkKey) {
@@ -16,6 +16,7 @@ export default function LogEventProcessor(identity, options, sdkKey) {
   // The max size of event queue until we start trim older events
   let maxEventQueueSize = 1000;
   let requestURL = options.api + '/log_event';
+  let disableCurrentPageLogging = options.disableCurrentPageLogging;
 
   let queue = [];
   let flushTimer = null;
@@ -166,7 +167,7 @@ export default function LogEventProcessor(identity, options, sdkKey) {
       return;
     }
     exposures.configs[gateName] = true;
-    this.logInternal(user, GATE_EXPOSURE_EVENT, null, {
+    this.logCustom(user, GATE_EXPOSURE_EVENT, null, {
       gate: gateName,
       gateValue: gateValue,
     });
@@ -177,7 +178,7 @@ export default function LogEventProcessor(identity, options, sdkKey) {
       return;
     }
     exposures.configs[configName] = true;
-    this.logInternal(user, CONFIG_EXPOSURE_EVENT, null, {
+    this.logCustom(user, CONFIG_EXPOSURE_EVENT, null, {
       config: configName,
       configGroup: groupName,
     });
@@ -189,7 +190,7 @@ export default function LogEventProcessor(identity, options, sdkKey) {
     value = null,
     metadata = {},
   ) {
-    let event = new LogEvent(INTERNAL_EVENT_PREFIX + eventName);
+    let event = new LogEvent(INTERNAL_EVENT_PREFIX + eventName, true);
     event.setValue(value);
     if (metadata == null) {
       metadata = {};
@@ -201,6 +202,19 @@ export default function LogEventProcessor(identity, options, sdkKey) {
     } else {
       this.log(event);
     }
+  };
+
+  processor.logCustom = function (
+    user,
+    eventName,
+    value = null,
+    metadata = {},
+  ) {
+    let event = new LogEvent(eventName, disableCurrentPageLogging);
+    event.setValue(value);
+    event.setMetadata(metadata);
+    event.setUser(user);
+    this.log(event);
   };
 
   processor.sendLocalStorageRequests = function () {
