@@ -54,18 +54,24 @@ describe('Verify behavior of InternalStore', () => {
   test('Verify save correctly saves into cache.', () => {
     expect.assertions(3);
     const ident = Identity({ userID: 'user_key' });
+    // @ts-ignore
     const spyOnSet = jest.spyOn(window.localStorage.__proto__, 'setItem');
+    // @ts-ignore
     const spyOnGet = jest.spyOn(window.localStorage.__proto__, 'getItem');
     storage.init();
     const store = InternalStore(ident);
     return store.loadFromLocalStorage().then(() => {
       return store.save(gates, configs).then(() => {
-        expect(store.cache['user_key']).toEqual({
+        const expected = {
           gates: gates,
-          configs: {
-            'RMv0YJlLOBe7cY7HgZ3Jox34R0Wrk7jLv3DZyBETA7I=': config_obj,
-          },
-        });
+          configs: {},
+        };
+        // @ts-ignore
+        configs['RMv0YJlLOBe7cY7HgZ3Jox34R0Wrk7jLv3DZyBETA7I'] = {
+          ...config_obj,
+        };
+        // @ts-ignore
+        expect(store.cache['user_key']).toMatchObject(expected);
         expect(spyOnSet).toHaveBeenCalledTimes(1);
         expect(spyOnGet).toHaveBeenCalledTimes(1);
       });
@@ -134,7 +140,9 @@ describe('Verify behavior of InternalStore', () => {
       const store = statsigSDK._store;
       // @ts-ignore
       const spy = jest.spyOn(statsigSDK._logger, 'log');
-      expect(store.getConfig('test_config')).toEqual(config_obj);
+      expect(store.getConfig('test_config').getValue()).toMatchObject(
+        config_obj.getValue(),
+      );
       expect(spy).toHaveBeenCalledTimes(1);
     });
   });

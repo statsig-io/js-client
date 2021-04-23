@@ -1,5 +1,11 @@
 import * as utils from './utils/core';
 
+/**
+ * @ignore
+ * @param {string} configName
+ * @param {object} value
+ * @param {string} groupName
+ */
 function DynamicConfig(configName, value, groupName) {
   /**
    * A class for fetching the json data configured for a DynamicConfig in the statsig console
@@ -14,6 +20,30 @@ function DynamicConfig(configName, value, groupName) {
   this.name = configName;
   this.value = utils.clone(value);
   this._groupName = groupName;
+
+  /**
+   * A generic, type sensitive getter, which returns the value at the given index in the config if it matches the type of the default value,
+   * and returns the default value otherwise
+   * @template {boolean | number | string | object | Array<any>} T
+   * @param {string} [key] - The index of the config to check
+   * @param {T | null} [defaultValue] - The default value of the parameter to return
+   * in cases where the parameter is not found or does not match the type of the default value
+   * @returns {T | null}
+   */
+  this.get = function (key, defaultValue) {
+    if (defaultValue == null) {
+      defaultValue = null;
+    }
+    const val = this.getValue(key, defaultValue);
+    if (val == null) {
+      return defaultValue;
+    }
+    if (defaultValue != null && typeof defaultValue !== typeof val) {
+      return defaultValue;
+    }
+    // @ts-ignore
+    return val;
+  };
 }
 
 /**
@@ -36,29 +66,6 @@ DynamicConfig.prototype.getValue = function (key, defaultValue = null) {
     return defaultValue;
   }
   return this.value[key];
-};
-
-/**
- * A generic, type sensitive getter, which returns the value at the given index in the config if it matches the type of the default value,
- * and returns the default value otherwise
- * @param {string} [key] - The index of the config to check
- * @param {boolean | number | string | object | Array<any> | null} [defaultValue] - The default value of the parameter to return
- * in cases where the parameter is not found or does not match the type of the default value
- * @returns {boolean | number | string | object | Array<any> | null}
- * @memberof DynamicConfig
- */
-DynamicConfig.prototype.get = function (key, defaultValue) {
-  if (defaultValue == null) {
-    defaultValue = null;
-  }
-  const val = this.getValue(key, defaultValue);
-  if (val == null) {
-    return defaultValue;
-  }
-  if (defaultValue != null && typeof defaultValue !== typeof val) {
-    return defaultValue;
-  }
-  return val;
 };
 
 /**

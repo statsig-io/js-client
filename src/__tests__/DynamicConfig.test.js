@@ -1,35 +1,41 @@
 const { default: DynamicConfig } = require('../DynamicConfig');
 
 describe('Verify behavior of DynamicConfig', () => {
-  const testConfig = new DynamicConfig('test_config', {
-    bool: true,
-    number: 2,
-    string: 'string',
-    object: {
-      key: 'value',
-      key2: 123,
+  const testConfig = new DynamicConfig(
+    'test_config',
+    {
+      bool: true,
+      number: 2,
+      string: 'string',
+      object: {
+        key: 'value',
+        key2: 123,
+      },
+      boolStr1: 'true',
+      boolStr2: 'FALSE',
+      numberStr1: '3',
+      numberStr2: '3.3',
+      arr: [1, 2, 'three'],
     },
-    boolStr1: 'true',
-    boolStr2: 'FALSE',
-    numberStr1: '3',
-    numberStr2: '3.3',
-    arr: [1, 2, 'three'],
-  });
+    'default',
+  );
 
   beforeEach(() => {
     expect.hasAssertions();
   });
 
   test('Test constructor', () => {
+    // @ts-ignore
     let config = new DynamicConfig();
     expect(config.getValue()).toStrictEqual({});
     expect(config.get()).toStrictEqual({});
     expect(config.get('test', 'test')).toStrictEqual('test');
 
-    config = new DynamicConfig('name', { test: 123 });
+    config = new DynamicConfig('name', { test: 123 }, 'default');
     expect(config.getValue()).toStrictEqual({ test: 123 });
 
-    config = new DynamicConfig('name', 123);
+    // @ts-ignore
+    config = new DynamicConfig('name', 123, 'default');
     expect(config.getValue()).toStrictEqual({});
   });
 

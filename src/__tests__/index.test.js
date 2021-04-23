@@ -172,7 +172,7 @@ describe('Verify behavior of top level index functions', () => {
       expect(ready).toBe(true);
 
       const config = statsigSDK.getConfig('test_config');
-      expect(config.value).toStrictEqual({
+      expect(config?.value).toStrictEqual({
         bool: true,
         number: 2,
         string: 'string',
