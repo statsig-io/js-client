@@ -101,25 +101,26 @@ declare namespace statsig {
     api?: string;
   };
 
-  /**
-   * A class for fetching the json data configured for a DynamicConfig in the statsig console
-   */
-  export type DynamicConfig = {
-    value: any;
-    getValue(
-      key: String,
-      defaultValue: any | null,
-    ): boolean | number | string | object | Array<any> | null;
-    get<T extends boolean | number | string | object | Array<any>>(
-      key: String,
-      defaultValue: T,
-    ): T;
-  };
-
   export type _SDKPackageInfo = {
     sdkType: string;
     sdkVersion: string;
   };
+
+  /**
+   * A class for fetching the json data configured for a DynamicConfig in the statsig console
+   */
+  export class DynamicConfig {
+    value: object;
+    constructor(configName: string, value: object, groupName: string);
+    getValue(
+      key: string,
+      defaultValue: any | null,
+    ): boolean | number | string | object | Array<any> | null;
+    get<T extends boolean | number | string | object | Array<any>>(
+      key: string,
+      defaultValue: T,
+    ): T;
+  }
 }
 
 export default statsig;

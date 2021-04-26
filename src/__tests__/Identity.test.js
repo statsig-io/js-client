@@ -1,4 +1,4 @@
-const { default: Identity } = require('../Identity');
+import Identity from '../Identity';
 
 describe('Verify behavior of Identity module', () => {
   beforeEach(() => {

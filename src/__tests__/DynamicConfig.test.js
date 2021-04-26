@@ -1,4 +1,4 @@
-const { default: DynamicConfig } = require('../DynamicConfig');
+import DynamicConfig from '../DynamicConfig';
 
 describe('Verify behavior of DynamicConfig', () => {
   const testConfig = new DynamicConfig(

@@ -25,14 +25,14 @@ describe('Verify behavior of DynamicConfig', () => {
   });
 
   test('Test typed get', () => {
-    expect(testConfig.get<string>('string', 'test')).toStrictEqual('string');
-    expect(testConfig.get<number>('bool', 3)).toStrictEqual(3);
-    expect(testConfig.get<boolean>('boolStr1', false)).toStrictEqual(false);
-    expect(testConfig.get<number>('numberStr2', 17)).toStrictEqual(17);
-    expect(
-      testConfig.get<Array<String>>('arr', ['test']),
-    ).toStrictEqual([1, 2, 'three']);
-    expect(testConfig.get<object>('object', {})).toStrictEqual({
+    expect(testConfig.get('bool', 3)).toStrictEqual(3);
+    expect(testConfig.getValue('111', 222)).toStrictEqual(222);
+    expect(testConfig.get('numberStr2', 'test')).toStrictEqual('3.3');
+    expect(testConfig.get('boolStr1', 'test')).toStrictEqual('true');
+    expect(testConfig.get('numberStr2', 17)).toStrictEqual(17);
+    expect(testConfig.get('arr', ['test'])).toStrictEqual([1, 2, 'three']);
+    expect(testConfig.get('object', ['test'])).toStrictEqual(['test']);
+    expect(testConfig.get('object', {})).toStrictEqual({
       key: 'value',
       key2: 123,
     });

@@ -1,11 +1,16 @@
 import { Base64 } from './utils/Base64';
 import DynamicConfig from './DynamicConfig';
-import { fallbackConfig } from './utils/defaults';
 import localStorage from './utils/storage';
 import { sha256 } from 'js-sha256';
 
 const INTERNAL_STORE_KEY = 'STATSIG_LOCAL_STORAGE_INTERNAL_STORE';
 
+/**
+ *
+ * @param {*} identity
+ * @param {*} logger
+ * @returns
+ */
 export default function InternalStore(identity, logger) {
   let store = {};
   store.cache = {};
@@ -115,7 +120,7 @@ export default function InternalStore(identity, logger) {
     let buffer = sha256.create().update(configName).arrayBuffer();
     var configNameHash = Base64.encodeArrayBuffer(buffer);
     const userID = identity.getUserID();
-    let value = fallbackConfig();
+    let value = null;
     if (userID && store.cache[userID]?.configs[configNameHash]) {
       value = store.cache[userID].configs[configNameHash];
       logger.logConfigExposure(
