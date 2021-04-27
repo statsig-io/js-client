@@ -169,7 +169,7 @@ export default function LogEventProcessor(identity, options, sdkKey) {
     exposures.configs[gateName] = true;
     this.logCustom(user, GATE_EXPOSURE_EVENT, null, {
       gate: gateName,
-      gateValue: gateValue,
+      gateValue: String(gateValue),
     });
   };
 

@@ -134,7 +134,7 @@ describe('Verify behavior of top level index functions', () => {
       gateExposure.setUser({});
       gateExposure.setMetadata({
         gate: 'test_gate',
-        gateValue: true,
+        gateValue: String(true),
       });
       const gateValue = statsigSDK.checkGate('test_gate');
       expect(gateValue).toBe(true);
