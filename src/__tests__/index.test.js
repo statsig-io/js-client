@@ -1,3 +1,5 @@
+const { default: LogEvent } = require('../LogEvent');
+
 describe('Verify behavior of top level index functions', () => {
   // @ts-ignore
   global.fetch = jest.fn(() =>
@@ -40,9 +42,13 @@ describe('Verify behavior of top level index functions', () => {
     fetch.mockClear();
     jest.resetModules();
     expect.hasAssertions();
+
+    // ensure Date.now() returns the same value in each test
+    let now = Date.now();
+    jest.spyOn(global.Date, 'now').mockImplementation(() => now);
   });
 
-  test('Verify checkGate returns false for nonexistent gate', () => {
+  test('Verify checkGate returns false when calling before initialize', () => {
     const statsigSDK = require('../../index').default;
     const result = statsigSDK.checkGate('gate_that_doesnt_exist');
     expect(result).toBe(false);
@@ -90,7 +96,7 @@ describe('Verify behavior of top level index functions', () => {
     });
   });
 
-  test('Verify getConfig returns an empty object for nonexistent config', () => {
+  test('Verify getConfig returns an empty object when calling before initialize', () => {
     const statsigSDK = require('../../index').default;
     const result = statsigSDK.getConfig('config_that_doesnt_exist');
     expect(result).toEqual(null);
@@ -115,14 +121,25 @@ describe('Verify behavior of top level index functions', () => {
     });
   });
 
-  test('Check test gatekeeper', () => {
+  test('Verify checkGate() returns the correct value under correct circumstances', () => {
+    expect.assertions(4);
     const statsigSDK = require('../../index').default;
     return statsigSDK.initialize('client-key', null).then(() => {
       const ready = statsigSDK.isReady();
       expect(ready).toBe(true);
 
+      //@ts-ignore
+      const spy = jest.spyOn(statsigSDK._logger, 'log');
+      let gateExposure = new LogEvent('statsig::gate_exposure');
+      gateExposure.setUser({});
+      gateExposure.setMetadata({
+        gate: 'test_gate',
+        gateValue: true,
+      });
       const gateValue = statsigSDK.checkGate('test_gate');
       expect(gateValue).toBe(true);
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy).toHaveBeenCalledWith(gateExposure);
     });
   });
 
@@ -164,13 +181,22 @@ describe('Verify behavior of top level index functions', () => {
     );
   });
 
-  test('Verify DynamicConfigs fetch', () => {
+  test('Verify getConfig() behaves correctly when calling under correct conditions', () => {
+    expect.assertions(4);
     const statsigSDK = require('../../index').default;
 
     return statsigSDK.initialize('client-key', null).then(() => {
       const ready = statsigSDK.isReady();
       expect(ready).toBe(true);
 
+      //@ts-ignore
+      const spy = jest.spyOn(statsigSDK._logger, 'log');
+      let configExposure = new LogEvent('statsig::config_exposure');
+      configExposure.setUser({});
+      configExposure.setMetadata({
+        config: 'test_config',
+        configGroup: 'default',
+      });
       const config = statsigSDK.getConfig('test_config');
       expect(config?.value).toStrictEqual({
         bool: true,
@@ -186,6 +212,8 @@ describe('Verify behavior of top level index functions', () => {
         numberStr2: '3.3',
         numberStr3: '3.3.3',
       });
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy).toHaveBeenCalledWith(configExposure);
     });
   });
 
