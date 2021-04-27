@@ -211,8 +211,12 @@ export default function LogEventProcessor(identity, options, sdkKey) {
     metadata = {},
   ) {
     let event = new LogEvent(eventName, disableCurrentPageLogging);
-    event.setValue(value);
-    event.setMetadata(metadata);
+    if (value != null) {
+      event.setValue(value);
+    }
+    if (metadata != null) {
+      event.setMetadata(metadata);
+    }
     event.setUser(user);
     this.log(event);
   };
