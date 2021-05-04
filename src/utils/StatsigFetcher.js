@@ -88,6 +88,7 @@ const fetcher = {
         'Content-type': 'application/json; charset=UTF-8',
         'STATSIG-API-KEY': sdkKey,
       },
+      keepalive: true,
     };
     return fetch(url, params)
       .then((res) => {
