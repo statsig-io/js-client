@@ -111,7 +111,6 @@ declare namespace statsig {
    */
   export class DynamicConfig {
     value: object;
-    constructor(configName: string, value: object, groupName: string);
     getValue(
       key: string,
       defaultValue: any | null,
