@@ -5,7 +5,7 @@ import * as utils from './utils/core';
  * @class DynamicConfig
  */
 export default class DynamicConfig {
-  constructor(configName, value, groupName) {
+  constructor(configName, value, rule) {
     if (typeof configName !== 'string' || configName.length === 0) {
       configName = '';
     }
@@ -14,7 +14,7 @@ export default class DynamicConfig {
     }
     this.name = configName;
     this.value = utils.clone(value);
-    this._groupName = groupName;
+    this._ruleID = rule;
   }
 
   /**
@@ -70,7 +70,7 @@ export default class DynamicConfig {
     return this.value[key];
   }
 
-  getGroupName() {
-    return this._groupName;
+  getRuleID() {
+    return this._ruleID;
   }
 }

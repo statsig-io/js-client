@@ -11,6 +11,13 @@ describe('Verify behavior of top level index functions', () => {
           gates: {
             'AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=': true,
           },
+          featureGates: {
+            'AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=': {
+              value: true,
+              rule: 'ruleID123',
+              name: 'AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=',
+            },
+          },
           configs: {
             'RMv0YJlLOBe7cY7HgZ3Jox34R0Wrk7jLv3DZyBETA7I=': {
               value: {
@@ -27,7 +34,7 @@ describe('Verify behavior of top level index functions', () => {
                 numberStr2: '3.3',
                 numberStr3: '3.3.3',
               },
-              group: 'default',
+              rule: 'ruleID',
             },
           },
         }),
@@ -135,6 +142,7 @@ describe('Verify behavior of top level index functions', () => {
       gateExposure.setMetadata({
         gate: 'test_gate',
         gateValue: String(true),
+        ruleID: 'ruleID123',
       });
       const gateValue = statsigSDK.checkGate('test_gate');
       expect(gateValue).toBe(true);
@@ -195,7 +203,7 @@ describe('Verify behavior of top level index functions', () => {
       configExposure.setUser({});
       configExposure.setMetadata({
         config: 'test_config',
-        configGroup: 'default',
+        ruleID: 'ruleID',
       });
       const config = statsigSDK.getConfig('test_config');
       expect(config?.value).toStrictEqual({

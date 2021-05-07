@@ -315,7 +315,7 @@ const statsig = {
         statsigMetadata: statsig._identity.getStatsigMetadata(),
       },
       (resJSON) => {
-        statsig._store.save(resJSON.gates, resJSON.configs);
+        statsig._store.save(resJSON.featureGates, resJSON.configs);
         statsig._configure(resJSON.sdkParams);
         if (typeof resolveCallback === 'function') {
           resolveCallback(resJSON);

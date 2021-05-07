@@ -162,7 +162,7 @@ export default function LogEventProcessor(identity, options, sdkKey) {
     };
   };
 
-  processor.logGateExposure = function (user, gateName, gateValue) {
+  processor.logGateExposure = function (user, gateName, gateValue, ruleID) {
     if (exposures.configs[gateName]) {
       return;
     }
@@ -170,17 +170,18 @@ export default function LogEventProcessor(identity, options, sdkKey) {
     this.logCustom(user, GATE_EXPOSURE_EVENT, null, {
       gate: gateName,
       gateValue: String(gateValue),
+      ruleID: ruleID,
     });
   };
 
-  processor.logConfigExposure = function (user, configName, groupName) {
+  processor.logConfigExposure = function (user, configName, ruleID) {
     if (exposures.configs[configName]) {
       return;
     }
     exposures.configs[configName] = true;
     this.logCustom(user, CONFIG_EXPOSURE_EVENT, null, {
       config: configName,
-      configGroup: groupName,
+      ruleID: ruleID,
     });
   };
 

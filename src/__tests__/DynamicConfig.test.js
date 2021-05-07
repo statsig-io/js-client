@@ -37,6 +37,7 @@ describe('Verify behavior of DynamicConfig', () => {
     // @ts-ignore
     config = new DynamicConfig('name', 123, 'default');
     expect(config.getValue()).toStrictEqual({});
+    expect(config.getRuleID()).toStrictEqual('default');
   });
 
   test('Test nonexistent keys', () => {

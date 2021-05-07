@@ -25,7 +25,7 @@ export default function InternalStore(identity, logger) {
         parsed[configName] = new DynamicConfig(
           configName,
           configs[configName].value,
-          configs[configName].group,
+          configs[configName].rule,
         );
       }
     }
@@ -42,7 +42,7 @@ export default function InternalStore(identity, logger) {
             if (jsonCache != null) {
               for (const [user, data] of Object.entries(jsonCache)) {
                 store.cache[user] = {
-                  gates: data.gates,
+                  gates: data.featureGates,
                   configs: {},
                 };
                 if (data.configs != null) {
@@ -52,7 +52,7 @@ export default function InternalStore(identity, logger) {
                     store.cache[user].configs[configName] = new DynamicConfig(
                       configData.name,
                       configData.value,
-                      configData._groupName,
+                      configData._ruleID,
                     );
                   }
                 }
@@ -101,12 +101,17 @@ export default function InternalStore(identity, logger) {
     let buffer = sha256.create().update(gateName).arrayBuffer();
     var gateNameHash = Base64.encodeArrayBuffer(buffer);
     const userID = identity.getUserID();
-    let value = false;
+    let gateValue = { value: false, rule: '' };
     if (userID && store.cache[userID]?.gates[gateNameHash]) {
-      value = store.cache[userID].gates[gateNameHash];
+      gateValue = store.cache[userID].gates[gateNameHash];
     }
-    logger.logGateExposure(identity.getUser(), gateName, value);
-    return value;
+    logger.logGateExposure(
+      identity.getUser(),
+      gateName,
+      gateValue.value === true,
+      gateValue.rule,
+    );
+    return gateValue.value === true;
   };
 
   store.getConfig = function (configName) {
@@ -126,7 +131,7 @@ export default function InternalStore(identity, logger) {
       logger.logConfigExposure(
         identity.getUser(),
         configName,
-        value.getGroupName(),
+        value.getRuleID(),
       );
     }
     return value;

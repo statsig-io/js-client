@@ -28,6 +28,12 @@ describe('Verify behavior of InternalStore', () => {
         Promise.resolve({
           disableAutoEventLogging: true,
           gates: gates,
+          featureGates: {
+            'AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=': {
+              value: true,
+              rule: 'ruleID123',
+            },
+          },
           configs: configs,
         }),
     }),
