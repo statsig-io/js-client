@@ -11,14 +11,14 @@ describe('Verify behavior of top level index functions', () => {
           gates: {
             'AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=': true,
           },
-          featureGates: {
+          feature_gates: {
             'AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=': {
               value: true,
-              rule: 'ruleID123',
+              rule_id: 'ruleID123',
               name: 'AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=',
             },
           },
-          configs: {
+          dynamic_configs: {
             'RMv0YJlLOBe7cY7HgZ3Jox34R0Wrk7jLv3DZyBETA7I=': {
               value: {
                 bool: true,
@@ -34,9 +34,10 @@ describe('Verify behavior of top level index functions', () => {
                 numberStr2: '3.3',
                 numberStr3: '3.3.3',
               },
-              rule: 'ruleID',
+              rule_id: 'ruleID',
             },
           },
+          configs: {},
         }),
     }),
   );

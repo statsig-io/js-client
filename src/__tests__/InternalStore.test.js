@@ -11,7 +11,7 @@ describe('Verify behavior of InternalStore', () => {
   const configs = {
     'RMv0YJlLOBe7cY7HgZ3Jox34R0Wrk7jLv3DZyBETA7I=': {
       value: { bool: true },
-      group: 'default',
+      rule_id: 'default',
     },
   };
   const config_obj = new DynamicConfig(
@@ -28,13 +28,14 @@ describe('Verify behavior of InternalStore', () => {
         Promise.resolve({
           disableAutoEventLogging: true,
           gates: gates,
-          featureGates: {
+          feature_gates: {
             'AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=': {
               value: true,
-              rule: 'ruleID123',
+              rule_id: 'ruleID123',
             },
           },
-          configs: configs,
+          dynamic_configs: configs,
+          configs: {},
         }),
     }),
   );
@@ -115,7 +116,7 @@ describe('Verify behavior of InternalStore', () => {
       expect(
         store.checkGate('AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY='),
       ).toBe(false);
-      expect(spy).toHaveBeenCalledTimes(2);
+      expect(spy).toHaveBeenCalledTimes(1);
     });
   });
 

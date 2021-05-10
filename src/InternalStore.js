@@ -25,7 +25,7 @@ export default function InternalStore(identity, logger) {
         parsed[configName] = new DynamicConfig(
           configName,
           configs[configName].value,
-          configs[configName].rule,
+          configs[configName].rule_id,
         );
       }
     }
@@ -101,16 +101,17 @@ export default function InternalStore(identity, logger) {
     let buffer = sha256.create().update(gateName).arrayBuffer();
     var gateNameHash = Base64.encodeArrayBuffer(buffer);
     const userID = identity.getUserID();
-    let gateValue = { value: false, rule: '' };
+    let gateValue = { value: false, rule_id: '' };
     if (userID && store.cache[userID]?.gates[gateNameHash]) {
       gateValue = store.cache[userID].gates[gateNameHash];
+      logger.logGateExposure(
+        identity.getUser(),
+        gateName,
+        gateValue.value === true,
+        gateValue.rule_id,
+      );
     }
-    logger.logGateExposure(
-      identity.getUser(),
-      gateName,
-      gateValue.value === true,
-      gateValue.rule,
-    );
+
     return gateValue.value === true;
   };
 
