@@ -9,7 +9,7 @@ The JavaScript SDK for single user client environments. For usage in React Nativ
 
 If you're looking to use Statsig in a multi-user server environment, try our [Node.js SDK](https://github.com/statsig-io/node-js-server-sdk).
 
-Statsig helps you move faster with Feature Gates and Dynamic Configs.  If you're new to Statsig, create an account at [statsig.com](https://www.statsig.com).
+Statsig helps you move faster with Feature Gates (Feature Flags) and Dynamic Configs. It also allows you to run A/B tests to validate your new features and understand their impact on your KPIs. If you're new to Statsig, create an account at [statsig.com](https://www.statsig.com).
 
 ## Getting Started
 Visit our [getting started guide](https://www.statsig.com/docs/js-client), or check out the [SDK Documentation](https://github.com/statsig-io/js-client/blob/main/docs/README.md)
