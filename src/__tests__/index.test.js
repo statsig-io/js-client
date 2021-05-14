@@ -125,13 +125,6 @@ describe('Verify behavior of top level index functions', () => {
     expect(ready).toBe(false);
   });
 
-  test('Verify updateUser rejects before initialize()', () => {
-    const statsigSDK = require('../../index').default;
-    return statsigSDK.updateUser({}).then((result) => {
-      expect(result).toStrictEqual(false);
-    });
-  });
-
   test('Verify checkGate() returns the correct value under correct circumstances', () => {
     expect.assertions(4);
     const statsigSDK = require('../../index').default;
@@ -155,13 +148,12 @@ describe('Verify behavior of top level index functions', () => {
     });
   });
 
-  test('Updating users before initialize does not ready the sdk', () => {
+  test('Updating users before initialize throws', () => {
+    expect.assertions(1);
     const statsigSDK = require('../../index').default;
-    return statsigSDK.updateUser({ userID: 123 }).then((result) => {
-      expect(result).toStrictEqual(false);
-      const ready = statsigSDK.isReady();
-      expect(ready).toBe(false);
-    });
+    return expect(statsigSDK.updateUser({ userID: 123 })).rejects.toEqual(
+      new Error('Call and wait for initialize() to finish first.'),
+    );
   });
 
   test('Initialize, switch, sdk ready', () => {

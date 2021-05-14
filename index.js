@@ -180,10 +180,13 @@ const statsig = {
    * Updates the user associated with calls to fetch gates/configs from statsig. This client SDK is intended for single user environments, but its possible a user was unknown previously and then logged in, or logged out and switched to a different account.  Use this function to update the gates/configs and associate event logs with the user.
    * @param {typedefs.StatsigUser} updatedUser - a set of user attributes identifying the user
    * @returns {Promise<boolean>} - a promise which *always resolves* to a value which indicates success or failure
+   * @throws Error if initialize() is not called first
    */
   updateUser: function (updatedUser) {
     if (statsig._identity == null || !statsig._ready) {
-      return Promise.resolve(false);
+      return Promise.reject(
+        new Error('Call and wait for initialize() to finish first.'),
+      );
     }
     statsig._ready = false;
     updatedUser = trimUserObjIfNeeded(updatedUser);
