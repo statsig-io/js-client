@@ -20,6 +20,7 @@ declare namespace statsig {
    * Checks the value of a gate for the current user
    * @param {string} gateName - the name of the gate to check
    * @returns {boolean} - value of a gate for the user. Gates are "off" (return false) by default
+   * @throws Error if initialize() is not called first, or gateName is not a string
    */
   function checkGate(gateName: string): boolean;
 
@@ -27,6 +28,7 @@ declare namespace statsig {
    * Checks the value of a config for the current user
    * @param {string} configName - the name of the config to get
    * @returns {DynamicConfig} - value of a config for the user
+   * @throws Error if initialize() is not called first, or configName is not a string
    */
   function getConfig(configName: string): DynamicConfig | null;
 
@@ -36,6 +38,7 @@ declare namespace statsig {
    * @param {?string|number} [value=null] - the value associated with the event (value = 10)
    * @param {?Record<string, string>} [metadata=null] - other attributes associated with this event (metadata = {item_name: 'banana', currency: 'USD'})
    * @returns {void}
+   * @throws Error if initialize() is not called first
    */
   function logEvent(
     eventName: string,
@@ -47,6 +50,7 @@ declare namespace statsig {
    * Updates the user associated with calls to fetch gates/configs from statsig. This client SDK is intended for single user environments, but its possible a user was unknown previously and then logged in, or logged out and switched to a different account.  Use this function to update the gates/configs and associate event logs with the user.
    * @param {typedefs.StatsigUser} updatedUser - a set of user attributes identifying the user
    * @returns {Promise<boolean>} - a promise which *always resolves* to a value which indicates success or failure
+   * @throws Error if initialize() is not called first
    */
   function updateUser(newUser: StatsigUser): Promise<boolean>;
 

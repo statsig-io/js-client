@@ -34,6 +34,7 @@
   "homepage": "https://www.statsig.com",
   "devDependencies": {
     "@babel/core": "^7.13.1",
+    "@babel/plugin-transform-runtime": "^7.14.2",
     "@babel/preset-env": "^7.13.5",
     "@types/jest": "^26.0.20",
     "babel-loader": "^8.2.2",

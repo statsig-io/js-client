@@ -42,7 +42,10 @@ const statsig = {
    * @throws Error if an invalid SDK Key is provided
    */
   initialize: function (sdkKey, user = {}, options = {}) {
-    if (statsig._ready != null) {
+    if (statsig._pendingInitPromise) {
+      return statsig._pendingInitPromise;
+    }
+    if (statsig._ready === true) {
       return Promise.resolve();
     }
     if (
@@ -71,44 +74,45 @@ const statsig = {
     );
     localStorage.init(_AsyncStorage);
 
-    return statsig._identity.setStableIDAsync().finally(() => {
-      statsig._logger = LogEventProcessor(
-        statsig._identity,
-        statsig._options,
-        sdkKey,
-      );
+    statsig._pendingInitPromise = statsig._identity
+      .setStableIDAsync()
+      .finally(() => {
+        statsig._logger = LogEventProcessor(
+          statsig._identity,
+          statsig._options,
+          sdkKey,
+        );
 
-      if (_AppState && typeof _AppState.addEventListener === 'function') {
-        _currentAppState = _AppState.currentState;
-        _AppState.addEventListener('change', statsig._handleAppStateChange);
-      }
-      statsig._store = InternalStore(statsig._identity, statsig._logger);
-      return statsig._store.loadFromLocalStorage().finally(() => {
-        return this._fetchValues()
-          .catch((e) => {
-            console.error(e);
-            return Promise.resolve();
-          })
-          .finally(() => {
-            statsig._ready = true;
-            statsig._logger.sendLocalStorageRequests();
-          });
+        if (_AppState && typeof _AppState.addEventListener === 'function') {
+          _currentAppState = _AppState.currentState;
+          _AppState.addEventListener('change', statsig._handleAppStateChange);
+        }
+        statsig._store = InternalStore(statsig._identity, statsig._logger);
+        return statsig._store.loadFromLocalStorage().finally(() => {
+          return this._fetchValues()
+            .catch((e) => {
+              console.error(e);
+              return Promise.resolve();
+            })
+            .finally(() => {
+              statsig._ready = true;
+              statsig._logger.sendLocalStorageRequests();
+              statsig._pendingInitPromise = null;
+            });
+        });
       });
-    });
+    return statsig._pendingInitPromise;
   },
 
   /**
    * Checks the value of a gate for the current user
    * @param {string} gateName - the name of the gate to check
    * @returns {boolean} - value of a gate for the user. Gates are "off" (return false) by default
-   * @throws Error if gateName is not a string
+   * @throws Error if initialize() is not called first, or gateName is not a string
    */
   checkGate: function (gateName) {
     if (statsig._store == null) {
-      console.error(
-        'Call and wait for initialize() to finish first. Returning false as the default value.',
-      );
-      return false;
+      throw new Error('Call and wait for initialize() to finish first.');
     }
     if (typeof gateName !== 'string') {
       throw new Error('Must pass a valid string as a gateName to check');
@@ -120,14 +124,11 @@ const statsig = {
    * Checks the value of a config for the current user
    * @param {string} configName - the name of the config to get
    * @returns {DynamicConfig | null} - value of a config for the user
-   * @throws Error if configName is not a string
+   * @throws Error if initialize() is not called first, or configName is not a string
    */
   getConfig: function (configName) {
     if (statsig._store == null) {
-      console.warn(
-        'Call and wait for initialize() to finish first. Returning a dummy config with only default values.',
-      );
-      return null;
+      throw new Error('Call and wait for initialize() to finish first.');
     }
     if (typeof configName !== 'string') {
       throw new Error('Must pass a valid string as a configName to check');
@@ -141,13 +142,11 @@ const statsig = {
    * @param {?string|number} [value=null] - the value associated with the event (value = 10)
    * @param {?Record<string, string>} [metadata=null] - other attributes associated with this event (metadata = {item_name: 'banana', currency: 'USD'})
    * @returns {void}
+   * @throws Error if initialize() is not called first
    */
   logEvent: function (eventName, value = null, metadata = null) {
     if (statsig._logger == null) {
-      console.error(
-        'Event not logged. Call and wait for initialize() before logging',
-      );
-      return;
+      throw new Error('Call and wait for initialize() to finish first.');
     }
     if (eventName == null) {
       console.error('Event not logged. eventName is null.');
@@ -181,10 +180,13 @@ const statsig = {
    * Updates the user associated with calls to fetch gates/configs from statsig. This client SDK is intended for single user environments, but its possible a user was unknown previously and then logged in, or logged out and switched to a different account.  Use this function to update the gates/configs and associate event logs with the user.
    * @param {typedefs.StatsigUser} updatedUser - a set of user attributes identifying the user
    * @returns {Promise<boolean>} - a promise which *always resolves* to a value which indicates success or failure
+   * @throws Error if initialize() is not called first
    */
   updateUser: function (updatedUser) {
     if (statsig._identity == null || !statsig._ready) {
-      return Promise.resolve(false);
+      return Promise.reject(
+        new Error('Call and wait for initialize() to finish first.'),
+      );
     }
     statsig._ready = false;
     updatedUser = trimUserObjIfNeeded(updatedUser);

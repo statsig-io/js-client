@@ -58,16 +58,8 @@ const fetcher = {
     return fetchPromise;
   },
 
-  post: function (
-    url,
-    sdkKey,
-    body,
-    retries = 0,
-    backoff = 1000,
-    disableRateLimit = false,
-  ) {
+  post: function (url, sdkKey, body, retries = 0, backoff = 1000) {
     this.init();
-    console.log(url);
     const counter = fetcher.leakyBucket[url];
     if (counter != null && counter >= 30) {
       return Promise.reject(
