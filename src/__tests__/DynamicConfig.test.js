@@ -96,4 +96,27 @@ describe('Verify behavior of DynamicConfig', () => {
       key2: 123,
     });
   });
+
+  test('Behavior of dummy configs', () => {
+    const dummyConfig = new DynamicConfig('configName');
+    expect(dummyConfig.get()).toEqual({});
+    expect(dummyConfig.get('test_field')).toEqual(null);
+    expect(dummyConfig.get('str', 'default_value')).toEqual('default_value');
+    expect(dummyConfig.get('bool', true)).toEqual(true);
+    expect(dummyConfig.get('number', 1.234)).toEqual(1.234);
+    expect(dummyConfig.get('arr', [1, 2, 3])).toEqual([1, 2, 3]);
+    expect(dummyConfig.get('obj', { key: 'value' })).toEqual({ key: 'value' });
+
+    expect(dummyConfig.getValue()).toEqual({});
+    expect(dummyConfig.getValue('test_field')).toEqual(null);
+    expect(dummyConfig.getValue('str', 'default_value')).toEqual(
+      'default_value',
+    );
+    expect(dummyConfig.getValue('bool', true)).toEqual(true);
+    expect(dummyConfig.getValue('number', 1.234)).toEqual(1.234);
+    expect(dummyConfig.getValue('arr', [1, 2, 3])).toEqual([1, 2, 3]);
+    expect(dummyConfig.getValue('obj', { key: 'value' })).toEqual({
+      key: 'value',
+    });
+  });
 });

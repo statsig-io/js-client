@@ -115,7 +115,7 @@ const statsig = {
       throw new Error('Call and wait for initialize() to finish first.');
     }
     if (typeof gateName !== 'string') {
-      throw new Error('Must pass a valid string as a gateName to check');
+      throw new Error('Must pass a valid string as the gateName.');
     }
     return statsig._store.checkGate(gateName);
   },
@@ -123,7 +123,7 @@ const statsig = {
   /**
    * Checks the value of a config for the current user
    * @param {string} configName - the name of the config to get
-   * @returns {DynamicConfig | null} - value of a config for the user
+   * @returns {DynamicConfig} - value of a config for the user
    * @throws Error if initialize() is not called first, or configName is not a string
    */
   getConfig: function (configName) {
@@ -131,7 +131,7 @@ const statsig = {
       throw new Error('Call and wait for initialize() to finish first.');
     }
     if (typeof configName !== 'string') {
-      throw new Error('Must pass a valid string as a configName to check');
+      throw new Error('Must pass a valid string as the configName.');
     }
     return statsig._store.getConfig(configName);
   },
