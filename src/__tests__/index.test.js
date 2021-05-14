@@ -1,3 +1,4 @@
+const { default: statsig } = require('../../index');
 const { default: LogEvent } = require('../LogEvent');
 
 describe('Verify behavior of top level index functions', () => {
@@ -56,10 +57,11 @@ describe('Verify behavior of top level index functions', () => {
     jest.spyOn(global.Date, 'now').mockImplementation(() => now);
   });
 
-  test('Verify checkGate returns false when calling before initialize', () => {
+  test('Verify checkGate throws when calling before initialize', () => {
     const statsigSDK = require('../../index').default;
-    const result = statsigSDK.checkGate('gate_that_doesnt_exist');
-    expect(result).toBe(false);
+    expect(() => {
+      statsigSDK.checkGate('gate_that_doesnt_exist');
+    }).toThrowError('Call and wait for initialize() to finish first.');
     const ready = statsigSDK.isReady();
     expect(ready).toBe(false);
   });
@@ -104,19 +106,20 @@ describe('Verify behavior of top level index functions', () => {
     });
   });
 
-  test('Verify getConfig returns an empty object when calling before initialize', () => {
+  test('Verify getConfig throws when calling before initialize', () => {
     const statsigSDK = require('../../index').default;
-    const result = statsigSDK.getConfig('config_that_doesnt_exist');
-    expect(result).toEqual(null);
+    expect(() => {
+      statsigSDK.getConfig('config_that_doesnt_exist');
+    }).toThrowError('Call and wait for initialize() to finish first.');
     const ready = statsigSDK.isReady();
     expect(ready).toBe(false);
   });
 
-  test('Verify logEvent can be called before initialize()', () => {
+  test('Verify logEvent throws if called before initialize()', () => {
     const statsigSDK = require('../../index').default;
     expect(() => {
       statsigSDK.logEvent('test_event');
-    }).not.toThrow();
+    }).toThrowError('Call and wait for initialize() to finish first.');
 
     const ready = statsigSDK.isReady();
     expect(ready).toBe(false);
@@ -262,5 +265,48 @@ describe('Verify behavior of top level index functions', () => {
         trimmedEvent.setUser(user);
         expect(spy).toBeCalledWith(trimmedEvent);
       });
+  });
+
+  test('calling initialize() multiple times work as expected', async () => {
+    expect.assertions(5);
+    const statsigSDK = require('../../index').default;
+    let count = 0;
+
+    global.fetch = jest.fn(
+      () =>
+        new Promise((resolve, reject) => {
+          setTimeout(() => {
+            count++;
+            resolve({
+              // @ts-ignore
+              headers: [],
+              ok: true,
+              json: () =>
+                Promise.resolve({
+                  disableAutoEventLogging: true,
+                  feature_gates: {
+                    'AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=': {
+                      value: true,
+                      rule_id: 'ruleID123',
+                      name: 'AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=',
+                    },
+                  },
+                  configs: {},
+                }),
+            });
+          }, 1000);
+        }),
+    );
+
+    // initialize() twice simultaneously reulsts in 1 promise
+    const v1 = statsigSDK.initialize('client-key');
+    const v2 = statsigSDK.initialize('client-key');
+    await expect(v1).resolves.not.toThrow();
+    await expect(v2).resolves.not.toThrow();
+    expect(count).toEqual(1);
+
+    // initialize() again after the first one completes resolves right away and does not make a new request
+    await expect(statsigSDK.initialize('client-key')).resolves.not.toThrow();
+    expect(count).toEqual(1);
   });
 });
