@@ -92,10 +92,7 @@ export default function InternalStore(identity, logger) {
 
   store.checkGate = function (gateName) {
     if (typeof gateName !== 'string' || gateName.length === 0) {
-      console.error(
-        'gateName must be a valid string. Returning false as the default.',
-      );
-      return false;
+      throw new Error('Must pass a valid string as the gateName.');
     }
 
     let buffer = sha256.create().update(gateName).arrayBuffer();
@@ -117,16 +114,13 @@ export default function InternalStore(identity, logger) {
 
   store.getConfig = function (configName) {
     if (typeof configName !== 'string' || configName.length === 0) {
-      console.error(
-        'configName must be a valid string. The config will only return default values.',
-      );
-      return null;
+      throw new Error('Must pass a valid string as the configName.');
     }
 
     let buffer = sha256.create().update(configName).arrayBuffer();
     var configNameHash = Base64.encodeArrayBuffer(buffer);
     const userID = identity.getUserID();
-    let value = null;
+    let value = new DynamicConfig(configName);
     if (userID && store.cache[userID]?.configs[configNameHash]) {
       value = store.cache[userID].configs[configNameHash];
       logger.logConfigExposure(

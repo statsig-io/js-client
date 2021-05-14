@@ -72,7 +72,7 @@ describe('Verify behavior of top level index functions', () => {
       expect(() => {
         // @ts-ignore
         statsigSDK.checkGate();
-      }).toThrowError('Must pass a valid string as a gateName to check');
+      }).toThrowError('Must pass a valid string as the gateName.');
     });
   });
 
@@ -82,7 +82,7 @@ describe('Verify behavior of top level index functions', () => {
       expect(() => {
         // @ts-ignore
         statsigSDK.checkGate(false);
-      }).toThrowError('Must pass a valid string as a gateName to check');
+      }).toThrowError('Must pass a valid string as the gateName.');
     });
   });
 
@@ -92,7 +92,7 @@ describe('Verify behavior of top level index functions', () => {
       expect(() => {
         // @ts-ignore
         statsigSDK.getConfig();
-      }).toThrowError('Must pass a valid string as a configName to check');
+      }).toThrowError('Must pass a valid string as the configName.');
     });
   });
 
@@ -102,7 +102,7 @@ describe('Verify behavior of top level index functions', () => {
       expect(() => {
         // @ts-ignore
         statsigSDK.getConfig(12);
-      }).toThrowError('Must pass a valid string as a configName to check');
+      }).toThrowError('Must pass a valid string as the configName.');
     });
   });
 

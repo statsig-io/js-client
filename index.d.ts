@@ -30,7 +30,7 @@ declare namespace statsig {
    * @returns {DynamicConfig} - value of a config for the user
    * @throws Error if initialize() is not called first, or configName is not a string
    */
-  function getConfig(configName: string): DynamicConfig | null;
+  function getConfig(configName: string): DynamicConfig;
 
   /**
    * Log an event for data analysis and alerting or to measure the impact of an experiment

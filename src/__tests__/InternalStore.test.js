@@ -85,7 +85,7 @@ describe('Verify behavior of InternalStore', () => {
     });
   });
 
-  test('Verify checkGate returns false when gateName is invalid.', () => {
+  test('Verify checkGate throws when gateName is invalid.', () => {
     expect.assertions(8);
     const statsigSDK = require('../../index').default;
     return statsigSDK.initialize(sdkKey, { userID: 'user_key' }).then(() => {
@@ -93,14 +93,41 @@ describe('Verify behavior of InternalStore', () => {
       const store = statsigSDK._store;
       // @ts-ignore
       const spy = jest.spyOn(statsigSDK._logger, 'log');
-      expect(store.checkGate()).toBe(false);
-      expect(store.checkGate(null)).toBe(false);
-      expect(store.checkGate(undefined)).toBe(false);
-      expect(store.checkGate('')).toBe(false);
-      expect(store.checkGate(1)).toBe(false);
-      expect(store.checkGate({ obj: 'obj' })).toBe(false);
-      expect(store.checkGate(true)).toBe(false);
-      expect(spy).not.toHaveBeenCalled();
+      expect(() => {
+        store.checkGate();
+      }).toThrowError('Must pass a valid string as the gateName.');
+      expect(() => {
+        store.checkGate(null);
+      }).toThrowError('Must pass a valid string as the gateName.');
+      expect(() => {
+        store.checkGate(undefined);
+      }).toThrowError('Must pass a valid string as the gateName.');
+      expect(() => {
+        store.checkGate('');
+      }).toThrowError('Must pass a valid string as the gateName.');
+      expect(() => {
+        store.checkGate(1);
+      }).toThrowError('Must pass a valid string as the gateName.');
+      expect(() => {
+        store.checkGate({ obj: 'obj' });
+      }).toThrowError('Must pass a valid string as the gateName.');
+      expect(() => {
+        store.checkGate(true);
+      }).toThrowError('Must pass a valid string as the gateName.');
+      expect(spy).not.toHaveBeenCalled(); // no exposure log
+    });
+  });
+
+  test('Verify checkGate returns false and does NOT log exposure when gateName does not exist.', () => {
+    expect.assertions(2);
+    const statsigSDK = require('../../index').default;
+    return statsigSDK.initialize(sdkKey, { userID: 'user_key' }).then(() => {
+      // @ts-ignore
+      const store = statsigSDK._store;
+      // @ts-ignore
+      const spy = jest.spyOn(statsigSDK._logger, 'log');
+      expect(store.checkGate('fake_gate')).toBe(false);
+      expect(spy).toHaveBeenCalledTimes(0);
     });
   });
 
@@ -120,7 +147,7 @@ describe('Verify behavior of InternalStore', () => {
     });
   });
 
-  test('Verify getConfig returns fallback config when configName is invalid.', () => {
+  test('Verify getConfig throws when configName is invalid.', () => {
     expect.assertions(8);
     const statsigSDK = require('../../index').default;
     return statsigSDK.initialize(sdkKey, { userID: 'user_key' }).then(() => {
@@ -128,14 +155,43 @@ describe('Verify behavior of InternalStore', () => {
       const store = statsigSDK._store;
       // @ts-ignore
       const spy = jest.spyOn(statsigSDK._logger, 'log');
-      expect(store.getConfig()).toEqual(null);
-      expect(store.getConfig(null)).toEqual(null);
-      expect(store.getConfig(undefined)).toEqual(null);
-      expect(store.getConfig('')).toEqual(null);
-      expect(store.getConfig(1)).toEqual(null);
-      expect(store.getConfig({ obj: 'obj' })).toEqual(null);
-      expect(store.getConfig(true)).toEqual(null);
+      expect(() => {
+        store.getConfig();
+      }).toThrowError('Must pass a valid string as the configName.');
+      expect(() => {
+        store.getConfig(null);
+      }).toThrowError('Must pass a valid string as the configName.');
+      expect(() => {
+        store.getConfig(undefined);
+      }).toThrowError('Must pass a valid string as the configName.');
+      expect(() => {
+        store.getConfig('');
+      }).toThrowError('Must pass a valid string as the configName.');
+      expect(() => {
+        store.getConfig(1);
+      }).toThrowError('Must pass a valid string as the configName.');
+      expect(() => {
+        store.getConfig(true);
+      }).toThrowError('Must pass a valid string as the configName.');
+      expect(() => {
+        store.getConfig({ obj: 'obj' });
+      }).toThrowError('Must pass a valid string as the configName.');
       expect(spy).not.toHaveBeenCalled();
+    });
+  });
+
+  test('Verify getConfig returns a dummy config and does NOT log exposure when configName does not exist.', () => {
+    expect.assertions(2);
+    const statsigSDK = require('../../index').default;
+    return statsigSDK.initialize(sdkKey, { userID: 'user_key' }).then(() => {
+      // @ts-ignore
+      const store = statsigSDK._store;
+      // @ts-ignore
+      const spy = jest.spyOn(statsigSDK._logger, 'log');
+      expect(store.getConfig('fake_config')).toEqual(
+        new DynamicConfig('fake_config'),
+      );
+      expect(spy).toHaveBeenCalledTimes(0);
     });
   });
 
