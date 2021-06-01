@@ -5,15 +5,17 @@ import * as utils from './utils/core';
  * @class DynamicConfig
  */
 export default class DynamicConfig {
-  constructor(configName, value, rule) {
+  constructor(configName, value = {}, rule = '') {
     if (typeof configName !== 'string' || configName.length === 0) {
       configName = '';
     }
-    if (value == null || typeof value !== 'object') {
+    this.name = configName;
+
+    if (typeof value !== 'object') {
       value = {};
     }
-    this.name = configName;
     this.value = utils.clone(value);
+
     this._ruleID = rule;
   }
 

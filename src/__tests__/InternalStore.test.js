@@ -118,7 +118,7 @@ describe('Verify behavior of InternalStore', () => {
     });
   });
 
-  test('Verify checkGate returns false and does NOT log exposure when gateName does not exist.', () => {
+  test('Verify checkGate returns false when gateName does not exist.', () => {
     expect.assertions(2);
     const statsigSDK = require('../../index').default;
     return statsigSDK.initialize(sdkKey, { userID: 'user_key' }).then(() => {
@@ -127,7 +127,7 @@ describe('Verify behavior of InternalStore', () => {
       // @ts-ignore
       const spy = jest.spyOn(statsigSDK._logger, 'log');
       expect(store.checkGate('fake_gate')).toBe(false);
-      expect(spy).toHaveBeenCalledTimes(0);
+      expect(spy).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -143,7 +143,7 @@ describe('Verify behavior of InternalStore', () => {
       expect(
         store.checkGate('AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY='),
       ).toBe(false);
-      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -180,7 +180,7 @@ describe('Verify behavior of InternalStore', () => {
     });
   });
 
-  test('Verify getConfig returns a dummy config and does NOT log exposure when configName does not exist.', () => {
+  test('Verify getConfig returns a dummy config and logs exposure when configName does not exist.', () => {
     expect.assertions(2);
     const statsigSDK = require('../../index').default;
     return statsigSDK.initialize(sdkKey, { userID: 'user_key' }).then(() => {
@@ -191,7 +191,7 @@ describe('Verify behavior of InternalStore', () => {
       expect(store.getConfig('fake_config')).toEqual(
         new DynamicConfig('fake_config'),
       );
-      expect(spy).toHaveBeenCalledTimes(0);
+      expect(spy).toHaveBeenCalledTimes(1);
     });
   });
 

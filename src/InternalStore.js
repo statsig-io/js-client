@@ -101,13 +101,13 @@ export default function InternalStore(identity, logger) {
     let gateValue = { value: false, rule_id: '' };
     if (userID && store.cache[userID]?.gates[gateNameHash]) {
       gateValue = store.cache[userID].gates[gateNameHash];
-      logger.logGateExposure(
-        identity.getUser(),
-        gateName,
-        gateValue.value === true,
-        gateValue.rule_id,
-      );
     }
+    logger.logGateExposure(
+      identity.getUser(),
+      gateName,
+      gateValue.value === true,
+      gateValue.rule_id,
+    );
 
     return gateValue.value === true;
   };
@@ -123,12 +123,8 @@ export default function InternalStore(identity, logger) {
     let value = new DynamicConfig(configName);
     if (userID && store.cache[userID]?.configs[configNameHash]) {
       value = store.cache[userID].configs[configNameHash];
-      logger.logConfigExposure(
-        identity.getUser(),
-        configName,
-        value.getRuleID(),
-      );
     }
+    logger.logConfigExposure(identity.getUser(), configName, value.getRuleID());
     return value;
   };
 
