@@ -1,6 +1,6 @@
 {
   "name": "statsig-js",
-  "version": "2.0.3",
+  "version": "2.1.0",
   "description": "Statsig JavaScript client SDK for single user environments.",
   "main": "dist/statsig-prod-web-sdk.js",
   "scripts": {
