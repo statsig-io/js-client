@@ -8,7 +8,7 @@ export function getSDKVersion() {
 }
 
 export function getSDKType() {
-  return require('../../package.json')?.name ?? '';
+  return 'js-client';
 }
 
 export function generateID() {

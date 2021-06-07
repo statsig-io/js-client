@@ -2,7 +2,6 @@ import fetcher from './src/utils/StatsigFetcher';
 import Identity from './src/Identity';
 import InternalStore from './src/InternalStore';
 import { getNumericValue } from './src/utils/core';
-import LogEvent from './src/LogEvent';
 import LogEventProcessor from './src/LogEventProcessor';
 import StatsigOptions from './src/StatsigOptions';
 import DynamicConfig from './src/DynamicConfig';
