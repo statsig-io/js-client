@@ -114,6 +114,7 @@ declare namespace statsig {
    * A class for fetching the json data configured for a DynamicConfig in the statsig console
    */
   export class DynamicConfig {
+    constructor(configName: string, value: object, rule: string);
     value: object;
     getValue(
       key: string,
