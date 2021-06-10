@@ -63,7 +63,7 @@ const statsig = {
     statsig._sdkKey = sdkKey;
     statsig._options = StatsigOptions(options);
     statsig._identity = Identity(
-      trimUserObjIfNeeded(user),
+      normalizeUser(user),
       _SDKPackageInfo,
       _NativeModules,
       _Platform,
@@ -188,7 +188,7 @@ const statsig = {
       );
     }
     statsig._ready = false;
-    updatedUser = trimUserObjIfNeeded(updatedUser);
+    updatedUser = normalizeUser(updatedUser);
     statsig._identity.setUser(updatedUser);
     statsig._logger.switchUser();
     return statsig
@@ -351,9 +351,15 @@ function shouldTrimParam(obj, size) {
   return false;
 }
 
+function normalizeUser(user) {
+  user = trimUserObjIfNeeded(user);
+  user['statsigEnvironment'] = statsig._options?.environment;
+  return user;
+}
+
 function trimUserObjIfNeeded(user) {
   if (user == null) {
-    return null;
+    return {};
   }
   if (shouldTrimParam(user.userID, MAX_VALUE_SIZE)) {
     console.warn('User ID is too large, trimming to ' + MAX_VALUE_SIZE);
