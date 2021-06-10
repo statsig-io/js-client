@@ -136,6 +136,22 @@ const statsig = {
   },
 
   /**
+   * Gets the experiment for a given user
+   * @param {string} experimentName - the name of the experiment to get
+   * @returns {DynamicConfig} - value of the experiment for the user, represented by a Dynamic Config object
+   * @throws Error if initialize() is not called first, or experimentName is not a string
+   */
+  getExperiment: function (experimentName) {
+    if (statsig._store == null) {
+      throw new Error('Call and wait for initialize() to finish first.');
+    }
+    if (typeof experimentName !== 'string') {
+      throw new Error('Must pass a valid string as the experimentName.');
+    }
+    return this.getConfig(experimentName);
+  },
+
+  /**
    * Log an event for data analysis and alerting or to measure the impact of an experiment
    * @param {string} eventName - the name of the event (eventName = 'Purchase')
    * @param {?string|number} [value=null] - the value associated with the event (value = 10)
