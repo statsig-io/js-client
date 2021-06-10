@@ -225,7 +225,7 @@ describe('Verify behavior of top level index functions', () => {
     const statsigSDK = require('../../index').default;
     const LogEvent = require('../LogEvent').default;
 
-    expect.assertions(6);
+    expect.assertions(7);
     let str_1k = str_64;
     // create a 32k long string
     for (let i = 0; i < 4; i++) {
@@ -233,11 +233,15 @@ describe('Verify behavior of top level index functions', () => {
     }
     expect(str_1k.length).toBe(1024);
     return statsigSDK
-      .initialize('client-key', {
-        userID: str_64 + 'more',
-        email: 'jest@statsig.com',
-        custom: { extradata: str_1k },
-      })
+      .initialize(
+        'client-key',
+        {
+          userID: str_64 + 'more',
+          email: 'jest@statsig.com',
+          custom: { extradata: str_1k },
+        },
+        { environment: { tier: 'production' } },
+      )
       .then(() => {
         // @ts-ignore
         let user = statsigSDK._identity.getUser();
@@ -245,6 +249,7 @@ describe('Verify behavior of top level index functions', () => {
         expect(user.userID).toEqual(str_64);
         expect(user.email).toEqual('jest@statsig.com');
         expect(user.custom).toEqual({});
+        expect(user.statsigEnvironment).toEqual({ tier: 'production' });
         // @ts-ignore
         const spy = jest.spyOn(statsigSDK._logger, 'log');
         statsigSDK.logEvent(str_64 + 'extra', str_64 + 'extra', {

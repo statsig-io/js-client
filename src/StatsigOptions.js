@@ -15,6 +15,7 @@ export default function StatsigOptions(inputOptions) {
   const statsigOptions = {
     api: getString('api', DEFAULT_API),
     disableCurrentPageLogging: getBool('disableCurrentPageLogging'),
+    environment: inputOptions['environment'],
   };
 
   function getString(key, defaultValue) {
