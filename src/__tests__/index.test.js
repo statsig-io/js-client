@@ -86,30 +86,44 @@ describe('Verify behavior of top level index functions', () => {
     });
   });
 
-  test('Verify getConfig throws with no gate name', () => {
+  test('Verify getConfig() and getExperiment() throw with no config name', () => {
     const statsigSDK = require('../../index').default;
+    expect.assertions(2);
     return statsigSDK.initialize('client-key', null).then(() => {
       expect(() => {
         // @ts-ignore
         statsigSDK.getConfig();
       }).toThrowError('Must pass a valid string as the configName.');
+      expect(() => {
+        // @ts-ignore
+        statsigSDK.getExperiment();
+      }).toThrowError('Must pass a valid string as the experimentName.');
     });
   });
 
-  test('Verify getConfig throws with wrong type as gate name', () => {
+  test('Verify getConfig and getExperiment() throw with wrong type as config name', () => {
     const statsigSDK = require('../../index').default;
+    expect.assertions(2);
     return statsigSDK.initialize('client-key', null).then(() => {
       expect(() => {
         // @ts-ignore
         statsigSDK.getConfig(12);
       }).toThrowError('Must pass a valid string as the configName.');
+      expect(() => {
+        // @ts-ignore
+        statsigSDK.getExperiment(12);
+      }).toThrowError('Must pass a valid string as the experimentName.');
     });
   });
 
-  test('Verify getConfig throws when calling before initialize', () => {
+  test('Verify getConfig and getExperiment throw when calling before initialize', () => {
     const statsigSDK = require('../../index').default;
+    expect.assertions(3);
     expect(() => {
       statsigSDK.getConfig('config_that_doesnt_exist');
+    }).toThrowError('Call and wait for initialize() to finish first.');
+    expect(() => {
+      statsigSDK.getExperiment('config_that_doesnt_exist');
     }).toThrowError('Call and wait for initialize() to finish first.');
     const ready = statsigSDK.isReady();
     expect(ready).toBe(false);
@@ -203,6 +217,42 @@ describe('Verify behavior of top level index functions', () => {
       });
       const config = statsigSDK.getConfig('test_config');
       expect(config?.value).toStrictEqual({
+        bool: true,
+        number: 2,
+        string: 'string',
+        object: {
+          key: 'value',
+          key2: 123,
+        },
+        boolStr1: 'true',
+        boolStr2: 'FALSE',
+        numberStr1: '3',
+        numberStr2: '3.3',
+        numberStr3: '3.3.3',
+      });
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy).toHaveBeenCalledWith(configExposure);
+    });
+  });
+
+  test('Verify getExperiment() behaves correctly when calling under correct conditions', () => {
+    expect.assertions(4);
+    const statsigSDK = require('../../index').default;
+
+    return statsigSDK.initialize('client-key', null).then(() => {
+      const ready = statsigSDK.isReady();
+      expect(ready).toBe(true);
+
+      //@ts-ignore
+      const spy = jest.spyOn(statsigSDK._logger, 'log');
+      let configExposure = new LogEvent('statsig::config_exposure');
+      configExposure.setUser({});
+      configExposure.setMetadata({
+        config: 'test_config',
+        ruleID: 'ruleID',
+      });
+      const exp = statsigSDK.getExperiment('test_config');
+      expect(exp?.value).toStrictEqual({
         bool: true,
         number: 2,
         string: 'string',

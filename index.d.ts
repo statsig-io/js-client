@@ -33,6 +33,14 @@ declare namespace statsig {
   function getConfig(configName: string): DynamicConfig;
 
   /**
+   * Gets the experiment for the current user
+   * @param {string} experimentName - the name of the experiment to get
+   * @returns {DynamicConfig} - value of a config for the user
+   * @throws Error if initialize() is not called first, or experimentName is not a string
+   */
+  function getExperiment(experimentName: string): DynamicConfig;
+
+  /**
    * Log an event for data analysis and alerting or to measure the impact of an experiment
    * @param {string} eventName - the name of the event (eventName = 'Purchase')
    * @param {?string|number} [value=null] - the value associated with the event (value = 10)
