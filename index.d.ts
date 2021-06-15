@@ -116,7 +116,7 @@ declare namespace statsig {
 
   export type StatsigEnvironment = {
     tier?: 'production' | 'staging' | 'development';
-    [key: string]: string;
+    [key: string]: string | undefined;
   };
 
   export type _SDKPackageInfo = {
