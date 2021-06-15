@@ -1,4 +1,3 @@
-const { default: statsig } = require('../../index');
 const { default: LogEvent } = require('../LogEvent');
 
 describe('Verify behavior of top level index functions', () => {

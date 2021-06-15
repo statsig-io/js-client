@@ -42,7 +42,7 @@ export default function InternalStore(identity, logger) {
             if (jsonCache != null) {
               for (const [user, data] of Object.entries(jsonCache)) {
                 store.cache[user] = {
-                  gates: data.featureGates,
+                  gates: data.gates,
                   configs: {},
                 };
                 if (data.configs != null) {
@@ -99,7 +99,12 @@ export default function InternalStore(identity, logger) {
     var gateNameHash = Base64.encodeArrayBuffer(buffer);
     const userID = identity.getUserID();
     let gateValue = { value: false, rule_id: '' };
-    if (userID && store.cache[userID]?.gates[gateNameHash]) {
+    if (
+      userID &&
+      store.cache[userID] &&
+      store.cache[userID].gates &&
+      store.cache[userID].gates[gateNameHash]
+    ) {
       gateValue = store.cache[userID].gates[gateNameHash];
     }
     logger.logGateExposure(
@@ -121,7 +126,12 @@ export default function InternalStore(identity, logger) {
     var configNameHash = Base64.encodeArrayBuffer(buffer);
     const userID = identity.getUserID();
     let value = new DynamicConfig(configName);
-    if (userID && store.cache[userID]?.configs[configNameHash]) {
+    if (
+      userID &&
+      store.cache[userID] &&
+      store.cache[userID].configs &&
+      store.cache[userID].configs[configNameHash]
+    ) {
       value = store.cache[userID].configs[configNameHash];
     }
     logger.logConfigExposure(identity.getUser(), configName, value.getRuleID());
