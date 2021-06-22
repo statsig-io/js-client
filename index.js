@@ -241,7 +241,7 @@ const statsig = {
     }
   },
 
-  _setReactNativeDependencies: function (
+  _setDependencies: function (
     SDKPackageInfo,
     AsyncStorage = null,
     AppState = null,

@@ -79,7 +79,7 @@ declare namespace statsig {
    * DO NOT CALL DIRECTLY.
    * Used to polyfill react native specific dependencies.
    */
-  function _setReactNativeDependencies(
+  function _setDependencies(
     SDKPackageInfo: _SDKPackageInfo,
     AsyncStorage: object | null,
     AppState: object | null,
