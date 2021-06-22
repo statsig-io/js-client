@@ -11,7 +11,7 @@
  * @property {string} [userAgent]
  * @property {string} [country]
  * @property {string} [locale]
- * @property {string} [clientVersion]
+ * @property {string} [appVersion]
  * @property {string} [name]
  * @property {Object.<string, string | number | boolean | Array<string>>} [custom]
  * @memberof typedefs

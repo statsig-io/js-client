@@ -6,7 +6,8 @@ The global statsig class for interacting with gates, configs, experiments config
 * [statsig](#statsig)
     * [.initialize(sdkKey, [user], [options])](#statsig.initialize) ⇒ <code>Promise.&lt;void&gt;</code>
     * [.checkGate(gateName)](#statsig.checkGate) ⇒ <code>boolean</code>
-    * [.getConfig(configName)](#statsig.getConfig) ⇒ [<code>DynamicConfig</code>](#DynamicConfig) \| <code>null</code>
+    * [.getConfig(configName)](#statsig.getConfig) ⇒ [<code>DynamicConfig</code>](#DynamicConfig)
+    * [.getExperiment(experimentName)](#statsig.getExperiment) ⇒ [<code>DynamicConfig</code>](#DynamicConfig)
     * [.logEvent(eventName, [value], [metadata])](#statsig.logEvent) ⇒ <code>void</code>
     * [.updateUser(newUser)](#statsig.updateUser) ⇒ <code>Promise.&lt;boolean&gt;</code>
     * [.isReady()](#statsig.isReady) ⇒ <code>boolean</code>
@@ -34,6 +35,7 @@ Checks the value of a gate for the current user
 
 **Kind**: static method of [<code>statsig</code>](#statsig)  
 **Returns**: <code>boolean</code> - - value of a gate for the user. Gates are "off" (return false) by default  
+**Throws**: Error if initialize() is not called first, or gateName is not a string
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -46,6 +48,7 @@ Checks the value of a config for the current user
 
 **Kind**: static method of [<code>statsig</code>](#statsig)  
 **Returns**: [<code>DynamicConfig</code>](#DynamicConfig) - - value of a config for the user  
+**Throws**: Error if initialize() is not called first, or configName is not a string
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -113,7 +116,7 @@ An object of properties relating to the current user
 | [userAgent] | <code>string</code> | 
 | [country] | <code>string</code> | 
 | [locale] | <code>string</code> | 
-| [clientVersion] | <code>string</code> | 
+| [appVersion] | <code>string</code> | 
 | [name] | <code>string</code> | 
 | [custom] | <code>Object.&lt;string, (string\|number\|boolean\|Array.&lt;string&gt;)&gt;</code> | 
 

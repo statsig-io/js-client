@@ -1,11 +1,15 @@
+## Classes
+
+<dl>
+<dt><a href="#DynamicConfig">DynamicConfig</a></dt>
+<dd></dd>
+</dl>
+
 ## Objects
 
 <dl>
 <dt><a href="#typedefs">typedefs</a> : <code>object</code></dt>
 <dd></dd>
-<dt><a href="#DynamicConfig">DynamicConfig</a> : <code>object</code></dt>
-<dd><p>A class for fetching the json data configured for a DynamicConfig in the statsig console</p>
-</dd>
 </dl>
 
 ## Constants
@@ -15,6 +19,43 @@
 <dd><p>The global statsig class for interacting with gates, configs, experiments configured in the statsig developer console.  Also used for event logging to view in the statsig console, or for analyzing experiment impacts using pulse.</p>
 </dd>
 </dl>
+
+## Functions
+
+<dl>
+<dt><a href="#get">get([key], [defaultValue])</a> ⇒ <code>T</code> | <code>null</code></dt>
+<dd><p>A generic, type sensitive getter, which returns the value at the given index in the config if it matches the type of the default value,
+and returns the default value otherwise</p>
+</dd>
+</dl>
+
+<a name="DynamicConfig"></a>
+
+## DynamicConfig
+**Kind**: global class  
+
+* [DynamicConfig](#DynamicConfig)
+    * [new DynamicConfig()](#new_DynamicConfig_new)
+    * [.getValue([key], [defaultValue])](#DynamicConfig.getValue) ⇒ <code>boolean</code> \| <code>number</code> \| <code>string</code> \| <code>object</code> \| <code>Array.&lt;any&gt;</code> \| <code>null</code>
+
+<a name="new_DynamicConfig_new"></a>
+
+### new DynamicConfig()
+A class for fetching the json data configured for a DynamicConfig in the statsig console
+
+<a name="DynamicConfig.getValue"></a>
+
+### DynamicConfig.getValue([key], [defaultValue]) ⇒ <code>boolean</code> \| <code>number</code> \| <code>string</code> \| <code>object</code> \| <code>Array.&lt;any&gt;</code> \| <code>null</code>
+With no parameters, returns the JSON object representing this config (or null if not found)
+With a key parameter, returns the value at that index in the JSON object, or null if not found
+With a key and a defaultValue, returns the value at that index, or the provided default if not found
+
+**Kind**: static method of [<code>DynamicConfig</code>](#DynamicConfig)  
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| [key] | <code>string</code> |  | The index of the config to check |
+| [defaultValue] | <code>boolean</code> \| <code>number</code> \| <code>string</code> \| <code>object</code> \| <code>Array.&lt;any&gt;</code> \| <code>null</code> | <code></code> | The default value of the parameter to return in cases where the parameter is not found |
 
 <a name="typedefs"></a>
 
@@ -41,7 +82,7 @@ An object of properties relating to the current user
 | [userAgent] | <code>string</code> | 
 | [country] | <code>string</code> | 
 | [locale] | <code>string</code> | 
-| [clientVersion] | <code>string</code> | 
+| [appVersion] | <code>string</code> | 
 | [name] | <code>string</code> | 
 | [custom] | <code>Object.&lt;string, (string\|number\|boolean\|Array.&lt;string&gt;)&gt;</code> | 
 
@@ -57,44 +98,6 @@ An object of properties for initializing the sdk with advanced options
 | --- | --- |
 | [api] | <code>string</code> | 
 
-<a name="DynamicConfig"></a>
-
-## DynamicConfig : <code>object</code>
-A class for fetching the json data configured for a DynamicConfig in the statsig console
-
-**Kind**: global namespace  
-
-* [DynamicConfig](#DynamicConfig) : <code>object</code>
-    * [.getValue([key], [defaultValue])](#DynamicConfig+getValue) ⇒ <code>boolean</code> \| <code>number</code> \| <code>string</code> \| <code>object</code> \| <code>Array.&lt;any&gt;</code> \| <code>null</code>
-    * [.get([key], [defaultValue])](#DynamicConfig+get) ⇒ <code>boolean</code> \| <code>number</code> \| <code>string</code> \| <code>object</code> \| <code>Array.&lt;any&gt;</code> \| <code>null</code>
-
-<a name="DynamicConfig+getValue"></a>
-
-### dynamicConfig.getValue([key], [defaultValue]) ⇒ <code>boolean</code> \| <code>number</code> \| <code>string</code> \| <code>object</code> \| <code>Array.&lt;any&gt;</code> \| <code>null</code>
-With no parameters, returns the JSON object representing this config (or null if not found)
-With a key parameter, returns the value at that index in the JSON object, or null if not found
-With a key and a defaultValue, returns the value at that index, or the provided default if not found
-
-**Kind**: instance method of [<code>DynamicConfig</code>](#DynamicConfig)  
-
-| Param | Type | Default | Description |
-| --- | --- | --- | --- |
-| [key] | <code>string</code> |  | The index of the config to check |
-| [defaultValue] | <code>boolean</code> \| <code>number</code> \| <code>string</code> \| <code>object</code> \| <code>Array.&lt;any&gt;</code> \| <code>null</code> | <code></code> | The default value of the parameter to return in cases where the parameter is not found |
-
-<a name="DynamicConfig+get"></a>
-
-### dynamicConfig.get([key], [defaultValue]) ⇒ <code>boolean</code> \| <code>number</code> \| <code>string</code> \| <code>object</code> \| <code>Array.&lt;any&gt;</code> \| <code>null</code>
-A generic, type sensitive getter, which returns the value at the given index in the config if it matches the type of the default value,
-and returns the default value otherwise
-
-**Kind**: instance method of [<code>DynamicConfig</code>](#DynamicConfig)  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| [key] | <code>string</code> | The index of the config to check |
-| [defaultValue] | <code>boolean</code> \| <code>number</code> \| <code>string</code> \| <code>object</code> \| <code>Array.&lt;any&gt;</code> \| <code>null</code> | The default value of the parameter to return in cases where the parameter is not found or does not match the type of the default value |
-
 <a name="statsig"></a>
 
 ## statsig
@@ -105,7 +108,8 @@ The global statsig class for interacting with gates, configs, experiments config
 * [statsig](#statsig)
     * [.initialize(sdkKey, [user], [options])](#statsig.initialize) ⇒ <code>Promise.&lt;void&gt;</code>
     * [.checkGate(gateName)](#statsig.checkGate) ⇒ <code>boolean</code>
-    * [.getConfig(configName)](#statsig.getConfig) ⇒ [<code>DynamicConfig</code>](#DynamicConfig) \| <code>null</code>
+    * [.getConfig(configName)](#statsig.getConfig) ⇒ [<code>DynamicConfig</code>](#DynamicConfig)
+    * [.getExperiment(experimentName)](#statsig.getExperiment) ⇒ [<code>DynamicConfig</code>](#DynamicConfig)
     * [.logEvent(eventName, [value], [metadata])](#statsig.logEvent) ⇒ <code>void</code>
     * [.updateUser(updatedUser)](#statsig.updateUser) ⇒ <code>Promise.&lt;boolean&gt;</code>
     * [.isReady()](#statsig.isReady) ⇒ <code>boolean</code>
@@ -138,7 +142,7 @@ Checks the value of a gate for the current user
 **Returns**: <code>boolean</code> - - value of a gate for the user. Gates are "off" (return false) by default  
 **Throws**:
 
-- Error if gateName is not a string
+- Error if initialize() is not called first, or gateName is not a string
 
 
 | Param | Type | Description |
@@ -147,19 +151,35 @@ Checks the value of a gate for the current user
 
 <a name="statsig.getConfig"></a>
 
-### statsig.getConfig(configName) ⇒ [<code>DynamicConfig</code>](#DynamicConfig) \| <code>null</code>
+### statsig.getConfig(configName) ⇒ [<code>DynamicConfig</code>](#DynamicConfig)
 Checks the value of a config for the current user
 
 **Kind**: static method of [<code>statsig</code>](#statsig)  
-**Returns**: [<code>DynamicConfig</code>](#DynamicConfig) \| <code>null</code> - - value of a config for the user  
+**Returns**: [<code>DynamicConfig</code>](#DynamicConfig) - - value of a config for the user  
 **Throws**:
 
-- Error if configName is not a string
+- Error if initialize() is not called first, or configName is not a string
 
 
 | Param | Type | Description |
 | --- | --- | --- |
 | configName | <code>string</code> | the name of the config to get |
+
+<a name="statsig.getExperiment"></a>
+
+### statsig.getExperiment(experimentName) ⇒ [<code>DynamicConfig</code>](#DynamicConfig)
+Gets the experiment for a given user
+
+**Kind**: static method of [<code>statsig</code>](#statsig)  
+**Returns**: [<code>DynamicConfig</code>](#DynamicConfig) - - value of the experiment for the user, represented by a Dynamic Config object  
+**Throws**:
+
+- Error if initialize() is not called first, or experimentName is not a string
+
+
+| Param | Type | Description |
+| --- | --- | --- |
+| experimentName | <code>string</code> | the name of the experiment to get |
 
 <a name="statsig.logEvent"></a>
 
@@ -167,6 +187,10 @@ Checks the value of a config for the current user
 Log an event for data analysis and alerting or to measure the impact of an experiment
 
 **Kind**: static method of [<code>statsig</code>](#statsig)  
+**Throws**:
+
+- Error if initialize() is not called first
+
 
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -181,6 +205,10 @@ Updates the user associated with calls to fetch gates/configs from statsig. This
 
 **Kind**: static method of [<code>statsig</code>](#statsig)  
 **Returns**: <code>Promise.&lt;boolean&gt;</code> - - a promise which *always resolves* to a value which indicates success or failure  
+**Throws**:
+
+- Error if initialize() is not called first
+
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -201,3 +229,16 @@ Informs the statsig SDK that the client is closing or shutting down
 so the SDK can clean up internal state
 
 **Kind**: static method of [<code>statsig</code>](#statsig)  
+<a name="get"></a>
+
+## get([key], [defaultValue]) ⇒ <code>T</code> \| <code>null</code>
+A generic, type sensitive getter, which returns the value at the given index in the config if it matches the type of the default value,
+and returns the default value otherwise
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| [key] | <code>string</code> | The index of the config to check |
+| [defaultValue] | <code>T</code> \| <code>null</code> | The default value of the parameter to return in cases where the parameter is not found or does not match the type of the default value |
+
