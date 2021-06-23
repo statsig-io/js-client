@@ -61,8 +61,8 @@ describe('Verify behavior of top level index functions', () => {
     expect(() => {
       statsigSDK.checkGate('gate_that_doesnt_exist');
     }).toThrowError('Call and wait for initialize() to finish first.');
-    const ready = statsigSDK.isReady();
-    expect(ready).toBe(false);
+    const ready = statsigSDK._ready;
+    expect(ready).toBeFalsy();
   });
 
   test('Verify checkGate throws with no gate name', () => {
@@ -124,8 +124,8 @@ describe('Verify behavior of top level index functions', () => {
     expect(() => {
       statsigSDK.getExperiment('config_that_doesnt_exist');
     }).toThrowError('Call and wait for initialize() to finish first.');
-    const ready = statsigSDK.isReady();
-    expect(ready).toBe(false);
+    const ready = statsigSDK._ready;
+    expect(ready).toBeFalsy();
   });
 
   test('Verify logEvent throws if called before initialize()', () => {
@@ -134,15 +134,15 @@ describe('Verify behavior of top level index functions', () => {
       statsigSDK.logEvent('test_event');
     }).toThrowError('Call and wait for initialize() to finish first.');
 
-    const ready = statsigSDK.isReady();
-    expect(ready).toBe(false);
+    const ready = statsigSDK._ready;
+    expect(ready).toBeFalsy();
   });
 
   test('Verify checkGate() returns the correct value under correct circumstances', () => {
     expect.assertions(4);
     const statsigSDK = require('../../index').default;
     return statsigSDK.initialize('client-key', null).then(() => {
-      const ready = statsigSDK.isReady();
+      const ready = statsigSDK._ready;
       expect(ready).toBe(true);
 
       //@ts-ignore
@@ -173,7 +173,7 @@ describe('Verify behavior of top level index functions', () => {
     const statsigSDK = require('../../index').default;
     return statsigSDK.initialize('client-key', null).then(() => {
       return statsigSDK.updateUser({ userID: 123 }).then(() => {
-        const ready = statsigSDK.isReady();
+        const ready = statsigSDK._ready;
         expect(ready).toBe(true);
       });
     });
@@ -203,7 +203,7 @@ describe('Verify behavior of top level index functions', () => {
     const statsigSDK = require('../../index').default;
 
     return statsigSDK.initialize('client-key', null).then(() => {
-      const ready = statsigSDK.isReady();
+      const ready = statsigSDK._ready;
       expect(ready).toBe(true);
 
       //@ts-ignore
@@ -239,7 +239,7 @@ describe('Verify behavior of top level index functions', () => {
     const statsigSDK = require('../../index').default;
 
     return statsigSDK.initialize('client-key', null).then(() => {
-      const ready = statsigSDK.isReady();
+      const ready = statsigSDK._ready;
       expect(ready).toBe(true);
 
       //@ts-ignore
