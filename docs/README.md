@@ -10,7 +10,6 @@ The global statsig class for interacting with gates, configs, experiments config
     * [.getExperiment(experimentName)](#statsig.getExperiment) ⇒ [<code>DynamicConfig</code>](#DynamicConfig)
     * [.logEvent(eventName, [value], [metadata])](#statsig.logEvent) ⇒ <code>void</code>
     * [.updateUser(newUser)](#statsig.updateUser) ⇒ <code>Promise.&lt;boolean&gt;</code>
-    * [.isReady()](#statsig.isReady) ⇒ <code>boolean</code>
     * [.shutdown()](#statsig.shutdown)
 
 <a name="statsig.initialize"></a>
@@ -78,15 +77,6 @@ Switches the user associated with calls to fetch gates/configs from statsig. Thi
 | Param | Type | Description |
 | --- | --- | --- |
 | updatedUser | [<code>StatsigUser</code>](#StatsigUser) | a set of user attributes identifying the user |
-
-<a name="statsig.isReady"></a>
-
-### statsig.isReady() ⇒ <code>boolean</code>
-Checks to see if the SDK is in a ready state to check gates and configs
-If the SDK is initializing, or switching users, it is not in a ready state.
-
-**Kind**: static method of [<code>statsig</code>](#statsig)  
-**Returns**: <code>boolean</code> - if the SDK is ready  
 
 <a name="statsig.shutdown"></a>
 
