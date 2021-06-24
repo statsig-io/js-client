@@ -138,7 +138,7 @@ export default function InternalStore(identity, logger) {
 
   store.hasGate = function (gateName) {
     var gateNameHash = getHashValue(gateName);
-    return store?.cache[identity.getUserID()]?.gates[gateNameHash] != null;
+    return store?.cache?.[identity.getUserID()]?.gates?.[gateNameHash] != null;
   };
 
   store.checkGate = function (gateName) {
@@ -154,7 +154,7 @@ export default function InternalStore(identity, logger) {
         value: store?.overrides[gateName] === true,
         rule_id: 'override',
       };
-    } else if (userID && store?.cache[userID]?.gates[gateNameHash]) {
+    } else if (userID && store?.cache?.[userID]?.gates?.[gateNameHash]) {
       gateValue = store.cache[userID].gates[gateNameHash];
     }
     logger.logGateExposure(
@@ -175,7 +175,7 @@ export default function InternalStore(identity, logger) {
     var configNameHash = getHashValue(configName);
     const userID = identity.getUserID();
     let value = new DynamicConfig(configName);
-    if (userID && store?.cache[userID]?.configs[configNameHash]) {
+    if (userID && store?.cache?.[userID]?.configs?.[configNameHash]) {
       value = store.cache[userID].configs[configNameHash];
     }
     logger.logConfigExposure(identity.getUser(), configName, value.getRuleID());
