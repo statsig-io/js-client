@@ -69,6 +69,30 @@ declare namespace statsig {
   function shutdown(): void;
 
   /**
+   * Override the value of a feature gate for the current device. This override value will be persisted as long as local storage is not cleared, or removeOverride has not been called.
+   * @param {string} gateName - the name of the gate to override the value for.
+   * @param {boolean}  value - the return value for the overriden gate.
+   * @throws Error if initialize() is not called first
+   * @throws Error if gateName is not a valid string or does not exist as a gate
+   * @throws Error if value is not a boolean
+   */
+  function overrideGate(gateName: string, value: boolean): void;
+
+  /**
+   * Remove all the overrides, or a specific override on the current device.
+   * @param {string} name - the name of the override to be removed. If not provided, all overrides will be removed.
+   * @throws Error if initialize() is not called first
+   */
+  function removeOverride(name?: string): void;
+
+  /**
+   * Get a list of overrides on the device.
+   * @returns {Record<string, any>} - an object with key-value pairs each representing the override's name and return value
+   * @throws Error if initialize() is not called first
+   */
+  function getOverrides(): Promise<Record<string, any>>;
+
+  /**
    * DO NOT CALL DIRECTLY.
    * Used to polyfill react native specific dependencies.
    */

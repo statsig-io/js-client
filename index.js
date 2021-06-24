@@ -232,6 +232,39 @@ const statsig = {
     }
   },
 
+  overrideGate: function (gateName, value) {
+    if (statsig._store == null) {
+      throw new Error('Call and wait for initialize() to finish first.');
+    }
+    if (typeof gateName !== 'string' || gateName.length === 0) {
+      throw new Error('The gateName is invalid.');
+    }
+    if (typeof value !== 'boolean') {
+      throw new Error('value must be a boolean.');
+    }
+    if (!statsig._store.hasGate(gateName)) {
+      throw new Error(
+        'The provided gateName does not exist as a valid feature gate.',
+      );
+    }
+
+    statsig._store.overrideGate(gateName, value);
+  },
+
+  removeOverride: function (name) {
+    if (statsig._store == null) {
+      throw new Error('Call and wait for initialize() to finish first.');
+    }
+    statsig._store.removeOverride(name);
+  },
+
+  getOverrides: function () {
+    if (statsig._store == null) {
+      throw new Error('Call and wait for initialize() to finish first.');
+    }
+    return statsig._store.getOverrides();
+  },
+
   _setDependencies: function (
     SDKPackageInfo,
     AsyncStorage = null,

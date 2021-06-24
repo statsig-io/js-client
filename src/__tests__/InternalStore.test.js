@@ -80,7 +80,7 @@ describe('Verify behavior of InternalStore', () => {
         // @ts-ignore
         expect(store.cache['user_key']).toMatchObject(expected);
         expect(spyOnSet).toHaveBeenCalledTimes(1);
-        expect(spyOnGet).toHaveBeenCalledTimes(1);
+        expect(spyOnGet).toHaveBeenCalledTimes(2); // twice, load cache values and overrides
       });
     });
   });
