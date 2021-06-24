@@ -4,6 +4,12 @@ import localStorage from './utils/storage';
 import { sha256 } from 'js-sha256';
 
 const INTERNAL_STORE_KEY = 'STATSIG_LOCAL_STORAGE_INTERNAL_STORE';
+const OVERRIDE_STORE_KEY = 'STATSIG_LOCAL_STORAGE_INTERNAL_STORE_OVERRIDES';
+
+function getHashValue(value) {
+  let buffer = sha256.create().update(value).arrayBuffer();
+  return Base64.encodeArrayBuffer(buffer);
+}
 
 /**
  *
@@ -14,6 +20,7 @@ const INTERNAL_STORE_KEY = 'STATSIG_LOCAL_STORAGE_INTERNAL_STORE';
 export default function InternalStore(identity, logger) {
   let store = {};
   store.cache = {};
+  store.overrides = {};
 
   function parseConfigs(configs) {
     if (typeof configs !== 'object' || configs == null) {
@@ -33,7 +40,7 @@ export default function InternalStore(identity, logger) {
   }
 
   store.loadFromLocalStorage = function () {
-    return localStorage
+    const loadCache = localStorage
       .getItemAsync(INTERNAL_STORE_KEY)
       .then((data) => {
         if (data) {
@@ -64,11 +71,24 @@ export default function InternalStore(identity, logger) {
           }
         }
         return Promise.resolve();
-      })
-      .catch((e) => {
-        // Never reject when local storage fails to load
+      });
+    const loadOverrides = localStorage
+      .getItemAsync(OVERRIDE_STORE_KEY)
+      .then((data) => {
+        if (data) {
+          try {
+            store.overrides = JSON.parse(data);
+          } catch (e) {
+            localStorage.removeItemAsync(OVERRIDE_STORE_KEY);
+          }
+        }
         return Promise.resolve();
       });
+
+    return Promise.all([loadCache, loadOverrides]).catch((e) => {
+      // don't reject when local storage fails to load
+      return Promise.resolve();
+    });
   };
 
   store.save = function (gates, configs) {
@@ -90,21 +110,51 @@ export default function InternalStore(identity, logger) {
       });
   };
 
+  store.removeOverride = function (name) {
+    // delete all overrides if a name is not provided
+    if (name == null) {
+      store.overrides = {};
+      localStorage.removeItemAsync(OVERRIDE_STORE_KEY);
+    } else {
+      delete store.overrides[name];
+      localStorage.setItemAsync(
+        OVERRIDE_STORE_KEY,
+        JSON.stringify(store.overrides),
+      );
+    }
+  };
+
+  store.getOverrides = function () {
+    return store.overrides;
+  };
+
+  store.overrideGate = function (gateName, value) {
+    store.overrides[gateName] = value;
+    localStorage.setItemAsync(
+      OVERRIDE_STORE_KEY,
+      JSON.stringify(store.overrides),
+    );
+  };
+
+  store.hasGate = function (gateName) {
+    var gateNameHash = getHashValue(gateName);
+    return store?.cache?.[identity.getUserID()]?.gates?.[gateNameHash] != null;
+  };
+
   store.checkGate = function (gateName) {
     if (typeof gateName !== 'string' || gateName.length === 0) {
       throw new Error('Must pass a valid string as the gateName.');
     }
 
-    let buffer = sha256.create().update(gateName).arrayBuffer();
-    var gateNameHash = Base64.encodeArrayBuffer(buffer);
+    var gateNameHash = getHashValue(gateName);
     const userID = identity.getUserID();
     let gateValue = { value: false, rule_id: '' };
-    if (
-      userID &&
-      store.cache[userID] &&
-      store.cache[userID].gates &&
-      store.cache[userID].gates[gateNameHash]
-    ) {
+    if (store?.overrides[gateName] != null) {
+      gateValue = {
+        value: store?.overrides[gateName] === true,
+        rule_id: 'override',
+      };
+    } else if (userID && store?.cache?.[userID]?.gates?.[gateNameHash]) {
       gateValue = store.cache[userID].gates[gateNameHash];
     }
     logger.logGateExposure(
@@ -122,16 +172,10 @@ export default function InternalStore(identity, logger) {
       throw new Error('Must pass a valid string as the configName.');
     }
 
-    let buffer = sha256.create().update(configName).arrayBuffer();
-    var configNameHash = Base64.encodeArrayBuffer(buffer);
+    var configNameHash = getHashValue(configName);
     const userID = identity.getUserID();
     let value = new DynamicConfig(configName);
-    if (
-      userID &&
-      store.cache[userID] &&
-      store.cache[userID].configs &&
-      store.cache[userID].configs[configNameHash]
-    ) {
+    if (userID && store?.cache?.[userID]?.configs?.[configNameHash]) {
       value = store.cache[userID].configs[configNameHash];
     }
     logger.logConfigExposure(identity.getUser(), configName, value.getRuleID());
