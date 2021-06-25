@@ -73,7 +73,6 @@ declare namespace statsig {
    * @param {string} gateName - the name of the gate to override the value for.
    * @param {boolean}  value - the return value for the overriden gate.
    * @throws Error if initialize() is not called first
-   * @throws Error if gateName is not a valid string or does not exist as a gate
    * @throws Error if value is not a boolean
    */
   function overrideGate(gateName: string, value: boolean): void;

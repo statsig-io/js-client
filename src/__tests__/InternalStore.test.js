@@ -2,6 +2,7 @@ import DynamicConfig from '../DynamicConfig';
 import InternalStore from '../InternalStore';
 import Identity from '../Identity';
 import storage from '../utils/storage';
+let statsig;
 
 describe('Verify behavior of InternalStore', () => {
   const sdkKey = 'test-internalstorekey';
@@ -43,14 +44,14 @@ describe('Verify behavior of InternalStore', () => {
   beforeEach(() => {
     jest.resetModules();
     jest.restoreAllMocks();
+    statsig = require('../../index').default;
   });
 
   test('Verify top level function initializes instance variables.', () => {
     expect.assertions(4);
-    const statsigSDK = require('../../index').default;
-    return statsigSDK.initialize(sdkKey, null).then(() => {
+    return statsig.initialize(sdkKey, null).then(() => {
       // @ts-ignore
-      const store = statsigSDK._store;
+      const store = statsig._store;
       expect(store.cache).toBeDefined();
       expect(store.save).toBeInstanceOf(Function);
       expect(store.checkGate).toBeInstanceOf(Function);
@@ -87,12 +88,11 @@ describe('Verify behavior of InternalStore', () => {
 
   test('Verify checkGate throws when gateName is invalid.', () => {
     expect.assertions(8);
-    const statsigSDK = require('../../index').default;
-    return statsigSDK.initialize(sdkKey, { userID: 'user_key' }).then(() => {
+    return statsig.initialize(sdkKey, { userID: 'user_key' }).then(() => {
       // @ts-ignore
-      const store = statsigSDK._store;
+      const store = statsig._store;
       // @ts-ignore
-      const spy = jest.spyOn(statsigSDK._logger, 'log');
+      const spy = jest.spyOn(statsig._logger, 'log');
       expect(() => {
         store.checkGate();
       }).toThrowError('Must pass a valid string as the gateName.');
@@ -120,12 +120,11 @@ describe('Verify behavior of InternalStore', () => {
 
   test('Verify checkGate returns false when gateName does not exist.', () => {
     expect.assertions(2);
-    const statsigSDK = require('../../index').default;
-    return statsigSDK.initialize(sdkKey, { userID: 'user_key' }).then(() => {
+    return statsig.initialize(sdkKey, { userID: 'user_key' }).then(() => {
       // @ts-ignore
-      const store = statsigSDK._store;
+      const store = statsig._store;
       // @ts-ignore
-      const spy = jest.spyOn(statsigSDK._logger, 'log');
+      const spy = jest.spyOn(statsig._logger, 'log');
       expect(store.checkGate('fake_gate')).toBe(false);
       expect(spy).toHaveBeenCalledTimes(1);
     });
@@ -133,12 +132,11 @@ describe('Verify behavior of InternalStore', () => {
 
   test('Verify checkGate returns the correct value.', () => {
     expect.assertions(3);
-    const statsigSDK = require('../../index').default;
-    return statsigSDK.initialize(sdkKey, { userID: 'user_key' }).then(() => {
+    return statsig.initialize(sdkKey, { userID: 'user_key' }).then(() => {
       // @ts-ignore
-      const store = statsigSDK._store;
+      const store = statsig._store;
       // @ts-ignore
-      const spy = jest.spyOn(statsigSDK._logger, 'log');
+      const spy = jest.spyOn(statsig._logger, 'log');
       expect(store.checkGate('test_gate')).toBe(true);
       expect(
         store.checkGate('AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY='),
@@ -149,12 +147,11 @@ describe('Verify behavior of InternalStore', () => {
 
   test('Verify getConfig throws when configName is invalid.', () => {
     expect.assertions(8);
-    const statsigSDK = require('../../index').default;
-    return statsigSDK.initialize(sdkKey, { userID: 'user_key' }).then(() => {
+    return statsig.initialize(sdkKey, { userID: 'user_key' }).then(() => {
       // @ts-ignore
-      const store = statsigSDK._store;
+      const store = statsig._store;
       // @ts-ignore
-      const spy = jest.spyOn(statsigSDK._logger, 'log');
+      const spy = jest.spyOn(statsig._logger, 'log');
       expect(() => {
         store.getConfig();
       }).toThrowError('Must pass a valid string as the configName.');
@@ -182,12 +179,11 @@ describe('Verify behavior of InternalStore', () => {
 
   test('Verify getConfig returns a dummy config and logs exposure when configName does not exist.', () => {
     expect.assertions(2);
-    const statsigSDK = require('../../index').default;
-    return statsigSDK.initialize(sdkKey, { userID: 'user_key' }).then(() => {
+    return statsig.initialize(sdkKey, { userID: 'user_key' }).then(() => {
       // @ts-ignore
-      const store = statsigSDK._store;
+      const store = statsig._store;
       // @ts-ignore
-      const spy = jest.spyOn(statsigSDK._logger, 'log');
+      const spy = jest.spyOn(statsig._logger, 'log');
       expect(store.getConfig('fake_config')).toEqual(
         new DynamicConfig('fake_config'),
       );
@@ -197,16 +193,42 @@ describe('Verify behavior of InternalStore', () => {
 
   test('Verify getConfig returns the correct value.', () => {
     expect.assertions(2);
-    const statsigSDK = require('../../index').default;
-    return statsigSDK.initialize(sdkKey, { userID: 'user_key' }).then(() => {
+    return statsig.initialize(sdkKey, { userID: 'user_key' }).then(() => {
       // @ts-ignore
-      const store = statsigSDK._store;
+      const store = statsig._store;
       // @ts-ignore
-      const spy = jest.spyOn(statsigSDK._logger, 'log');
+      const spy = jest.spyOn(statsig._logger, 'log');
       expect(store.getConfig('test_config').getValue()).toMatchObject(
         config_obj.getValue(),
       );
       expect(spy).toHaveBeenCalledTimes(1);
     });
+  });
+
+  test('that override APIs work', async () => {
+    expect.assertions(8);
+    await statsig.initialize(sdkKey, { userID: '123' });
+    // test_gate is true without override
+    expect(statsig._store.checkGate('test_gate')).toBe(true);
+
+    // becomes false with override
+    statsig._store.overrideGate('test_gate', false);
+    expect(statsig._store.checkGate('test_gate')).toBe(false);
+    expect(statsig._store.getOverrides()).toEqual({ test_gate: false });
+
+    // overriding non-existent gate does not do anything
+    statsig._store.overrideGate('fake_gate', true);
+    expect(statsig._store.getOverrides()).toEqual({ test_gate: false });
+
+    // remove all overrides
+    statsig._store.removeOverride();
+    expect(statsig._store.getOverrides()).toEqual({});
+
+    // remove a named override
+    statsig._store.overrideGate('test_gate', false);
+    expect(statsig._store.checkGate('test_gate')).toBe(false);
+    expect(statsig._store.getOverrides()).toEqual({ test_gate: false });
+    statsig._store.removeOverride('test_gate');
+    expect(statsig._store.getOverrides()).toEqual({});
   });
 });

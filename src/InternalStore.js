@@ -129,6 +129,12 @@ export default function InternalStore(identity, logger) {
   };
 
   store.overrideGate = function (gateName, value) {
+    if (!this.hasGate(gateName)) {
+      console.warn(
+        'The provided gateName does not exist as a valid feature gate.',
+      );
+      return;
+    }
     store.overrides[gateName] = value;
     localStorage.setItemAsync(
       OVERRIDE_STORE_KEY,

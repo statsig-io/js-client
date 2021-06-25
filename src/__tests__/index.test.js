@@ -1,4 +1,5 @@
 const { default: LogEvent } = require('../LogEvent');
+let statsig;
 
 describe('Verify behavior of top level index functions', () => {
   // @ts-ignore
@@ -44,11 +45,11 @@ describe('Verify behavior of top level index functions', () => {
 
   const str_64 =
     '1234567890123456789012345678901234567890123456789012345678901234';
-
   beforeEach(() => {
     // @ts-ignore
     fetch.mockClear();
     jest.resetModules();
+    statsig = require('../../index').default;
     expect.hasAssertions();
 
     // ensure Date.now() returns the same value in each test
@@ -57,96 +58,88 @@ describe('Verify behavior of top level index functions', () => {
   });
 
   test('Verify checkGate throws when calling before initialize', () => {
-    const statsigSDK = require('../../index').default;
     expect(() => {
-      statsigSDK.checkGate('gate_that_doesnt_exist');
+      statsig.checkGate('gate_that_doesnt_exist');
     }).toThrowError('Call and wait for initialize() to finish first.');
-    const ready = statsigSDK._ready;
+    const ready = statsig._ready;
     expect(ready).toBeFalsy();
   });
 
   test('Verify checkGate throws with no gate name', () => {
-    const statsigSDK = require('../../index').default;
-    return statsigSDK.initialize('client-key', null).then(() => {
+    return statsig.initialize('client-key', null).then(() => {
       expect(() => {
         // @ts-ignore
-        statsigSDK.checkGate();
+        statsig.checkGate();
       }).toThrowError('Must pass a valid string as the gateName.');
     });
   });
 
   test('Verify checkGate throws with wrong type as gate name', () => {
-    const statsigSDK = require('../../index').default;
-    return statsigSDK.initialize('client-key', null).then(() => {
+    return statsig.initialize('client-key', null).then(() => {
       expect(() => {
         // @ts-ignore
-        statsigSDK.checkGate(false);
+        statsig.checkGate(false);
       }).toThrowError('Must pass a valid string as the gateName.');
     });
   });
 
   test('Verify getConfig() and getExperiment() throw with no config name', () => {
-    const statsigSDK = require('../../index').default;
     expect.assertions(2);
-    return statsigSDK.initialize('client-key', null).then(() => {
+    return statsig.initialize('client-key', null).then(() => {
       expect(() => {
         // @ts-ignore
-        statsigSDK.getConfig();
+        statsig.getConfig();
       }).toThrowError('Must pass a valid string as the configName.');
       expect(() => {
         // @ts-ignore
-        statsigSDK.getExperiment();
+        statsig.getExperiment();
       }).toThrowError('Must pass a valid string as the experimentName.');
     });
   });
 
   test('Verify getConfig and getExperiment() throw with wrong type as config name', () => {
-    const statsigSDK = require('../../index').default;
     expect.assertions(2);
-    return statsigSDK.initialize('client-key', null).then(() => {
+    return statsig.initialize('client-key', null).then(() => {
       expect(() => {
         // @ts-ignore
-        statsigSDK.getConfig(12);
+        statsig.getConfig(12);
       }).toThrowError('Must pass a valid string as the configName.');
       expect(() => {
         // @ts-ignore
-        statsigSDK.getExperiment(12);
+        statsig.getExperiment(12);
       }).toThrowError('Must pass a valid string as the experimentName.');
     });
   });
 
   test('Verify getConfig and getExperiment throw when calling before initialize', () => {
-    const statsigSDK = require('../../index').default;
     expect.assertions(3);
     expect(() => {
-      statsigSDK.getConfig('config_that_doesnt_exist');
+      statsig.getConfig('config_that_doesnt_exist');
     }).toThrowError('Call and wait for initialize() to finish first.');
     expect(() => {
-      statsigSDK.getExperiment('config_that_doesnt_exist');
+      statsig.getExperiment('config_that_doesnt_exist');
     }).toThrowError('Call and wait for initialize() to finish first.');
-    const ready = statsigSDK._ready;
+    const ready = statsig._ready;
     expect(ready).toBeFalsy();
   });
 
   test('Verify logEvent throws if called before initialize()', () => {
-    const statsigSDK = require('../../index').default;
     expect(() => {
-      statsigSDK.logEvent('test_event');
+      statsig.logEvent('test_event');
     }).toThrowError('Call and wait for initialize() to finish first.');
 
-    const ready = statsigSDK._ready;
+    const ready = statsig._ready;
     expect(ready).toBeFalsy();
   });
 
   test('Verify checkGate() returns the correct value under correct circumstances', () => {
     expect.assertions(4);
-    const statsigSDK = require('../../index').default;
-    return statsigSDK.initialize('client-key', null).then(() => {
-      const ready = statsigSDK._ready;
+    return statsig.initialize('client-key', null).then(() => {
+      const ready = statsig._ready;
       expect(ready).toBe(true);
 
       //@ts-ignore
-      const spy = jest.spyOn(statsigSDK._logger, 'log');
+      const spy = jest.spyOn(statsig._logger, 'log');
       let gateExposure = new LogEvent('statsig::gate_exposure');
       gateExposure.setUser({});
       gateExposure.setMetadata({
@@ -154,7 +147,7 @@ describe('Verify behavior of top level index functions', () => {
         gateValue: String(true),
         ruleID: 'ruleID123',
       });
-      const gateValue = statsigSDK.checkGate('test_gate');
+      const gateValue = statsig.checkGate('test_gate');
       expect(gateValue).toBe(true);
       expect(spy).toHaveBeenCalledTimes(1);
       expect(spy).toHaveBeenCalledWith(gateExposure);
@@ -163,26 +156,23 @@ describe('Verify behavior of top level index functions', () => {
 
   test('Updating users before initialize throws', () => {
     expect.assertions(1);
-    const statsigSDK = require('../../index').default;
-    return expect(statsigSDK.updateUser({ userID: 123 })).rejects.toEqual(
+    return expect(statsig.updateUser({ userID: 123 })).rejects.toEqual(
       new Error('Call and wait for initialize() to finish first.'),
     );
   });
 
   test('Initialize, switch, sdk ready', () => {
-    const statsigSDK = require('../../index').default;
-    return statsigSDK.initialize('client-key', null).then(() => {
-      return statsigSDK.updateUser({ userID: 123 }).then(() => {
-        const ready = statsigSDK._ready;
+    return statsig.initialize('client-key', null).then(() => {
+      return statsig.updateUser({ userID: 123 }).then(() => {
+        const ready = statsig._ready;
         expect(ready).toBe(true);
       });
     });
   });
 
   test('Initialize rejects invalid SDK Key', () => {
-    const statsigSDK = require('../../index').default;
     // @ts-ignore
-    return expect(statsigSDK.initialize()).rejects.toEqual(
+    return expect(statsig.initialize()).rejects.toEqual(
       new Error(
         'Invalid key provided.  You must use a Client or Test SDK Key from the Statsig console with the js-client-sdk',
       ),
@@ -190,8 +180,7 @@ describe('Verify behavior of top level index functions', () => {
   });
 
   test('Initialize rejects Secret Key', () => {
-    const statsigSDK = require('../../index').default;
-    return expect(statsigSDK.initialize('secret-key', null)).rejects.toEqual(
+    return expect(statsig.initialize('secret-key', null)).rejects.toEqual(
       new Error(
         'Invalid key provided.  You must use a Client or Test SDK Key from the Statsig console with the js-client-sdk',
       ),
@@ -200,21 +189,20 @@ describe('Verify behavior of top level index functions', () => {
 
   test('Verify getConfig() behaves correctly when calling under correct conditions', () => {
     expect.assertions(4);
-    const statsigSDK = require('../../index').default;
 
-    return statsigSDK.initialize('client-key', null).then(() => {
-      const ready = statsigSDK._ready;
+    return statsig.initialize('client-key', null).then(() => {
+      const ready = statsig._ready;
       expect(ready).toBe(true);
 
       //@ts-ignore
-      const spy = jest.spyOn(statsigSDK._logger, 'log');
+      const spy = jest.spyOn(statsig._logger, 'log');
       let configExposure = new LogEvent('statsig::config_exposure');
       configExposure.setUser({});
       configExposure.setMetadata({
         config: 'test_config',
         ruleID: 'ruleID',
       });
-      const config = statsigSDK.getConfig('test_config');
+      const config = statsig.getConfig('test_config');
       expect(config?.value).toStrictEqual({
         bool: true,
         number: 2,
@@ -236,21 +224,20 @@ describe('Verify behavior of top level index functions', () => {
 
   test('Verify getExperiment() behaves correctly when calling under correct conditions', () => {
     expect.assertions(4);
-    const statsigSDK = require('../../index').default;
 
-    return statsigSDK.initialize('client-key', null).then(() => {
-      const ready = statsigSDK._ready;
+    return statsig.initialize('client-key', null).then(() => {
+      const ready = statsig._ready;
       expect(ready).toBe(true);
 
       //@ts-ignore
-      const spy = jest.spyOn(statsigSDK._logger, 'log');
+      const spy = jest.spyOn(statsig._logger, 'log');
       let configExposure = new LogEvent('statsig::config_exposure');
       configExposure.setUser({});
       configExposure.setMetadata({
         config: 'test_config',
         ruleID: 'ruleID',
       });
-      const exp = statsigSDK.getExperiment('test_config');
+      const exp = statsig.getExperiment('test_config');
       expect(exp?.value).toStrictEqual({
         bool: true,
         number: 2,
@@ -271,9 +258,6 @@ describe('Verify behavior of top level index functions', () => {
   });
 
   test('Verify big user object and log event are getting trimmed', () => {
-    const statsigSDK = require('../../index').default;
-    const LogEvent = require('../LogEvent').default;
-
     expect.assertions(7);
     let str_1k = str_64;
     // create a 32k long string
@@ -281,7 +265,7 @@ describe('Verify behavior of top level index functions', () => {
       str_1k += str_1k;
     }
     expect(str_1k.length).toBe(1024);
-    return statsigSDK
+    return statsig
       .initialize(
         'client-key',
         {
@@ -293,15 +277,15 @@ describe('Verify behavior of top level index functions', () => {
       )
       .then(() => {
         // @ts-ignore
-        let user = statsigSDK._identity.getUser();
+        let user = statsig._identity.getUser();
         expect(user.userID.length).toBe(64);
         expect(user.userID).toEqual(str_64);
         expect(user.email).toEqual('jest@statsig.com');
         expect(user.custom).toEqual({});
         expect(user.statsigEnvironment).toEqual({ tier: 'production' });
         // @ts-ignore
-        const spy = jest.spyOn(statsigSDK._logger, 'log');
-        statsigSDK.logEvent(str_64 + 'extra', str_64 + 'extra', {
+        const spy = jest.spyOn(statsig._logger, 'log');
+        statsig.logEvent(str_64 + 'extra', str_64 + 'extra', {
           extradata: str_1k,
         });
         const trimmedEvent = new LogEvent(str_64.substring(0, 64));
@@ -315,7 +299,6 @@ describe('Verify behavior of top level index functions', () => {
 
   test('calling initialize() multiple times work as expected', async () => {
     expect.assertions(5);
-    const statsigSDK = require('../../index').default;
     let count = 0;
 
     global.fetch = jest.fn(
@@ -345,14 +328,14 @@ describe('Verify behavior of top level index functions', () => {
     );
 
     // initialize() twice simultaneously reulsts in 1 promise
-    const v1 = statsigSDK.initialize('client-key');
-    const v2 = statsigSDK.initialize('client-key');
+    const v1 = statsig.initialize('client-key');
+    const v2 = statsig.initialize('client-key');
     await expect(v1).resolves.not.toThrow();
     await expect(v2).resolves.not.toThrow();
     expect(count).toEqual(1);
 
     // initialize() again after the first one completes resolves right away and does not make a new request
-    await expect(statsigSDK.initialize('client-key')).resolves.not.toThrow();
+    await expect(statsig.initialize('client-key')).resolves.not.toThrow();
     expect(count).toEqual(1);
   });
 });
