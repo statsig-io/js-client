@@ -242,11 +242,6 @@ const statsig = {
     if (typeof value !== 'boolean') {
       throw new Error('value must be a boolean.');
     }
-    if (!statsig._store.hasGate(gateName)) {
-      throw new Error(
-        'The provided gateName does not exist as a valid feature gate.',
-      );
-    }
 
     statsig._store.overrideGate(gateName, value);
   },
