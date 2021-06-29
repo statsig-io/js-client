@@ -8,6 +8,7 @@ const STATSIG_LOCAL_STORAGE_LOGGING_REQUEST_KEY =
 const CONFIG_EXPOSURE_EVENT = 'statsig::config_exposure';
 const GATE_EXPOSURE_EVENT = 'statsig::gate_exposure';
 const INTERNAL_EVENT_PREFIX = 'statsig::';
+const LOG_FAILURE_EVENT = 'log_event_failed';
 
 export default function LogEventProcessor(identity, options, sdkKey) {
   const processor = {};
@@ -93,6 +94,7 @@ export default function LogEventProcessor(identity, options, sdkKey) {
       return;
     }
     const oldQueue = queue;
+    const currentUser = identity.getUser();
     queue = [];
 
     fetcher
@@ -102,10 +104,10 @@ export default function LogEventProcessor(identity, options, sdkKey) {
       })
       .then((response) => {
         if (!response.ok) {
-          throw Error(response.status);
+          throw response;
         }
       })
-      .catch((e) => {
+      .catch((error) => {
         queue = oldQueue.concat(queue);
         if (queue.length >= flushBatchSize) {
           flushBatchSize = Math.min(
@@ -117,9 +119,18 @@ export default function LogEventProcessor(identity, options, sdkKey) {
           // Drop oldest events so that the queue has 10 less than the max amount of events we allow
           queue = queue.slice(queue.length - maxEventQueueSize + 10);
         }
-        this.logInternal(identity.getUser(), 'log_event_failed', null, {
-          error: e.message,
-        });
+
+        if (typeof error.text === 'function') {
+          error.text().then((errorText) => {
+            this.logInternal(currentUser, LOG_FAILURE_EVENT, null, {
+              error: `${error.status}: ${errorText}`,
+            });
+          });
+        } else {
+          this.logInternal(currentUser, LOG_FAILURE_EVENT, null, {
+            error: error.message,
+          });
+        }
       })
       .finally(() => {
         if (shutdown) {

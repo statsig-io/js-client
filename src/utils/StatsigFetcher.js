@@ -37,7 +37,7 @@ const fetcher = {
           });
         }
         return Promise.reject(
-          'Request to ' + url + ' failed with status ' + res.status,
+          new Error('Request to ' + url + ' failed with status ' + res.status),
         );
       })
       .catch((e) => {
@@ -92,9 +92,9 @@ const fetcher = {
         if (!retryCodes.includes(res.status)) {
           retries = 0;
         }
-        return Promise.reject(
-          'Request to ' + url + ' failed with status ' + res.status,
-        );
+        return res.text().then((errorText) => {
+          return Promise.reject(new Error(`${res.status}: ${errorText}`));
+        });
       })
       .catch((e) => {
         if (retries > 0) {

@@ -90,7 +90,6 @@ const statsig = {
         return statsig._store.loadFromLocalStorage().finally(() => {
           return this._fetchValues()
             .catch((e) => {
-              console.error(e);
               return Promise.resolve();
             })
             .finally(() => {
