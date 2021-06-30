@@ -89,7 +89,7 @@ declare namespace statsig {
    * @returns {Record<string, any>} - an object with key-value pairs each representing the override's name and return value
    * @throws Error if initialize() is not called first
    */
-  function getOverrides(): Promise<Record<string, any>>;
+  function getOverrides(): Record<string, any>;
 
   /**
    * DO NOT CALL DIRECTLY.
