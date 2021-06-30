@@ -22,6 +22,29 @@ const storage = {
     } catch (e) {}
   },
 
+  canUseSyncAPI: function () {
+    return storage.local != null;
+  },
+
+  getNullableItem: function (key) {
+    if (storage.local) {
+      return storage.local.getItem(key) ?? null;
+    }
+    return null;
+  },
+
+  setItem: function (key, value) {
+    if (storage.local) {
+      return storage.local.setItem(key, value);
+    }
+  },
+
+  removeItem: function (key) {
+    if (storage.local) {
+      storage.local.removeItem(key);
+    }
+  },
+
   getItemAsync: function (key) {
     try {
       if (storage.local) {

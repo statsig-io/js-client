@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import localStorage from './storage';
 
-const STATSIG_STABLE_ID_KEY = 'STATSIG_LOCAL_STORAGE_STABLE_ID';
+export const STATSIG_STABLE_ID_KEY = 'STATSIG_LOCAL_STORAGE_STABLE_ID';
 
 export function getSDKVersion() {
   return require('../../package.json')?.version ?? '';
