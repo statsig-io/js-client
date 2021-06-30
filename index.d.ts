@@ -92,21 +92,6 @@ declare namespace statsig {
   function getOverrides(): Promise<Record<string, any>>;
 
   /**
-   * DO NOT CALL DIRECTLY.
-   * Used to polyfill react native specific dependencies.
-   */
-  function _setDependencies(
-    SDKPackageInfo: _SDKPackageInfo,
-    AsyncStorage: object | null,
-    AppState: object | null,
-    NativeModules: object | null,
-    Platform: object | null,
-    RNDevice: object | null,
-    Constants: object | null,
-    ExpoDevice: object | null,
-  ): void;
-
-  /**
    * An object of properties relating to the current user
    * Provide as many as possible to take advantage of advanced conditions in the statsig console
    * A dictionary of additional fields can be provided under the "custom" field
@@ -133,11 +118,6 @@ declare namespace statsig {
   export type StatsigEnvironment = {
     tier?: 'production' | 'staging' | 'development';
     [key: string]: string | undefined;
-  };
-
-  export type _SDKPackageInfo = {
-    sdkType: string;
-    sdkVersion: string;
   };
 
   /**

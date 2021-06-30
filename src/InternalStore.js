@@ -40,31 +40,25 @@ export default function InternalStore(identity, logger) {
   }
 
   store.loadFromLocalStorage = function () {
+    if (localStorage.canUseSyncAPI()) {
+      const cacheData = localStorage.getNullableItem(INTERNAL_STORE_KEY);
+      if (cacheData != null) {
+        try {
+          store._configureFromCachedData(cacheData);
+        } catch (e) {
+          localStorage.removeItem(INTERNAL_STORE_KEY);
+        }
+      }
+    }
+  };
+
+  store.loadFromLocalStorageAsync = function () {
     const loadCache = localStorage
       .getItemAsync(INTERNAL_STORE_KEY)
       .then((data) => {
         if (data) {
           try {
-            let jsonCache = JSON.parse(data);
-            if (jsonCache != null) {
-              for (const [user, data] of Object.entries(jsonCache)) {
-                store.cache[user] = {
-                  gates: data.gates,
-                  configs: {},
-                };
-                if (data.configs != null) {
-                  for (const [configName, configData] of Object.entries(
-                    data.configs,
-                  )) {
-                    store.cache[user].configs[configName] = new DynamicConfig(
-                      configData.name,
-                      configData.value,
-                      configData._ruleID,
-                    );
-                  }
-                }
-              }
-            }
+            store._configureFromCachedData(data);
           } catch (e) {
             // Cached value corrupted, remove cache
             localStorage.removeItemAsync(INTERNAL_STORE_KEY);
@@ -186,6 +180,27 @@ export default function InternalStore(identity, logger) {
     }
     logger.logConfigExposure(identity.getUser(), configName, value.getRuleID());
     return value;
+  };
+
+  store._configureFromCachedData = function (data) {
+    let jsonCache = JSON.parse(data);
+    if (jsonCache != null) {
+      for (const [user, data] of Object.entries(jsonCache)) {
+        store.cache[user] = {
+          gates: data.gates,
+          configs: {},
+        };
+        if (data.configs != null) {
+          for (const [configName, configData] of Object.entries(data.configs)) {
+            store.cache[user].configs[configName] = new DynamicConfig(
+              configData.name,
+              configData.value,
+              configData._ruleID,
+            );
+          }
+        }
+      }
+    }
   };
 
   return store;

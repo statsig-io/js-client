@@ -1,6 +1,7 @@
 import * as utils from './utils/core';
 
 export default function Identity(
+  localStorage,
   initialUser,
   // For react native SDKs only:
   SDKPackageInfo = null,
@@ -50,7 +51,24 @@ export default function Identity(
     }
   }
 
+  identity.trySetStableID = function () {
+    if (!localStorage.canUseSyncAPI()) {
+      return false;
+    }
+
+    let stableID = localStorage.getNullableItem(utils.STATSIG_STABLE_ID_KEY);
+    if (stableID == null) {
+      stableID = utils.generateID();
+      localStorage.setItem(utils.STATSIG_STABLE_ID_KEY, stableID);
+    }
+    statsigMetadata.stableID = stableID;
+    return true;
+  };
+
   identity.setStableIDAsync = function () {
+    if (statsigMetadata.stableID) {
+      return Promise.resolve();
+    }
     return utils
       .getStableIDAsync()
       .then((data) => {

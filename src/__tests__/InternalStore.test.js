@@ -61,14 +61,15 @@ describe('Verify behavior of InternalStore', () => {
 
   test('Verify save correctly saves into cache.', () => {
     expect.assertions(3);
-    const ident = Identity({ userID: 'user_key' });
+    storage.init();
+    const ident = Identity(storage, { userID: 'user_key' });
     // @ts-ignore
     const spyOnSet = jest.spyOn(window.localStorage.__proto__, 'setItem');
     // @ts-ignore
     const spyOnGet = jest.spyOn(window.localStorage.__proto__, 'getItem');
-    storage.init();
+
     const store = InternalStore(ident);
-    return store.loadFromLocalStorage().then(() => {
+    return store.loadFromLocalStorageAsync().then(() => {
       return store.save(gates, configs).then(() => {
         const expected = {
           gates: gates,

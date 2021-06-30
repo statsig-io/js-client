@@ -1,4 +1,5 @@
 import Identity from '../Identity';
+import storage from '../utils/storage';
 
 describe('Verify behavior of Identity module', () => {
   beforeEach(() => {
@@ -12,14 +13,14 @@ describe('Verify behavior of Identity module', () => {
     expect(id.getStatsigMetadata()).not.toBeNull();
 
     const user = { userID: 'uuid1' };
-    const id2 = Identity(user);
+    const id2 = Identity(storage, user);
     expect(id2.getUser()).toStrictEqual(user);
     expect(id2.getUserID()).toStrictEqual('uuid1');
     expect(id2.getStatsigMetadata()).not.toBeNull();
   });
 
   test('Test setUser', () => {
-    const id = Identity({ userID: 'test_user' });
+    const id = Identity(storage, { userID: 'test_user' });
     expect(id.getUser()).toStrictEqual({ userID: 'test_user' });
     const previousSessionID = id.getStatsigMetadata().sessionID;
     id.setUser(null);

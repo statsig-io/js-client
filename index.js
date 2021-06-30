@@ -41,65 +41,11 @@ const statsig = {
    * @throws Error if an invalid SDK Key is provided
    */
   initialize: function (sdkKey, user = {}, options = {}) {
-    if (statsig._pendingInitPromise) {
-      return statsig._pendingInitPromise;
+    let pendingInit = this._setup(sdkKey, user, options);
+    if (pendingInit != null) {
+      return pendingInit;
     }
-    if (statsig._ready === true) {
-      return Promise.resolve();
-    }
-    if (
-      typeof sdkKey !== 'string' ||
-      sdkKey.length === 0 ||
-      (!sdkKey.startsWith('client-') && !sdkKey.startsWith('test-'))
-    ) {
-      return Promise.reject(
-        new Error(
-          'Invalid key provided.  You must use a Client or Test SDK Key from the Statsig console with the js-client-sdk',
-        ),
-      );
-    }
-
-    statsig._ready = false;
-    statsig._sdkKey = sdkKey;
-    statsig._options = StatsigOptions(options);
-    statsig._identity = Identity(
-      normalizeUser(user),
-      _SDKPackageInfo,
-      _NativeModules,
-      _Platform,
-      _RNDeviceInfo,
-      _ExpoConstants,
-      _ExpoDevice,
-    );
-    localStorage.init(_AsyncStorage);
-
-    statsig._pendingInitPromise = statsig._identity
-      .setStableIDAsync()
-      .finally(() => {
-        statsig._logger = LogEventProcessor(
-          statsig._identity,
-          statsig._options,
-          sdkKey,
-        );
-
-        if (_AppState && typeof _AppState.addEventListener === 'function') {
-          _currentAppState = _AppState.currentState;
-          _AppState.addEventListener('change', statsig._handleAppStateChange);
-        }
-        statsig._store = InternalStore(statsig._identity, statsig._logger);
-        return statsig._store.loadFromLocalStorage().finally(() => {
-          return this._fetchValues()
-            .catch((e) => {
-              return Promise.resolve();
-            })
-            .finally(() => {
-              statsig._ready = true;
-              statsig._logger.sendLocalStorageRequests();
-              statsig._pendingInitPromise = null;
-            });
-        });
-      });
-    return statsig._pendingInitPromise;
+    return this._initAsync();
   },
 
   /**
@@ -259,6 +205,84 @@ const statsig = {
     return statsig._store.getOverrides();
   },
 
+  /**
+   * Completes the synchronous setup of the SDK, initializing the local members and loading from local storage where possible
+   * After _setup() completes, the SDK is usable, and on clients with synchronous access to localStorage it will have the previous
+   * values for the user (if we have seen this user before)
+   * @param {string} sdkKey - a SDK key, generated from the statsig developer console
+   * @param {typedefs.StatsigUser} [user={}] - an object containing user attributes.  Pass a stable identifier as the key when possible, and any other attributes you have (ip, country, etc.) in order to use advanced gate conditions
+   * @param {typedefs.StatsigOptions} [options={}] - manual sdk configuration for advanced setup
+   * @returns {Promise<void> | null} - a pending initialization promise if async initialization has not completed
+   */
+  _setup: function (sdkKey, user, options) {
+    if (statsig._pendingInitPromise) {
+      return statsig._pendingInitPromise;
+    }
+    if (statsig._ready === true) {
+      return Promise.resolve();
+    }
+    if (
+      typeof sdkKey !== 'string' ||
+      sdkKey.length === 0 ||
+      (!sdkKey.startsWith('client-') && !sdkKey.startsWith('test-'))
+    ) {
+      return Promise.reject(
+        new Error(
+          'Invalid key provided.  You must use a Client or Test SDK Key from the Statsig console with the js-client-sdk',
+        ),
+      );
+    }
+
+    statsig._ready = false;
+    statsig._sdkKey = sdkKey;
+    statsig._options = StatsigOptions(options);
+    localStorage.init(_AsyncStorage);
+    statsig._identity = Identity(
+      localStorage,
+      normalizeUser(user),
+      _SDKPackageInfo,
+      _NativeModules,
+      _Platform,
+      _RNDeviceInfo,
+      _ExpoConstants,
+      _ExpoDevice,
+    );
+
+    const synchronous = statsig._identity.trySetStableID();
+    statsig._setupInternal();
+    if (synchronous) {
+      statsig._store.loadFromLocalStorage();
+    }
+    return null;
+  },
+
+  /**
+   * Complete the asynchronous initialization of the SDK, namely fetching the gates and configs for the current user
+   * @returns {Promise<void>} - a promise which only resolves, and will resolve once gate and config values are fetched for the user
+   */
+  _initAsync: function () {
+    if (statsig._ready) {
+      return Promise.resolve();
+    }
+    statsig._pendingInitPromise = statsig._identity
+      .setStableIDAsync()
+      .finally(() => {
+        statsig._setupInternal();
+        return statsig._store.loadFromLocalStorageAsync().finally(() => {
+          return this._fetchValues()
+            .catch((e) => {
+              return Promise.resolve();
+            })
+            .finally(() => {
+              statsig._ready = true;
+              statsig._logger.sendLocalStorageRequests();
+              statsig._pendingInitPromise = null;
+            });
+        });
+      });
+    return statsig._pendingInitPromise;
+  },
+
   _setDependencies: function (
     SDKPackageInfo,
     AsyncStorage = null,
@@ -277,6 +301,28 @@ const statsig = {
     _RNDeviceInfo = RNDeviceInfo;
     _ExpoConstants = ExpoConstants;
     _ExpoDevice = ExpoDevice;
+  },
+
+  _setupInternal: function () {
+    if (statsig._logger == null) {
+      statsig._logger = LogEventProcessor(
+        statsig._identity,
+        statsig._options,
+        statsig._sdkKey,
+      );
+    }
+
+    if (
+      _AppState &&
+      typeof _AppState.addEventListener === 'function' &&
+      _currentAppState == null
+    ) {
+      _currentAppState = _AppState.currentState;
+      _AppState.addEventListener('change', statsig._handleAppStateChange);
+    }
+    if (statsig._store == null) {
+      statsig._store = InternalStore(statsig._identity, statsig._logger);
+    }
   },
 
   _handleAppStateChange: function (nextAppState) {
