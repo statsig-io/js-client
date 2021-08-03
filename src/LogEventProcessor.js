@@ -23,10 +23,6 @@ export default function LogEventProcessor(identity, options, sdkKey) {
   let flushTimer = null;
   let loggedErrors = new Set();
   let failedLoggingRequests = [];
-  let exposures = {
-    configs: {},
-    gates: {},
-  };
 
   if (
     typeof window !== 'undefined' &&
@@ -167,17 +163,9 @@ export default function LogEventProcessor(identity, options, sdkKey) {
 
   processor.switchUser = function () {
     processor.flush(true);
-    exposures = {
-      configs: {},
-      gates: {},
-    };
   };
 
   processor.logGateExposure = function (user, gateName, gateValue, ruleID) {
-    if (exposures.configs[gateName]) {
-      return;
-    }
-    exposures.configs[gateName] = true;
     this.logCustom(user, GATE_EXPOSURE_EVENT, null, {
       gate: gateName,
       gateValue: String(gateValue),
@@ -186,10 +174,6 @@ export default function LogEventProcessor(identity, options, sdkKey) {
   };
 
   processor.logConfigExposure = function (user, configName, ruleID) {
-    if (exposures.configs[configName]) {
-      return;
-    }
-    exposures.configs[configName] = true;
     this.logCustom(user, CONFIG_EXPOSURE_EVENT, null, {
       config: configName,
       ruleID: ruleID,
