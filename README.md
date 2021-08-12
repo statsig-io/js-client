@@ -5,11 +5,9 @@
 
 ## Statsig JavaScript Client SDK
 
-The JavaScript SDK for single user client environments. For usage in React Native, check out our [Expo SDK](https://github.com/statsig-io/react-native-expo), or [React Native SDK](https://github.com/statsig-io/react-native) if you are not using Expo, both of which are based on this JavaScript SDK.
+The JavaScript SDK for single user client environments. If you need a SDK for another language or server environment, check out our [other SDKs](https://docs.statsig.com/#sdks).
 
-If you're looking to use Statsig in a multi-user server environment, try our [Node.js SDK](https://github.com/statsig-io/node-js-server-sdk).
-
-Statsig helps you move faster with Feature Gates (Feature Flags) and Dynamic Configs. It also allows you to run A/B tests to validate your new features and understand their impact on your KPIs. If you're new to Statsig, create an account at [statsig.com](https://www.statsig.com).
+Statsig helps you move faster with feature gates (feature flags), and/or dynamic configs. It also allows you to run A/B/n tests to validate your new features and understand their impact on your KPIs. If you're new to Statsig, check out our product and create an account at [statsig.com](https://www.statsig.com).
 
 ## Getting Started
-Visit our [getting started guide](https://www.statsig.com/docs/js-client), or check out the [SDK Documentation](https://github.com/statsig-io/js-client/blob/main/docs/README.md)
+Check out our [SDK docs](https://docs.statsig.com/client/jsClientSDK) to get started.
