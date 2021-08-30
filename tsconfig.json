@@ -1,12 +1,20 @@
 {
-  "include": ["src/**/*", "./index.js", "index.d.ts"],
   "compilerOptions": {
-    "allowJs": true,
-    "checkJs": true,
-    "resolveJsonModule": true,
-    "declaration": true,
-    "emitDeclarationOnly": true,
+    "target": "es5",
+    "module": "es6",
+    "strict": true,
     "outDir": "dist",
-    "esModuleInterop": true
-  }
+    "sourceMap": false,
+    "esModuleInterop": true,
+    "declaration": true,
+    "skipLibCheck": true,
+    "moduleResolution": "node"
+  },
+  "include": ["src/**/*", "src/utils/*"],
+  "exclude": [
+    "node_modules",
+    "typings",
+    "src/__tests__/*",
+    "src/utils/__tests__/*"
+  ]
 }

@@ -1,49 +1,30 @@
 const path = require('path');
 const TerserPlugin = require('terser-webpack-plugin');
 
-const BUILD_DIR = path.resolve(__dirname, './dist');
-
-const baseConfig = {
-  entry: __dirname + '/index.js',
+module.exports = {
+  entry: './src/index.ts',
+  mode: 'production',
+  target: 'web',
   module: {
     rules: [
       {
-        test: /\.(js)$/,
+        test: /\.tsx?$/,
+        use: 'ts-loader',
         exclude: /node_modules/,
-        use: 'babel-loader',
       },
     ],
   },
-};
-
-function output(prefix) {
-  return {
-    output: {
-      path: BUILD_DIR,
-      filename: 'statsig-' + prefix + '-sdk.js',
-      library: 'statsig',
-      libraryTarget: 'umd',
-      libraryExport: 'default',
-      globalObject: 'this',
-    },
-  };
-}
-
-const debug = Object.assign({}, baseConfig, output('dev-web'), {
-  target: 'web',
-  mode: 'development',
-  optimization: {
-    minimizer: [
-      new TerserPlugin({
-        extractComments: false,
-      }),
-    ],
+  resolve: {
+    extensions: ['.tsx', '.ts', '.js'],
   },
-});
-
-const prod = Object.assign({}, baseConfig, output('prod-web'), {
-  target: 'web',
-  mode: 'production',
+  output: {
+    filename: 'statsig-prod-web-sdk.js',
+    library: 'statsig',
+    libraryTarget: 'var',
+    path: path.resolve(__dirname, 'build'),
+    libraryExport: 'default',
+    globalObject: 'this',
+  },
   optimization: {
     minimizer: [
       new TerserPlugin({
@@ -59,6 +40,4 @@ const prod = Object.assign({}, baseConfig, output('prod-web'), {
       }),
     ],
   },
-});
-
-module.exports = [debug, prod];
+};

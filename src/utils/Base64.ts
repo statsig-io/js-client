@@ -2,7 +2,7 @@
 export const Base64 = {
   _keyStr: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=',
 
-  _encodeBinary: function (input) {
+  _encodeBinary: function (input: string): string {
     var output = '';
     var chr1, chr2, chr3, enc1, enc2, enc3, enc4;
     var i = 0;
@@ -34,7 +34,7 @@ export const Base64 = {
     return output;
   },
 
-  encodeArrayBuffer(buffer) {
+  encodeArrayBuffer(buffer: ArrayBuffer): string {
     var binary = '';
     var bytes = new Uint8Array(buffer);
     var len = bytes.byteLength;

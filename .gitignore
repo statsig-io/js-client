@@ -15,6 +15,7 @@ node_modules/
 
 # Builds
 dist/
+build/
 
 # Optional npm cache directory
 .npm

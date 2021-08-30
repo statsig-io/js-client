@@ -1,4 +1,3 @@
-// @ts-nocheck
 global.console = {
   log: console.log, // console.log are kept in tests for debugging
 
