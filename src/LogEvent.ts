@@ -30,8 +30,10 @@ export default class LogEvent {
     this.statsigMetadata[key] = value;
   }
 
-  public setUser(user: object | null) {
-    this.user = user;
+  public setUser(newUser: StatsigUser | null) {
+    // Need to remove private attributes from logs and also keep in the original user for evaluations.
+    this.user = { ...newUser };
+    delete this.user.privateAttributes;
   }
 
   public toJsonObject(): Record<string, any> {
