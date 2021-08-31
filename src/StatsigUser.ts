@@ -7,4 +7,5 @@ export type StatsigUser = {
   locale?: string;
   appVersion?: string;
   custom?: Record<string, string | number | boolean | Array<string>>;
+  privateAttributes?: Record<string, string | number | boolean | Array<string>>;
 };
