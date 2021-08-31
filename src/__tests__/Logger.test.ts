@@ -7,7 +7,7 @@ import StatsigClient from '../StatsigClient';
 import 'core-js';
 
 describe('Verify behavior of StatsigLogger', () => {
-  const sdkKey = 'test-internalstorekey';
+  const sdkKey = 'client-loggertestkey';
   const waitAllPromises = () => new Promise(setImmediate);
   //@ts-ignore
   global.fetch = jest.fn((url) => {

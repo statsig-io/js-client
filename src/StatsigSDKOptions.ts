@@ -14,7 +14,7 @@ export type StatsigOptions = {
 export default class StatsigSDKOptions {
   private api: string;
   private disableCurrentPageLogging: boolean;
-  private environment: StatsigEnvironment;
+  private environment: StatsigEnvironment | null;
   constructor(options?: StatsigOptions | null) {
     if (options == null) {
       options = {};
@@ -22,14 +22,14 @@ export default class StatsigSDKOptions {
     let api = options.api ?? DEFAULT_API;
     this.api = api.endsWith('/') ? api : api + '/';
     this.disableCurrentPageLogging = options.disableCurrentPageLogging ?? false;
-    this.environment = options.environment ?? {};
+    this.environment = options.environment ?? null;
   }
 
   getApi(): string {
     return this.api;
   }
 
-  getEnvironment(): StatsigEnvironment {
+  getEnvironment(): StatsigEnvironment | null {
     return this.environment;
   }
 

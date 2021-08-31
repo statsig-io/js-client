@@ -113,9 +113,16 @@ export default class StatsigClient implements IHasStatsigInternal {
     if (this.ready) {
       return Promise.resolve();
     }
+    if (typeof sdkKey !== 'string' || !sdkKey.startsWith('client-')) {
+      return Promise.reject(
+        new Error(
+          'Invalid key provided.  You must use a Client SDK Key from the Statsig console to initialize the sdk',
+        ),
+      );
+    }
     this.sdkKey = sdkKey;
-    this.identity.setUser(this.normalizeUser(user ?? null));
     this.options = new StatsigSDKOptions(options);
+    this.identity.setUser(this.normalizeUser(user ?? null));
     this.store.loadFromLocalStorage();
     // TODO fetch from async storage first
 
@@ -141,23 +148,51 @@ export default class StatsigClient implements IHasStatsigInternal {
     return this.pendingInitPromise;
   }
 
+  /**
+   * Checks the value of a gate for the current user
+   * @param {string} gateName - the name of the gate to check
+   * @returns {boolean} - value of a gate for the user. Gates are "off" (return false) by default
+   * @throws Error if initialize() is not called first, or gateName is not a string
+   */
   public checkGate(gateName: string): boolean {
     if (!this.ready) {
       throw new Error('Call and wait for initialize() to finish first.');
     }
+    if (typeof gateName !== 'string' || gateName.length === 0) {
+      throw new Error('Must pass a valid string as the gateName.');
+    }
     return this.store.checkGate(gateName);
   }
 
+  /**
+   * Checks the value of a config for the current user
+   * @param {string} configName - the name of the config to get
+   * @returns {DynamicConfig} - value of a config for the user
+   * @throws Error if initialize() is not called first, or configName is not a string
+   */
   public getConfig(configName: string): DynamicConfig {
     if (!this.ready) {
       throw new Error('Call and wait for initialize() to finish first.');
     }
+    if (typeof configName !== 'string' || configName.length === 0) {
+      throw new Error('Must pass a valid string as the configName.');
+    }
+
     return this.store.getConfig(configName);
   }
 
+  /**
+   * Gets the experiment for a given user
+   * @param {string} experimentName - the name of the experiment to get
+   * @returns {DynamicConfig} - value of the experiment for the user, represented by a Dynamic Config object
+   * @throws Error if initialize() is not called first, or experimentName is not a string
+   */
   public getExperiment(experimentName: string): DynamicConfig {
     if (!this.ready) {
       throw new Error('Call and wait for initialize() to finish first.');
+    }
+    if (typeof experimentName !== 'string' || experimentName.length === 0) {
+      throw new Error('Must pass a valid string as the experimentName.');
     }
     return this.store.getConfig(experimentName);
   }
@@ -167,8 +202,12 @@ export default class StatsigClient implements IHasStatsigInternal {
     value: string | number | null = null,
     metadata: Record<string, string> | null = null,
   ): void {
-    if (!this.ready) {
-      throw new Error('Call and wait for initialize() to finish first.');
+    if (!this.logger || !this.sdkKey) {
+      throw new Error('Must initialize() before logging events.');
+    }
+    if (typeof eventName !== 'string' || eventName.length === 0) {
+      console.error('Event not logged. No valid eventName passed.');
+      return;
     }
     if (this.shouldTrimParam(eventName, MAX_VALUE_SIZE)) {
       console.warn(
@@ -222,6 +261,10 @@ export default class StatsigClient implements IHasStatsigInternal {
       });
   }
 
+  /**
+   * Informs the statsig SDK that the client is closing or shutting down
+   * so the SDK can clean up internal state
+   */
   public shutdown(): void {
     this.logger.flush(true);
     if (this.appState) {
@@ -303,8 +346,10 @@ export default class StatsigClient implements IHasStatsigInternal {
 
   private normalizeUser(user: StatsigUser | null): StatsigUser {
     user = this.trimUserObjIfNeeded(user);
-    // @ts-ignore
-    user.statsigEnvironment = this.options.getEnvironment();
+    if (this.options.getEnvironment() != null) {
+      // @ts-ignore
+      user.statsigEnvironment = this.options.getEnvironment();
+    }
     return user;
   }
 

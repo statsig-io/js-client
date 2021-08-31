@@ -5,7 +5,7 @@
 import StatsigClient from '../StatsigClient';
 
 describe('Verify behavior of StatsigClient', () => {
-  const sdkKey = 'test-internalstorekey';
+  const sdkKey = 'client-clienttestkey';
 
   // @ts-ignore
   global.fetch = jest.fn(() =>
@@ -37,7 +37,7 @@ describe('Verify behavior of StatsigClient', () => {
     }).toThrowError('Call and wait for initialize() to finish first.');
     expect(() => {
       client.logEvent('config_that_doesnt_exist');
-    }).toThrowError('Call and wait for initialize() to finish first.');
+    }).toThrowError('Must initialize() before logging events.');
   });
 
   test('that override APIs work', async () => {

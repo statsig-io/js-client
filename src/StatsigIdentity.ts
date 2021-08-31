@@ -66,7 +66,7 @@ export default class Identity {
     this.user = null;
     this.statsigMetadata = {
       sessionID: uuidv4(),
-      sdkType: 'ts-client',
+      sdkType: 'js-client',
       sdkVersion: require('../package.json')?.version ?? '',
       stableID: this.getStableID(),
     };

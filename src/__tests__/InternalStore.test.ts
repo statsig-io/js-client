@@ -6,7 +6,7 @@ import DynamicConfig from '../DynamicConfig';
 import StatsigClient from '../StatsigClient';
 
 describe('Verify behavior of InternalStore', () => {
-  const sdkKey = 'test-internalstorekey';
+  const sdkKey = 'client-internalstorekey';
   const gates = {
     'AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=': true,
   };

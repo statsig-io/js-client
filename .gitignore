@@ -17,6 +17,9 @@ node_modules/
 dist/
 build/
 
+# Test coverage
+coverage/
+
 # Optional npm cache directory
 .npm
 
