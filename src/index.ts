@@ -3,6 +3,11 @@ import StatsigClient from './StatsigClient';
 import { StatsigOptions } from './StatsigSDKOptions';
 import { StatsigUser } from './StatsigUser';
 
+export { StatsigOptions, StatsigEnvironment } from './StatsigSDKOptions';
+export { StatsigUser } from './StatsigUser';
+export { default as DynamicConfig } from './DynamicConfig';
+export { default as StatsigClient } from './StatsigClient';
+
 export default class Statsig {
   private static instance: StatsigClient;
 
@@ -10,8 +15,8 @@ export default class Statsig {
 
   public static async initialize(
     sdkKey: string,
-    user: StatsigUser | null,
-    options: StatsigOptions,
+    user?: StatsigUser | null,
+    options?: StatsigOptions | null,
   ): Promise<void> {
     if (!Statsig.instance) {
       Statsig.instance = new StatsigClient();
