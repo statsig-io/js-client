@@ -82,6 +82,7 @@ export default class StatsigLogger {
     gateName: string,
     gateValue: boolean,
     ruleID: string,
+    secondaryExposures: Record<string, string>[],
   ) {
     const gateExposure = new LogEvent(GATE_EXPOSURE_EVENT);
     gateExposure.setUser(user);
@@ -90,6 +91,7 @@ export default class StatsigLogger {
       gateValue: String(gateValue),
       ruleID: ruleID,
     });
+    gateExposure.setSecondaryExposures(secondaryExposures);
     this.log(gateExposure);
   }
 
@@ -97,6 +99,7 @@ export default class StatsigLogger {
     user: StatsigUser | null,
     configName: string,
     ruleID: string,
+    secondaryExposures: Record<string, string>[],
   ) {
     const configExposure = new LogEvent(CONFIG_EXPOSURE_EVENT);
     configExposure.setUser(user);
@@ -104,6 +107,7 @@ export default class StatsigLogger {
       config: configName,
       ruleID: ruleID,
     });
+    configExposure.setSecondaryExposures(secondaryExposures);
     this.log(configExposure);
   }
 

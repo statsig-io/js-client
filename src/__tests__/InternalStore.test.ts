@@ -7,19 +7,43 @@ import StatsigClient from '../StatsigClient';
 
 describe('Verify behavior of InternalStore', () => {
   const sdkKey = 'client-internalstorekey';
-  const gates = {
-    'AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=': true,
+  const feature_gates = {
+    'AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=': {
+      value: true,
+      rule_id: 'ruleID12',
+      secondary_exposures: [
+        {
+          gate: 'dependent_gate_1',
+          gateValue: 'true',
+          ruleID: 'rule_1',
+        },
+      ],
+    },
   };
   const configs = {
     'RMv0YJlLOBe7cY7HgZ3Jox34R0Wrk7jLv3DZyBETA7I=': {
       value: { bool: true },
       rule_id: 'default',
+      secondary_exposures: [
+        {
+          gate: 'dependent_gate_1',
+          gateValue: 'true',
+          ruleID: 'rule_1',
+        },
+      ],
     },
   };
   const config_obj = new DynamicConfig(
     'RMv0YJlLOBe7cY7HgZ3Jox34R0Wrk7jLv3DZyBETA7I=',
     { bool: true },
     'default',
+    [
+      {
+        gate: 'dependent_gate_1',
+        gateValue: 'true',
+        ruleID: 'rule_1',
+      },
+    ],
   );
 
   class LocalStorageMock {
@@ -90,7 +114,7 @@ describe('Verify behavior of InternalStore', () => {
   });
 
   test('Verify save correctly saves into cache.', () => {
-    expect.assertions(4);
+    expect.assertions(7);
     const spyOnSet = jest.spyOn(window.localStorage.__proto__, 'setItem');
     const spyOnGet = jest.spyOn(window.localStorage.__proto__, 'getItem');
     const client = new StatsigClient();
@@ -98,15 +122,15 @@ describe('Verify behavior of InternalStore', () => {
     expect(spyOnGet).toHaveBeenCalledTimes(1);
     expect(spyOnSet).toHaveBeenCalledTimes(1);
     const store = client.getStore();
-    store.loadFromLocalStorage();
 
-    // @ts-ignore
-    configs['RMv0YJlLOBe7cY7HgZ3Jox34R0Wrk7jLv3DZyBETA7I'] = {
-      ...config_obj,
-    };
-    expect(spyOnGet).toHaveBeenCalledTimes(3); // twice, load cache values and overrides
-    store.save({ feature_gates: gates, dynamic_configs: configs });
+    store.save({ feature_gates: feature_gates, dynamic_configs: configs });
     expect(spyOnSet).toHaveBeenCalledTimes(2);
+    expect(store.getConfig('test_config')).toEqual(config_obj);
+
+    store.loadFromLocalStorage();
+    expect(spyOnGet).toHaveBeenCalledTimes(3); // twice, load cache values and overrides
+    expect(store.getConfig('test_config')).toEqual(config_obj); // loading from storage should return right results
+    expect(store.checkGate('test_gate')).toEqual(true);
   });
 
   test('Verify checkGate returns false when gateName does not exist.', () => {

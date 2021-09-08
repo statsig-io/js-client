@@ -1,4 +1,5 @@
 import { sha256 } from 'js-sha256';
+
 import DynamicConfig from './DynamicConfig';
 import { IHasStatsigInternal } from './StatsigClient';
 import { Base64 } from './utils/Base64';
@@ -13,8 +14,9 @@ type FeatureGate = {
   name: string;
   value: boolean;
   rule_id: string;
+  secondary_exposures: [];
 };
-const INTERNAL_STORE_KEY = 'STATSIG_LOCAL_STORAGE_INTERNAL_STORE_V2';
+const INTERNAL_STORE_KEY = 'STATSIG_LOCAL_STORAGE_INTERNAL_STORE_V3';
 const OVERRIDE_STORE_KEY = 'STATSIG_LOCAL_STORAGE_INTERNAL_STORE_OVERRIDES_V2';
 
 export default class StatsigStore {
@@ -36,25 +38,11 @@ export default class StatsigStore {
       return;
     }
     try {
-      const jsonPersisted = JSON.parse(persisted);
-      if (jsonPersisted == null) {
+      const persistedJsonConfigs = JSON.parse(persisted);
+      if (persistedJsonConfigs == null) {
         return;
       }
-      this.gates = jsonPersisted.gates;
-      if (jsonPersisted.configs) {
-        for (const [configName, configData] of Object.entries(
-          jsonPersisted.configs,
-        )) {
-          this.configs[configName] = new DynamicConfig(
-            // @ts-ignore
-            configData.name,
-            // @ts-ignore
-            configData.value,
-            // @ts-ignore
-            configData.ruleID,
-          );
-        }
-      }
+      this.parseConfigs(persistedJsonConfigs);
     } catch (e) {
       // Cached value corrupted, remove cache
       StatsigLocalStorage.removeItem(INTERNAL_STORE_KEY);
@@ -74,28 +62,24 @@ export default class StatsigStore {
     }
   }
 
-  public save(json: Record<string, any>): void {
-    if (json.feature_gates) {
-      this.gates = json.feature_gates;
-    }
-    if (json.dynamic_configs) {
-      this.configs = this.parseConfigs(json.dynamic_configs);
-    }
+  public save(jsonConfigs: Record<string, any>): void {
+    this.parseConfigs(jsonConfigs);
 
     StatsigLocalStorage.setItem(
       INTERNAL_STORE_KEY,
-      JSON.stringify({
-        gates: this.gates,
-        configs: this.configs,
-      }),
+      JSON.stringify(jsonConfigs),
     );
   }
 
   public checkGate(gateName: string): boolean {
     const gateNameHash = getHashValue(gateName);
-    let gateValue = { value: false, rule_id: '' };
+    let gateValue = { value: false, rule_id: '', secondary_exposures: [] };
     if (this.overrides[gateName] != null) {
-      gateValue = { value: this.overrides[gateName], rule_id: 'override' };
+      gateValue = {
+        value: this.overrides[gateName],
+        rule_id: 'override',
+        secondary_exposures: [],
+      };
     } else if (this.gates[gateNameHash] != null) {
       gateValue = this.gates[gateNameHash];
     }
@@ -106,6 +90,7 @@ export default class StatsigStore {
         gateName,
         gateValue.value,
         gateValue.rule_id,
+        gateValue.secondary_exposures,
       );
     return gateValue.value === true;
   }
@@ -122,6 +107,7 @@ export default class StatsigStore {
         this.sdkInternal.getCurrentUser(),
         configName,
         configValue.getRuleID(),
+        configValue._getSecondaryExposures(),
       );
     return configValue;
   }
@@ -162,19 +148,24 @@ export default class StatsigStore {
     return this.gates[hash] != null;
   }
 
-  private parseConfigs(
-    json: Record<string, any>,
-  ): Record<string, DynamicConfig> {
-    let parsed: Record<string, DynamicConfig> = {};
-    for (const configName in json) {
-      if (configName && json[configName]) {
-        parsed[configName] = new DynamicConfig(
-          configName,
-          json[configName].value,
-          json[configName].rule_id,
-        );
-      }
+  private parseConfigs(jsonConfigs: Record<string, any>): void {
+    if (jsonConfigs.feature_gates) {
+      this.gates = jsonConfigs.feature_gates;
     }
-    return parsed;
+    if (jsonConfigs.dynamic_configs) {
+      let parsed: Record<string, DynamicConfig> = {};
+      let dynamicConfigs = jsonConfigs.dynamic_configs;
+      for (const configName in dynamicConfigs) {
+        if (configName && dynamicConfigs[configName]) {
+          parsed[configName] = new DynamicConfig(
+            configName,
+            dynamicConfigs[configName].value,
+            dynamicConfigs[configName].rule_id,
+            dynamicConfigs[configName].secondary_exposures,
+          );
+        }
+      }
+      this.configs = parsed;
+    }
   }
 }
