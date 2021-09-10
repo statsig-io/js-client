@@ -2,14 +2,18 @@ export default class DynamicConfig {
   private name: string;
   public value: Record<string, any>;
   private ruleID: string;
+  private secondaryExposures: Record<string, string>[];
+
   public constructor(
     configName: string,
     configValue: Record<string, any> = {},
-    ruleID = '',
+    ruleID: string = '',
+    secondaryExposures: Record<string, string>[] = [],
   ) {
     this.name = configName;
     this.value = JSON.parse(JSON.stringify(configValue));
     this.ruleID = ruleID;
+    this.secondaryExposures = secondaryExposures;
   }
 
   public get<T>(key: string, defaultValue: T): T {
@@ -50,5 +54,9 @@ export default class DynamicConfig {
 
   public getName(): string {
     return this.name;
+  }
+
+  public _getSecondaryExposures(): Record<string, string>[] {
+    return this.secondaryExposures;
   }
 }
