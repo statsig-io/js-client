@@ -114,21 +114,18 @@ describe('Verify behavior of InternalStore', () => {
   });
 
   test('Verify save correctly saves into cache.', () => {
-    expect.assertions(7);
+    expect.assertions(5);
     const spyOnSet = jest.spyOn(window.localStorage.__proto__, 'setItem');
     const spyOnGet = jest.spyOn(window.localStorage.__proto__, 'getItem');
     const client = new StatsigClient();
-    // creating a client creates an identity which attempts to get and set the stable id
-    expect(spyOnGet).toHaveBeenCalledTimes(1);
-    expect(spyOnSet).toHaveBeenCalledTimes(1);
     const store = client.getStore();
 
     store.save({ feature_gates: feature_gates, dynamic_configs: configs });
-    expect(spyOnSet).toHaveBeenCalledTimes(2);
+    expect(spyOnSet).toHaveBeenCalledTimes(1);
     expect(store.getConfig('test_config')).toEqual(config_obj);
 
     store.loadFromLocalStorage();
-    expect(spyOnGet).toHaveBeenCalledTimes(3); // twice, load cache values and overrides
+    expect(spyOnGet).toHaveBeenCalledTimes(2); // twice, load cache values and overrides
     expect(store.getConfig('test_config')).toEqual(config_obj); // loading from storage should return right results
     expect(store.checkGate('test_gate')).toEqual(true);
   });

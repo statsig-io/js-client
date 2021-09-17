@@ -3,6 +3,7 @@
  */
 
 import StatsigClient from '../StatsigClient';
+import StatsigAsyncStorage from '../utils/StatsigAsyncLocalStorage';
 
 describe('Verify behavior of StatsigClient', () => {
   const sdkKey = 'client-clienttestkey';
@@ -66,5 +67,34 @@ describe('Verify behavior of StatsigClient', () => {
     expect(statsig.getOverrides()).toEqual({ test_gate: false });
     statsig.removeOverride('test_gate');
     expect(statsig.getOverrides()).toEqual({});
+  });
+
+  test('that async storage works', async () => {
+    expect.assertions(2);
+    const statsig = new StatsigClient();
+    const store: Record<string, string> = {};
+    statsig.setAsyncStorage({
+      getItem(key: string): Promise<string | null> {
+        return Promise.resolve(store[key] ?? null);
+      },
+      setItem(key: string, value: string): Promise<void> {
+        store[key] = value;
+        return Promise.resolve();
+      },
+      removeItem(key: string): Promise<void> {
+        delete store[key];
+        return Promise.resolve();
+      },
+    });
+
+    const spyOnSet = jest.spyOn(StatsigAsyncStorage, 'setItemAsync');
+    const spyOnGet = jest.spyOn(StatsigAsyncStorage, 'getItemAsync');
+
+    await statsig.initializeAsync(sdkKey, { userID: '123' });
+
+    // Set the stable id, save the configs
+    expect(spyOnSet).toHaveBeenCalledTimes(2);
+    // Get the stable id, saved configs, and saved logs
+    expect(spyOnGet).toHaveBeenCalledTimes(3);
   });
 });

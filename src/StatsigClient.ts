@@ -123,8 +123,14 @@ export default class StatsigClient implements IHasStatsigInternal {
     this.sdkKey = sdkKey;
     this.options = new StatsigSDKOptions(options);
     this.identity.setUser(this.normalizeUser(user ?? null));
-    this.store.loadFromLocalStorage();
-    // TODO fetch from async storage first
+
+    if (StatsigAsyncStorage.asyncStorage) {
+      await this.identity.initAsync();
+      await this.store.loadFromAsyncStorage();
+    } else {
+      this.identity.init();
+      this.store.loadFromLocalStorage();
+    }
 
     if (this.appState) {
       this.currentAppState = this.appState.currentState;
@@ -134,16 +140,16 @@ export default class StatsigClient implements IHasStatsigInternal {
     this.pendingInitPromise = this.network
       .fetchValues(
         this.identity.getUser(),
-        (json: Record<string, any>): void => {
-          this.store.save(json);
+        async (json: Record<string, any>): Promise<void> => {
+          await this.store.save(json);
           return;
         },
         (e: Error) => {},
       )
-      .finally(() => {
+      .finally(async () => {
         this.pendingInitPromise = null;
-        this.logger.sendLocalStorageRequests();
         this.ready = true;
+        this.logger.sendSavedRequests();
       });
     return this.pendingInitPromise;
   }
@@ -241,8 +247,8 @@ export default class StatsigClient implements IHasStatsigInternal {
     this.pendingInitPromise = this.network
       .fetchValues(
         this.identity.getUser(),
-        (json: Record<string, any>): void => {
-          this.store.save(json);
+        async (json: Record<string, any>): Promise<void> => {
+          await this.store.save(json);
         },
         (e: Error) => {
           throw e;
@@ -326,7 +332,7 @@ export default class StatsigClient implements IHasStatsigInternal {
       this.currentAppState?.match(/inactive|background/) &&
       nextAppState === 'active'
     ) {
-      this.logger.sendLocalStorageRequests();
+      this.logger.sendSavedRequests();
     }
     this.currentAppState = nextAppState;
   }

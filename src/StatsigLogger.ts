@@ -1,6 +1,7 @@
 import LogEvent from './LogEvent';
 import { IHasStatsigInternal } from './StatsigClient';
 import { StatsigUser } from './StatsigUser';
+import StatsigAsyncStorage from './utils/StatsigAsyncLocalStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
 
 const STATSIG_LOCAL_STORAGE_LOGGING_REQUEST_KEY =
@@ -165,7 +166,7 @@ export default class StatsigLogger {
           processor.logInternal(logFailureEvent);
         }
       })
-      .finally(() => {
+      .finally(async () => {
         if (isClosing) {
           if (this.queue.length > 0) {
             this.failedLogEvents.push({
@@ -176,15 +177,22 @@ export default class StatsigLogger {
             // on app background/window blur, save unsent events as a request and clean up the queue (in case app foregrounds)
             this.queue = [];
           }
-          processor.saveFailedRequests();
+          await processor.saveFailedRequests();
         }
       });
   }
 
-  private saveFailedRequests(): void {
+  private async saveFailedRequests(): Promise<void> {
     if (this.failedLogEvents.length > 0) {
       const requestsCopy = this.failedLogEvents;
       this.failedLogEvents = [];
+      if (StatsigAsyncStorage.asyncStorage) {
+        await StatsigAsyncStorage.setItemAsync(
+          STATSIG_LOCAL_STORAGE_LOGGING_REQUEST_KEY,
+          JSON.stringify(requestsCopy),
+        );
+        return;
+      }
       StatsigLocalStorage.setItem(
         STATSIG_LOCAL_STORAGE_LOGGING_REQUEST_KEY,
         JSON.stringify(requestsCopy),
@@ -192,10 +200,17 @@ export default class StatsigLogger {
     }
   }
 
-  public sendLocalStorageRequests(): void {
-    const failedRequests = StatsigLocalStorage.getItem(
-      STATSIG_LOCAL_STORAGE_LOGGING_REQUEST_KEY,
-    );
+  public async sendSavedRequests(): Promise<void> {
+    let failedRequests;
+    if (StatsigAsyncStorage.asyncStorage) {
+      failedRequests = await StatsigAsyncStorage.getItemAsync(
+        STATSIG_LOCAL_STORAGE_LOGGING_REQUEST_KEY,
+      );
+    } else {
+      failedRequests = StatsigLocalStorage.getItem(
+        STATSIG_LOCAL_STORAGE_LOGGING_REQUEST_KEY,
+      );
+    }
     if (failedRequests == null) {
       return;
     }

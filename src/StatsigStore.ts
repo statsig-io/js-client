@@ -3,6 +3,7 @@ import { sha256 } from 'js-sha256';
 import DynamicConfig from './DynamicConfig';
 import { IHasStatsigInternal } from './StatsigClient';
 import { Base64 } from './utils/Base64';
+import StatsigAsyncStorage from './utils/StatsigAsyncLocalStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
 
 function getHashValue(value: string) {
@@ -31,8 +32,17 @@ export default class StatsigStore {
     this.sdkInternal = sdkInternal;
   }
 
+  public async loadFromAsyncStorage(): Promise<void> {
+    const persisted = await StatsigAsyncStorage.getItemAsync(INTERNAL_STORE_KEY);
+    this.loadFrom(persisted);
+  }
+
   public loadFromLocalStorage(): void {
     const persisted = StatsigLocalStorage.getItem(INTERNAL_STORE_KEY);
+    this.loadFrom(persisted);
+  }
+
+  private loadFrom(persisted: string | null): void {
     if (persisted == null) {
       this.loadOverrides();
       return;
@@ -62,8 +72,12 @@ export default class StatsigStore {
     }
   }
 
-  public save(jsonConfigs: Record<string, any>): void {
+  public async save(jsonConfigs: Record<string, any>): Promise<void> {
     this.parseConfigs(jsonConfigs);
+
+    if (StatsigAsyncStorage.asyncStorage) {
+      await StatsigAsyncStorage.setItemAsync(INTERNAL_STORE_KEY, JSON.stringify(jsonConfigs));
+    }
 
     StatsigLocalStorage.setItem(
       INTERNAL_STORE_KEY,

@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { _SDKPackageInfo } from './StatsigClient';
 import { StatsigUser } from './StatsigUser';
+import StatsigAsyncStorage from './utils/StatsigAsyncLocalStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
 
 export type DeviceInfo = {
@@ -68,11 +69,23 @@ export default class Identity {
       sessionID: uuidv4(),
       sdkType: 'js-client',
       sdkVersion: require('../package.json')?.version ?? '',
-      stableID: this.getStableID(),
+      stableID: '',
     };
   }
 
-  private getStableID(): string {
+  public async initAsync(): Promise<Identity> {
+    if (StatsigAsyncStorage.asyncStorage) {
+      let stableID = await StatsigAsyncStorage.getItemAsync(STATSIG_STABLE_ID_KEY);
+      if (stableID === null) {
+        stableID = uuidv4();
+        StatsigAsyncStorage.setItemAsync(STATSIG_STABLE_ID_KEY, stableID);
+      }
+      this.statsigMetadata.stableID = stableID
+    }
+    return this;
+  }
+
+  public init(): string {
     let stableID = StatsigLocalStorage.getItem(STATSIG_STABLE_ID_KEY);
     if (stableID == null) {
       stableID = uuidv4();
