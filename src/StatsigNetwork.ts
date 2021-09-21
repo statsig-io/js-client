@@ -127,6 +127,7 @@ export default class StatsigNetwork {
             }, backoff);
           });
         }
+        return Promise.reject(e);
       })
       .finally(() => {
         this.leakyBucket[url] = Math.max(this.leakyBucket[url] - 1, 0);
