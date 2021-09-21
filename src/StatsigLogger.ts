@@ -214,7 +214,14 @@ export default class StatsigLogger {
     if (failedRequests == null) {
       return;
     }
-    const requestBodies = JSON.parse(failedRequests);
+    let requestBodies = [];
+    try {
+      requestBodies = JSON.parse(failedRequests);
+    } catch (e) {
+      this.clearLocalStorageRequests();
+      return;
+    }
+    
     for (const requestBody of requestBodies) {
       if (
         requestBody != null &&
@@ -231,8 +238,23 @@ export default class StatsigLogger {
           })
           .catch((e) => {
             this.failedLogEvents.push(requestBody);
-          });
+          })
+          .finally(() => {
+            this.clearLocalStorageRequests();
+          })
       }
+    }
+  }
+
+  private async clearLocalStorageRequests(): Promise<void> {
+    if (StatsigAsyncStorage.asyncStorage) {
+      await StatsigAsyncStorage.removeItemAsync(
+        STATSIG_LOCAL_STORAGE_LOGGING_REQUEST_KEY,
+      );
+    } else {
+      StatsigLocalStorage.removeItem(
+        STATSIG_LOCAL_STORAGE_LOGGING_REQUEST_KEY,
+      );
     }
   }
 
