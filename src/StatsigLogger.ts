@@ -1,5 +1,6 @@
 import LogEvent from './LogEvent';
 import { IHasStatsigInternal } from './StatsigClient';
+import { StatsigEndpoint } from './StatsigNetwork';
 import { StatsigUser } from './StatsigUser';
 import StatsigAsyncStorage from './utils/StatsigAsyncLocalStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
@@ -123,7 +124,7 @@ export default class StatsigLogger {
     const processor = this;
     this.sdkInternal
       .getNetwork()
-      .post('log_event', {
+      .postToEndpoint(StatsigEndpoint.LogEvent, {
         events: oldQueue,
         statsigMetadata: this.sdkInternal.getStatsigMetadata(),
       })
@@ -230,7 +231,7 @@ export default class StatsigLogger {
       ) {
         this.sdkInternal
           .getNetwork()
-          .post('log_event', requestBody)
+          .postToEndpoint(StatsigEndpoint.LogEvent, requestBody)
           .then((response) => {
             if (!response.ok) {
               throw Error(response.status);

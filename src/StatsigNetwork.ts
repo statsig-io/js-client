@@ -1,6 +1,11 @@
 import { IHasStatsigInternal } from './StatsigClient';
 import { StatsigUser } from './StatsigUser';
 
+export enum StatsigEndpoint {
+  Initialize = 'initialize',
+  LogEvent = 'log_event',
+}
+
 export default class StatsigNetwork {
   private sdkInternal: IHasStatsigInternal;
 
@@ -19,7 +24,7 @@ export default class StatsigNetwork {
     rejectCallback: (e: Error) => void,
   ): Promise<void> {
     return this.postWithTimeout(
-      'initialize',
+      StatsigEndpoint.Initialize,
       {
         user: user,
         statsigMetadata: this.sdkInternal.getStatsigMetadata(),
@@ -32,7 +37,7 @@ export default class StatsigNetwork {
   }
 
   private postWithTimeout(
-    path: string,
+    endpointName: StatsigEndpoint,
     body: object,
     resolveCallback: (json: Record<string, any>) => void,
     rejectCallback: (e: Error) => void,
@@ -40,7 +45,7 @@ export default class StatsigNetwork {
     retries: number = 0,
     backoff: number = 1000,
   ): Promise<void> {
-    const fetchPromise = this.post(path, body, retries, backoff)
+    const fetchPromise = this.postToEndpoint(endpointName, body, retries, backoff)
       .then((res) => {
         if (res.ok) {
           return res.json().then((json: Record<string, any>) => {
@@ -50,7 +55,7 @@ export default class StatsigNetwork {
         }
 
         return Promise.reject(
-          new Error('Request to ' + path + ' failed with status ' + res.status),
+          new Error('Request to ' + endpointName + ' failed with status ' + res.status),
         );
       })
       .catch((e) => {
@@ -71,13 +76,13 @@ export default class StatsigNetwork {
     return fetchPromise;
   }
 
-  public post(
-    path: string,
+  public postToEndpoint(
+    endpointName: StatsigEndpoint,
     body: object,
     retries: number = 0,
     backoff: number = 1000,
   ): Promise<any> {
-    const url = this.sdkInternal.getOptions().getApi() + path;
+    const url = this.sdkInternal.getOptions().getApi() + endpointName;
     const counter = this.leakyBucket[url];
     if (counter != null && counter >= 30) {
       return Promise.reject(
@@ -121,7 +126,7 @@ export default class StatsigNetwork {
           return new Promise((resolve, reject) => {
             setTimeout(() => {
               this.leakyBucket[url] = Math.max(this.leakyBucket[url] - 1, 0);
-              this.post(url, body, retries - 1, backoff * 2)
+              this.postToEndpoint(endpointName, body, retries - 1, backoff * 2)
                 .then(resolve)
                 .catch(reject);
             }, backoff);
