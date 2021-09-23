@@ -91,6 +91,7 @@ export default class Identity {
       stableID = uuidv4();
       StatsigLocalStorage.setItem(STATSIG_STABLE_ID_KEY, stableID);
     }
+    this.statsigMetadata.stableID = stableID
     return stableID;
   }
 
