@@ -14,9 +14,14 @@ export default class StatsigNetwork {
 
   private leakyBucket: Record<string, number>;
 
+  private canUseKeepalive : boolean = false;
+
   public constructor(sdkInternal: IHasStatsigInternal) {
     this.sdkInternal = sdkInternal;
     this.leakyBucket = {};
+    try {
+      this.canUseKeepalive = 'keepalive' in new Request('');
+    } catch (_e) {}
   }
 
   public fetchValues(
@@ -117,7 +122,7 @@ export default class StatsigNetwork {
       this.leakyBucket[url] = counter + 1;
     }
 
-    const params = {
+    const params : RequestInit = {
       method: 'POST',
       body: JSON.stringify(body),
       headers: {
@@ -125,8 +130,11 @@ export default class StatsigNetwork {
         'STATSIG-API-KEY': this.sdkInternal.getSDKKey(),
         'STATSIG-CLIENT-TIME': Date.now() + '',
       },
-      keepalive: true,
     };
+
+    if (this.canUseKeepalive) {
+      params.keepalive = true;
+    }
 
     return fetch(url, params)
       .then((res) => {
@@ -156,5 +164,9 @@ export default class StatsigNetwork {
       .finally(() => {
         this.leakyBucket[url] = Math.max(this.leakyBucket[url] - 1, 0);
       });
+  }
+
+  public supportsKeepalive(): boolean {
+    return this.canUseKeepalive;
   }
 }

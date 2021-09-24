@@ -19,11 +19,6 @@ type FailedLogEventBody = {
   time: number;
 };
 
-let SUPPORTS_KEEPALIVE = false;
-try {
-  SUPPORTS_KEEPALIVE = 'keepalive' in new Request('');
-} catch (_e) {}
-
 const MS_RETRY_LOGS_CUTOFF = 5 * 24 * 60 * 60 * 1000;
 
 export default class StatsigLogger {
@@ -133,7 +128,7 @@ export default class StatsigLogger {
 
     const oldQueue = this.queue;
     this.queue = [];
-    if (isClosing && !SUPPORTS_KEEPALIVE && navigator && navigator.sendBeacon) {
+    if (isClosing && !this.sdkInternal.getNetwork().supportsKeepalive() && navigator && navigator.sendBeacon) {
       const beacon = this.sdkInternal.getNetwork().sendLogBeacon({
         events: oldQueue,
         statsigMetadata: this.sdkInternal.getStatsigMetadata(),
