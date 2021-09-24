@@ -95,11 +95,11 @@ export default class StatsigClient implements IHasStatsigInternal {
   public constructor() {
     this.ready = false;
     this.sdkKey = null;
+    this.options = new StatsigSDKOptions();
+    this.identity = new StatsigIdentity();
     this.network = new StatsigNetwork(this);
     this.store = new StatsigStore(this);
     this.logger = new StatsigLogger(this);
-    this.options = new StatsigSDKOptions();
-    this.identity = new StatsigIdentity();
   }
 
   public async initializeAsync(
@@ -123,6 +123,7 @@ export default class StatsigClient implements IHasStatsigInternal {
     this.sdkKey = sdkKey;
     this.options = new StatsigSDKOptions(options);
     this.identity.setUser(this.normalizeUser(user ?? null));
+    this.logger.init();
 
     if (StatsigAsyncStorage.asyncStorage) {
       await this.identity.initAsync();

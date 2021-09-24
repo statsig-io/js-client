@@ -16,6 +16,7 @@ const LOG_FAILURE_EVENT = INTERNAL_EVENT_PREFIX + 'log_event_failed';
 type FailedLogEventBody = {
   events: object[];
   statsigMetadata: object;
+  time: number;
 };
 
 let SUPPORTS_KEEPALIVE = false;
@@ -23,16 +24,14 @@ try {
   SUPPORTS_KEEPALIVE = 'keepalive' in new Request('');
 } catch (_e) {}
 
+const MS_RETRY_LOGS_CUTOFF = 5 * 24 * 60 * 60 * 1000;
+
 export default class StatsigLogger {
   private sdkInternal: IHasStatsigInternal;
 
-  private flushBatchSize: number = 10;
-  private flushInterval: number = 10 * 1000;
-  private maxEventQueueSize: number = 1000;
-
   private queue: object[];
 
-  private flushTimer: ReturnType<typeof setTimeout> | null;
+  private flushInterval: ReturnType<typeof setInterval> | null;
   private loggedErrors: Set<string>;
   private failedLogEvents: FailedLogEventBody[];
 
@@ -40,11 +39,13 @@ export default class StatsigLogger {
     this.sdkInternal = sdkInternal;
 
     this.queue = [];
-    this.flushTimer = null;
+    this.flushInterval = null;
     this.loggedErrors = new Set();
 
     this.failedLogEvents = [];
+  }
 
+  public init(): void {
     if (
       typeof window !== 'undefined' &&
       typeof window.addEventListener === 'function'
@@ -62,6 +63,11 @@ export default class StatsigLogger {
         }
       });
     }
+    
+    const me = this;
+    this.flushInterval = setInterval(() => {
+      me.flush();
+    }, this.sdkInternal.getOptions().getLoggingIntervalMillis());
   }
 
   public log(event: LogEvent): void {
@@ -78,10 +84,9 @@ export default class StatsigLogger {
       }
     }
     this.queue.push(event.toJsonObject());
-    if (this.queue.length >= this.flushBatchSize) {
+    if (this.queue.length >= this.sdkInternal.getOptions().getLoggingBufferMaxSize()) {
       this.flush();
     }
-    this.resetFlushTimeout();
   }
 
   public logGateExposure(
@@ -122,6 +127,9 @@ export default class StatsigLogger {
     if (this.queue.length === 0) {
       return;
     }
+    if (isClosing && this.flushInterval != null) {
+      clearInterval(this.flushInterval);
+    }
 
     const oldQueue = this.queue;
     this.queue = [];
@@ -136,6 +144,7 @@ export default class StatsigLogger {
           this.failedLogEvents.push({
             events: this.queue,
             statsigMetadata: this.sdkInternal.getStatsigMetadata(),
+            time: Date.now(),
           });
           this.queue = [];
         }
@@ -147,30 +156,27 @@ export default class StatsigLogger {
     const processor = this;
     this.sdkInternal
       .getNetwork()
-      .postToEndpoint(StatsigEndpoint.LogEvent, {
-        events: oldQueue,
-        statsigMetadata: this.sdkInternal.getStatsigMetadata(),
-      })
+      .postToEndpoint(
+        StatsigEndpoint.LogEvent,
+        {
+          events: oldQueue,
+          statsigMetadata: this.sdkInternal.getStatsigMetadata(),
+        },
+        3, /* retries */
+      )
       .then((response) => {
         if (!response.ok) {
           throw response;
         }
       })
       .catch((error) => {
-        this.queue = oldQueue.concat(this.queue);
+        this.failedLogEvents.push({
+          events: oldQueue,
+          statsigMetadata: this.sdkInternal.getStatsigMetadata(),
+          time: Date.now(),
+        });
 
-        if (this.queue.length >= this.maxEventQueueSize) {
-          // Drop oldest events so that the queue has 10 less than
-          // the max amount of events we allow
-          this.queue = this.queue.slice(
-            this.queue.length - this.maxEventQueueSize + 10,
-          );
-        } else if (this.queue.length >= this.flushBatchSize) {
-          this.flushBatchSize = Math.min(
-            this.queue.length + this.flushBatchSize,
-            this.maxEventQueueSize,
-          );
-        }
+        processor.saveFailedRequests();
 
         if (typeof error.text === 'function') {
           error.text().then((errorText: string) => {
@@ -196,6 +202,7 @@ export default class StatsigLogger {
             this.failedLogEvents.push({
               events: this.queue,
               statsigMetadata: this.sdkInternal.getStatsigMetadata(),
+              time: Date.now(),
             });
 
             // on app background/window blur, save unsent events as a request and clean up the queue (in case app foregrounds)
@@ -208,18 +215,17 @@ export default class StatsigLogger {
 
   private async saveFailedRequests(): Promise<void> {
     if (this.failedLogEvents.length > 0) {
-      const requestsCopy = this.failedLogEvents;
-      this.failedLogEvents = [];
+      const requestsCopy = JSON.stringify(this.failedLogEvents);
       if (StatsigAsyncStorage.asyncStorage) {
         await StatsigAsyncStorage.setItemAsync(
           STATSIG_LOCAL_STORAGE_LOGGING_REQUEST_KEY,
-          JSON.stringify(requestsCopy),
+          requestsCopy,
         );
         return;
       }
       StatsigLocalStorage.setItem(
         STATSIG_LOCAL_STORAGE_LOGGING_REQUEST_KEY,
-        JSON.stringify(requestsCopy),
+        requestsCopy,
       );
     }
   }
@@ -241,9 +247,9 @@ export default class StatsigLogger {
     let requestBodies = [];
     try {
       requestBodies = JSON.parse(failedRequests);
-    } catch (e) {
+    } catch (_e) {
+    } finally {
       this.clearLocalStorageRequests();
-      return;
     }
     
     for (const requestBody of requestBodies) {
@@ -260,12 +266,11 @@ export default class StatsigLogger {
               throw Error(response.status);
             }
           })
-          .catch((e) => {
-            this.failedLogEvents.push(requestBody);
-          })
-          .finally(() => {
-            this.clearLocalStorageRequests();
-          })
+          .catch((_e) => {
+            if (requestBody.time > Date.now() - MS_RETRY_LOGS_CUTOFF) {
+              this.failedLogEvents.push(requestBody);
+            }
+          });
       }
     }
   }
@@ -288,15 +293,5 @@ export default class StatsigLogger {
     }
     this.loggedErrors.add(event.getName());
     this.log(event);
-  }
-
-  private resetFlushTimeout(): void {
-    if (this.flushTimer != null) {
-      clearTimeout(this.flushTimer);
-    }
-    const me = this;
-    this.flushTimer = setTimeout(() => {
-      me.flush();
-    }, this.flushInterval);
   }
 }

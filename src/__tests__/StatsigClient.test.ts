@@ -42,9 +42,12 @@ describe('Verify behavior of StatsigClient', () => {
   });
 
   test('that override APIs work', async () => {
-    expect.assertions(8);
+    expect.assertions(10);
     const statsig = new StatsigClient();
     await statsig.initializeAsync(sdkKey, { userID: '123' });
+    expect(statsig.getOptions().getLoggingBufferMaxSize()).toEqual(10);
+    expect(statsig.getOptions().getLoggingIntervalMillis()).toEqual(5000);
+
     // test_gate is true without override
     expect(statsig.checkGate('test_gate')).toBe(true);
 
@@ -70,7 +73,7 @@ describe('Verify behavior of StatsigClient', () => {
   });
 
   test('that async storage works', async () => {
-    expect.assertions(2);
+    expect.assertions(4);
     const statsig = new StatsigClient();
     const store: Record<string, string> = {};
     statsig.setAsyncStorage({
@@ -90,7 +93,13 @@ describe('Verify behavior of StatsigClient', () => {
     const spyOnSet = jest.spyOn(StatsigAsyncStorage, 'setItemAsync');
     const spyOnGet = jest.spyOn(StatsigAsyncStorage, 'getItemAsync');
 
-    await statsig.initializeAsync(sdkKey, { userID: '123' });
+    await statsig.initializeAsync(sdkKey, { userID: '123' }, {
+      loggingBufferMaxSize: 600,
+      loggingIntervalMillis: 100,
+    });
+
+    expect(statsig.getOptions().getLoggingBufferMaxSize()).toEqual(500);
+    expect(statsig.getOptions().getLoggingIntervalMillis()).toEqual(1000);
 
     // Set the stable id, save the configs
     expect(spyOnSet).toHaveBeenCalledTimes(2);
