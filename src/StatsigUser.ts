@@ -6,6 +6,6 @@ export type StatsigUser = {
   country?: string;
   locale?: string;
   appVersion?: string;
-  custom?: Record<string, string | number | boolean | Array<string>>;
-  privateAttributes?: Record<string, string | number | boolean | Array<string>>;
+  custom?: Record<string, string | number | boolean | Array<string> | undefined>;
+  privateAttributes?: Record<string, string | number | boolean | Array<string> | undefined>;
 };
