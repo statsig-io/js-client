@@ -18,6 +18,11 @@ type FailedLogEventBody = {
   statsigMetadata: object;
 };
 
+let SUPPORTS_KEEPALIVE = false;
+try {
+  SUPPORTS_KEEPALIVE = 'keepalive' in new Request('');
+} catch (_e) {}
+
 export default class StatsigLogger {
   private sdkInternal: IHasStatsigInternal;
 
@@ -120,6 +125,24 @@ export default class StatsigLogger {
 
     const oldQueue = this.queue;
     this.queue = [];
+    if (isClosing && !SUPPORTS_KEEPALIVE && navigator && navigator.sendBeacon) {
+      const beacon = this.sdkInternal.getNetwork().sendLogBeacon({
+        events: oldQueue,
+        statsigMetadata: this.sdkInternal.getStatsigMetadata(),
+      });
+      if (!beacon) {
+        this.queue = oldQueue.concat(this.queue);
+        if (this.queue.length > 0) {
+          this.failedLogEvents.push({
+            events: this.queue,
+            statsigMetadata: this.sdkInternal.getStatsigMetadata(),
+          });
+          this.queue = [];
+        }
+        this.saveFailedRequests();
+      }
+      return;
+    }
 
     const processor = this;
     this.sdkInternal
