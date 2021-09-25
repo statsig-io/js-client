@@ -11,6 +11,7 @@ export type StatsigOptions = {
   environment?: StatsigEnvironment;
   loggingIntervalMillis?: number;
   loggingBufferMaxSize?: number;
+  disableNetworkKeepalive?: boolean;
 };
 
 type BoundedNumberInput = {
@@ -25,6 +26,8 @@ export default class StatsigSDKOptions {
   private environment: StatsigEnvironment | null;
   private loggingIntervalMillis: number;
   private loggingBufferMaxSize: number;
+
+  private disableNetworkKeepalive: boolean;
 
   constructor(options?: StatsigOptions | null) {
     if (options == null) {
@@ -50,6 +53,8 @@ export default class StatsigSDKOptions {
         max: 500,
       },
     );
+
+    this.disableNetworkKeepalive = options.disableNetworkKeepalive ?? false;
   }
 
   getApi(): string {
@@ -70,6 +75,10 @@ export default class StatsigSDKOptions {
 
   getLoggingBufferMaxSize(): number {
     return this.loggingBufferMaxSize;
+  }
+
+  getDisableNetworkKeepalive(): boolean {
+    return this.disableNetworkKeepalive;
   }
 
   private normalizeNumberInput(input: number | undefined, bounds: BoundedNumberInput): number {

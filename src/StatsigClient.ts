@@ -124,6 +124,7 @@ export default class StatsigClient implements IHasStatsigInternal {
     this.options = new StatsigSDKOptions(options);
     this.identity.setUser(this.normalizeUser(user ?? null));
     this.logger.init();
+    this.network.init();
 
     if (StatsigAsyncStorage.asyncStorage) {
       await this.identity.initAsync();

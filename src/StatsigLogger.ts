@@ -158,6 +158,8 @@ export default class StatsigLogger {
           statsigMetadata: this.sdkInternal.getStatsigMetadata(),
         },
         3, /* retries */
+        1000, /* backoff */
+        isClosing, /* useKeepalive */
       )
       .then((response) => {
         if (!response.ok) {

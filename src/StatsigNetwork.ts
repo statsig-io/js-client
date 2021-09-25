@@ -19,9 +19,14 @@ export default class StatsigNetwork {
   public constructor(sdkInternal: IHasStatsigInternal) {
     this.sdkInternal = sdkInternal;
     this.leakyBucket = {};
-    try {
-      this.canUseKeepalive = 'keepalive' in new Request('');
-    } catch (_e) {}
+  }
+
+  public init(): void {
+    if (!this.sdkInternal.getOptions().getDisableNetworkKeepalive()) {
+      try {
+        this.canUseKeepalive = 'keepalive' in new Request('');
+      } catch (_e) {}
+    }
   }
 
   public fetchValues(
@@ -105,6 +110,7 @@ export default class StatsigNetwork {
     body: object,
     retries: number = 0,
     backoff: number = 1000,
+    useKeepalive: boolean = false,
   ): Promise<any> {
     const url = this.sdkInternal.getOptions().getApi() + endpointName;
     const counter = this.leakyBucket[url];
@@ -132,7 +138,7 @@ export default class StatsigNetwork {
       },
     };
 
-    if (this.canUseKeepalive) {
+    if (this.canUseKeepalive && useKeepalive) {
       params.keepalive = true;
     }
 
