@@ -70,6 +70,11 @@ export default class Statsig {
     Statsig.instance.shutdown();
   }
 
+  /**
+   * Overrides the given gate locally with the given value
+   * @param gateName - name of the gate to override
+   * @param value - value to assign to the gate
+   */
   public static overrideGate(gateName: string, value: boolean): void {
     if (!Statsig.instance) {
       throw new Error('Call and wait for initialize() to finish first.');
@@ -77,6 +82,22 @@ export default class Statsig {
     Statsig.instance.overrideGate(gateName, value);
   }
 
+    /**
+   * Overrides the given config locally with the given value
+   * @param configName - name of the config to override
+   * @param value - value to assign to the config
+   */
+  public static overrideConfig(configName: string, value: object): void {
+    if (!Statsig.instance) {
+      throw new Error('Call and wait for initialize() to finish first.');
+    }
+    Statsig.instance.overrideConfig(configName, value);
+  }
+
+  /**
+   * @deprecated use removeGateOverride or removeConfigOverride
+   * @param name the gate override to remove
+   */
   public static removeOverride(name?: string): void {
     if (!Statsig.instance) {
       throw new Error('Call and wait for initialize() to finish first.');
@@ -84,7 +105,41 @@ export default class Statsig {
     Statsig.instance.removeOverride(name);
   }
 
+  /**
+   * @param name the gate override to remove
+   */
+  public static removeGateOverride(name?: string): void {
+    if (!Statsig.instance) {
+      throw new Error('Call and wait for initialize() to finish first.');
+    }
+    Statsig.instance.removeGateOverride(name);
+  }
+
+  /**
+   * @param name the config override to remove
+   */
+  public static removeConfigOverride(name?: string): void {
+    if (!Statsig.instance) {
+      throw new Error('Call and wait for initialize() to finish first.');
+    }
+    Statsig.instance.removeConfigOverride(name);
+  }
+
+  /**
+   * @deprecated use getAllOverrides
+   * @returns the gate overrides
+   */
   public static getOverrides(): Record<string, any> {
+    if (!Statsig.instance) {
+      throw new Error('Call and wait for initialize() to finish first.');
+    }
+    return Statsig.instance.getOverrides();
+  }
+
+  /**
+   * @returns The local gate and config overrides
+   */
+  public static getAllOverrides(): Record<string, any> {
     if (!Statsig.instance) {
       throw new Error('Call and wait for initialize() to finish first.');
     }

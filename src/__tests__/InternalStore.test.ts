@@ -182,7 +182,7 @@ describe('Verify behavior of InternalStore', () => {
     });
   });
 
-  test('that override APIs work', async () => {
+  test('that deprecated override gate APIs work', async () => {
     expect.assertions(8);
     const statsig = new StatsigClient();
     await statsig.initializeAsync(sdkKey, { userID: '123' });
@@ -192,21 +192,65 @@ describe('Verify behavior of InternalStore', () => {
     // becomes false with override
     statsig.getStore().overrideGate('test_gate', false);
     expect(statsig.getStore().checkGate('test_gate')).toBe(false);
-    expect(statsig.getStore().getOverrides()).toEqual({ test_gate: false });
+    expect(statsig.getOverrides()).toEqual({ test_gate: false });
 
     // overriding non-existent gate does not do anything
-    statsig.getStore().overrideGate('fake_gate', true);
-    expect(statsig.getStore().getOverrides()).toEqual({ test_gate: false });
+    statsig.overrideGate('fake_gate', true);
+    expect(statsig.getOverrides()).toEqual({ test_gate: false });
 
     // remove all overrides
-    statsig.getStore().removeOverride();
-    expect(statsig.getStore().getOverrides()).toEqual({});
+    statsig.removeOverride();
+    expect(statsig.getOverrides()).toEqual({});
 
     // remove a named override
     statsig.getStore().overrideGate('test_gate', false);
     expect(statsig.getStore().checkGate('test_gate')).toBe(false);
-    expect(statsig.getStore().getOverrides()).toEqual({ test_gate: false });
-    statsig.getStore().removeOverride('test_gate');
-    expect(statsig.getStore().getOverrides()).toEqual({});
+    expect(statsig.getOverrides()).toEqual({ test_gate: false });
+    statsig.removeOverride('test_gate');
+    expect(statsig.getOverrides()).toEqual({});
+  });
+
+  test('that override gate/config APIs work', async () => {
+    expect.assertions(14);
+    const statsig = new StatsigClient();
+    await statsig.initializeAsync(sdkKey, { userID: '123' });
+    // test_config matches without override
+    expect(statsig.getStore().getConfig('test_config')).toEqual(config_obj);
+
+    const overrideConfig = {
+      override: true,
+      value: 'Override',
+      count: 1,
+    }
+    statsig.getStore().overrideConfig('test_config', overrideConfig);
+    expect(statsig.getStore().getConfig('test_config').getValue()).toEqual(overrideConfig);
+    expect(statsig.getAllOverrides().configs).toEqual({ test_config: overrideConfig });
+    expect(statsig.getAllOverrides().gates).toEqual({});
+
+    // overriding non-existent config does not do anything
+    statsig.overrideConfig('nonexistent_config', {abc: 123});
+    expect(statsig.getAllOverrides().configs).toEqual({ test_config: overrideConfig });
+    
+
+    // remove config override, add gate override
+    statsig.removeConfigOverride();
+    expect(statsig.getStore().checkGate('test_gate')).toBe(true);
+    statsig.getStore().overrideGate('test_gate', false);
+    expect(statsig.getStore().checkGate('test_gate')).toBe(false);
+    expect(statsig.getAllOverrides()).toEqual({gates: { test_gate: false }, configs: {}});
+
+    // overriding non-existent gate does not do anything
+    statsig.overrideGate('nonexistent_gate', true);
+    expect(statsig.getAllOverrides().gates).toEqual({ test_gate: false });
+
+    // remove a named override
+    statsig.overrideConfig('test_config', overrideConfig);
+    expect(statsig.getConfig('test_config').getValue()).toEqual(overrideConfig);
+    expect(statsig.getAllOverrides().configs).toEqual({ test_config: overrideConfig });
+    statsig.removeConfigOverride('test_config')
+    expect(statsig.getAllOverrides().gates).toEqual({ test_gate: false });
+    expect(statsig.getAllOverrides().configs).toEqual({});
+    statsig.removeGateOverride("test_gate")
+    expect(statsig.getAllOverrides().gates).toEqual({});
   });
 });

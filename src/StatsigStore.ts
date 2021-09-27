@@ -1,7 +1,7 @@
 import { sha256 } from 'js-sha256';
 
 import DynamicConfig from './DynamicConfig';
-import { IHasStatsigInternal } from './StatsigClient';
+import { IHasStatsigInternal, StatsigOverrides } from './StatsigClient';
 import { Base64 } from './utils/Base64';
 import StatsigAsyncStorage from './utils/StatsigAsyncLocalStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
@@ -17,16 +17,20 @@ type FeatureGate = {
   rule_id: string;
   secondary_exposures: [];
 };
+
 const INTERNAL_STORE_KEY = 'STATSIG_LOCAL_STORAGE_INTERNAL_STORE_V3';
-const OVERRIDE_STORE_KEY = 'STATSIG_LOCAL_STORAGE_INTERNAL_STORE_OVERRIDES_V2';
+const OVERRIDES_STORE_KEY = 'STATSIG_LOCAL_STORAGE_INTERNAL_STORE_OVERRIDES_V3';
 
 export default class StatsigStore {
   private sdkInternal: IHasStatsigInternal;
 
+  private overrides: StatsigOverrides = {
+    gates: {},
+    configs: {},
+  };
+
   private gates: Record<string, FeatureGate> = {};
   private configs: Record<string, DynamicConfig> = {};
-
-  private overrides: Record<string, boolean> = {};
 
   public constructor(sdkInternal: IHasStatsigInternal) {
     this.sdkInternal = sdkInternal;
@@ -61,14 +65,13 @@ export default class StatsigStore {
   }
 
   private loadOverrides(): void {
-    const overrides = StatsigLocalStorage.getItem(OVERRIDE_STORE_KEY);
-    if (overrides == null) {
-      return;
-    }
-    try {
-      this.overrides = JSON.parse(overrides);
-    } catch (e) {
-      StatsigLocalStorage.removeItem(OVERRIDE_STORE_KEY);
+    const overrides = StatsigLocalStorage.getItem(OVERRIDES_STORE_KEY);
+    if (overrides != null) {
+      try {
+        this.overrides = JSON.parse(overrides);
+      } catch (e) {
+        StatsigLocalStorage.removeItem(OVERRIDES_STORE_KEY);
+      }
     }
   }
 
@@ -88,9 +91,9 @@ export default class StatsigStore {
   public checkGate(gateName: string): boolean {
     const gateNameHash = getHashValue(gateName);
     let gateValue = { value: false, rule_id: '', secondary_exposures: [] };
-    if (this.overrides[gateName] != null) {
+    if (this.overrides.gates[gateName] != null) {
       gateValue = {
-        value: this.overrides[gateName],
+        value: this.overrides.gates[gateName],
         rule_id: 'override',
         secondary_exposures: [],
       };
@@ -112,7 +115,13 @@ export default class StatsigStore {
   public getConfig(configName: string): DynamicConfig {
     const configNameHash = getHashValue(configName);
     let configValue = new DynamicConfig(configName);
-    if (this.configs[configNameHash] != null) {
+    if (this.overrides.configs[configName] != null) {
+      configValue = new DynamicConfig(
+        configName,
+        this.overrides.configs[configName],
+        'override',
+      );
+    } else if (this.configs[configNameHash] != null) {
       configValue = this.configs[configNameHash];
     }
     this.sdkInternal
@@ -126,6 +135,23 @@ export default class StatsigStore {
     return configValue;
   }
 
+  public overrideConfig(configName: string, value: object): void {
+    if (!this.hasConfig(configName)) {
+      console.warn(
+        'The provided configName does not exist as a valid config/experiment.',
+      );
+      return;
+    }
+    try {
+      JSON.stringify(value);
+    } catch(e) {
+      console.warn("Failed to stringify given config override.  Dropping", e);
+      return;
+    }
+    this.overrides.configs[configName] = value;
+    this.saveOverrides();
+  }
+
   public overrideGate(gateName: string, value: boolean): void {
     if (!this.hasGate(gateName)) {
       console.warn(
@@ -133,28 +159,46 @@ export default class StatsigStore {
       );
       return;
     }
-    this.overrides[gateName] = value;
-    StatsigLocalStorage.setItem(
-      OVERRIDE_STORE_KEY,
-      JSON.stringify(this.overrides),
-    );
+    this.overrides.gates[gateName] = value;
+    this.saveOverrides();
   }
 
-  public removeOverride(gateName?: string): void {
+  public removeGateOverride(gateName?: string): void {
     if (gateName == null) {
-      this.overrides = {};
-      StatsigLocalStorage.removeItem(OVERRIDE_STORE_KEY);
+      this.overrides.gates = {};
     } else {
-      delete this.overrides[gateName];
+      delete this.overrides.gates[gateName];
+    }
+    this.saveOverrides();
+  }
+
+  public removeConfigOverride(configName?: string): void {
+    if (configName == null) {
+      this.overrides.configs = {};
+    } else {
+      delete this.overrides.configs[configName];
+    }
+    this.saveOverrides();
+  }
+
+  public getAllOverrides(): StatsigOverrides {
+    return this.overrides;
+  }
+
+  private saveOverrides(): void {
+    try {
       StatsigLocalStorage.setItem(
-        OVERRIDE_STORE_KEY,
+        OVERRIDES_STORE_KEY,
         JSON.stringify(this.overrides),
       );
+    } catch (e) {
+      console.warn("Failed to persist gate/config overrides");
     }
   }
 
-  public getOverrides(): Record<string, any> {
-    return this.overrides;
+  private hasConfig(configName: string): boolean {
+    const hash = getHashValue(configName);
+    return this.configs[hash] != null;
   }
 
   private hasGate(gateName: string): boolean {

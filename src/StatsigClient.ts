@@ -48,6 +48,11 @@ export interface IHasStatsigInternal {
   getStatsigMetadata(): Record<string, string | number>;
 }
 
+export type StatsigOverrides = {
+  gates: Record<string, boolean>,
+  configs: Record<string, object>,
+};
+
 export default class StatsigClient implements IHasStatsigInternal {
   // RN dependencies
   private appState: AppState | null = null;
@@ -280,16 +285,62 @@ export default class StatsigClient implements IHasStatsigInternal {
     }
   }
 
+  /**
+   * Stores a local gate override
+   * @param gateName the gate to override
+   * @param value the value to override the gate to
+   */
   public overrideGate(gateName: string, value: boolean): void {
     this.store.overrideGate(gateName, value);
   }
 
-  public removeOverride(name?: string): void {
-    this.store.removeOverride(name);
+  /**
+   * Stores a local config override
+   * @param gateName the config to override
+   * @param value the json value to override the config to
+   */
+  public overrideConfig(configName: string, value: object): void {
+    this.store.overrideConfig(configName, value);
   }
 
+  /**
+   * Removes the given gate override
+   * @param gateName 
+   */
+  public removeGateOverride(gateName?: string): void {
+    this.store.removeGateOverride(gateName);
+  }
+
+  /**
+   * Removes the given config override
+   * @param configName 
+   */
+  public removeConfigOverride(configName?: string): void {
+    this.store.removeConfigOverride(configName);
+  }
+
+  /**
+   * @deprecated - use removeGateOverride or removeConfig override
+   * Removes the given gate override
+   * @param gateName 
+   */
+   public removeOverride(gateName?: string): void {
+    this.store.removeGateOverride(gateName);
+  }
+
+  /**
+   * @deprecated - use getAllOverrides to get gate and config overrides
+   * @returns Gate overrides
+   */
   public getOverrides(): Record<string, any> {
-    return this.store.getOverrides();
+    return this.store.getAllOverrides().gates;
+  }
+
+  /**
+   * @returns The local gate and config overrides
+   */
+  public getAllOverrides(): StatsigOverrides {
+    return this.store.getAllOverrides();
   }
 
   public setSDKPackageInfo(sdkPackageInfo: _SDKPackageInfo) {
