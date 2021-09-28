@@ -55,10 +55,10 @@ export interface IStatsig {
   updateUser(user: StatsigUser | null): Promise<boolean>;
   shutdown(): void;
   overrideGate(gateName: string, value: boolean): void;
-  overrideConfig(gateName: string, value: object): void;
+  overrideConfig(gateName: string, value: Record<string, any>): void;
   removeGateOverride(gateName?: string): void;
   removeConfigOverride(configName?: string): void;
-  getAllOverrides(): Record<string, any>;
+  getAllOverrides(): StatsigOverrides;
 
   // DEPRECATED
   removeOverride(overrideName?: string | null): void;
@@ -77,7 +77,7 @@ export interface IHasStatsigInternal {
 
 export type StatsigOverrides = {
   gates: Record<string, boolean>,
-  configs: Record<string, object>,
+  configs: Record<string, Record<string, any>>,
 };
 
 export default class StatsigClient implements IHasStatsigInternal, IStatsig {
@@ -327,7 +327,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
    * @param gateName the config to override
    * @param value the json value to override the config to
    */
-  public overrideConfig(configName: string, value: object): void {
+  public overrideConfig(configName: string, value: Record<string, any>): void {
     this.store.overrideConfig(configName, value);
   }
 

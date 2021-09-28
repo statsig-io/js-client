@@ -135,7 +135,7 @@ export default class StatsigStore {
     return configValue;
   }
 
-  public overrideConfig(configName: string, value: object): void {
+  public overrideConfig(configName: string, value: Record<string, any>): void {
     if (!this.hasConfig(configName)) {
       console.warn(
         'The provided configName does not exist as a valid config/experiment.',

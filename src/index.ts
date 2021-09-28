@@ -1,5 +1,5 @@
 import DynamicConfig from './DynamicConfig';
-import StatsigClient from './StatsigClient';
+import StatsigClient, { StatsigOverrides } from './StatsigClient';
 import { StatsigOptions } from './StatsigSDKOptions';
 import { StatsigUser } from './StatsigUser';
 
@@ -10,7 +10,7 @@ export { default as StatsigClient } from './StatsigClient';
 export type { _SDKPackageInfo as _SDKPackageInfo } from './StatsigClient';
 export type { AppState as AppState } from './StatsigClient';
 export type { AppStateStatus as AppStateStatus } from './StatsigClient';
-export { IStatsig } from './StatsigClient';
+export { IStatsig, StatsigOverrides } from './StatsigClient';
 
 export type {
   NativeModules,
@@ -98,7 +98,7 @@ export default class Statsig {
     Statsig.instance.overrideGate(gateName, value);
   }
 
-    /**
+  /**
    * Overrides the given config locally with the given value
    * @param configName - name of the config to override
    * @param value - value to assign to the config
@@ -155,10 +155,10 @@ export default class Statsig {
   /**
    * @returns The local gate and config overrides
    */
-  public static getAllOverrides(): Record<string, any> {
+  public static getAllOverrides(): StatsigOverrides {
     if (!Statsig.instance) {
       throw new Error('Call and wait for initialize() to finish first.');
     }
-    return Statsig.instance.getOverrides();
+    return Statsig.instance.getAllOverrides();
   }
 }
