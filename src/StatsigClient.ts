@@ -38,6 +38,33 @@ export type _SDKPackageInfo = {
   sdkVersion: string;
 };
 
+export interface IStatsig {
+  initializeAsync(
+    sdkKey: string,
+    user?: StatsigUser | null,
+    options?: StatsigOptions | null,
+  ): Promise<void>;
+  checkGate(gateName: string): boolean;
+  getConfig(configName: string): DynamicConfig;
+  getExperiment(experimentName: string): DynamicConfig;
+  logEvent(
+    eventName: string,
+    value: string | number | null,
+    metadata: Record<string, string> | null,
+  ): void;
+  updateUser(user: StatsigUser | null): Promise<boolean>;
+  shutdown(): void;
+  overrideGate(gateName: string, value: boolean): void;
+  overrideConfig(gateName: string, value: object): void;
+  removeGateOverride(gateName?: string): void;
+  removeConfigOverride(configName?: string): void;
+  getAllOverrides(): Record<string, any>;
+
+  // DEPRECATED
+  removeOverride(overrideName?: string | null): void;
+  getOverrides(): Record<string, any>;
+}
+
 export interface IHasStatsigInternal {
   getNetwork(): StatsigNetwork;
   getStore(): StatsigStore;
@@ -53,7 +80,8 @@ export type StatsigOverrides = {
   configs: Record<string, object>,
 };
 
-export default class StatsigClient implements IHasStatsigInternal {
+export default class StatsigClient implements IHasStatsigInternal, IStatsig {
+
   // RN dependencies
   private appState: AppState | null = null;
   private currentAppState: AppStateStatus | null = null;
@@ -347,32 +375,46 @@ export default class StatsigClient implements IHasStatsigInternal {
     this.identity.setSDKPackageInfo(sdkPackageInfo);
   }
 
-  public setAsyncStorage(asyncStorage: AsyncStorage): void {
-    StatsigAsyncStorage.asyncStorage = asyncStorage;
+  public setAsyncStorage(asyncStorage?: AsyncStorage | null): void {
+    if (asyncStorage != null) {
+      StatsigAsyncStorage.asyncStorage = asyncStorage;
+    }
   }
 
-  public setAppState(appState: AppState): void {
-    this.appState = appState;
+  public setAppState(appState?: AppState | null): void {
+    if (appState != null) {
+      this.appState = appState;
+    }
   }
 
-  public setNativeModules(nativeModules: NativeModules): void {
-    this.identity.setNativeModules(nativeModules);
+  public setNativeModules(nativeModules?: NativeModules | null): void {
+    if (nativeModules != null) {
+      this.identity.setNativeModules(nativeModules);
+    }
   }
 
-  public setPlatform(platform: Platform): void {
-    this.identity.setPlatform(platform);
+  public setPlatform(platform?: Platform | null): void {
+    if (platform != null) {
+      this.identity.setPlatform(platform);
+    }
   }
 
-  public setRNDeviceInfo(deviceInfo: DeviceInfo): void {
-    this.identity.setRNDeviceInfo(deviceInfo);
+  public setRNDeviceInfo(deviceInfo?: DeviceInfo | null): void {
+    if (deviceInfo != null) {
+      this.identity.setRNDeviceInfo(deviceInfo);
+    }
   }
 
-  public setExpoConstants(expoConstants: ExpoConstants): void {
-    this.identity.setExpoConstants(expoConstants);
+  public setExpoConstants(expoConstants?: ExpoConstants | null): void {
+    if (expoConstants != null) {
+      this.identity.setExpoConstants(expoConstants);
+    }
   }
 
-  public setExpoDevice(expoDevice: ExpoDevice): void {
-    this.identity.setExpoDevice(expoDevice);
+  public setExpoDevice(expoDevice?: ExpoDevice | null): void {
+    if (expoDevice != null) {
+      this.identity.setExpoDevice(expoDevice);
+    }
   }
 
   private handleAppStateChange(nextAppState: AppStateStatus): void {

@@ -7,6 +7,22 @@ export { StatsigOptions, StatsigEnvironment } from './StatsigSDKOptions';
 export { StatsigUser } from './StatsigUser';
 export { default as DynamicConfig } from './DynamicConfig';
 export { default as StatsigClient } from './StatsigClient';
+export type { _SDKPackageInfo as _SDKPackageInfo } from './StatsigClient';
+export type { AppState as AppState } from './StatsigClient';
+export type { AppStateStatus as AppStateStatus } from './StatsigClient';
+export { IStatsig } from './StatsigClient';
+
+export type {
+  NativeModules,
+  Platform,
+  DeviceInfo,
+  ExpoConstants,
+  ExpoDevice,
+} from './StatsigIdentity';
+
+export type {
+  AsyncStorage,
+} from './utils/StatsigAsyncLocalStorage';
 
 export default class Statsig {
   private static instance: StatsigClient;
