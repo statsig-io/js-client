@@ -49,8 +49,8 @@ export interface IStatsig {
   getExperiment(experimentName: string): DynamicConfig;
   logEvent(
     eventName: string,
-    value: string | number | null,
-    metadata: Record<string, string> | null,
+    value?: string | number | null,
+    metadata?: Record<string, string> | null,
   ): void;
   updateUser(user: StatsigUser | null): Promise<boolean>;
   shutdown(): void;
