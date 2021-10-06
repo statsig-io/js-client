@@ -11,15 +11,39 @@ function getHashValue(value: string) {
   return Base64.encodeArrayBuffer(buffer);
 }
 
-type FeatureGate = {
+type APIFeatureGate = {
   name: string;
   value: boolean;
   rule_id: string;
   secondary_exposures: [];
 };
 
+type APIDynamicConfig = {
+  name: string;
+  value: { [key: string]: unknown };
+  rule_id: string;
+  secondary_exposures: [];
+  is_device_based?: boolean;
+  is_user_in_experiment?: boolean;
+  is_experiment_active?: boolean;
+};
+
+type APIInitializeData = {
+  dynamic_configs: Record<string, APIDynamicConfig | undefined>;
+  feature_gates: Record<string, APIFeatureGate | undefined>;
+};
+
+type StickyUserExperiments = {
+  user_id: string | number | null;
+  experiments: Record<string, APIDynamicConfig | undefined>;
+};
+
 const INTERNAL_STORE_KEY = 'STATSIG_LOCAL_STORAGE_INTERNAL_STORE_V3';
 const OVERRIDES_STORE_KEY = 'STATSIG_LOCAL_STORAGE_INTERNAL_STORE_OVERRIDES_V3';
+const STICKY_USER_EXPERIMENTS_KEY =
+  'STATSIG_LOCAL_STORAGE_STICKY_USER_EXPERIMENTS';
+const STICKY_DEVICE_EXPERIMENTS_KEY =
+  'STATSIG_LOCAL_STORAGE_STICKY_DEVICE_EXPERIMENTS';
 
 export default class StatsigStore {
   private sdkInternal: IHasStatsigInternal;
@@ -29,39 +53,82 @@ export default class StatsigStore {
     configs: {},
   };
 
-  private gates: Record<string, FeatureGate> = {};
-  private configs: Record<string, DynamicConfig> = {};
+  private values: APIInitializeData;
+  private stickyUserExperiments: StickyUserExperiments;
+  private stickyDeviceExperiments: Record<string, APIDynamicConfig>;
 
   public constructor(sdkInternal: IHasStatsigInternal) {
     this.sdkInternal = sdkInternal;
+    this.values = { feature_gates: {}, dynamic_configs: {} };
+    this.stickyUserExperiments = {
+      user_id: sdkInternal.getCurrentUser()?.userID ?? null,
+      experiments: {},
+    };
+    this.stickyDeviceExperiments = {};
   }
 
   public async loadFromAsyncStorage(): Promise<void> {
-    const persisted = await StatsigAsyncStorage.getItemAsync(INTERNAL_STORE_KEY);
-    this.loadFrom(persisted);
+    this.parseCachedValues(
+      await StatsigAsyncStorage.getItemAsync(INTERNAL_STORE_KEY),
+      await StatsigAsyncStorage.getItemAsync(STICKY_USER_EXPERIMENTS_KEY),
+      await StatsigAsyncStorage.getItemAsync(STICKY_DEVICE_EXPERIMENTS_KEY),
+    );
   }
 
   public loadFromLocalStorage(): void {
-    const persisted = StatsigLocalStorage.getItem(INTERNAL_STORE_KEY);
-    this.loadFrom(persisted);
+    this.parseCachedValues(
+      StatsigLocalStorage.getItem(INTERNAL_STORE_KEY),
+      StatsigLocalStorage.getItem(STICKY_USER_EXPERIMENTS_KEY),
+      StatsigLocalStorage.getItem(STICKY_DEVICE_EXPERIMENTS_KEY),
+    );
   }
 
-  private loadFrom(persisted: string | null): void {
-    if (persisted == null) {
-      this.loadOverrides();
-      return;
-    }
+  private parseCachedValues(
+    allValues: string | null,
+    userExperiments: string | null,
+    deviceExperiments: string | null,
+  ): void {
     try {
-      const persistedJsonConfigs = JSON.parse(persisted);
-      if (persistedJsonConfigs == null) {
-        return;
+      const allValuesParsed = allValues ? JSON.parse(allValues) : null;
+      if (allValuesParsed) {
+        this.values = allValuesParsed;
       }
-      this.parseConfigs(persistedJsonConfigs);
     } catch (e) {
       // Cached value corrupted, remove cache
-      StatsigLocalStorage.removeItem(INTERNAL_STORE_KEY);
+      this.removeFromStorage(INTERNAL_STORE_KEY);
     }
+
+    try {
+      const userExpParsed = userExperiments
+        ? JSON.parse(userExperiments)
+        : null;
+      if (
+        userExpParsed &&
+        userExpParsed.user_id === this.sdkInternal.getCurrentUser()?.userID
+      ) {
+        this.stickyUserExperiments = userExpParsed;
+      }
+    } catch (e) {
+      this.removeFromStorage(STICKY_USER_EXPERIMENTS_KEY);
+    }
+
+    try {
+      const deviceExpParsed = deviceExperiments
+        ? JSON.parse(deviceExperiments)
+        : null;
+      if (deviceExpParsed) {
+        this.stickyDeviceExperiments = deviceExpParsed;
+      }
+    } catch (e) {
+      this.removeFromStorage(STICKY_DEVICE_EXPERIMENTS_KEY);
+    }
+
     this.loadOverrides();
+  }
+
+  private removeFromStorage(key: string) {
+    StatsigAsyncStorage.removeItemAsync(key);
+    StatsigLocalStorage.removeItem(key);
   }
 
   private loadOverrides(): void {
@@ -76,16 +143,19 @@ export default class StatsigStore {
   }
 
   public async save(jsonConfigs: Record<string, any>): Promise<void> {
-    this.parseConfigs(jsonConfigs);
+    this.values = jsonConfigs as APIInitializeData;
 
     if (StatsigAsyncStorage.asyncStorage) {
-      await StatsigAsyncStorage.setItemAsync(INTERNAL_STORE_KEY, JSON.stringify(jsonConfigs));
+      await StatsigAsyncStorage.setItemAsync(
+        INTERNAL_STORE_KEY,
+        JSON.stringify(jsonConfigs),
+      );
+    } else {
+      StatsigLocalStorage.setItem(
+        INTERNAL_STORE_KEY,
+        JSON.stringify(jsonConfigs),
+      );
     }
-
-    StatsigLocalStorage.setItem(
-      INTERNAL_STORE_KEY,
-      JSON.stringify(jsonConfigs),
-    );
   }
 
   public checkGate(gateName: string): boolean {
@@ -97,8 +167,8 @@ export default class StatsigStore {
         rule_id: 'override',
         secondary_exposures: [],
       };
-    } else if (this.gates[gateNameHash] != null) {
-      gateValue = this.gates[gateNameHash];
+    } else {
+      gateValue = this.values.feature_gates[gateNameHash] ?? gateValue;
     }
     this.sdkInternal
       .getLogger()
@@ -121,8 +191,14 @@ export default class StatsigStore {
         this.overrides.configs[configName],
         'override',
       );
-    } else if (this.configs[configNameHash] != null) {
-      configValue = this.configs[configNameHash];
+    } else if (this.values.dynamic_configs[configNameHash] != null) {
+      const rawConfigValue = this.values.dynamic_configs[configNameHash];
+      configValue = new DynamicConfig(
+        configName,
+        rawConfigValue?.value,
+        rawConfigValue?.rule_id,
+        rawConfigValue?.secondary_exposures,
+      );
     }
     this.sdkInternal
       .getLogger()
@@ -135,6 +211,62 @@ export default class StatsigStore {
     return configValue;
   }
 
+  public getExperiment(
+    expName: string,
+    keepDeviceValue: boolean = false,
+  ): DynamicConfig {
+    const expNameHash = getHashValue(expName);
+    let exp = new DynamicConfig(expName);
+    if (this.overrides.configs[expName] != null) {
+      exp = new DynamicConfig(
+        expName,
+        this.overrides.configs[expName],
+        'override',
+      );
+    } else {
+      let stickyValue =
+        this.stickyUserExperiments.experiments[expNameHash] ??
+        this.stickyDeviceExperiments[expNameHash];
+      let latestValue = this.values.dynamic_configs[expNameHash];
+
+      // If flag is false, or experiment is NOT active, simply remove the
+      // sticky experiment value, and return the latest value
+      if (!keepDeviceValue || latestValue?.is_experiment_active == false) {
+        this.removeStickyValue(expName);
+        exp = this.createDynamicConfig(expName, latestValue);
+      } else if (stickyValue != null) {
+        // If sticky value is already in cache, use it
+        exp = this.createDynamicConfig(expName, stickyValue);
+      } else if (latestValue != null) {
+        // Here the user has NOT been exposed before.
+        // If they are IN this ACTIVE experiment, then we save the value as sticky
+        if (
+          latestValue.is_experiment_active &&
+          latestValue.is_user_in_experiment
+        ) {
+          if (latestValue.is_device_based) {
+            // save sticky values in memory
+            this.stickyDeviceExperiments[expNameHash] = latestValue;
+          } else {
+            this.stickyUserExperiments.experiments[expNameHash] = latestValue;
+          }
+          // also save to persistent storage
+          this.saveStickyValuesToStorage();
+        }
+        exp = this.createDynamicConfig(expName, latestValue);
+      }
+    }
+    this.sdkInternal
+      .getLogger()
+      .logConfigExposure(
+        this.sdkInternal.getCurrentUser(),
+        expName,
+        exp.getRuleID(),
+        exp._getSecondaryExposures(),
+      );
+    return exp;
+  }
+
   public overrideConfig(configName: string, value: Record<string, any>): void {
     if (!this.hasConfig(configName)) {
       console.warn(
@@ -144,8 +276,8 @@ export default class StatsigStore {
     }
     try {
       JSON.stringify(value);
-    } catch(e) {
-      console.warn("Failed to stringify given config override.  Dropping", e);
+    } catch (e) {
+      console.warn('Failed to stringify given config override.  Dropping', e);
       return;
     }
     this.overrides.configs[configName] = value;
@@ -192,38 +324,64 @@ export default class StatsigStore {
         JSON.stringify(this.overrides),
       );
     } catch (e) {
-      console.warn("Failed to persist gate/config overrides");
+      console.warn('Failed to persist gate/config overrides');
+    }
+  }
+
+  public updateUser(newUserID: string | number | null) {
+    if (newUserID !== this.stickyUserExperiments.user_id) {
+      this.stickyUserExperiments = { user_id: newUserID, experiments: {} };
+      this.removeFromStorage(STICKY_USER_EXPERIMENTS_KEY);
     }
   }
 
   private hasConfig(configName: string): boolean {
     const hash = getHashValue(configName);
-    return this.configs[hash] != null;
+    return this.values.dynamic_configs[hash] != null;
   }
 
   private hasGate(gateName: string): boolean {
     const hash = getHashValue(gateName);
-    return this.gates[hash] != null;
+    return this.values.feature_gates[hash] != null;
   }
 
-  private parseConfigs(jsonConfigs: Record<string, any>): void {
-    if (jsonConfigs.feature_gates) {
-      this.gates = jsonConfigs.feature_gates;
-    }
-    if (jsonConfigs.dynamic_configs) {
-      let parsed: Record<string, DynamicConfig> = {};
-      let dynamicConfigs = jsonConfigs.dynamic_configs;
-      for (const configName in dynamicConfigs) {
-        if (configName && dynamicConfigs[configName]) {
-          parsed[configName] = new DynamicConfig(
-            configName,
-            dynamicConfigs[configName].value,
-            dynamicConfigs[configName].rule_id,
-            dynamicConfigs[configName].secondary_exposures,
-          );
-        }
-      }
-      this.configs = parsed;
+  private createDynamicConfig(
+    name: string,
+    apiConfig: APIDynamicConfig | undefined,
+  ) {
+    return new DynamicConfig(
+      name,
+      apiConfig?.value,
+      apiConfig?.rule_id,
+      apiConfig?.secondary_exposures,
+    );
+  }
+
+  private removeStickyValue(key: string) {
+    delete this.stickyUserExperiments.experiments[key];
+    delete this.stickyDeviceExperiments[key];
+    this.saveStickyValuesToStorage();
+  }
+
+  private saveStickyValuesToStorage() {
+    if (StatsigAsyncStorage.asyncStorage) {
+      StatsigAsyncStorage.setItemAsync(
+        STICKY_USER_EXPERIMENTS_KEY,
+        JSON.stringify(this.stickyUserExperiments),
+      );
+      StatsigAsyncStorage.setItemAsync(
+        STICKY_DEVICE_EXPERIMENTS_KEY,
+        JSON.stringify(this.stickyDeviceExperiments),
+      );
+    } else {
+      StatsigLocalStorage.setItem(
+        STICKY_USER_EXPERIMENTS_KEY,
+        JSON.stringify(this.stickyUserExperiments),
+      );
+      StatsigLocalStorage.setItem(
+        STICKY_DEVICE_EXPERIMENTS_KEY,
+        JSON.stringify(this.stickyDeviceExperiments),
+      );
     }
   }
 }

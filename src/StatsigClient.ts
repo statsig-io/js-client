@@ -1,6 +1,13 @@
 import DynamicConfig from './DynamicConfig';
 import LogEvent from './LogEvent';
 import StatsigIdentity from './StatsigIdentity';
+import type {
+  DeviceInfo,
+  ExpoConstants,
+  ExpoDevice,
+  NativeModules,
+  Platform,
+} from './StatsigIdentity';
 import StatsigLogger from './StatsigLogger';
 import StatsigNetwork from './StatsigNetwork';
 import StatsigSDKOptions, { StatsigOptions } from './StatsigSDKOptions';
@@ -8,13 +15,6 @@ import StatsigStore from './StatsigStore';
 import { StatsigUser } from './StatsigUser';
 import StatsigAsyncStorage from './utils/StatsigAsyncLocalStorage';
 import type { AsyncStorage } from './utils/StatsigAsyncLocalStorage';
-import type {
-  NativeModules,
-  Platform,
-  DeviceInfo,
-  ExpoConstants,
-  ExpoDevice,
-} from './StatsigIdentity';
 
 const MAX_VALUE_SIZE = 64;
 const MAX_OBJ_SIZE = 1024;
@@ -70,18 +70,17 @@ export interface IHasStatsigInternal {
   getStore(): StatsigStore;
   getLogger(): StatsigLogger;
   getOptions(): StatsigSDKOptions;
-  getCurrentUser(): object | null;
+  getCurrentUser(): StatsigUser | null;
   getSDKKey(): string;
   getStatsigMetadata(): Record<string, string | number>;
 }
 
 export type StatsigOverrides = {
-  gates: Record<string, boolean>,
-  configs: Record<string, Record<string, any>>,
+  gates: Record<string, boolean>;
+  configs: Record<string, Record<string, any>>;
 };
 
 export default class StatsigClient implements IHasStatsigInternal, IStatsig {
-
   // RN dependencies
   private appState: AppState | null = null;
   private currentAppState: AppStateStatus | null = null;
@@ -228,14 +227,17 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
    * @returns {DynamicConfig} - value of the experiment for the user, represented by a Dynamic Config object
    * @throws Error if initialize() is not called first, or experimentName is not a string
    */
-  public getExperiment(experimentName: string): DynamicConfig {
+  public getExperiment(
+    experimentName: string,
+    keepDeviceValue: boolean = false,
+  ): DynamicConfig {
     if (!this.ready) {
       throw new Error('Call and wait for initialize() to finish first.');
     }
     if (typeof experimentName !== 'string' || experimentName.length === 0) {
       throw new Error('Must pass a valid string as the experimentName.');
     }
-    return this.store.getConfig(experimentName);
+    return this.store.getExperiment(experimentName, keepDeviceValue);
   }
 
   public logEvent(
@@ -278,7 +280,9 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     if (!this.ready) {
       throw new Error('Call and wait for initialize() to finish first.');
     }
-    this.identity.updateUser(this.normalizeUser(user));
+    const normalizedUser = this.normalizeUser(user);
+    this.identity.updateUser(normalizedUser);
+    this.store.updateUser(normalizedUser.userID ?? null);
     this.pendingInitPromise = this.network
       .fetchValues(
         this.identity.getUser(),
@@ -333,7 +337,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
 
   /**
    * Removes the given gate override
-   * @param gateName 
+   * @param gateName
    */
   public removeGateOverride(gateName?: string): void {
     this.store.removeGateOverride(gateName);
@@ -341,7 +345,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
 
   /**
    * Removes the given config override
-   * @param configName 
+   * @param configName
    */
   public removeConfigOverride(configName?: string): void {
     this.store.removeConfigOverride(configName);
@@ -350,9 +354,9 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   /**
    * @deprecated - use removeGateOverride or removeConfig override
    * Removes the given gate override
-   * @param gateName 
+   * @param gateName
    */
-   public removeOverride(gateName?: string): void {
+  public removeOverride(gateName?: string): void {
     this.store.removeGateOverride(gateName);
   }
 

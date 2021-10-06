@@ -58,7 +58,7 @@ export default class StatsigLogger {
         }
       });
     }
-    
+
     const me = this;
     this.flushInterval = setInterval(() => {
       me.flush();
@@ -79,7 +79,10 @@ export default class StatsigLogger {
       }
     }
     this.queue.push(event.toJsonObject());
-    if (this.queue.length >= this.sdkInternal.getOptions().getLoggingBufferMaxSize()) {
+    if (
+      this.queue.length >=
+      this.sdkInternal.getOptions().getLoggingBufferMaxSize()
+    ) {
       this.flush();
     }
   }
@@ -128,7 +131,12 @@ export default class StatsigLogger {
 
     const oldQueue = this.queue;
     this.queue = [];
-    if (isClosing && !this.sdkInternal.getNetwork().supportsKeepalive() && navigator && navigator.sendBeacon) {
+    if (
+      isClosing &&
+      !this.sdkInternal.getNetwork().supportsKeepalive() &&
+      navigator &&
+      navigator.sendBeacon
+    ) {
       const beacon = this.sdkInternal.getNetwork().sendLogBeacon({
         events: oldQueue,
         statsigMetadata: this.sdkInternal.getStatsigMetadata(),
@@ -157,9 +165,9 @@ export default class StatsigLogger {
           events: oldQueue,
           statsigMetadata: this.sdkInternal.getStatsigMetadata(),
         },
-        3, /* retries */
-        1000, /* backoff */
-        isClosing, /* useKeepalive */
+        3 /* retries */,
+        1000 /* backoff */,
+        isClosing /* useKeepalive */,
       )
       .then((response) => {
         if (!response.ok) {
@@ -248,7 +256,7 @@ export default class StatsigLogger {
     } finally {
       this.clearLocalStorageRequests();
     }
-    
+
     for (const requestBody of requestBodies) {
       if (
         requestBody != null &&
@@ -272,15 +280,13 @@ export default class StatsigLogger {
     }
   }
 
-  private async clearLocalStorageRequests(): Promise<void> {
+  private clearLocalStorageRequests(): void {
     if (StatsigAsyncStorage.asyncStorage) {
-      await StatsigAsyncStorage.removeItemAsync(
+      StatsigAsyncStorage.removeItemAsync(
         STATSIG_LOCAL_STORAGE_LOGGING_REQUEST_KEY,
       );
     } else {
-      StatsigLocalStorage.removeItem(
-        STATSIG_LOCAL_STORAGE_LOGGING_REQUEST_KEY,
-      );
+      StatsigLocalStorage.removeItem(STATSIG_LOCAL_STORAGE_LOGGING_REQUEST_KEY);
     }
   }
 
