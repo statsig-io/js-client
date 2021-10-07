@@ -20,9 +20,7 @@ export type {
   ExpoDevice,
 } from './StatsigIdentity';
 
-export type {
-  AsyncStorage,
-} from './utils/StatsigAsyncLocalStorage';
+export type { AsyncStorage } from './utils/StatsigAsyncLocalStorage';
 
 export default class Statsig {
   private static instance: StatsigClient;
@@ -54,11 +52,14 @@ export default class Statsig {
     return Statsig.instance.getConfig(configName);
   }
 
-  public static getExperiment(experimentName: string): DynamicConfig {
+  public static getExperiment(
+    experimentName: string,
+    keepDeviceValue: boolean = false,
+  ): DynamicConfig {
     if (!Statsig.instance) {
       throw new Error('Call and wait for initialize() to finish first.');
     }
-    return Statsig.instance.getExperiment(experimentName);
+    return Statsig.instance.getExperiment(experimentName, keepDeviceValue);
   }
 
   public static logEvent(
