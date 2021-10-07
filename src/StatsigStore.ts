@@ -90,7 +90,11 @@ export default class StatsigStore {
   ): void {
     try {
       const allValuesParsed = allValues ? JSON.parse(allValues) : null;
-      if (allValuesParsed) {
+      if (
+        allValuesParsed &&
+        allValuesParsed.feature_gates != null &&
+        allValuesParsed.dynamic_configs != null
+      ) {
         this.values = allValuesParsed;
       }
     } catch (e) {
@@ -193,12 +197,7 @@ export default class StatsigStore {
       );
     } else if (this.values.dynamic_configs[configNameHash] != null) {
       const rawConfigValue = this.values.dynamic_configs[configNameHash];
-      configValue = new DynamicConfig(
-        configName,
-        rawConfigValue?.value,
-        rawConfigValue?.rule_id,
-        rawConfigValue?.secondary_exposures,
-      );
+      configValue = this.createDynamicConfig(configName, rawConfigValue);
     }
     this.sdkInternal
       .getLogger()

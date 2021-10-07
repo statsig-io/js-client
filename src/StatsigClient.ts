@@ -46,7 +46,10 @@ export interface IStatsig {
   ): Promise<void>;
   checkGate(gateName: string): boolean;
   getConfig(configName: string): DynamicConfig;
-  getExperiment(experimentName: string): DynamicConfig;
+  getExperiment(
+    experimentName: string,
+    keepDeviceValue?: boolean,
+  ): DynamicConfig;
   logEvent(
     eventName: string,
     value?: string | number | null,

@@ -93,17 +93,21 @@ describe('Verify behavior of StatsigClient', () => {
     const spyOnSet = jest.spyOn(StatsigAsyncStorage, 'setItemAsync');
     const spyOnGet = jest.spyOn(StatsigAsyncStorage, 'getItemAsync');
 
-    await statsig.initializeAsync(sdkKey, { userID: '123' }, {
-      loggingBufferMaxSize: 600,
-      loggingIntervalMillis: 100,
-    });
+    await statsig.initializeAsync(
+      sdkKey,
+      { userID: '123' },
+      {
+        loggingBufferMaxSize: 600,
+        loggingIntervalMillis: 100,
+      },
+    );
 
     expect(statsig.getOptions().getLoggingBufferMaxSize()).toEqual(500);
     expect(statsig.getOptions().getLoggingIntervalMillis()).toEqual(1000);
 
     // Set the stable id, save the configs
     expect(spyOnSet).toHaveBeenCalledTimes(2);
-    // Get the stable id, saved configs, and saved logs
-    expect(spyOnGet).toHaveBeenCalledTimes(3);
+    // Get the stable id, 3 saved configs, and saved logs
+    expect(spyOnGet).toHaveBeenCalledTimes(5);
   });
 });
