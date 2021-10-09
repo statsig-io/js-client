@@ -7,55 +7,74 @@ import LogEvent from '../LogEvent';
 let statsig;
 
 describe('Verify behavior of top level index functions', () => {
+  let postedLogs = {};
+  let requestCount = 0;
   // @ts-ignore
-  global.fetch = jest.fn(() =>
-    Promise.resolve({
-      ok: true,
-      json: () =>
-        Promise.resolve({
-          disableAutoEventLogging: true,
-          gates: {
-            'AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=': true,
-          },
-          feature_gates: {
-            'AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=': {
-              value: true,
-              rule_id: 'ruleID123',
-              name: 'AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=',
+  global.fetch = jest.fn((url, params) => {
+    requestCount++;
+    if (url.toString().includes('log_event')) {
+      postedLogs = JSON.parse(params.body as string);
+      return Promise.resolve({ ok: true });
+    }
+    if (url.toString().includes('initialize')) {
+      return Promise.resolve({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            disableAutoEventLogging: true,
+            gates: {
+              'AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=': true,
             },
-          },
-          dynamic_configs: {
-            'RMv0YJlLOBe7cY7HgZ3Jox34R0Wrk7jLv3DZyBETA7I=': {
-              value: {
-                bool: true,
-                number: 2,
-                string: 'string',
-                object: {
-                  key: 'value',
-                  key2: 123,
-                },
-                boolStr1: 'true',
-                boolStr2: 'FALSE',
-                numberStr1: '3',
-                numberStr2: '3.3',
-                numberStr3: '3.3.3',
+            feature_gates: {
+              'AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=': {
+                value: true,
+                rule_id: 'ruleID123',
+                name: 'AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=',
+                secondary_exposures: [
+                  {
+                    gate: 'dependent_gate_1',
+                    gateValue: 'true',
+                    ruleID: 'rule_1',
+                  },
+                  {
+                    gate: 'dependent_gate_2',
+                    gateValue: 'false',
+                    ruleID: 'default',
+                  },
+                ],
               },
-              rule_id: 'ruleID',
             },
-          },
-          configs: {},
-        }),
-    }),
-  );
+            dynamic_configs: {
+              'RMv0YJlLOBe7cY7HgZ3Jox34R0Wrk7jLv3DZyBETA7I=': {
+                value: {
+                  bool: true,
+                  number: 2,
+                  string: 'string',
+                  object: {
+                    key: 'value',
+                    key2: 123,
+                  },
+                  boolStr1: 'true',
+                  boolStr2: 'FALSE',
+                  numberStr1: '3',
+                  numberStr2: '3.3',
+                  numberStr3: '3.3.3',
+                },
+                rule_id: 'ruleID',
+              },
+            },
+          }),
+      });
+    }
+  });
 
   const str_64 =
     '1234567890123456789012345678901234567890123456789012345678901234';
   beforeEach(() => {
-    // @ts-ignore
-    fetch.mockClear();
     jest.resetModules();
     statsig = require('../index').default;
     expect.hasAssertions();
+    requestCount = 0;
 
     // ensure Date.now() returns the same value in each test
     let now = Date.now();
@@ -150,6 +169,18 @@ describe('Verify behavior of top level index functions', () => {
           gateValue: String(true),
           ruleID: 'ruleID123',
         });
+        gateExposure.setSecondaryExposures([
+          {
+            gate: 'dependent_gate_1',
+            gateValue: 'true',
+            ruleID: 'rule_1',
+          },
+          {
+            gate: 'dependent_gate_2',
+            gateValue: 'false',
+            ruleID: 'default',
+          },
+        ]);
         const gateValue = statsig.checkGate('test_gate');
         expect(gateValue).toBe(true);
         expect(spy).toHaveBeenCalledTimes(1);
@@ -207,6 +238,7 @@ describe('Verify behavior of top level index functions', () => {
           config: 'test_config',
           ruleID: 'ruleID',
         });
+        configExposure.setSecondaryExposures([]);
         const config = statsig.getConfig('test_config');
         expect(config?.value).toStrictEqual({
           bool: true,
@@ -244,6 +276,7 @@ describe('Verify behavior of top level index functions', () => {
           config: 'test_config',
           ruleID: 'ruleID',
         });
+        configExposure.setSecondaryExposures([]);
         const exp = statsig.getExperiment('test_config');
         expect(exp?.value).toStrictEqual({
           bool: true,
@@ -307,43 +340,108 @@ describe('Verify behavior of top level index functions', () => {
 
   test('calling initialize() multiple times work as expected', async () => {
     expect.assertions(5);
-    let count = 0;
-
-    global.fetch = jest.fn(
-      () =>
-        new Promise((resolve, reject) => {
-          setTimeout(() => {
-            count++;
-            resolve({
-              // @ts-ignore
-              headers: [],
-              ok: true,
-              json: () =>
-                Promise.resolve({
-                  disableAutoEventLogging: true,
-                  feature_gates: {
-                    'AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=': {
-                      value: true,
-                      rule_id: 'ruleID123',
-                      name: 'AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=',
-                    },
-                  },
-                  configs: {},
-                }),
-            });
-          }, 1000);
-        }),
-    );
 
     // initialize() twice simultaneously reulsts in 1 promise
     const v1 = statsig.initialize('client-key');
     const v2 = statsig.initialize('client-key');
     await expect(v1).resolves.not.toThrow();
     await expect(v2).resolves.not.toThrow();
-    expect(count).toEqual(1);
+    expect(requestCount).toEqual(1);
 
     // initialize() again after the first one completes resolves right away and does not make a new request
     await expect(statsig.initialize('client-key')).resolves.not.toThrow();
-    expect(count).toEqual(1);
+    expect(requestCount).toEqual(1);
+  });
+
+  test('shutdown does flush logs and they are correct', async () => {
+    expect.assertions(8);
+    await statsig.initialize('client-key', {
+      userID: '12345',
+      country: 'US',
+      custom: { key: 'value' },
+      privateAttributes: { private: 'value' },
+    });
+    expect(statsig.checkGate('test_gate')).toEqual(true);
+    const config = statsig.getConfig('test_config');
+    expect(config?.value).toStrictEqual({
+      bool: true,
+      number: 2,
+      string: 'string',
+      object: {
+        key: 'value',
+        key2: 123,
+      },
+      boolStr1: 'true',
+      boolStr2: 'FALSE',
+      numberStr1: '3',
+      numberStr2: '3.3',
+      numberStr3: '3.3.3',
+    });
+    statsig.logEvent('test_event', 'value', { key: 'value' });
+    statsig.shutdown();
+    expect(postedLogs['events'].length).toEqual(3);
+    expect(postedLogs['events'][0]).toEqual(
+      expect.objectContaining({
+        eventName: 'statsig::gate_exposure',
+        metadata: { gate: 'test_gate', gateValue: 'true', ruleID: 'ruleID123' },
+        secondaryExposures: [
+          { gate: 'dependent_gate_1', gateValue: 'true', ruleID: 'rule_1' },
+          { gate: 'dependent_gate_2', gateValue: 'false', ruleID: 'default' },
+        ],
+        user: {
+          userID: '12345',
+          country: 'US',
+          custom: { key: 'value' },
+        },
+        statsigMetadata: expect.any(Object),
+        time: expect.any(Number),
+        value: null,
+      }),
+    );
+    expect(postedLogs['events'][1]).toEqual(
+      expect.objectContaining({
+        eventName: 'statsig::config_exposure',
+        metadata: {
+          config: 'test_config',
+          ruleID: 'ruleID',
+        },
+        secondaryExposures: [],
+        user: {
+          userID: '12345',
+          country: 'US',
+          custom: { key: 'value' },
+        },
+        statsigMetadata: expect.any(Object),
+        time: expect.any(Number),
+        value: null,
+      }),
+    );
+    expect(postedLogs['events'][2]).toEqual(
+      expect.objectContaining({
+        eventName: 'test_event',
+        metadata: {
+          key: 'value',
+        },
+        user: {
+          userID: '12345',
+          country: 'US',
+          custom: { key: 'value' },
+        },
+        statsigMetadata: expect.any(Object),
+        time: expect.any(Number),
+        value: 'value',
+      }),
+    );
+    expect(postedLogs['events'][2]).toEqual(
+      expect.not.objectContaining({ secondaryExposures: expect.anything() }),
+    );
+
+    expect(postedLogs['statsigMetadata']).toEqual(
+      expect.objectContaining({
+        sdkType: 'js-client',
+        sdkVersion: expect.any(String),
+        stableID: expect.any(String),
+      }),
+    );
   });
 });
