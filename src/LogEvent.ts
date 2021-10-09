@@ -7,13 +7,12 @@ export default class LogEvent {
   private metadata: object | null = null;
   private time: number;
   private statsigMetadata: Record<string, string | number>;
-  private secondaryExposures: Record<string, string>[];
+  private secondaryExposures?: Record<string, string>[];
 
   public constructor(eventName: string) {
     this.eventName = eventName;
     this.statsigMetadata = {};
     this.time = Date.now();
-    this.secondaryExposures = [];
   }
 
   public getName() {
@@ -50,7 +49,7 @@ export default class LogEvent {
       metadata: this.metadata,
       time: this.time,
       statsigMetadata: this.statsigMetadata,
-      secondaryExposures: this.secondaryExposures,
+      secondaryExposures: this.secondaryExposures ?? undefined,
     };
   }
 }

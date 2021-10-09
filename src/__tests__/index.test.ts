@@ -238,6 +238,7 @@ describe('Verify behavior of top level index functions', () => {
           config: 'test_config',
           ruleID: 'ruleID',
         });
+        configExposure.setSecondaryExposures([]);
         const config = statsig.getConfig('test_config');
         expect(config?.value).toStrictEqual({
           bool: true,
@@ -275,6 +276,7 @@ describe('Verify behavior of top level index functions', () => {
           config: 'test_config',
           ruleID: 'ruleID',
         });
+        configExposure.setSecondaryExposures([]);
         const exp = statsig.getExperiment('test_config');
         expect(exp?.value).toStrictEqual({
           bool: true,
@@ -351,8 +353,8 @@ describe('Verify behavior of top level index functions', () => {
     expect(requestCount).toEqual(1);
   });
 
-  test('shutdown does flush logs', async () => {
-    expect.assertions(6);
+  test('shutdown does flush logs and they are correct', async () => {
+    expect.assertions(8);
     await statsig.initialize('client-key', {
       userID: '12345',
       country: 'US',
@@ -375,8 +377,9 @@ describe('Verify behavior of top level index functions', () => {
       numberStr2: '3.3',
       numberStr3: '3.3.3',
     });
+    statsig.logEvent('test_event', 'value', { key: 'value' });
     statsig.shutdown();
-    expect(postedLogs['events'].length).toEqual(2);
+    expect(postedLogs['events'].length).toEqual(3);
     expect(postedLogs['events'][0]).toEqual(
       expect.objectContaining({
         eventName: 'statsig::gate_exposure',
@@ -412,6 +415,25 @@ describe('Verify behavior of top level index functions', () => {
         time: expect.any(Number),
         value: null,
       }),
+    );
+    expect(postedLogs['events'][2]).toEqual(
+      expect.objectContaining({
+        eventName: 'test_event',
+        metadata: {
+          key: 'value',
+        },
+        user: {
+          userID: '12345',
+          country: 'US',
+          custom: { key: 'value' },
+        },
+        statsigMetadata: expect.any(Object),
+        time: expect.any(Number),
+        value: 'value',
+      }),
+    );
+    expect(postedLogs['events'][2]).toEqual(
+      expect.not.objectContaining({ secondaryExposures: expect.anything() }),
     );
 
     expect(postedLogs['statsigMetadata']).toEqual(
