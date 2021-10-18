@@ -52,6 +52,13 @@ export default class Statsig {
     return Statsig.instance.getConfig(configName);
   }
 
+  public static async getFailsafeConfig(): Promise<DynamicConfig> {
+    if (!Statsig.instance) {
+      throw new Error('Call and wait for initialize() to finish first.');
+    }
+    return await Statsig.instance.getFailsafeConfig();
+  }
+
   public static getExperiment(
     experimentName: string,
     keepDeviceValue: boolean = false,

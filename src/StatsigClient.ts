@@ -18,6 +18,7 @@ import type { AsyncStorage } from './utils/StatsigAsyncLocalStorage';
 
 const MAX_VALUE_SIZE = 64;
 const MAX_OBJ_SIZE = 1024;
+const FAILSAFE_URL = 'https://api.statsig1.com/failsafe/get';
 
 export type AppState = {
   currentState: AppStateStatus;
@@ -208,7 +209,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   }
 
   /**
-   * Checks the value of a config for the current user
+   * Gets config object for the current user
    * @param {string} configName - the name of the config to get
    * @returns {DynamicConfig} - value of a config for the user
    * @throws Error if initialize() is not called first, or configName is not a string
@@ -222,6 +223,29 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     }
 
     return this.store.getConfig(configName);
+  }
+
+  /**
+   * Gets a faile-safe config stored separately in a different CDN - this
+   * one is not user-specific
+   * @returns {DynamicConfig} - value of the failsafe config
+   * @throws Error if initialize() is not called first, or configName is not a string
+   */
+  public async getFailsafeConfig(): Promise<DynamicConfig> {
+    const url = FAILSAFE_URL + `/${this.sdkKey}`;
+    const configName = '__failsafe';
+    const params : RequestInit = {
+      method: 'POST',
+    };
+    try {
+      const response = await fetch(url, params);
+      if (response.ok) {
+        const configValue = await response.json();
+        return new DynamicConfig(configName, configValue);
+      }
+    } catch (e) {
+    }
+    return new DynamicConfig(configName, {});
   }
 
   /**
