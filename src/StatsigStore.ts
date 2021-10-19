@@ -53,6 +53,7 @@ export default class StatsigStore {
     configs: {},
   };
 
+  private loaded: boolean;
   private values: APIInitializeData;
   private stickyUserExperiments: StickyUserExperiments;
   private stickyDeviceExperiments: Record<string, APIDynamicConfig>;
@@ -65,6 +66,7 @@ export default class StatsigStore {
       experiments: {},
     };
     this.stickyDeviceExperiments = {};
+    this.loaded = false;
   }
 
   public async loadFromAsyncStorage(): Promise<void> {
@@ -73,6 +75,7 @@ export default class StatsigStore {
       await StatsigAsyncStorage.getItemAsync(STICKY_USER_EXPERIMENTS_KEY),
       await StatsigAsyncStorage.getItemAsync(STICKY_DEVICE_EXPERIMENTS_KEY),
     );
+    this.loaded = true;
   }
 
   public loadFromLocalStorage(): void {
@@ -81,6 +84,11 @@ export default class StatsigStore {
       StatsigLocalStorage.getItem(STICKY_USER_EXPERIMENTS_KEY),
       StatsigLocalStorage.getItem(STICKY_DEVICE_EXPERIMENTS_KEY),
     );
+    this.loaded = true;
+  }
+
+  public isLoaded(): boolean {
+    return this.loaded;
   }
 
   private parseCachedValues(
@@ -148,7 +156,6 @@ export default class StatsigStore {
 
   public async save(jsonConfigs: Record<string, any>): Promise<void> {
     this.values = jsonConfigs as APIInitializeData;
-
     if (StatsigAsyncStorage.asyncStorage) {
       await StatsigAsyncStorage.setItemAsync(
         INTERNAL_STORE_KEY,

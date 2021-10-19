@@ -198,9 +198,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
    * @throws Error if initialize() is not called first, or gateName is not a string
    */
   public checkGate(gateName: string): boolean {
-    if (!this.ready) {
-      throw new Error('Call and wait for initialize() to finish first.');
-    }
+    this.ensureStoreLoaded();
     if (typeof gateName !== 'string' || gateName.length === 0) {
       throw new Error('Must pass a valid string as the gateName.');
     }
@@ -214,9 +212,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
    * @throws Error if initialize() is not called first, or configName is not a string
    */
   public getConfig(configName: string): DynamicConfig {
-    if (!this.ready) {
-      throw new Error('Call and wait for initialize() to finish first.');
-    }
+    this.ensureStoreLoaded();
     if (typeof configName !== 'string' || configName.length === 0) {
       throw new Error('Must pass a valid string as the configName.');
     }
@@ -234,9 +230,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     experimentName: string,
     keepDeviceValue: boolean = false,
   ): DynamicConfig {
-    if (!this.ready) {
-      throw new Error('Call and wait for initialize() to finish first.');
-    }
+    this.ensureStoreLoaded();
     if (typeof experimentName !== 'string' || experimentName.length === 0) {
       throw new Error('Must pass a valid string as the experimentName.');
     }
@@ -326,6 +320,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
    * @param value the value to override the gate to
    */
   public overrideGate(gateName: string, value: boolean): void {
+    this.ensureStoreLoaded();
     this.store.overrideGate(gateName, value);
   }
 
@@ -335,6 +330,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
    * @param value the json value to override the config to
    */
   public overrideConfig(configName: string, value: Record<string, any>): void {
+    this.ensureStoreLoaded();
     this.store.overrideConfig(configName, value);
   }
 
@@ -343,6 +339,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
    * @param gateName
    */
   public removeGateOverride(gateName?: string): void {
+    this.ensureStoreLoaded();
     this.store.removeGateOverride(gateName);
   }
 
@@ -351,6 +348,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
    * @param configName
    */
   public removeConfigOverride(configName?: string): void {
+    this.ensureStoreLoaded();
     this.store.removeConfigOverride(configName);
   }
 
@@ -360,6 +358,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
    * @param gateName
    */
   public removeOverride(gateName?: string): void {
+    this.ensureStoreLoaded();
     this.store.removeGateOverride(gateName);
   }
 
@@ -368,6 +367,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
    * @returns Gate overrides
    */
   public getOverrides(): Record<string, any> {
+    this.ensureStoreLoaded();
     return this.store.getAllOverrides().gates;
   }
 
@@ -375,6 +375,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
    * @returns The local gate and config overrides
    */
   public getAllOverrides(): StatsigOverrides {
+    this.ensureStoreLoaded();
     return this.store.getAllOverrides();
   }
 
@@ -481,5 +482,11 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       }
     }
     return user;
+  }
+
+  private ensureStoreLoaded(): void {
+    if (!this.store.isLoaded()) {
+      throw new Error('Call and wait for initialize() to finish first.');
+    }
   }
 }
