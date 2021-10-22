@@ -83,27 +83,10 @@ describe('Verify behavior of StatsigClient', () => {
     });
   });
 
-  test('Test constructor', () => {
-    expect.assertions(4);
-    const client = new StatsigClient();
-    expect(() => {
-      client.checkGate('gate');
-    }).toThrowError('Call and wait for initialize() to finish first.');
-    expect(() => {
-      client.getConfig('config');
-    }).toThrowError('Call and wait for initialize() to finish first.');
-    expect(() => {
-      client.getExperiment('experiment');
-    }).toThrowError('Call and wait for initialize() to finish first.');
-    expect(() => {
-      client.logEvent('event');
-    }).toThrowError('Must initialize() before logging events.');
-  });
-
   test('cache used before initialize resolves, then network result used', async () => {
     expect.assertions(4);
-    const statsig = new StatsigClient();
-    const init = statsig.initializeAsync(sdkKey, { userID: '123' });
+    const statsig = new StatsigClient(sdkKey, { userID: '123' });
+    const init = statsig.initializeAsync();
 
     // test_gate is true from the cache
     expect(statsig.checkGate('test_gate')).toBe(true);

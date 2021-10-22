@@ -6,18 +6,17 @@ describe('Verify behavior of Identity module', () => {
   });
 
   test('Test constructor', () => {
-    const id = new StatsigIdentity();
+    const id = new StatsigIdentity(null);
     expect(id.getUser()).toStrictEqual(null);
     expect(id.getStatsigMetadata()).not.toBeNull();
 
     const user = { userID: 'uuid1' };
-    id.setUser(user);
+    id.updateUser(user);
     expect(id.getUser()).toStrictEqual(user);
   });
 
   test('Test setUser', () => {
-    const id = new StatsigIdentity();
-    id.setUser({ userID: 'test_user' });
+    const id = new StatsigIdentity({ userID: 'test_user' });
     expect(id.getUser()).toStrictEqual({ userID: 'test_user' });
     const previousSessionID = id.getStatsigMetadata().sessionID;
     id.updateUser(null);
@@ -25,9 +24,9 @@ describe('Verify behavior of Identity module', () => {
       previousSessionID,
     );
     expect(id.getUser()).toStrictEqual(null);
-    id.setUser({ userID: 'test_user2' });
+    id.updateUser({ userID: 'test_user2' });
     expect(id.getUser()).toStrictEqual({ userID: 'test_user2' });
-    id.setUser({ userID: 'test_user2', locale: 'en_US' });
+    id.updateUser({ userID: 'test_user2', locale: 'en_US' });
     expect(id.getUser()).toStrictEqual({
       userID: 'test_user2',
       locale: 'en_US',
@@ -35,7 +34,7 @@ describe('Verify behavior of Identity module', () => {
   });
 
   test('React Native StatsigMetadata', () => {
-    const id = new StatsigIdentity();
+    const id = new StatsigIdentity({});
     id.setSDKPackageInfo({
       sdkType: 'react-native-client',
       sdkVersion: '3.0.0',
@@ -70,7 +69,7 @@ describe('Verify behavior of Identity module', () => {
   });
 
   test('React Native Expo StatsigMetadata', () => {
-    const id = new StatsigIdentity();
+    const id = new StatsigIdentity(null);
     id.setExpoConstants({
       nativeAppVersion: null,
       nativeBuildVersion: '1.0.1',

@@ -138,9 +138,9 @@ describe('Verify behavior of InternalStore', () => {
 
   test('Verify top level function initializes instance variables.', () => {
     expect.assertions(2);
-    const client = new StatsigClient();
+    const client = new StatsigClient(sdkKey, null);
     expect(client.getStore()).not.toBeNull();
-    return client.initializeAsync(sdkKey, null).then(() => {
+    return client.initializeAsync().then(() => {
       // @ts-ignore
       const store = client.getStore();
       expect(store).not.toBeNull();
@@ -148,26 +148,38 @@ describe('Verify behavior of InternalStore', () => {
   });
 
   test('Verify save correctly saves into cache.', () => {
-    expect.assertions(5);
+    expect.assertions(4);
     const spyOnSet = jest.spyOn(window.localStorage.__proto__, 'setItem');
     const spyOnGet = jest.spyOn(window.localStorage.__proto__, 'getItem');
-    const client = new StatsigClient();
+    const client = new StatsigClient(sdkKey);
     const store = client.getStore();
 
     store.save({ feature_gates: feature_gates, dynamic_configs: configs });
-    expect(spyOnSet).toHaveBeenCalledTimes(1);
+    expect(spyOnSet).toHaveBeenCalledTimes(2);
+    expect(spyOnGet).toHaveBeenCalledTimes(5); // load 3 cache values, overrides, and stableid
     expect(store.getConfig('test_config')).toEqual(config_obj);
+    expect(store.checkGate('test_gate')).toEqual(true);
+  });
 
-    store.loadFromLocalStorage();
-    expect(spyOnGet).toHaveBeenCalledTimes(4); // load 3 cache values and 1 overrides
-    expect(store.getConfig('test_config')).toEqual(config_obj); // loading from storage should return right results
+  test('Verify cache before init and save correctly saves into cache.', () => {
+    expect.assertions(5);
+    const spyOnSet = jest.spyOn(window.localStorage.__proto__, 'setItem');
+    const spyOnGet = jest.spyOn(window.localStorage.__proto__, 'getItem');
+    const client = new StatsigClient(sdkKey);
+    expect(spyOnSet).toHaveBeenCalledTimes(1);
+    const store = client.getStore();
+
+    store.save({ feature_gates: feature_gates, dynamic_configs: configs });
+    expect(spyOnSet).toHaveBeenCalledTimes(2);
+    expect(spyOnGet).toHaveBeenCalledTimes(5); // load 3 cache values and 1 overrides and 1 stableid
+    expect(store.getConfig('test_config')).toEqual(config_obj);
     expect(store.checkGate('test_gate')).toEqual(true);
   });
 
   test('Verify checkGate returns false when gateName does not exist.', () => {
     expect.assertions(2);
-    const client = new StatsigClient();
-    return client.initializeAsync(sdkKey, { userID: 'user_key' }).then(() => {
+    const client = new StatsigClient(sdkKey, { userID: 'user_key' });
+    return client.initializeAsync().then(() => {
       const store = client.getStore();
       const spy = jest.spyOn(client.getLogger(), 'log');
       expect(store.checkGate('fake_gate')).toBe(false);
@@ -177,8 +189,8 @@ describe('Verify behavior of InternalStore', () => {
 
   test('Verify checkGate returns the correct value.', () => {
     expect.assertions(3);
-    const client = new StatsigClient();
-    return client.initializeAsync(sdkKey, { userID: 'user_key' }).then(() => {
+    const client = new StatsigClient(sdkKey, { userID: 'user_key' });
+    return client.initializeAsync().then(() => {
       const spy = jest.spyOn(client.getLogger(), 'log');
       expect(client.getStore().checkGate('test_gate')).toBe(true);
       expect(
@@ -192,8 +204,8 @@ describe('Verify behavior of InternalStore', () => {
 
   test('Verify getConfig returns a dummy config and logs exposure when configName does not exist.', () => {
     expect.assertions(2);
-    const client = new StatsigClient();
-    return client.initializeAsync(sdkKey, { userID: 'user_key' }).then(() => {
+    const client = new StatsigClient(sdkKey, { userID: 'user_key' });
+    return client.initializeAsync().then(() => {
       const store = client.getStore();
       const spy = jest.spyOn(client.getLogger(), 'log');
       expect(store.getConfig('fake_config')).toEqual(
@@ -205,8 +217,8 @@ describe('Verify behavior of InternalStore', () => {
 
   test('Verify getConfig returns the correct value.', () => {
     expect.assertions(2);
-    const client = new StatsigClient();
-    return client.initializeAsync(sdkKey, { userID: 'user_key' }).then(() => {
+    const client = new StatsigClient(sdkKey, { userID: 'user_key' });
+    return client.initializeAsync().then(() => {
       const store = client.getStore();
       const spy = jest.spyOn(client.getLogger(), 'log');
       expect(store.getConfig('test_config').getValue()).toMatchObject({
@@ -218,8 +230,8 @@ describe('Verify behavior of InternalStore', () => {
 
   test('that deprecated override gate APIs work', async () => {
     expect.assertions(8);
-    const statsig = new StatsigClient();
-    await statsig.initializeAsync(sdkKey, { userID: '123' });
+    const statsig = new StatsigClient(sdkKey, { userID: '123' });
+    await statsig.initializeAsync();
     // test_gate is true without override
     expect(statsig.getStore().checkGate('test_gate')).toBe(true);
 
@@ -246,8 +258,8 @@ describe('Verify behavior of InternalStore', () => {
 
   test('that override gate/config APIs work', async () => {
     expect.assertions(14);
-    const statsig = new StatsigClient();
-    await statsig.initializeAsync(sdkKey, { userID: '123' });
+    const statsig = new StatsigClient(sdkKey, { userID: '123' });
+    await statsig.initializeAsync();
     // test_config matches without override
     expect(statsig.getStore().getConfig('test_config')).toEqual(config_obj);
 
@@ -300,8 +312,8 @@ describe('Verify behavior of InternalStore', () => {
 
   test('test experiment sticky bucketing behavior', async () => {
     expect.assertions(15);
-    const statsig = new StatsigClient();
-    await statsig.initializeAsync(sdkKey, { userID: '123' });
+    const statsig = new StatsigClient(sdkKey, { userID: '123' });
+    await statsig.initializeAsync();
     const store = statsig.getStore();
 
     // getting values with flag set to false, should get latest values
@@ -357,8 +369,8 @@ describe('Verify behavior of InternalStore', () => {
 
   test('test experiment sticky bucketing behavior when user changes', async () => {
     expect.assertions(9);
-    const statsig = new StatsigClient();
-    await statsig.initializeAsync(sdkKey, { userID: '123' });
+    const statsig = new StatsigClient(sdkKey, { userID: '123' });
+    await statsig.initializeAsync();
     const store = statsig.getStore();
 
     // getting values with flag set to false, should get latest values
@@ -395,8 +407,8 @@ describe('Verify behavior of InternalStore', () => {
 
   test('test experiment sticky bucketing behavior across sessions', async () => {
     expect.assertions(6);
-    const statsig = new StatsigClient();
-    await statsig.initializeAsync(sdkKey, { userID: '123' });
+    const statsig = new StatsigClient(sdkKey, { userID: '123' });
+    await statsig.initializeAsync();
     const store = statsig.getStore();
 
     store.save(generateTestConfigs('v0', true, true));
@@ -408,9 +420,8 @@ describe('Verify behavior of InternalStore', () => {
       'v0',
     );
 
-    // re-initialize with a different user id. Only device experiments should stick
-    const statsig2 = new StatsigClient();
-    await statsig2.initializeAsync(sdkKey, { userID: 'tore' });
+    // re-create with a different user id. Only device experiments should stick
+    const statsig2 = new StatsigClient(sdkKey, { userID: 'tore' });
     const store2 = statsig2.getStore();
 
     store2.save(generateTestConfigs('v1', true, true));

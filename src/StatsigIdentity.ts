@@ -63,36 +63,39 @@ export default class Identity {
   private platform: Platform | null = null;
   private nativeModules: NativeModules | null = null;
 
-  public constructor() {
-    this.user = null;
+  public constructor(user: StatsigUser | null) {
+    this.user = user;
+    let stableID;
+    if (StatsigAsyncStorage.asyncStorage) {
+      stableID = '';
+    } else {
+      stableID = StatsigLocalStorage.getItem(STATSIG_STABLE_ID_KEY);
+      if (stableID == null) {
+        stableID = uuidv4();
+        StatsigLocalStorage.setItem(STATSIG_STABLE_ID_KEY, stableID);
+      }
+    }
+
     this.statsigMetadata = {
       sessionID: uuidv4(),
       sdkType: 'js-client',
       sdkVersion: require('../package.json')?.version ?? '',
-      stableID: '',
+      stableID: stableID,
     };
   }
 
   public async initAsync(): Promise<Identity> {
     if (StatsigAsyncStorage.asyncStorage) {
-      let stableID = await StatsigAsyncStorage.getItemAsync(STATSIG_STABLE_ID_KEY);
+      let stableID = await StatsigAsyncStorage.getItemAsync(
+        STATSIG_STABLE_ID_KEY,
+      );
       if (stableID === null) {
         stableID = uuidv4();
         StatsigAsyncStorage.setItemAsync(STATSIG_STABLE_ID_KEY, stableID);
       }
-      this.statsigMetadata.stableID = stableID
+      this.statsigMetadata.stableID = stableID;
     }
     return this;
-  }
-
-  public init(): string {
-    let stableID = StatsigLocalStorage.getItem(STATSIG_STABLE_ID_KEY);
-    if (stableID == null) {
-      stableID = uuidv4();
-      StatsigLocalStorage.setItem(STATSIG_STABLE_ID_KEY, stableID);
-    }
-    this.statsigMetadata.stableID = stableID
-    return stableID;
   }
 
   public getStatsigMetadata(): Record<string, string> {
@@ -101,10 +104,6 @@ export default class Identity {
 
   public getUser(): StatsigUser | null {
     return this.user;
-  }
-
-  public setUser(user: StatsigUser | null): void {
-    this.user = user;
   }
 
   public updateUser(user: StatsigUser | null): void {

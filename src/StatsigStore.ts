@@ -67,6 +67,7 @@ export default class StatsigStore {
     };
     this.stickyDeviceExperiments = {};
     this.loaded = false;
+    this.loadFromLocalStorage();
   }
 
   public async loadFromAsyncStorage(): Promise<void> {
@@ -78,7 +79,10 @@ export default class StatsigStore {
     this.loaded = true;
   }
 
-  public loadFromLocalStorage(): void {
+  private loadFromLocalStorage(): void {
+    if (StatsigAsyncStorage.asyncStorage) {
+      return;
+    }
     this.parseCachedValues(
       StatsigLocalStorage.getItem(INTERNAL_STORE_KEY),
       StatsigLocalStorage.getItem(STICKY_USER_EXPERIMENTS_KEY),

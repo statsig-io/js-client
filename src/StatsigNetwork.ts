@@ -14,14 +14,15 @@ export default class StatsigNetwork {
 
   private leakyBucket: Record<string, number>;
 
-  private canUseKeepalive : boolean = false;
+  private canUseKeepalive: boolean = false;
 
   public constructor(sdkInternal: IHasStatsigInternal) {
     this.sdkInternal = sdkInternal;
     this.leakyBucket = {};
+    this.init();
   }
 
-  public init(): void {
+  private init(): void {
     if (!this.sdkInternal.getOptions().getDisableNetworkKeepalive()) {
       try {
         this.canUseKeepalive = 'keepalive' in new Request('');
@@ -56,7 +57,12 @@ export default class StatsigNetwork {
     retries: number = 0,
     backoff: number = 1000,
   ): Promise<void> {
-    const fetchPromise = this.postToEndpoint(endpointName, body, retries, backoff)
+    const fetchPromise = this.postToEndpoint(
+      endpointName,
+      body,
+      retries,
+      backoff,
+    )
       .then((res) => {
         if (res.ok) {
           return res.json().then((json: Record<string, any>) => {
@@ -66,7 +72,9 @@ export default class StatsigNetwork {
         }
 
         return Promise.reject(
-          new Error('Request to ' + endpointName + ' failed with status ' + res.status),
+          new Error(
+            'Request to ' + endpointName + ' failed with status ' + res.status,
+          ),
         );
       })
       .catch((e) => {
@@ -87,10 +95,9 @@ export default class StatsigNetwork {
     return fetchPromise;
   }
 
-  public sendLogBeacon(
-    payload: Record<string, any>,
-  ): boolean {
-    const url = this.sdkInternal.getOptions().getApi() + StatsigEndpoint.LogEventFallback;
+  public sendLogBeacon(payload: Record<string, any>): boolean {
+    const url =
+      this.sdkInternal.getOptions().getApi() + StatsigEndpoint.LogEventFallback;
     payload.apiKey = this.sdkInternal.getSDKKey();
     payload.clientTime = Date.now() + '';
     let stringPayload = null;
@@ -99,10 +106,7 @@ export default class StatsigNetwork {
     } catch (_e) {
       return false;
     }
-    return navigator.sendBeacon(
-      url,
-      stringPayload,
-    );
+    return navigator.sendBeacon(url, stringPayload);
   }
 
   public postToEndpoint(
@@ -128,7 +132,7 @@ export default class StatsigNetwork {
       this.leakyBucket[url] = counter + 1;
     }
 
-    const params : RequestInit = {
+    const params: RequestInit = {
       method: 'POST',
       body: JSON.stringify(body),
       headers: {

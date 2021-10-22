@@ -38,9 +38,10 @@ export default class StatsigLogger {
     this.loggedErrors = new Set();
 
     this.failedLogEvents = [];
+    this.init();
   }
 
-  public init(): void {
+  private init(): void {
     if (
       typeof window !== 'undefined' &&
       typeof window.addEventListener === 'function'

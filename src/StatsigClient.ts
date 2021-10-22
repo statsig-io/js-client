@@ -39,11 +39,7 @@ export type _SDKPackageInfo = {
 };
 
 export interface IStatsig {
-  initializeAsync(
-    sdkKey: string,
-    user?: StatsigUser | null,
-    options?: StatsigOptions | null,
-  ): Promise<void>;
+  initializeAsync(): Promise<void>;
   checkGate(gateName: string): boolean;
   getConfig(configName: string): DynamicConfig;
   getExperiment(
@@ -127,46 +123,36 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     return this.identity.getStatsigMetadata();
   }
 
-  public constructor() {
+  public constructor(
+    sdkKey: string,
+    user?: StatsigUser | null,
+    options?: StatsigOptions | null,
+  ) {
+    if (typeof sdkKey !== 'string' || !sdkKey.startsWith('client-')) {
+      throw new Error(
+        'Invalid key provided.  You must use a Client SDK Key from the Statsig console to initialize the sdk',
+      );
+    }
     this.ready = false;
-    this.sdkKey = null;
-    this.options = new StatsigSDKOptions();
-    this.identity = new StatsigIdentity();
+    this.sdkKey = sdkKey;
+    this.options = new StatsigSDKOptions(options);
+    this.identity = new StatsigIdentity(this.normalizeUser(user ?? null));
     this.network = new StatsigNetwork(this);
     this.store = new StatsigStore(this);
     this.logger = new StatsigLogger(this);
   }
 
-  public async initializeAsync(
-    sdkKey: string,
-    user?: StatsigUser | null,
-    options?: StatsigOptions | null,
-  ): Promise<void> {
+  public async initializeAsync(): Promise<void> {
     if (this.pendingInitPromise != null) {
       return this.pendingInitPromise;
     }
     if (this.ready) {
       return Promise.resolve();
     }
-    if (typeof sdkKey !== 'string' || !sdkKey.startsWith('client-')) {
-      return Promise.reject(
-        new Error(
-          'Invalid key provided.  You must use a Client SDK Key from the Statsig console to initialize the sdk',
-        ),
-      );
-    }
-    this.sdkKey = sdkKey;
-    this.options = new StatsigSDKOptions(options);
-    this.identity.setUser(this.normalizeUser(user ?? null));
-    this.logger.init();
-    this.network.init();
 
     if (StatsigAsyncStorage.asyncStorage) {
       await this.identity.initAsync();
       await this.store.loadFromAsyncStorage();
-    } else {
-      this.identity.init();
-      this.store.loadFromLocalStorage();
     }
 
     if (this.appState) {
@@ -383,7 +369,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     this.identity.setSDKPackageInfo(sdkPackageInfo);
   }
 
-  public setAsyncStorage(asyncStorage?: AsyncStorage | null): void {
+  public static setAsyncStorage(asyncStorage?: AsyncStorage | null): void {
     if (asyncStorage != null) {
       StatsigAsyncStorage.asyncStorage = asyncStorage;
     }

@@ -24,27 +24,27 @@ describe('Verify behavior of StatsigClient', () => {
     }),
   );
 
-  test('Test constructor', () => {
+  test('Test constructor will populate from cache on create', () => {
     expect.assertions(4);
-    const client = new StatsigClient();
+    const client = new StatsigClient(sdkKey);
     expect(() => {
-      client.checkGate('config_that_doesnt_exist');
-    }).toThrowError('Call and wait for initialize() to finish first.');
+      client.checkGate('gate');
+    }).not.toThrow();
     expect(() => {
-      client.getConfig('config_that_doesnt_exist');
-    }).toThrowError('Call and wait for initialize() to finish first.');
+      client.getConfig('config');
+    }).not.toThrow();
     expect(() => {
-      client.getExperiment('config_that_doesnt_exist');
-    }).toThrowError('Call and wait for initialize() to finish first.');
+      client.getExperiment('experiment');
+    }).not.toThrow();
     expect(() => {
-      client.logEvent('config_that_doesnt_exist');
-    }).toThrowError('Must initialize() before logging events.');
+      client.logEvent('event');
+    }).not.toThrow();
   });
 
   test('that override APIs work', async () => {
     expect.assertions(10);
-    const statsig = new StatsigClient();
-    await statsig.initializeAsync(sdkKey, { userID: '123' });
+    const statsig = new StatsigClient(sdkKey, { userID: '123' });
+    await statsig.initializeAsync();
     expect(statsig.getOptions().getLoggingBufferMaxSize()).toEqual(10);
     expect(statsig.getOptions().getLoggingIntervalMillis()).toEqual(5000);
 
@@ -74,9 +74,16 @@ describe('Verify behavior of StatsigClient', () => {
 
   test('that async storage works', async () => {
     expect.assertions(4);
-    const statsig = new StatsigClient();
+    const statsig = new StatsigClient(
+      sdkKey,
+      { userID: '123' },
+      {
+        loggingBufferMaxSize: 600,
+        loggingIntervalMillis: 100,
+      },
+    );
     const store: Record<string, string> = {};
-    statsig.setAsyncStorage({
+    StatsigClient.setAsyncStorage({
       getItem(key: string): Promise<string | null> {
         return Promise.resolve(store[key] ?? null);
       },
@@ -93,14 +100,7 @@ describe('Verify behavior of StatsigClient', () => {
     const spyOnSet = jest.spyOn(StatsigAsyncStorage, 'setItemAsync');
     const spyOnGet = jest.spyOn(StatsigAsyncStorage, 'getItemAsync');
 
-    await statsig.initializeAsync(
-      sdkKey,
-      { userID: '123' },
-      {
-        loggingBufferMaxSize: 600,
-        loggingIntervalMillis: 100,
-      },
-    );
+    await statsig.initializeAsync();
 
     expect(statsig.getOptions().getLoggingBufferMaxSize()).toEqual(500);
     expect(statsig.getOptions().getLoggingIntervalMillis()).toEqual(1000);

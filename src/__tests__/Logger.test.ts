@@ -44,34 +44,32 @@ describe('Verify behavior of StatsigLogger', () => {
 
   test('Test constructor', () => {
     expect.assertions(4);
-    const client = new StatsigClient();
+    const client = new StatsigClient(sdkKey, { userID: 'user_key' });
     const logger = client.getLogger();
     const spyOnFlush = jest.spyOn(logger, 'flush');
     const spyOnLog = jest.spyOn(logger, 'log');
-    return client
-      .initializeAsync(sdkKey, { userID: 'user_key' })
-      .then(async () => {
-        logger.log(new LogEvent('event'));
-        logger.log(new LogEvent('event'));
-        logger.log(new LogEvent('event'));
-        client.checkGate('test_gate');
-        client.checkGate('test_gate');
-        client.checkGate('test_gate');
-        logger.log(new LogEvent('event'));
-        client.getExperiment('test_config');
-        client.getExperiment('test_config');
-        client.getExperiment('test_config');
-        expect(spyOnLog).toHaveBeenCalledTimes(10);
-        // should log 11 events, triggering a flush
-        client.getExperiment('test_config');
-        expect(spyOnFlush).toHaveBeenCalledTimes(1);
-        await waitAllPromises();
-        // posting logs network request fails, causing a log event failure
-        expect(spyOnLog).toHaveBeenCalledTimes(12);
-        // manually flush again, failing again, but we dont log a second time
-        logger.flush();
-        await waitAllPromises();
-        expect(spyOnLog).toHaveBeenCalledTimes(12);
-      });
+    return client.initializeAsync().then(async () => {
+      logger.log(new LogEvent('event'));
+      logger.log(new LogEvent('event'));
+      logger.log(new LogEvent('event'));
+      client.checkGate('test_gate');
+      client.checkGate('test_gate');
+      client.checkGate('test_gate');
+      logger.log(new LogEvent('event'));
+      client.getExperiment('test_config');
+      client.getExperiment('test_config');
+      client.getExperiment('test_config');
+      expect(spyOnLog).toHaveBeenCalledTimes(10);
+      // should log 11 events, triggering a flush
+      client.getExperiment('test_config');
+      expect(spyOnFlush).toHaveBeenCalledTimes(1);
+      await waitAllPromises();
+      // posting logs network request fails, causing a log event failure
+      expect(spyOnLog).toHaveBeenCalledTimes(12);
+      // manually flush again, failing again, but we dont log a second time
+      logger.flush();
+      await waitAllPromises();
+      expect(spyOnLog).toHaveBeenCalledTimes(12);
+    });
   });
 });

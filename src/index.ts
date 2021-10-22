@@ -33,9 +33,9 @@ export default class Statsig {
     options?: StatsigOptions | null,
   ): Promise<void> {
     if (!Statsig.instance) {
-      Statsig.instance = new StatsigClient();
+      Statsig.instance = new StatsigClient(sdkKey, user, options);
     }
-    return Statsig.instance.initializeAsync(sdkKey, user, options);
+    return Statsig.instance.initializeAsync();
   }
 
   public static checkGate(gateName: string): boolean {
