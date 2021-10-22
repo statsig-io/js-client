@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+
 import { _SDKPackageInfo } from './StatsigClient';
 import { StatsigUser } from './StatsigUser';
 import StatsigAsyncStorage from './utils/StatsigAsyncLocalStorage';
@@ -84,15 +85,16 @@ export default class Identity {
     };
   }
 
-  public async initAsync(): Promise<Identity> {
+  public async initAsync(overrideStableID: string | null): Promise<Identity> {
     if (StatsigAsyncStorage.asyncStorage) {
-      let stableID = await StatsigAsyncStorage.getItemAsync(
-        STATSIG_STABLE_ID_KEY,
-      );
-      if (stableID === null) {
-        stableID = uuidv4();
-        StatsigAsyncStorage.setItemAsync(STATSIG_STABLE_ID_KEY, stableID);
+      let stableID = overrideStableID;
+      if (!stableID) {
+        stableID = await StatsigAsyncStorage.getItemAsync(
+          STATSIG_STABLE_ID_KEY,
+        );
+        stableID = stableID ?? uuidv4();
       }
+      StatsigAsyncStorage.setItemAsync(STATSIG_STABLE_ID_KEY, stableID);
       this.statsigMetadata.stableID = stableID;
     }
     return this;

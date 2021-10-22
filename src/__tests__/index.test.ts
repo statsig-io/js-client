@@ -444,4 +444,6 @@ describe('Verify behavior of top level index functions', () => {
       }),
     );
   });
+
+  test('shutdown does flush logs and they are correct', async () => {});
 });

@@ -2,15 +2,19 @@
  * @jest-environment jsdom
  */
 
+import { parse } from 'uuid';
+
 import StatsigClient from '../StatsigClient';
+import StatsigSDKOptions from '../StatsigSDKOptions';
 import StatsigAsyncStorage from '../utils/StatsigAsyncLocalStorage';
 
 describe('Verify behavior of StatsigClient', () => {
   const sdkKey = 'client-clienttestkey';
-
+  var parsedRequestBody;
   // @ts-ignore
-  global.fetch = jest.fn(() =>
-    Promise.resolve({
+  global.fetch = jest.fn((url, params) => {
+    parsedRequestBody = JSON.parse(params.body as string);
+    return Promise.resolve({
       ok: true,
       json: () =>
         Promise.resolve({
@@ -21,8 +25,8 @@ describe('Verify behavior of StatsigClient', () => {
             },
           },
         }),
-    }),
-  );
+    });
+  });
 
   test('Test constructor will populate from cache on create', () => {
     expect.assertions(4);
@@ -109,5 +113,22 @@ describe('Verify behavior of StatsigClient', () => {
     expect(spyOnSet).toHaveBeenCalledTimes(2);
     // Get the stable id, 3 saved configs, and saved logs
     expect(spyOnGet).toHaveBeenCalledTimes(5);
+  });
+
+  test('that overrideStableID works', async () => {
+    const statsig = new StatsigClient();
+    await statsig.initializeAsync('client-key');
+    console.log(parsedRequestBody);
+    let stableID = parsedRequestBody['statsigMetadata']['stableID'];
+    const statsig2 = new StatsigClient();
+    await statsig2.initializeAsync('client-key', null, {
+      overrideStableID: '123',
+    });
+    console.log(parsedRequestBody);
+    const statsig3 = new StatsigClient();
+    await statsig3.initializeAsync('client-key', null, {
+      overrideStableID: '456',
+    });
+    console.log(parsedRequestBody);
   });
 });

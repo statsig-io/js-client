@@ -136,7 +136,10 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     this.ready = false;
     this.sdkKey = sdkKey;
     this.options = new StatsigSDKOptions(options);
-    this.identity = new StatsigIdentity(this.normalizeUser(user ?? null));
+    this.identity = new StatsigIdentity(
+      this.normalizeUser(user ?? null),
+      this.options.getOverrideStableID(),
+    );
     this.network = new StatsigNetwork(this);
     this.store = new StatsigStore(this);
     this.logger = new StatsigLogger(this);

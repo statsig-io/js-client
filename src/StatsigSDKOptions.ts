@@ -12,12 +12,13 @@ export type StatsigOptions = {
   loggingIntervalMillis?: number;
   loggingBufferMaxSize?: number;
   disableNetworkKeepalive?: boolean;
+  overrideStableID?: string;
 };
 
 type BoundedNumberInput = {
-  default: number,
-  min: number,
-  max: number,
+  default: number;
+  min: number;
+  max: number;
 };
 
 export default class StatsigSDKOptions {
@@ -26,8 +27,8 @@ export default class StatsigSDKOptions {
   private environment: StatsigEnvironment | null;
   private loggingIntervalMillis: number;
   private loggingBufferMaxSize: number;
-
   private disableNetworkKeepalive: boolean;
+  private overrideStableID: string | null;
 
   constructor(options?: StatsigOptions | null) {
     if (options == null) {
@@ -38,7 +39,7 @@ export default class StatsigSDKOptions {
     this.disableCurrentPageLogging = options.disableCurrentPageLogging ?? false;
     this.environment = options.environment ?? null;
     this.loggingIntervalMillis = this.normalizeNumberInput(
-      options.loggingIntervalMillis, 
+      options.loggingIntervalMillis,
       {
         default: 5000,
         min: 1000,
@@ -46,7 +47,7 @@ export default class StatsigSDKOptions {
       },
     );
     this.loggingBufferMaxSize = this.normalizeNumberInput(
-      options.loggingBufferMaxSize, 
+      options.loggingBufferMaxSize,
       {
         default: 10,
         min: 2,
@@ -55,6 +56,7 @@ export default class StatsigSDKOptions {
     );
 
     this.disableNetworkKeepalive = options.disableNetworkKeepalive ?? false;
+    this.overrideStableID = options.overrideStableID ?? null;
   }
 
   getApi(): string {
@@ -81,7 +83,14 @@ export default class StatsigSDKOptions {
     return this.disableNetworkKeepalive;
   }
 
-  private normalizeNumberInput(input: number | undefined, bounds: BoundedNumberInput): number {
+  getOverrideStableID(): string | null {
+    return this.overrideStableID;
+  }
+
+  private normalizeNumberInput(
+    input: number | undefined,
+    bounds: BoundedNumberInput,
+  ): number {
     if (input == null) {
       return bounds.default;
     }
