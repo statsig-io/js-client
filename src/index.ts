@@ -39,16 +39,12 @@ export default class Statsig {
   }
 
   public static checkGate(gateName: string): boolean {
-    if (!Statsig.instance) {
-      throw new Error('Call and wait for initialize() to finish first.');
-    }
+    this.ensureInitialized();
     return Statsig.instance.checkGate(gateName);
   }
 
   public static getConfig(configName: string): DynamicConfig {
-    if (!Statsig.instance) {
-      throw new Error('Call and wait for initialize() to finish first.');
-    }
+    this.ensureInitialized();
     return Statsig.instance.getConfig(configName);
   }
 
@@ -56,9 +52,7 @@ export default class Statsig {
     experimentName: string,
     keepDeviceValue: boolean = false,
   ): DynamicConfig {
-    if (!Statsig.instance) {
-      throw new Error('Call and wait for initialize() to finish first.');
-    }
+    this.ensureInitialized();
     return Statsig.instance.getExperiment(experimentName, keepDeviceValue);
   }
 
@@ -67,23 +61,17 @@ export default class Statsig {
     value: string | number | null = null,
     metadata: Record<string, string> | null = null,
   ): void {
-    if (!Statsig.instance) {
-      throw new Error('Call and wait for initialize() to finish first.');
-    }
+    this.ensureInitialized();
     Statsig.instance.logEvent(eventName, value, metadata);
   }
 
   public static updateUser(user: StatsigUser | null): Promise<boolean> {
-    if (!Statsig.instance) {
-      throw new Error('Call and wait for initialize() to finish first.');
-    }
+    this.ensureInitialized();
     return Statsig.instance.updateUser(user);
   }
 
   public static shutdown() {
-    if (!Statsig.instance) {
-      throw new Error('Call and wait for initialize() to finish first.');
-    }
+    this.ensureInitialized();
     Statsig.instance.shutdown();
   }
 
@@ -93,9 +81,7 @@ export default class Statsig {
    * @param value - value to assign to the gate
    */
   public static overrideGate(gateName: string, value: boolean): void {
-    if (!Statsig.instance) {
-      throw new Error('Call and wait for initialize() to finish first.');
-    }
+    this.ensureInitialized();
     Statsig.instance.overrideGate(gateName, value);
   }
 
@@ -105,9 +91,7 @@ export default class Statsig {
    * @param value - value to assign to the config
    */
   public static overrideConfig(configName: string, value: object): void {
-    if (!Statsig.instance) {
-      throw new Error('Call and wait for initialize() to finish first.');
-    }
+    this.ensureInitialized();
     Statsig.instance.overrideConfig(configName, value);
   }
 
@@ -116,9 +100,7 @@ export default class Statsig {
    * @param name the gate override to remove
    */
   public static removeOverride(name?: string): void {
-    if (!Statsig.instance) {
-      throw new Error('Call and wait for initialize() to finish first.');
-    }
+    this.ensureInitialized();
     Statsig.instance.removeOverride(name);
   }
 
@@ -126,9 +108,7 @@ export default class Statsig {
    * @param name the gate override to remove
    */
   public static removeGateOverride(name?: string): void {
-    if (!Statsig.instance) {
-      throw new Error('Call and wait for initialize() to finish first.');
-    }
+    this.ensureInitialized();
     Statsig.instance.removeGateOverride(name);
   }
 
@@ -136,9 +116,7 @@ export default class Statsig {
    * @param name the config override to remove
    */
   public static removeConfigOverride(name?: string): void {
-    if (!Statsig.instance) {
-      throw new Error('Call and wait for initialize() to finish first.');
-    }
+    this.ensureInitialized();
     Statsig.instance.removeConfigOverride(name);
   }
 
@@ -147,9 +125,7 @@ export default class Statsig {
    * @returns the gate overrides
    */
   public static getOverrides(): Record<string, any> {
-    if (!Statsig.instance) {
-      throw new Error('Call and wait for initialize() to finish first.');
-    }
+    this.ensureInitialized();
     return Statsig.instance.getOverrides();
   }
 
@@ -157,9 +133,21 @@ export default class Statsig {
    * @returns The local gate and config overrides
    */
   public static getAllOverrides(): StatsigOverrides {
+    this.ensureInitialized();
+    return Statsig.instance.getAllOverrides();
+  }
+
+  /**
+   * @returns The Statsig stable ID used for device level experiments
+   */
+  public static getStableID(): string {
+    this.ensureInitialized();
+    return Statsig.instance.getStableID();
+  }
+
+  private static ensureInitialized() {
     if (!Statsig.instance) {
       throw new Error('Call and wait for initialize() to finish first.');
     }
-    return Statsig.instance.getAllOverrides();
   }
 }

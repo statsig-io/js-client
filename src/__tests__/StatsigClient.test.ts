@@ -110,13 +110,14 @@ describe('Verify behavior of StatsigClient', () => {
   });
 
   test('that overrideStableID works for local storage and gets set correctly in request', async () => {
-    expect.assertions(5);
+    expect.assertions(7);
     StatsigAsyncStorage.asyncStorage = null;
 
     const statsig = new StatsigClient(sdkKey);
     await statsig.initializeAsync();
     let stableID = parsedRequestBody['statsigMetadata']['stableID'];
     expect(stableID).toBeTruthy();
+    expect(statsig.getStableID()).toEqual(stableID);
 
     const statsig2 = new StatsigClient(sdkKey, null, {
       overrideStableID: '123',
@@ -126,6 +127,7 @@ describe('Verify behavior of StatsigClient', () => {
       stableID,
     );
     expect(parsedRequestBody['statsigMetadata']['stableID']).toEqual('123');
+    expect(statsig2.getStableID()).toEqual('123');
 
     const statsig3 = new StatsigClient(sdkKey, null, {
       overrideStableID: '456',
@@ -139,13 +141,14 @@ describe('Verify behavior of StatsigClient', () => {
   });
 
   test('that overrideStableID works for async storage and gets set correctly in request', async () => {
-    expect.assertions(5);
+    expect.assertions(7);
     setFakeAsyncStorage();
 
     const statsig = new StatsigClient(sdkKey);
     await statsig.initializeAsync();
     let stableID = parsedRequestBody['statsigMetadata']['stableID'];
     expect(stableID).toBeTruthy();
+    expect(statsig.getStableID()).toEqual(stableID);
 
     const statsig2 = new StatsigClient(sdkKey, null, {
       overrideStableID: '123',
@@ -155,6 +158,7 @@ describe('Verify behavior of StatsigClient', () => {
       stableID,
     );
     expect(parsedRequestBody['statsigMetadata']['stableID']).toEqual('123');
+    expect(statsig2.getStableID()).toEqual('123');
 
     const statsig3 = new StatsigClient(sdkKey, null, {
       overrideStableID: '456',

@@ -368,6 +368,14 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     return this.store.getAllOverrides();
   }
 
+  /**
+   * @returns The Statsig stable ID used for device level experiments
+   */
+  public getStableID(): string {
+    return this.identity.getStatsigMetadata().stableID;
+  }
+
+  // All methods below are for the statsig react native SDK internal usage only!
   public setSDKPackageInfo(sdkPackageInfo: _SDKPackageInfo) {
     this.identity.setSDKPackageInfo(sdkPackageInfo);
   }

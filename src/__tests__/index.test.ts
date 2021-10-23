@@ -444,4 +444,13 @@ describe('Verify behavior of top level index functions', () => {
       }),
     );
   });
+
+  test('set and get stableID', async () => {
+    await statsig.initialize(
+      'client-key',
+      { userID: '123' },
+      { overrideStableID: '666' },
+    );
+    expect(statsig.getStableID()).toEqual('666');
+  });
 });
