@@ -38,22 +38,33 @@ export default class Statsig {
     return Statsig.instance.initializeAsync();
   }
 
-  public static checkGate(gateName: string): boolean {
+  public static checkGate(
+    gateName: string,
+    ignoreOverrides: boolean = false,
+  ): boolean {
     this.ensureInitialized();
-    return Statsig.instance.checkGate(gateName);
+    return Statsig.instance.checkGate(gateName, ignoreOverrides);
   }
 
-  public static getConfig(configName: string): DynamicConfig {
+  public static getConfig(
+    configName: string,
+    ignoreOverrides: boolean = false,
+  ): DynamicConfig {
     this.ensureInitialized();
-    return Statsig.instance.getConfig(configName);
+    return Statsig.instance.getConfig(configName, ignoreOverrides);
   }
 
   public static getExperiment(
     experimentName: string,
     keepDeviceValue: boolean = false,
+    ignoreOverrides: boolean = false,
   ): DynamicConfig {
     this.ensureInitialized();
-    return Statsig.instance.getExperiment(experimentName, keepDeviceValue);
+    return Statsig.instance.getExperiment(
+      experimentName,
+      keepDeviceValue,
+      ignoreOverrides,
+    );
   }
 
   public static logEvent(

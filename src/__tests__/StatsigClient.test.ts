@@ -24,6 +24,13 @@ describe('Verify behavior of StatsigClient', () => {
               rule_id: 'ruleID123',
             },
           },
+          dynamic_configs: {
+            'RMv0YJlLOBe7cY7HgZ3Jox34R0Wrk7jLv3DZyBETA7I=': {
+              value: {
+                num: 4,
+              },
+            },
+          },
         }),
     });
   });
@@ -82,6 +89,45 @@ describe('Verify behavior of StatsigClient', () => {
     expect(statsig.getOverrides()).toEqual({ test_gate: false });
     statsig.removeOverride('test_gate');
     expect(statsig.getOverrides()).toEqual({});
+  });
+
+  test('that you can ignore an override to get the underlying value', async () => {
+    expect.assertions(9);
+    const statsig = new StatsigClient(sdkKey, { userID: '123' });
+    await statsig.initializeAsync();
+
+    expect(statsig.checkGate('test_gate')).toBe(true);
+    statsig.overrideGate('test_gate', false);
+    expect(statsig.checkGate('test_gate', false)).toBe(false);
+    expect(statsig.checkGate('test_gate', true)).toBe(true);
+
+    expect(statsig.getConfig('test_config').getValue()).toEqual({ num: 4 });
+    statsig.overrideConfig('test_config', { str: 'test', num: 7 });
+    expect(statsig.getConfig('test_config', false).getValue()).toEqual({
+      str: 'test',
+      num: 7,
+    });
+    expect(statsig.getConfig('test_config', true).getValue()).toEqual({
+      num: 4,
+    });
+
+    expect(
+      statsig.getExperiment('test_config', false, true).getValue(),
+    ).toEqual({
+      num: 4,
+    });
+    statsig.overrideConfig('test_config', { str: 'exp', num: 12 });
+    expect(
+      statsig.getExperiment('test_config', false, false).getValue(),
+    ).toEqual({
+      str: 'exp',
+      num: 12,
+    });
+    expect(
+      statsig.getExperiment('test_config', false, true).getValue(),
+    ).toEqual({
+      num: 4,
+    });
   });
 
   test('that async storage works', async () => {

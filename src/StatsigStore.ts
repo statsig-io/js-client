@@ -173,10 +173,13 @@ export default class StatsigStore {
     }
   }
 
-  public checkGate(gateName: string): boolean {
+  public checkGate(
+    gateName: string,
+    ignoreOverrides: boolean = false,
+  ): boolean {
     const gateNameHash = getHashValue(gateName);
     let gateValue = { value: false, rule_id: '', secondary_exposures: [] };
-    if (this.overrides.gates[gateName] != null) {
+    if (!ignoreOverrides && this.overrides.gates[gateName] != null) {
       gateValue = {
         value: this.overrides.gates[gateName],
         rule_id: 'override',
@@ -197,10 +200,13 @@ export default class StatsigStore {
     return gateValue.value === true;
   }
 
-  public getConfig(configName: string): DynamicConfig {
+  public getConfig(
+    configName: string,
+    ignoreOverrides: boolean = false,
+  ): DynamicConfig {
     const configNameHash = getHashValue(configName);
     let configValue = new DynamicConfig(configName);
-    if (this.overrides.configs[configName] != null) {
+    if (!ignoreOverrides && this.overrides.configs[configName] != null) {
       configValue = new DynamicConfig(
         configName,
         this.overrides.configs[configName],
@@ -224,10 +230,11 @@ export default class StatsigStore {
   public getExperiment(
     expName: string,
     keepDeviceValue: boolean = false,
+    ignoreOverrides: boolean = false,
   ): DynamicConfig {
     const expNameHash = getHashValue(expName);
     let exp = new DynamicConfig(expName);
-    if (this.overrides.configs[expName] != null) {
+    if (!ignoreOverrides && this.overrides.configs[expName] != null) {
       exp = new DynamicConfig(
         expName,
         this.overrides.configs[expName],

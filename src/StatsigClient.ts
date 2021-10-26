@@ -40,11 +40,12 @@ export type _SDKPackageInfo = {
 
 export interface IStatsig {
   initializeAsync(): Promise<void>;
-  checkGate(gateName: string): boolean;
-  getConfig(configName: string): DynamicConfig;
+  checkGate(gateName: string, ignoreOverrides?: boolean): boolean;
+  getConfig(configName: string, ignoreOverrides?: boolean): DynamicConfig;
   getExperiment(
     experimentName: string,
     keepDeviceValue?: boolean,
+    ignoreOverrides?: boolean,
   ): DynamicConfig;
   logEvent(
     eventName: string,
@@ -187,12 +188,15 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
    * @returns {boolean} - value of a gate for the user. Gates are "off" (return false) by default
    * @throws Error if initialize() is not called first, or gateName is not a string
    */
-  public checkGate(gateName: string): boolean {
+  public checkGate(
+    gateName: string,
+    ignoreOverrides: boolean = false,
+  ): boolean {
     this.ensureStoreLoaded();
     if (typeof gateName !== 'string' || gateName.length === 0) {
       throw new Error('Must pass a valid string as the gateName.');
     }
-    return this.store.checkGate(gateName);
+    return this.store.checkGate(gateName, ignoreOverrides);
   }
 
   /**
@@ -201,13 +205,16 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
    * @returns {DynamicConfig} - value of a config for the user
    * @throws Error if initialize() is not called first, or configName is not a string
    */
-  public getConfig(configName: string): DynamicConfig {
+  public getConfig(
+    configName: string,
+    ignoreOverrides: boolean = false,
+  ): DynamicConfig {
     this.ensureStoreLoaded();
     if (typeof configName !== 'string' || configName.length === 0) {
       throw new Error('Must pass a valid string as the configName.');
     }
 
-    return this.store.getConfig(configName);
+    return this.store.getConfig(configName, ignoreOverrides);
   }
 
   /**
@@ -219,12 +226,17 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   public getExperiment(
     experimentName: string,
     keepDeviceValue: boolean = false,
+    ignoreOverrides: boolean = false,
   ): DynamicConfig {
     this.ensureStoreLoaded();
     if (typeof experimentName !== 'string' || experimentName.length === 0) {
       throw new Error('Must pass a valid string as the experimentName.');
     }
-    return this.store.getExperiment(experimentName, keepDeviceValue);
+    return this.store.getExperiment(
+      experimentName,
+      keepDeviceValue,
+      ignoreOverrides,
+    );
   }
 
   public logEvent(
