@@ -58,6 +58,7 @@ export interface IStatsig {
   removeGateOverride(gateName?: string): void;
   removeConfigOverride(configName?: string): void;
   getAllOverrides(): StatsigOverrides;
+  getStableID(): string;
 
   // DEPRECATED
   removeOverride(overrideName?: string | null): void;
