@@ -2,15 +2,19 @@
  * @jest-environment jsdom
  */
 
+import { parse } from 'uuid';
+
 import StatsigClient from '../StatsigClient';
+import StatsigSDKOptions from '../StatsigSDKOptions';
 import StatsigAsyncStorage from '../utils/StatsigAsyncLocalStorage';
 
 describe('Verify behavior of StatsigClient', () => {
   const sdkKey = 'client-clienttestkey';
-
+  var parsedRequestBody;
   // @ts-ignore
-  global.fetch = jest.fn(() =>
-    Promise.resolve({
+  global.fetch = jest.fn((url, params) => {
+    parsedRequestBody = JSON.parse(params.body as string);
+    return Promise.resolve({
       ok: true,
       json: () =>
         Promise.resolve({
@@ -21,8 +25,16 @@ describe('Verify behavior of StatsigClient', () => {
             },
           },
         }),
-    }),
-  );
+    });
+  });
+
+  beforeEach(() => {
+    jest.resetModules();
+  });
+
+  afterEach(() => {
+    StatsigAsyncStorage.asyncStorage = null;
+  });
 
   test('Test constructor will populate from cache on create', () => {
     expect.assertions(4);
@@ -74,6 +86,9 @@ describe('Verify behavior of StatsigClient', () => {
 
   test('that async storage works', async () => {
     expect.assertions(4);
+    setFakeAsyncStorage();
+    const spyOnSet = jest.spyOn(StatsigAsyncStorage, 'setItemAsync');
+    const spyOnGet = jest.spyOn(StatsigAsyncStorage, 'getItemAsync');
     const statsig = new StatsigClient(
       sdkKey,
       { userID: '123' },
@@ -82,23 +97,6 @@ describe('Verify behavior of StatsigClient', () => {
         loggingIntervalMillis: 100,
       },
     );
-    const store: Record<string, string> = {};
-    StatsigClient.setAsyncStorage({
-      getItem(key: string): Promise<string | null> {
-        return Promise.resolve(store[key] ?? null);
-      },
-      setItem(key: string, value: string): Promise<void> {
-        store[key] = value;
-        return Promise.resolve();
-      },
-      removeItem(key: string): Promise<void> {
-        delete store[key];
-        return Promise.resolve();
-      },
-    });
-
-    const spyOnSet = jest.spyOn(StatsigAsyncStorage, 'setItemAsync');
-    const spyOnGet = jest.spyOn(StatsigAsyncStorage, 'getItemAsync');
 
     await statsig.initializeAsync();
 
@@ -110,4 +108,83 @@ describe('Verify behavior of StatsigClient', () => {
     // Get the stable id, 3 saved configs, and saved logs
     expect(spyOnGet).toHaveBeenCalledTimes(5);
   });
+
+  test('that overrideStableID works for local storage and gets set correctly in request', async () => {
+    expect.assertions(7);
+    StatsigAsyncStorage.asyncStorage = null;
+
+    const statsig = new StatsigClient(sdkKey);
+    await statsig.initializeAsync();
+    let stableID = parsedRequestBody['statsigMetadata']['stableID'];
+    expect(stableID).toBeTruthy();
+    expect(statsig.getStableID()).toEqual(stableID);
+
+    const statsig2 = new StatsigClient(sdkKey, null, {
+      overrideStableID: '123',
+    });
+    await statsig2.initializeAsync();
+    expect(parsedRequestBody['statsigMetadata']['stableID']).not.toEqual(
+      stableID,
+    );
+    expect(parsedRequestBody['statsigMetadata']['stableID']).toEqual('123');
+    expect(statsig2.getStableID()).toEqual('123');
+
+    const statsig3 = new StatsigClient(sdkKey, null, {
+      overrideStableID: '456',
+    });
+    await statsig3.initializeAsync();
+    expect(parsedRequestBody['statsigMetadata']['stableID']).toEqual('456');
+
+    const statsig4 = new StatsigClient(sdkKey, null);
+    await statsig4.initializeAsync();
+    expect(parsedRequestBody['statsigMetadata']['stableID']).toEqual('456');
+  });
+
+  test('that overrideStableID works for async storage and gets set correctly in request', async () => {
+    expect.assertions(7);
+    setFakeAsyncStorage();
+
+    const statsig = new StatsigClient(sdkKey);
+    await statsig.initializeAsync();
+    let stableID = parsedRequestBody['statsigMetadata']['stableID'];
+    expect(stableID).toBeTruthy();
+    expect(statsig.getStableID()).toEqual(stableID);
+
+    const statsig2 = new StatsigClient(sdkKey, null, {
+      overrideStableID: '123',
+    });
+    await statsig2.initializeAsync();
+    expect(parsedRequestBody['statsigMetadata']['stableID']).not.toEqual(
+      stableID,
+    );
+    expect(parsedRequestBody['statsigMetadata']['stableID']).toEqual('123');
+    expect(statsig2.getStableID()).toEqual('123');
+
+    const statsig3 = new StatsigClient(sdkKey, null, {
+      overrideStableID: '456',
+    });
+    await statsig3.initializeAsync();
+    expect(parsedRequestBody['statsigMetadata']['stableID']).toEqual('456');
+
+    const statsig4 = new StatsigClient(sdkKey, null);
+    await statsig4.initializeAsync();
+    expect(parsedRequestBody['statsigMetadata']['stableID']).toEqual('456');
+  });
 });
+
+function setFakeAsyncStorage() {
+  const store: Record<string, string> = {};
+  StatsigClient.setAsyncStorage({
+    getItem(key: string): Promise<string | null> {
+      return Promise.resolve(store[key] ?? null);
+    },
+    setItem(key: string, value: string): Promise<void> {
+      store[key] = value;
+      return Promise.resolve();
+    },
+    removeItem(key: string): Promise<void> {
+      delete store[key];
+      return Promise.resolve();
+    },
+  });
+}

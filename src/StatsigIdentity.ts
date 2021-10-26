@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+
 import { _SDKPackageInfo } from './StatsigClient';
 import { StatsigUser } from './StatsigUser';
 import StatsigAsyncStorage from './utils/StatsigAsyncLocalStorage';
@@ -46,7 +47,7 @@ type StatsigMetadata = {
   sessionID: string;
   sdkType: string;
   sdkVersion: string;
-  stableID: string;
+  stableID?: string;
   locale?: string;
   appVersion?: string;
   systemVersion?: string;
@@ -63,38 +64,38 @@ export default class Identity {
   private platform: Platform | null = null;
   private nativeModules: NativeModules | null = null;
 
-  public constructor(user: StatsigUser | null) {
+  public constructor(
+    user: StatsigUser | null,
+    overrideStableID?: string | null,
+  ) {
     this.user = user;
-    let stableID;
-    if (StatsigAsyncStorage.asyncStorage) {
-      stableID = '';
-    } else {
-      stableID = StatsigLocalStorage.getItem(STATSIG_STABLE_ID_KEY);
-      if (stableID == null) {
-        stableID = uuidv4();
-        StatsigLocalStorage.setItem(STATSIG_STABLE_ID_KEY, stableID);
-      }
-    }
-
     this.statsigMetadata = {
       sessionID: uuidv4(),
       sdkType: 'js-client',
       sdkVersion: require('../package.json')?.version ?? '',
-      stableID: stableID,
     };
+
+    let stableID = overrideStableID;
+    if (!StatsigAsyncStorage.asyncStorage) {
+      stableID =
+        stableID ??
+        StatsigLocalStorage.getItem(STATSIG_STABLE_ID_KEY) ??
+        uuidv4();
+      StatsigLocalStorage.setItem(STATSIG_STABLE_ID_KEY, stableID);
+    }
+    if (stableID) {
+      this.statsigMetadata.stableID = stableID;
+    }
   }
 
   public async initAsync(): Promise<Identity> {
-    if (StatsigAsyncStorage.asyncStorage) {
-      let stableID = await StatsigAsyncStorage.getItemAsync(
-        STATSIG_STABLE_ID_KEY,
-      );
-      if (stableID === null) {
-        stableID = uuidv4();
-        StatsigAsyncStorage.setItemAsync(STATSIG_STABLE_ID_KEY, stableID);
-      }
-      this.statsigMetadata.stableID = stableID;
+    let stableID: string | null | undefined = this.statsigMetadata.stableID;
+    if (!stableID) {
+      stableID = await StatsigAsyncStorage.getItemAsync(STATSIG_STABLE_ID_KEY);
+      stableID = stableID ?? uuidv4();
     }
+    StatsigAsyncStorage.setItemAsync(STATSIG_STABLE_ID_KEY, stableID);
+    this.statsigMetadata.stableID = stableID;
     return this;
   }
 

@@ -58,6 +58,7 @@ export interface IStatsig {
   removeGateOverride(gateName?: string): void;
   removeConfigOverride(configName?: string): void;
   getAllOverrides(): StatsigOverrides;
+  getStableID(): string;
 
   // DEPRECATED
   removeOverride(overrideName?: string | null): void;
@@ -136,7 +137,10 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     this.ready = false;
     this.sdkKey = sdkKey;
     this.options = new StatsigSDKOptions(options);
-    this.identity = new StatsigIdentity(this.normalizeUser(user ?? null));
+    this.identity = new StatsigIdentity(
+      this.normalizeUser(user ?? null),
+      this.options.getOverrideStableID(),
+    );
     this.network = new StatsigNetwork(this);
     this.store = new StatsigStore(this);
     this.logger = new StatsigLogger(this);
@@ -365,6 +369,14 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     return this.store.getAllOverrides();
   }
 
+  /**
+   * @returns The Statsig stable ID used for device level experiments
+   */
+  public getStableID(): string {
+    return this.identity.getStatsigMetadata().stableID;
+  }
+
+  // All methods below are for the statsig react native SDK internal usage only!
   public setSDKPackageInfo(sdkPackageInfo: _SDKPackageInfo) {
     this.identity.setSDKPackageInfo(sdkPackageInfo);
   }
