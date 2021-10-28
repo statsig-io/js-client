@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "prepublish": "tsc && webpack",
+    "prepare": "tsc && webpack",
     "postbuild": "rm -rf build/**/*.map",
     "test": "jest",
     "types": "npx tsc"
