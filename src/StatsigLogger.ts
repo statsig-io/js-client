@@ -67,18 +67,22 @@ export default class StatsigLogger {
   }
 
   public log(event: LogEvent): void {
-    if (
-      !this.sdkInternal.getOptions().getDisableCurrentPageLogging() &&
-      window != null &&
-      window.location != null &&
-      window.location.href != null
-    ) {
-      // https://stackoverflow.com/questions/6257463/how-to-get-the-url-without-any-parameters-in-javascript
-      const parts = window.location.href.split(/[?#]/);
-      if (parts?.length > 0) {
-        event.addStatsigMetadata('currentPage', parts[0]);
+    try {
+      if (
+        !this.sdkInternal.getOptions().getDisableCurrentPageLogging() &&
+        typeof window !== 'undefined' &&
+        window != null &&
+        typeof window.location === 'object' &&
+        typeof window.location.href === 'string'
+      ) {
+        // https://stackoverflow.com/questions/6257463/how-to-get-the-url-without-any-parameters-in-javascript
+        const parts = window.location.href.split(/[?#]/);
+        if (parts?.length > 0) {
+          event.addStatsigMetadata('currentPage', parts[0]);
+        }
       }
-    }
+    } catch (_e) {}
+
     this.queue.push(event.toJsonObject());
     if (
       this.queue.length >=
