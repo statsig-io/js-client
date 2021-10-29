@@ -1,7 +1,21 @@
 import DynamicConfig from './DynamicConfig';
-import StatsigClient, { StatsigOverrides } from './StatsigClient';
+import StatsigClient, {
+  AppState,
+  StatsigOverrides,
+  _SDKPackageInfo,
+} from './StatsigClient';
+import {
+  DeviceInfo,
+  ExpoConstants,
+  ExpoDevice,
+  NativeModules,
+  Platform,
+} from './StatsigIdentity';
 import { StatsigOptions } from './StatsigSDKOptions';
 import { StatsigUser } from './StatsigUser';
+import StatsigAsyncStorage, {
+  AsyncStorage,
+} from './utils/StatsigAsyncLocalStorage';
 
 export { StatsigOptions, StatsigEnvironment } from './StatsigSDKOptions';
 export { StatsigUser } from './StatsigUser';
@@ -25,6 +39,16 @@ export type { AsyncStorage } from './utils/StatsigAsyncLocalStorage';
 export default class Statsig {
   private static instance: StatsigClient;
 
+  // RN static dependencies
+  private static sdkPackageInfo?: _SDKPackageInfo;
+  private static appState?: AppState;
+  private static nativeModules?: NativeModules;
+  private static platform?: Platform;
+  private static deviceInfo?: DeviceInfo;
+  // RN Expo static dependencies
+  private static expoConstants?: ExpoConstants;
+  private static expoDevice?: ExpoDevice;
+
   private constructor() {}
 
   public static async initialize(
@@ -34,6 +58,13 @@ export default class Statsig {
   ): Promise<void> {
     if (!Statsig.instance) {
       Statsig.instance = new StatsigClient(sdkKey, user, options);
+      Statsig.instance.setSDKPackageInfo(this.sdkPackageInfo);
+      Statsig.instance.setAppState(this.appState);
+      Statsig.instance.setNativeModules(this.nativeModules);
+      Statsig.instance.setPlatform(this.platform);
+      Statsig.instance.setRNDeviceInfo(this.deviceInfo);
+      Statsig.instance.setExpoConstants(this.expoConstants);
+      Statsig.instance.setExpoDevice(this.expoDevice);
     }
     return Statsig.instance.initializeAsync();
   }
@@ -159,6 +190,53 @@ export default class Statsig {
   private static ensureInitialized() {
     if (!Statsig.instance) {
       throw new Error('Call and wait for initialize() to finish first.');
+    }
+  }
+
+  // All methods below are for the statsig react native SDK internal usage only!
+  public setSDKPackageInfo(sdkPackageInfo: _SDKPackageInfo) {
+    Statsig.sdkPackageInfo = sdkPackageInfo;
+  }
+
+  public static setAsyncStorage(asyncStorage?: AsyncStorage | null): void {
+    if (asyncStorage != null) {
+      StatsigAsyncStorage.asyncStorage = asyncStorage;
+    }
+  }
+
+  public static setAppState(appState?: AppState | null): void {
+    if (appState != null) {
+      Statsig.appState = appState;
+    }
+  }
+
+  public static setNativeModules(nativeModules?: NativeModules | null): void {
+    if (nativeModules != null) {
+      Statsig.nativeModules = nativeModules;
+    }
+  }
+
+  public static setPlatform(platform?: Platform | null): void {
+    if (platform != null) {
+      Statsig.platform = platform;
+    }
+  }
+
+  public setRNDeviceInfo(deviceInfo?: DeviceInfo | null): void {
+    if (deviceInfo != null) {
+      Statsig.deviceInfo = deviceInfo;
+    }
+  }
+
+  public setExpoConstants(expoConstants?: ExpoConstants | null): void {
+    if (expoConstants != null) {
+      Statsig.expoConstants = expoConstants;
+    }
+  }
+
+  public setExpoDevice(expoDevice?: ExpoDevice | null): void {
+    if (expoDevice != null) {
+      Statsig.expoDevice = expoDevice;
     }
   }
 }

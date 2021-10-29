@@ -389,8 +389,10 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   }
 
   // All methods below are for the statsig react native SDK internal usage only!
-  public setSDKPackageInfo(sdkPackageInfo: _SDKPackageInfo) {
-    this.identity.setSDKPackageInfo(sdkPackageInfo);
+  public setSDKPackageInfo(sdkPackageInfo?: _SDKPackageInfo) {
+    if (sdkPackageInfo != null) {
+      this.identity.setSDKPackageInfo(sdkPackageInfo);
+    }
   }
 
   public static setAsyncStorage(asyncStorage?: AsyncStorage | null): void {
