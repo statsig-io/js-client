@@ -194,7 +194,7 @@ export default class Statsig {
   }
 
   // All methods below are for the statsig react native SDK internal usage only!
-  public setSDKPackageInfo(sdkPackageInfo: _SDKPackageInfo) {
+  public static setSDKPackageInfo(sdkPackageInfo: _SDKPackageInfo) {
     Statsig.sdkPackageInfo = sdkPackageInfo;
   }
 
@@ -222,19 +222,19 @@ export default class Statsig {
     }
   }
 
-  public setRNDeviceInfo(deviceInfo?: DeviceInfo | null): void {
+  public static setRNDeviceInfo(deviceInfo?: DeviceInfo | null): void {
     if (deviceInfo != null) {
       Statsig.deviceInfo = deviceInfo;
     }
   }
 
-  public setExpoConstants(expoConstants?: ExpoConstants | null): void {
+  public static setExpoConstants(expoConstants?: ExpoConstants | null): void {
     if (expoConstants != null) {
       Statsig.expoConstants = expoConstants;
     }
   }
 
-  public setExpoDevice(expoDevice?: ExpoDevice | null): void {
+  public static setExpoDevice(expoDevice?: ExpoDevice | null): void {
     if (expoDevice != null) {
       Statsig.expoDevice = expoDevice;
     }

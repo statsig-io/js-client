@@ -1,11 +1,11 @@
 {
   "name": "statsig-js",
-  "version": "4.4.0",
+  "version": "4.4.0-beta.12",
   "description": "Statsig JavaScript client SDK for single user environments.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "prepare": "tsc && webpack",
+    "prepare": "rm -rf build/ && rm -rf dist/ && tsc && webpack",
     "postbuild": "rm -rf build/**/*.map",
     "test": "jest",
     "types": "npx tsc"
