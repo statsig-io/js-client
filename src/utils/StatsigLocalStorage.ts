@@ -3,6 +3,7 @@ export default class StatsigLocalStorage {
   public static getItem(key: string): string | null {
     if (
       typeof Storage !== 'undefined' &&
+      typeof window !== 'undefined' &&
       window != null &&
       window.localStorage != null
     ) {
@@ -15,6 +16,7 @@ export default class StatsigLocalStorage {
   public static setItem(key: string, value: string): void {
     if (
       typeof Storage !== 'undefined' &&
+      typeof window !== 'undefined' &&
       window != null &&
       window.localStorage != null
     ) {
@@ -27,6 +29,7 @@ export default class StatsigLocalStorage {
   public static removeItem(key: string): void {
     if (
       typeof Storage !== 'undefined' &&
+      typeof window !== 'undefined' &&
       window != null &&
       window.localStorage != null
     ) {
