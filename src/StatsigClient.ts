@@ -88,6 +88,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   private currentAppState: AppStateStatus | null = null;
 
   private ready: boolean;
+  private initCalled: boolean = false;
   private pendingInitPromise: Promise<void> | null = null;
 
   private network: StatsigNetwork;
@@ -156,7 +157,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     if (this.ready) {
       return Promise.resolve();
     }
-
+    this.initCalled = true;
     if (StatsigAsyncStorage.asyncStorage) {
       await this.identity.initAsync();
       await this.store.loadFromAsyncStorage();
@@ -277,10 +278,14 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     this.logger.log(event);
   }
 
-  public updateUser(user: StatsigUser | null): Promise<boolean> {
-    if (!this.ready) {
-      throw new Error('Call and wait for initialize() to finish first.');
+  public async updateUser(user: StatsigUser | null): Promise<boolean> {
+    if (!this.initCalled) {
+      throw new Error('Call initialize() first.');
     }
+    if (this.pendingInitPromise != null) {
+      await this.pendingInitPromise;
+    }
+
     const normalizedUser = this.normalizeUser(user);
     this.identity.updateUser(normalizedUser);
     this.store.updateUser(normalizedUser.userID ?? null);
@@ -296,7 +301,6 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       )
       .finally(() => {
         this.pendingInitPromise = null;
-        this.ready = true;
       });
     return this.pendingInitPromise
       .then(() => {
@@ -388,6 +392,10 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
    */
   public getStableID(): string {
     return this.identity.getStatsigMetadata().stableID;
+  }
+
+  public initializeCalled(): boolean {
+    return this.initCalled;
   }
 
   // All methods below are for the statsig react native SDK internal usage only!
