@@ -2,10 +2,7 @@
  * @jest-environment jsdom
  */
 
-import { parse } from 'uuid';
-
 import StatsigClient from '../StatsigClient';
-import StatsigSDKOptions from '../StatsigSDKOptions';
 import StatsigAsyncStorage from '../utils/StatsigAsyncLocalStorage';
 
 describe('Verify behavior of StatsigClient', () => {

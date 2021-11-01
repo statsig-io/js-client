@@ -10,6 +10,7 @@ import {
   ExpoDevice,
   NativeModules,
   Platform,
+  UUID,
 } from './StatsigIdentity';
 import { StatsigOptions } from './StatsigSDKOptions';
 import { StatsigUser } from './StatsigUser';
@@ -32,6 +33,7 @@ export type {
   DeviceInfo,
   ExpoConstants,
   ExpoDevice,
+  UUID,
 } from './StatsigIdentity';
 
 export type { AsyncStorage } from './utils/StatsigAsyncLocalStorage';
@@ -238,5 +240,9 @@ export default class Statsig {
     if (expoDevice != null) {
       Statsig.expoDevice = expoDevice;
     }
+  }
+
+  public static setReactNativeUUID(uuid?: UUID): void {
+    StatsigClient.setReactNativeUUID(uuid);
   }
 }

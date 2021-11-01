@@ -43,6 +43,10 @@ export type Platform = {
   } | null;
 };
 
+export type UUID = {
+  v4(): string | number[];
+};
+
 type StatsigMetadata = {
   sessionID: string;
   sdkType: string;
@@ -63,14 +67,17 @@ export default class Identity {
   private statsigMetadata: StatsigMetadata;
   private platform: Platform | null = null;
   private nativeModules: NativeModules | null = null;
+  private reactNativeUUID?: UUID;
 
   public constructor(
     user: StatsigUser | null,
     overrideStableID?: string | null,
+    reactNativeUUID?: UUID,
   ) {
+    this.reactNativeUUID = reactNativeUUID;
     this.user = user;
     this.statsigMetadata = {
-      sessionID: uuidv4(),
+      sessionID: this.getUUID(),
       sdkType: 'js-client',
       sdkVersion: require('../package.json')?.version ?? '',
     };
@@ -80,7 +87,7 @@ export default class Identity {
       stableID =
         stableID ??
         StatsigLocalStorage.getItem(STATSIG_STABLE_ID_KEY) ??
-        uuidv4();
+        this.getUUID();
       StatsigLocalStorage.setItem(STATSIG_STABLE_ID_KEY, stableID);
     }
     if (stableID) {
@@ -92,7 +99,7 @@ export default class Identity {
     let stableID: string | null | undefined = this.statsigMetadata.stableID;
     if (!stableID) {
       stableID = await StatsigAsyncStorage.getItemAsync(STATSIG_STABLE_ID_KEY);
-      stableID = stableID ?? uuidv4();
+      stableID = stableID ?? this.getUUID();
     }
     StatsigAsyncStorage.setItemAsync(STATSIG_STABLE_ID_KEY, stableID);
     this.statsigMetadata.stableID = stableID;
@@ -109,7 +116,7 @@ export default class Identity {
 
   public updateUser(user: StatsigUser | null): void {
     this.user = user;
-    this.statsigMetadata.sessionID = uuidv4();
+    this.statsigMetadata.sessionID = this.getUUID();
   }
 
   public setSDKPackageInfo(SDKPackageInfo: _SDKPackageInfo): void {
@@ -140,6 +147,10 @@ export default class Identity {
         this.nativeModules.SettingsManager?.settings?.AppleLocale ||
         this.nativeModules.SettingsManager?.settings?.AppleLanguages[0];
     }
+  }
+
+  private getUUID(): string {
+    return (this.reactNativeUUID?.v4() as string) ?? uuidv4();
   }
 
   public setRNDeviceInfo(deviceInfo: DeviceInfo): void {

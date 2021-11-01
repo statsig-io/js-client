@@ -1,6 +1,6 @@
 import DynamicConfig from './DynamicConfig';
 import LogEvent from './LogEvent';
-import StatsigIdentity from './StatsigIdentity';
+import StatsigIdentity, { UUID } from './StatsigIdentity';
 import type {
   DeviceInfo,
   ExpoConstants,
@@ -83,6 +83,7 @@ export type StatsigOverrides = {
 
 export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   // RN dependencies
+  private static reactNativeUUID?: UUID;
   private appState: AppState | null = null;
   private currentAppState: AppStateStatus | null = null;
 
@@ -141,6 +142,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     this.identity = new StatsigIdentity(
       this.normalizeUser(user ?? null),
       this.options.getOverrideStableID(),
+      StatsigClient.reactNativeUUID,
     );
     this.network = new StatsigNetwork(this);
     this.store = new StatsigStore(this);
@@ -399,6 +401,10 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     if (asyncStorage != null) {
       StatsigAsyncStorage.asyncStorage = asyncStorage;
     }
+  }
+
+  public static setReactNativeUUID(uuid?: UUID): void {
+    StatsigClient.reactNativeUUID = uuid;
   }
 
   public setAppState(appState?: AppState | null): void {

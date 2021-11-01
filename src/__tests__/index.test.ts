@@ -453,4 +453,23 @@ describe('Verify behavior of top level index functions', () => {
     );
     expect(statsig.getStableID()).toEqual('666');
   });
+
+  // React Native specific tests
+  test('set react native uuid', async () => {
+    const RNUUID = {
+      v4(): string | number[] {
+        return 'uuid_666';
+      },
+    };
+    statsig.setReactNativeUUID(RNUUID);
+    await statsig.initialize(
+      'client-key',
+      { userID: '123' },
+      { overrideStableID: '666' },
+    );
+    expect(statsig.getStableID()).toEqual('666');
+    expect(statsig.instance.identity.getStatsigMetadata().sessionID).toEqual(
+      'uuid_666',
+    );
+  });
 });

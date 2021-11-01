@@ -88,4 +88,14 @@ describe('Verify behavior of Identity module', () => {
     expect(metadata.deviceModelName).toEqual('iPhone XS');
     expect(metadata.deviceModel).toEqual('iPhone7,2');
   });
+
+  test('Test React Native UUID', () => {
+    const RNUUID = {
+      v4(): string | number[] {
+        return 'uuid_123';
+      },
+    };
+    const id = new StatsigIdentity({ userID: 'test_user' }, null, RNUUID);
+    expect(id.getStatsigMetadata().sessionID).toEqual('uuid_123');
+  });
 });
