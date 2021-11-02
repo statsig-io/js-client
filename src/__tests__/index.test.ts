@@ -3,7 +3,7 @@
  */
 
 import LogEvent from '../LogEvent';
-
+import StatsigClient from '../StatsigClient';
 let statsig;
 
 describe('Verify behavior of top level index functions', () => {
@@ -461,15 +461,14 @@ describe('Verify behavior of top level index functions', () => {
         return 'uuid_666';
       },
     };
-    statsig.setReactNativeUUID(RNUUID);
-    await statsig.initialize(
+    StatsigClient.setReactNativeUUID(RNUUID);
+    const client = new StatsigClient(
       'client-key',
       { userID: '123' },
       { overrideStableID: '666' },
     );
-    expect(statsig.getStableID()).toEqual('666');
-    expect(statsig.instance.identity.getStatsigMetadata().sessionID).toEqual(
-      'uuid_666',
-    );
+    await client.initializeAsync();
+    expect(client.getStableID()).toEqual('666');
+    expect(client.getStatsigMetadata().sessionID).toEqual('uuid_666');
   });
 });

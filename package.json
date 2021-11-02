@@ -7,7 +7,7 @@
   "scripts": {
     "prepare": "rm -rf build/ && rm -rf dist/ && tsc && webpack",
     "postbuild": "rm -rf build/**/*.map",
-    "test": "jest",
+    "test": "jest src/__tests__/index.test.ts",
     "types": "npx tsc"
   },
   "files": [
