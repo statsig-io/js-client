@@ -9,6 +9,7 @@ let statsig;
 describe('Verify behavior of top level index functions', () => {
   let postedLogs = {};
   let requestCount = 0;
+  let hasCustomID = false;
   // @ts-ignore
   global.fetch = jest.fn((url, params) => {
     requestCount++;
@@ -17,6 +18,8 @@ describe('Verify behavior of top level index functions', () => {
       return Promise.resolve({ ok: true });
     }
     if (url.toString().includes('initialize')) {
+      let body = JSON.parse(params.body as string);
+      hasCustomID = body.user.customIDs?.['customID'] != null;
       return Promise.resolve({
         ok: true,
         json: () =>
@@ -75,6 +78,7 @@ describe('Verify behavior of top level index functions', () => {
     statsig = require('../index').default;
     expect.hasAssertions();
     requestCount = 0;
+    hasCustomID = false;
 
     // ensure Date.now() returns the same value in each test
     let now = Date.now();
@@ -470,5 +474,17 @@ describe('Verify behavior of top level index functions', () => {
     await client.initializeAsync();
     expect(client.getStableID()).toEqual('666');
     expect(client.getStatsigMetadata().sessionID).toEqual('uuid_666');
+  });
+
+  test('customIDs is sent with user', async () => {
+    let client = new StatsigClient('client-key', { userID: '123' });
+    await client.initializeAsync();
+    expect(hasCustomID).toBeFalsy();
+    client = new StatsigClient('client-key', {
+      userID: '123',
+      customIDs: { customID: '666' },
+    });
+    await client.initializeAsync();
+    expect(hasCustomID).toBeTruthy();
   });
 });
