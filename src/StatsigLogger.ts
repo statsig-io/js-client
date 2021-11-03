@@ -2,7 +2,7 @@ import LogEvent from './LogEvent';
 import { IHasStatsigInternal } from './StatsigClient';
 import { StatsigEndpoint } from './StatsigNetwork';
 import { StatsigUser } from './StatsigUser';
-import StatsigAsyncStorage from './utils/StatsigAsyncLocalStorage';
+import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
 
 const STATSIG_LOCAL_STORAGE_LOGGING_REQUEST_KEY =

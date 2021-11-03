@@ -6,14 +6,15 @@ import StatsigClient, {
 import { StatsigOptions } from './StatsigSDKOptions';
 import { StatsigUser } from './StatsigUser';
 
+export { default as StatsigAsyncStorage } from './utils/StatsigAsyncStorage';
 export { StatsigOptions, StatsigEnvironment } from './StatsigSDKOptions';
 export { StatsigUser } from './StatsigUser';
 export { default as DynamicConfig } from './DynamicConfig';
 export { default as StatsigClient } from './StatsigClient';
-export type { _SDKPackageInfo as _SDKPackageInfo } from './StatsigClient';
-export type { AppState as AppState } from './StatsigClient';
-export type { AppStateStatus as AppStateStatus } from './StatsigClient';
 export { IStatsig, StatsigOverrides } from './StatsigClient';
+
+export type { AsyncStorage } from './utils/StatsigAsyncStorage';
+export type { _SDKPackageInfo as _SDKPackageInfo } from './StatsigClient';
 
 export type {
   NativeModules,

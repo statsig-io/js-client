@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { _SDKPackageInfo } from './StatsigClient';
 import { StatsigUser } from './StatsigUser';
-import StatsigAsyncStorage from './utils/StatsigAsyncLocalStorage';
+import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
 
 export type DeviceInfo = {

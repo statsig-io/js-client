@@ -13,25 +13,13 @@ import StatsigNetwork from './StatsigNetwork';
 import StatsigSDKOptions, { StatsigOptions } from './StatsigSDKOptions';
 import StatsigStore from './StatsigStore';
 import { StatsigUser } from './StatsigUser';
-import StatsigAsyncStorage from './utils/StatsigAsyncLocalStorage';
-import type { AsyncStorage } from './utils/StatsigAsyncLocalStorage';
+import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
+import type { AsyncStorage } from './utils/StatsigAsyncStorage';
 
 const MAX_VALUE_SIZE = 64;
 const MAX_OBJ_SIZE = 1024;
 
-export type AppState = {
-  currentState: AppStateStatus;
-  addEventListener: (
-    event: string,
-    handler: (newState: string) => void,
-  ) => void;
-  removeEventListener: (
-    event: string,
-    handler: (newState: string) => void,
-  ) => void;
-};
-
-export type AppStateStatus = string;
+import type { AppState, AppStateStatus } from 'react-native';
 
 export type _SDKPackageInfo = {
   sdkType: string;

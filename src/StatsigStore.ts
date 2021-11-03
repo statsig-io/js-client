@@ -3,7 +3,7 @@ import { sha256 } from 'js-sha256';
 import DynamicConfig from './DynamicConfig';
 import { IHasStatsigInternal, StatsigOverrides } from './StatsigClient';
 import { Base64 } from './utils/Base64';
-import StatsigAsyncStorage from './utils/StatsigAsyncLocalStorage';
+import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
 
 function getHashValue(value: string) {
