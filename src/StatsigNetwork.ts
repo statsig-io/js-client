@@ -4,7 +4,7 @@ import { StatsigUser } from './StatsigUser';
 export enum StatsigEndpoint {
   Initialize = 'initialize',
   LogEvent = 'log_event',
-  LogEventFallback = 'log_event_fallback',
+  LogEventBeacon = 'log_event_beacon',
 }
 
 export default class StatsigNetwork {
@@ -96,9 +96,10 @@ export default class StatsigNetwork {
   }
 
   public sendLogBeacon(payload: Record<string, any>): boolean {
-    const url =
-      this.sdkInternal.getOptions().getApi() + StatsigEndpoint.LogEventFallback;
-    payload.apiKey = this.sdkInternal.getSDKKey();
+    const url = new URL(
+      this.sdkInternal.getOptions().getApi() + StatsigEndpoint.LogEventBeacon,
+    );
+    url.searchParams.append('k', this.sdkInternal.getSDKKey());
     payload.clientTime = Date.now() + '';
     let stringPayload = null;
     try {
