@@ -17,6 +17,7 @@
     "src/__tests__/*",
     "src/utils/__tests__/*",
     "dist",
-    "build"
+    "build",
+    "tsconfig.json"
   ]
 }

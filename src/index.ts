@@ -16,6 +16,7 @@ export { IStatsig, StatsigOverrides } from './StatsigClient';
 export type { AsyncStorage } from './utils/StatsigAsyncStorage';
 export type { _SDKPackageInfo as _SDKPackageInfo } from './StatsigClient';
 
+export type { AppState, AppStateEvent, AppStateStatus } from './StatsigClient';
 export type {
   NativeModules,
   Platform,

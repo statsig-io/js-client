@@ -19,7 +19,25 @@ import type { AsyncStorage } from './utils/StatsigAsyncStorage';
 const MAX_VALUE_SIZE = 64;
 const MAX_OBJ_SIZE = 1024;
 
-import type { AppState, AppStateStatus } from 'react-native';
+export type AppStateEvent = 'change' | 'memoryWarning' | 'blur' | 'focus';
+export type AppStateStatus =
+  | 'active'
+  | 'background'
+  | 'inactive'
+  | 'unknown'
+  | 'extension';
+
+export type AppState = {
+  currentState: AppStateStatus;
+  addEventListener: (
+    event: AppStateEvent,
+    handler: (newState: AppStateStatus) => void,
+  ) => void;
+  removeEventListener: (
+    event: AppStateEvent,
+    handler: (newState: AppStateStatus) => void,
+  ) => void;
+};
 
 export type _SDKPackageInfo = {
   sdkType: string;
@@ -151,7 +169,11 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       await this.store.loadFromAsyncStorage();
     }
 
-    if (this.appState) {
+    if (
+      this.appState &&
+      this.appState.addEventListener &&
+      typeof this.appState.addEventListener === 'function'
+    ) {
       this.currentAppState = this.appState.currentState;
       this.appState.addEventListener('change', this.handleAppStateChange);
     }
@@ -176,6 +198,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   /**
    * Checks the value of a gate for the current user
    * @param {string} gateName - the name of the gate to check
+   * @param {boolean} ignoreOverrides = false if this check should ignore local overrides
    * @returns {boolean} - value of a gate for the user. Gates are "off" (return false) by default
    * @throws Error if initialize() is not called first, or gateName is not a string
    */
@@ -193,6 +216,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   /**
    * Checks the value of a config for the current user
    * @param {string} configName - the name of the config to get
+   * @param {boolean} ignoreOverrides = false if this check should ignore local overrides
    * @returns {DynamicConfig} - value of a config for the user
    * @throws Error if initialize() is not called first, or configName is not a string
    */
@@ -211,6 +235,8 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   /**
    * Gets the experiment for a given user
    * @param {string} experimentName - the name of the experiment to get
+   * @param {boolean} keepDeviceValue = false if this should use "sticky" values persisted in local storage
+   * @param {boolean} ignoreOverrides = false if this check should ignore local overrides
    * @returns {DynamicConfig} - value of the experiment for the user, represented by a Dynamic Config object
    * @throws Error if initialize() is not called first, or experimentName is not a string
    */
@@ -305,7 +331,11 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
    */
   public shutdown(): void {
     this.logger.flush(true);
-    if (this.appState) {
+    if (
+      this.appState &&
+      this.appState.removeEventListener &&
+      typeof this.appState.removeEventListener === 'function'
+    ) {
       this.appState.removeEventListener('change', this.handleAppStateChange);
     }
   }
@@ -399,8 +429,10 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     }
   }
 
-  public static setReactNativeUUID(uuid?: UUID): void {
-    StatsigClient.reactNativeUUID = uuid;
+  public static setReactNativeUUID(uuid?: UUID | null): void {
+    if (uuid != null) {
+      StatsigClient.reactNativeUUID = uuid;
+    }
   }
 
   public setAppState(appState?: AppState | null): void {
