@@ -3,7 +3,7 @@
  */
 
 import StatsigClient from '../StatsigClient';
-import StatsigAsyncStorage from '../utils/StatsigAsyncLocalStorage';
+import StatsigAsyncStorage from '../utils/StatsigAsyncStorage';
 
 describe('Verify behavior of StatsigClient', () => {
   const sdkKey = 'client-clienttestkey';

@@ -3,7 +3,7 @@
  */
 
 import StatsigLocalStorage from '../StatsigLocalStorage';
-import StatsigAsyncLocalStorage from '../StatsigAsyncLocalStorage';
+import StatsigAsyncStorage from '../StatsigAsyncStorage';
 
 describe('Verify behavior of core utility functions', () => {
   beforeEach(() => {
@@ -27,8 +27,8 @@ describe('Verify behavior of core utility functions', () => {
 
   test('Test async storage doesnt work when not provided', () => {
     expect.assertions(1);
-    return StatsigAsyncLocalStorage.setItemAsync('123', 'ABC').then(() => {
-      StatsigAsyncLocalStorage.getItemAsync('123').then((result) => {
+    return StatsigAsyncStorage.setItemAsync('123', 'ABC').then(() => {
+      StatsigAsyncStorage.getItemAsync('123').then((result) => {
         expect(result).toBeNull();
       });
     });
@@ -37,7 +37,7 @@ describe('Verify behavior of core utility functions', () => {
   test('Test async storage is the same across multiple gets', () => {
     expect.assertions(3);
     const store: Record<string, string> = {};
-    StatsigAsyncLocalStorage.asyncStorage = {
+    StatsigAsyncStorage.asyncStorage = {
       getItem(key: string): Promise<string | null> {
         return Promise.resolve(store[key] ?? null);
       },
@@ -50,14 +50,14 @@ describe('Verify behavior of core utility functions', () => {
         return Promise.resolve();
       },
     };
-    return StatsigAsyncLocalStorage.setItemAsync('123', 'ABC').then(() => {
-      StatsigAsyncLocalStorage.getItemAsync('123').then((result) => {
+    return StatsigAsyncStorage.setItemAsync('123', 'ABC').then(() => {
+      StatsigAsyncStorage.getItemAsync('123').then((result) => {
         expect(result).toEqual('ABC');
-        StatsigAsyncLocalStorage.getItemAsync('123').then((result) => {
+        StatsigAsyncStorage.getItemAsync('123').then((result) => {
           expect(result).toEqual('ABC');
         });
-        StatsigAsyncLocalStorage.removeItemAsync('123').then((result) => {
-          StatsigAsyncLocalStorage.getItemAsync('123').then((result) => {
+        StatsigAsyncStorage.removeItemAsync('123').then((result) => {
+          StatsigAsyncStorage.getItemAsync('123').then((result) => {
             expect(result).toBeNull();
           });
         });
