@@ -96,6 +96,9 @@ export default class StatsigNetwork {
   }
 
   public sendLogBeacon(payload: Record<string, any>): boolean {
+    if (this.sdkInternal.getOptions().getLocalModeEnabled()) {
+      return true;
+    }
     const url = new URL(
       this.sdkInternal.getOptions().getApi() + StatsigEndpoint.LogEventBeacon,
     );
@@ -117,6 +120,9 @@ export default class StatsigNetwork {
     backoff: number = 1000,
     useKeepalive: boolean = false,
   ): Promise<any> {
+    if (this.sdkInternal.getOptions().getLocalModeEnabled()) {
+      return Promise.reject('no network requests in localMode');
+    }
     const url = this.sdkInternal.getOptions().getApi() + endpointName;
     const counter = this.leakyBucket[url];
     if (counter != null && counter >= 30) {

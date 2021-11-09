@@ -13,6 +13,7 @@ export type StatsigOptions = {
   loggingBufferMaxSize?: number;
   disableNetworkKeepalive?: boolean;
   overrideStableID?: string;
+  localMode?: boolean;
 };
 
 type BoundedNumberInput = {
@@ -29,6 +30,7 @@ export default class StatsigSDKOptions {
   private loggingBufferMaxSize: number;
   private disableNetworkKeepalive: boolean;
   private overrideStableID: string | null;
+  private localMode: boolean;
 
   constructor(options?: StatsigOptions | null) {
     if (options == null) {
@@ -57,6 +59,7 @@ export default class StatsigSDKOptions {
 
     this.disableNetworkKeepalive = options.disableNetworkKeepalive ?? false;
     this.overrideStableID = options.overrideStableID ?? null;
+    this.localMode = options.localMode ?? false;
   }
 
   getApi(): string {
@@ -85,6 +88,10 @@ export default class StatsigSDKOptions {
 
   getOverrideStableID(): string | null {
     return this.overrideStableID;
+  }
+
+  getLocalModeEnabled(): boolean {
+    return this.localMode;
   }
 
   private normalizeNumberInput(

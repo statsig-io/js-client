@@ -285,12 +285,6 @@ export default class StatsigStore {
   }
 
   public overrideConfig(configName: string, value: Record<string, any>): void {
-    if (!this.hasConfig(configName)) {
-      console.warn(
-        'The provided configName does not exist as a valid config/experiment.',
-      );
-      return;
-    }
     try {
       JSON.stringify(value);
     } catch (e) {
@@ -302,12 +296,6 @@ export default class StatsigStore {
   }
 
   public overrideGate(gateName: string, value: boolean): void {
-    if (!this.hasGate(gateName)) {
-      console.warn(
-        'The provided gateName does not exist as a valid feature gate.',
-      );
-      return;
-    }
     this.overrides.gates[gateName] = value;
     this.saveOverrides();
   }

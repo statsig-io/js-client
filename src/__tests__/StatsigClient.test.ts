@@ -32,8 +32,40 @@ describe('Verify behavior of StatsigClient', () => {
     });
   });
 
+  class LocalStorageMock {
+    private store: Record<string, string>;
+    constructor() {
+      this.store = {};
+    }
+
+    clear() {
+      this.store = {};
+    }
+
+    getItem(key: string) {
+      return this.store[key] || null;
+    }
+
+    setItem(key: string, value: string) {
+      this.store[key] = String(value);
+    }
+
+    removeItem(key: string) {
+      delete this.store[key];
+    }
+  }
+
+  const localStorage = new LocalStorageMock();
+  // @ts-ignore
+  Object.defineProperty(window, 'localStorage', {
+    value: localStorage,
+  });
+
   beforeEach(() => {
     jest.resetModules();
+    parsedRequestBody = null;
+
+    window.localStorage.clear();
   });
 
   afterEach(() => {
@@ -72,9 +104,12 @@ describe('Verify behavior of StatsigClient', () => {
     expect(statsig.checkGate('test_gate')).toBe(false);
     expect(statsig.getOverrides()).toEqual({ test_gate: false });
 
-    // overriding non-existent gate does not do anything
+    // overriding non-existent gate
     statsig.overrideGate('fake_gate', true);
-    expect(statsig.getOverrides()).toEqual({ test_gate: false });
+    expect(statsig.getOverrides()).toEqual({
+      test_gate: false,
+      fake_gate: true,
+    });
 
     // remove all overrides
     statsig.removeOverride();
@@ -212,6 +247,36 @@ describe('Verify behavior of StatsigClient', () => {
     const statsig4 = new StatsigClient(sdkKey, null);
     await statsig4.initializeAsync();
     expect(parsedRequestBody['statsigMetadata']['stableID']).toEqual('456');
+  });
+
+  test('that localMode supports a dummy statsig complete with overrides', async () => {
+    expect.assertions(7);
+    console.log(window.localStorage);
+    parsedRequestBody = null;
+    const statsig = new StatsigClient(
+      sdkKey,
+      {},
+      {
+        localMode: true,
+      },
+    );
+    await statsig.initializeAsync();
+    expect(parsedRequestBody).toBeNull(); // never issued the request
+
+    expect(statsig.checkGate('test_gate')).toEqual(false);
+    expect(statsig.getConfig('test_config').getValue()).toEqual({});
+
+    statsig.overrideGate('test_gate', true);
+    expect(statsig.checkGate('test_gate')).toEqual(true);
+    const configOverride = { hello: 456 };
+    statsig.overrideConfig('test_config', configOverride);
+    expect(statsig.getConfig('test_config').getValue()).toEqual(configOverride);
+
+    statsig.removeConfigOverride('test_config');
+    statsig.removeGateOverride('test_gate');
+
+    expect(statsig.checkGate('test_gate')).toEqual(false);
+    expect(statsig.getConfig('test_config').getValue()).toEqual({});
   });
 });
 

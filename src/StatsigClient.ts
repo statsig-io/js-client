@@ -187,6 +187,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         },
         (e: Error) => {},
       )
+      .catch((e) => {})
       .finally(async () => {
         this.pendingInitPromise = null;
         this.ready = true;

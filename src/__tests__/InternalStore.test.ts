@@ -240,9 +240,12 @@ describe('Verify behavior of InternalStore', () => {
     expect(statsig.getStore().checkGate('test_gate', false)).toBe(false);
     expect(statsig.getOverrides()).toEqual({ test_gate: false });
 
-    // overriding non-existent gate does not do anything
+    // overriding non-existent gate
     statsig.overrideGate('fake_gate', true);
-    expect(statsig.getOverrides()).toEqual({ test_gate: false });
+    expect(statsig.getOverrides()).toEqual({
+      test_gate: false,
+      fake_gate: true,
+    });
 
     // remove all overrides
     statsig.removeOverride();
@@ -283,6 +286,7 @@ describe('Verify behavior of InternalStore', () => {
     statsig.overrideConfig('nonexistent_config', { abc: 123 });
     expect(statsig.getAllOverrides().configs).toEqual({
       test_config: overrideConfig,
+      nonexistent_config: { abc: 123 },
     });
 
     // remove config override, add gate override
@@ -295,9 +299,12 @@ describe('Verify behavior of InternalStore', () => {
       configs: {},
     });
 
-    // overriding non-existent gate does not do anything
+    // overriding non-existent gate
     statsig.overrideGate('nonexistent_gate', true);
-    expect(statsig.getAllOverrides().gates).toEqual({ test_gate: false });
+    expect(statsig.getAllOverrides().gates).toEqual({
+      test_gate: false,
+      nonexistent_gate: true,
+    });
 
     // remove a named override
     statsig.overrideConfig('test_config', overrideConfig);
@@ -306,10 +313,13 @@ describe('Verify behavior of InternalStore', () => {
       test_config: overrideConfig,
     });
     statsig.removeConfigOverride('test_config');
-    expect(statsig.getAllOverrides().gates).toEqual({ test_gate: false });
+    expect(statsig.getAllOverrides().gates).toEqual({
+      test_gate: false,
+      nonexistent_gate: true,
+    });
     expect(statsig.getAllOverrides().configs).toEqual({});
     statsig.removeGateOverride('test_gate');
-    expect(statsig.getAllOverrides().gates).toEqual({});
+    expect(statsig.getAllOverrides().gates).toEqual({ nonexistent_gate: true });
   });
 
   test('test experiment sticky bucketing behavior', async () => {
