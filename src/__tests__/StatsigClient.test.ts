@@ -251,7 +251,6 @@ describe('Verify behavior of StatsigClient', () => {
 
   test('that localMode supports a dummy statsig complete with overrides', async () => {
     expect.assertions(7);
-    console.log(window.localStorage);
     parsedRequestBody = null;
     const statsig = new StatsigClient(
       sdkKey,

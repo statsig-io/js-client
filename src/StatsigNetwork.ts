@@ -32,6 +32,7 @@ export default class StatsigNetwork {
 
   public fetchValues(
     user: StatsigUser | null,
+    timeout: number,
     resolveCallback: (json: Record<string, any>) => void,
     rejectCallback: (e: Error) => void,
   ): Promise<void> {
@@ -43,7 +44,7 @@ export default class StatsigNetwork {
       },
       resolveCallback,
       rejectCallback,
-      3000, // timeout for early returns
+      timeout, // timeout for early returns
       10, // retries
     );
   }
