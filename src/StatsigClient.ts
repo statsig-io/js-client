@@ -181,6 +181,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     this.pendingInitPromise = this.network
       .fetchValues(
         this.identity.getUser(),
+        this.options.getInitTimeoutMs(),
         async (json: Record<string, any>): Promise<void> => {
           await this.store.save(json);
           return;
@@ -307,6 +308,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     this.pendingInitPromise = this.network
       .fetchValues(
         this.identity.getUser(),
+        this.options.getInitTimeoutMs(),
         async (json: Record<string, any>): Promise<void> => {
           await this.store.save(json);
         },

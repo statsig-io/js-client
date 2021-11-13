@@ -14,6 +14,7 @@ export type StatsigOptions = {
   disableNetworkKeepalive?: boolean;
   overrideStableID?: string;
   localMode?: boolean;
+  initTimeoutMs?: number;
 };
 
 type BoundedNumberInput = {
@@ -31,6 +32,7 @@ export default class StatsigSDKOptions {
   private disableNetworkKeepalive: boolean;
   private overrideStableID: string | null;
   private localMode: boolean;
+  private initTimeoutMs: number;
 
   constructor(options?: StatsigOptions | null) {
     if (options == null) {
@@ -60,6 +62,10 @@ export default class StatsigSDKOptions {
     this.disableNetworkKeepalive = options.disableNetworkKeepalive ?? false;
     this.overrideStableID = options.overrideStableID ?? null;
     this.localMode = options.localMode ?? false;
+    this.initTimeoutMs =
+      options.initTimeoutMs && options.initTimeoutMs >= 0
+        ? options.initTimeoutMs
+        : 3000;
   }
 
   getApi(): string {
@@ -92,6 +98,10 @@ export default class StatsigSDKOptions {
 
   getLocalModeEnabled(): boolean {
     return this.localMode;
+  }
+
+  getInitTimeoutMs(): number {
+    return this.initTimeoutMs;
   }
 
   private normalizeNumberInput(
