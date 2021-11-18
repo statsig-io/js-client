@@ -183,8 +183,8 @@ describe('Verify behavior of StatsigClient', () => {
 
     // Set the stable id, save the configs
     expect(spyOnSet).toHaveBeenCalledTimes(2);
-    // Get the stable id, 3 saved configs, and saved logs
-    expect(spyOnGet).toHaveBeenCalledTimes(5);
+    // Get the stable id, 2 saved configs, and saved logs
+    expect(spyOnGet).toHaveBeenCalledTimes(4);
   });
 
   test('that overrideStableID works for local storage and gets set correctly in request', async () => {

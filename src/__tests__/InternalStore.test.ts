@@ -154,9 +154,12 @@ describe('Verify behavior of InternalStore', () => {
     const client = new StatsigClient(sdkKey);
     const store = client.getStore();
 
-    store.save({ feature_gates: feature_gates, dynamic_configs: configs });
+    store.save('', {
+      feature_gates: feature_gates,
+      dynamic_configs: configs,
+    });
     expect(spyOnSet).toHaveBeenCalledTimes(2);
-    expect(spyOnGet).toHaveBeenCalledTimes(5); // load 3 cache values, overrides, and stableid
+    expect(spyOnGet).toHaveBeenCalledTimes(4); // load 2 cache values, overrides, and stableid
     expect(store.getConfig('test_config', false)).toEqual(config_obj);
     expect(store.checkGate('test_gate', false)).toEqual(true);
   });
@@ -169,9 +172,12 @@ describe('Verify behavior of InternalStore', () => {
     expect(spyOnSet).toHaveBeenCalledTimes(1);
     const store = client.getStore();
 
-    store.save({ feature_gates: feature_gates, dynamic_configs: configs });
+    store.save('', {
+      feature_gates: feature_gates,
+      dynamic_configs: configs,
+    });
     expect(spyOnSet).toHaveBeenCalledTimes(2);
-    expect(spyOnGet).toHaveBeenCalledTimes(5); // load 3 cache values and 1 overrides and 1 stableid
+    expect(spyOnGet).toHaveBeenCalledTimes(4); // load 2 cache values and 1 overrides and 1 stableid
     expect(store.getConfig('test_config', false)).toEqual(config_obj);
     expect(store.checkGate('test_gate', false)).toEqual(true);
   });
@@ -329,7 +335,7 @@ describe('Verify behavior of InternalStore', () => {
     const store = statsig.getStore();
 
     // getting values with flag set to false, should get latest values
-    store.save(generateTestConfigs('v0', true, true));
+    store.save('123', generateTestConfigs('v0', true, true));
     expect(store.getExperiment('exp', false).get('key', '')).toEqual('v0');
     expect(store.getExperiment('device_exp', false).get('key', '')).toEqual(
       'v0',
@@ -339,7 +345,7 @@ describe('Verify behavior of InternalStore', () => {
     );
 
     // update values, and then get with flag set to true. All values should update
-    store.save(generateTestConfigs('v1', true, true));
+    store.save('123', generateTestConfigs('v1', true, true));
     expect(store.getExperiment('exp', true).get('key', '')).toEqual('v1');
     expect(store.getExperiment('device_exp', true).get('key', '')).toEqual(
       'v1',
@@ -349,7 +355,7 @@ describe('Verify behavior of InternalStore', () => {
     );
 
     // update values again. Now some values should be sticky except the non-sticky ones
-    store.save(generateTestConfigs('v2', true, true));
+    store.save('123', generateTestConfigs('v2', true, true));
     expect(store.getExperiment('exp', true).get('key', '')).toEqual('v1');
     expect(store.getExperiment('device_exp', true).get('key', '')).toEqual(
       'v1',
@@ -359,7 +365,7 @@ describe('Verify behavior of InternalStore', () => {
     );
 
     // update the experiments so that the user is no longer in experiments, should still be sticky for the right ones
-    store.save(generateTestConfigs('v3', false, true));
+    store.save('123', generateTestConfigs('v3', false, true));
     expect(store.getExperiment('exp', true).get('key', '')).toEqual('v1');
     expect(store.getExperiment('device_exp', true).get('key', '')).toEqual(
       'v1',
@@ -369,7 +375,7 @@ describe('Verify behavior of InternalStore', () => {
     );
 
     // update the experiments to no longer be active, values should update NOW
-    store.save(generateTestConfigs('v4', false, false));
+    store.save('123', generateTestConfigs('v4', false, false));
     expect(store.getExperiment('exp', true).get('key', '')).toEqual('v4');
     expect(store.getExperiment('device_exp', true).get('key', '')).toEqual(
       'v4',
@@ -381,12 +387,12 @@ describe('Verify behavior of InternalStore', () => {
 
   test('test experiment sticky bucketing behavior when user changes', async () => {
     expect.assertions(9);
-    const statsig = new StatsigClient(sdkKey, { userID: '123' });
+    const statsig = new StatsigClient(sdkKey, { userID: '456' });
     await statsig.initializeAsync();
     const store = statsig.getStore();
 
     // getting values with flag set to false, should get latest values
-    store.save(generateTestConfigs('v0', true, true));
+    store.save('456', generateTestConfigs('v0', true, true));
     expect(store.getExperiment('exp', false).get('key', '')).toEqual('v0');
     expect(store.getExperiment('device_exp', false).get('key', '')).toEqual(
       'v0',
@@ -396,7 +402,7 @@ describe('Verify behavior of InternalStore', () => {
     );
 
     // update values, and then get with flag set to true. All values should update
-    store.save(generateTestConfigs('v1', true, true));
+    store.save('456', generateTestConfigs('v1', true, true));
     expect(store.getExperiment('exp', true).get('key', '')).toEqual('v1');
     expect(store.getExperiment('device_exp', true).get('key', '')).toEqual(
       'v1',
@@ -406,8 +412,8 @@ describe('Verify behavior of InternalStore', () => {
     );
 
     // update user. Only device value should stick
-    store.updateUser('tore');
-    store.save(generateTestConfigs('v2', true, true));
+    await statsig.updateUser({ userID: 'tore' });
+    store.save('tore', generateTestConfigs('v2', true, true));
     expect(store.getExperiment('exp', true).get('key', '')).toEqual('v2');
     expect(store.getExperiment('device_exp', true).get('key', '')).toEqual(
       'v1',
@@ -419,11 +425,11 @@ describe('Verify behavior of InternalStore', () => {
 
   test('test experiment sticky bucketing behavior across sessions', async () => {
     expect.assertions(6);
-    const statsig = new StatsigClient(sdkKey, { userID: '123' });
+    const statsig = new StatsigClient(sdkKey, { userID: '789' });
     await statsig.initializeAsync();
     const store = statsig.getStore();
 
-    store.save(generateTestConfigs('v0', true, true));
+    store.save('789', generateTestConfigs('v0', true, true));
     expect(store.getExperiment('exp', true).get('key', '')).toEqual('v0');
     expect(store.getExperiment('device_exp', true).get('key', '')).toEqual(
       'v0',
@@ -436,7 +442,7 @@ describe('Verify behavior of InternalStore', () => {
     const statsig2 = new StatsigClient(sdkKey, { userID: 'tore' });
     const store2 = statsig2.getStore();
 
-    store2.save(generateTestConfigs('v1', true, true));
+    store2.save('tore', generateTestConfigs('v1', true, true));
     expect(store2.getExperiment('exp', true).get('key', '')).toEqual('v1');
     expect(store2.getExperiment('device_exp', true).get('key', '')).toEqual(
       'v0',

@@ -3,8 +3,6 @@
  */
 
 import StatsigClient from '../StatsigClient';
-import StatsigAsyncStorage from '../utils/StatsigAsyncLocalStorage';
-import StatsigStore from '../StatsigStore';
 describe('Verify behavior of StatsigClient', () => {
   const sdkKey = 'client-clienttestkey';
   jest.useFakeTimers();
@@ -13,19 +11,21 @@ describe('Verify behavior of StatsigClient', () => {
     private store: Record<string, string>;
     constructor() {
       this.store = {
-        STATSIG_LOCAL_STORAGE_INTERNAL_STORE_V3: JSON.stringify({
-          feature_gates: {
-            'AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=': {
-              value: true,
-              rule_id: 'cache',
-            },
-          },
-          dynamic_configs: {
-            'RMv0YJlLOBe7cY7HgZ3Jox34R0Wrk7jLv3DZyBETA7I=': {
-              value: {
-                param: 'cache',
+        STATSIG_LOCAL_STORAGE_INTERNAL_STORE_V4: JSON.stringify({
+          123: {
+            feature_gates: {
+              'AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=': {
+                value: true,
+                rule_id: 'cache',
               },
-              rule_id: 'cache',
+            },
+            dynamic_configs: {
+              'RMv0YJlLOBe7cY7HgZ3Jox34R0Wrk7jLv3DZyBETA7I=': {
+                value: {
+                  param: 'cache',
+                },
+                rule_id: 'cache',
+              },
             },
           },
         }),

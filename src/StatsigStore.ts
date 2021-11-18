@@ -33,17 +33,21 @@ type APIInitializeData = {
   feature_gates: Record<string, APIFeatureGate | undefined>;
 };
 
-type StickyUserExperiments = {
-  user_id: string | number | null;
-  experiments: Record<string, APIDynamicConfig | undefined>;
+type UserCacheValues = {
+  dynamic_configs: Record<string, APIDynamicConfig | undefined>;
+  feature_gates: Record<string, APIFeatureGate | undefined>;
+  sticky_experiments: Record<string, APIDynamicConfig | undefined>;
+  time: number;
 };
 
-const INTERNAL_STORE_KEY = 'STATSIG_LOCAL_STORAGE_INTERNAL_STORE_V3';
 const OVERRIDES_STORE_KEY = 'STATSIG_LOCAL_STORAGE_INTERNAL_STORE_OVERRIDES_V3';
-const STICKY_USER_EXPERIMENTS_KEY =
-  'STATSIG_LOCAL_STORAGE_STICKY_USER_EXPERIMENTS';
 const STICKY_DEVICE_EXPERIMENTS_KEY =
   'STATSIG_LOCAL_STORAGE_STICKY_DEVICE_EXPERIMENTS';
+
+// V4 change: values are now cached on a specific user ID. We store values for up to 5 different user IDs at a time.
+const INTERNAL_STORE_KEY = 'STATSIG_LOCAL_STORAGE_INTERNAL_STORE_V4';
+
+const MAX_USER_VALUE_CACHED = 5;
 
 export default class StatsigStore {
   private sdkInternal: IHasStatsigInternal;
@@ -54,16 +58,17 @@ export default class StatsigStore {
   };
 
   private loaded: boolean;
-  private values: APIInitializeData;
-  private stickyUserExperiments: StickyUserExperiments;
+  private values: Record<string, UserCacheValues | undefined>;
   private stickyDeviceExperiments: Record<string, APIDynamicConfig>;
 
   public constructor(sdkInternal: IHasStatsigInternal) {
     this.sdkInternal = sdkInternal;
-    this.values = { feature_gates: {}, dynamic_configs: {} };
-    this.stickyUserExperiments = {
-      user_id: sdkInternal.getCurrentUser()?.userID ?? null,
-      experiments: {},
+    this.values = {};
+    this.values[this.getCurrentUserCacheKey()] = {
+      feature_gates: {},
+      dynamic_configs: {},
+      sticky_experiments: {},
+      time: 0,
     };
     this.stickyDeviceExperiments = {};
     this.loaded = false;
@@ -73,7 +78,6 @@ export default class StatsigStore {
   public async loadFromAsyncStorage(): Promise<void> {
     this.parseCachedValues(
       await StatsigAsyncStorage.getItemAsync(INTERNAL_STORE_KEY),
-      await StatsigAsyncStorage.getItemAsync(STICKY_USER_EXPERIMENTS_KEY),
       await StatsigAsyncStorage.getItemAsync(STICKY_DEVICE_EXPERIMENTS_KEY),
     );
     this.loaded = true;
@@ -85,7 +89,6 @@ export default class StatsigStore {
     }
     this.parseCachedValues(
       StatsigLocalStorage.getItem(INTERNAL_STORE_KEY),
-      StatsigLocalStorage.getItem(STICKY_USER_EXPERIMENTS_KEY),
       StatsigLocalStorage.getItem(STICKY_DEVICE_EXPERIMENTS_KEY),
     );
     this.loaded = true;
@@ -97,35 +100,13 @@ export default class StatsigStore {
 
   private parseCachedValues(
     allValues: string | null,
-    userExperiments: string | null,
     deviceExperiments: string | null,
   ): void {
     try {
-      const allValuesParsed = allValues ? JSON.parse(allValues) : null;
-      if (
-        allValuesParsed &&
-        allValuesParsed.feature_gates != null &&
-        allValuesParsed.dynamic_configs != null
-      ) {
-        this.values = allValuesParsed;
-      }
+      this.values = allValues ? JSON.parse(allValues) : this.values;
     } catch (e) {
       // Cached value corrupted, remove cache
       this.removeFromStorage(INTERNAL_STORE_KEY);
-    }
-
-    try {
-      const userExpParsed = userExperiments
-        ? JSON.parse(userExperiments)
-        : null;
-      if (
-        userExpParsed &&
-        userExpParsed.user_id === this.sdkInternal.getCurrentUser()?.userID
-      ) {
-        this.stickyUserExperiments = userExpParsed;
-      }
-    } catch (e) {
-      this.removeFromStorage(STICKY_USER_EXPERIMENTS_KEY);
     }
 
     try {
@@ -158,17 +139,40 @@ export default class StatsigStore {
     }
   }
 
-  public async save(jsonConfigs: Record<string, any>): Promise<void> {
-    this.values = jsonConfigs as APIInitializeData;
+  public async save(
+    userCacheKey: string,
+    jsonConfigs: Record<string, any>,
+  ): Promise<void> {
+    this.values[userCacheKey] = {
+      ...(jsonConfigs as APIInitializeData),
+      sticky_experiments: this.values[userCacheKey]?.sticky_experiments ?? {},
+      time: Date.now(),
+    };
+    if (Object.entries(this.values).length > MAX_USER_VALUE_CACHED) {
+      let minTime = null;
+      let minKey = null;
+      for (const entry of Object.entries(this.values)) {
+        if (entry[1] == null) {
+          continue;
+        }
+        if (minTime == null || minTime > entry[1].time) {
+          minTime = entry[1].time;
+          minKey = entry[0];
+        }
+      }
+      if (minKey) {
+        delete this.values[minKey];
+      }
+    }
     if (StatsigAsyncStorage.asyncStorage) {
       await StatsigAsyncStorage.setItemAsync(
         INTERNAL_STORE_KEY,
-        JSON.stringify(jsonConfigs),
+        JSON.stringify(this.values),
       );
     } else {
       StatsigLocalStorage.setItem(
         INTERNAL_STORE_KEY,
-        JSON.stringify(jsonConfigs),
+        JSON.stringify(this.values),
       );
     }
   }
@@ -186,7 +190,10 @@ export default class StatsigStore {
         secondary_exposures: [],
       };
     } else {
-      gateValue = this.values.feature_gates[gateNameHash] ?? gateValue;
+      gateValue =
+        this.values[this.getCurrentUserCacheKey()]?.feature_gates[
+          gateNameHash
+        ] ?? gateValue;
     }
     this.sdkInternal
       .getLogger()
@@ -212,8 +219,15 @@ export default class StatsigStore {
         this.overrides.configs[configName],
         'override',
       );
-    } else if (this.values.dynamic_configs[configNameHash] != null) {
-      const rawConfigValue = this.values.dynamic_configs[configNameHash];
+    } else if (
+      this.values[this.getCurrentUserCacheKey()]?.dynamic_configs[
+        configNameHash
+      ] != null
+    ) {
+      const rawConfigValue =
+        this.values[this.getCurrentUserCacheKey()]?.dynamic_configs[
+          configNameHash
+        ];
       configValue = this.createDynamicConfig(configName, rawConfigValue);
     }
     this.sdkInternal
@@ -241,15 +255,18 @@ export default class StatsigStore {
         'override',
       );
     } else {
+      const userCacheKey = this.getCurrentUserCacheKey();
+      const userValues = this.values[userCacheKey];
+
       let stickyValue =
-        this.stickyUserExperiments.experiments[expNameHash] ??
+        userValues?.sticky_experiments[expNameHash] ??
         this.stickyDeviceExperiments[expNameHash];
-      let latestValue = this.values.dynamic_configs[expNameHash];
+      let latestValue = userValues?.dynamic_configs[expNameHash];
 
       // If flag is false, or experiment is NOT active, simply remove the
       // sticky experiment value, and return the latest value
       if (!keepDeviceValue || latestValue?.is_experiment_active == false) {
-        this.removeStickyValue(expName);
+        this.removeStickyValue(userCacheKey, expName);
         exp = this.createDynamicConfig(expName, latestValue);
       } else if (stickyValue != null) {
         // If sticky value is already in cache, use it
@@ -264,8 +281,8 @@ export default class StatsigStore {
           if (latestValue.is_device_based) {
             // save sticky values in memory
             this.stickyDeviceExperiments[expNameHash] = latestValue;
-          } else {
-            this.stickyUserExperiments.experiments[expNameHash] = latestValue;
+          } else if (userValues) {
+            userValues.sticky_experiments[expNameHash] = latestValue;
           }
           // also save to persistent storage
           this.saveStickyValuesToStorage();
@@ -333,21 +350,8 @@ export default class StatsigStore {
     }
   }
 
-  public updateUser(newUserID: string | number | null) {
-    if (newUserID !== this.stickyUserExperiments.user_id) {
-      this.stickyUserExperiments = { user_id: newUserID, experiments: {} };
-      this.removeFromStorage(STICKY_USER_EXPERIMENTS_KEY);
-    }
-  }
-
-  private hasConfig(configName: string): boolean {
-    const hash = getHashValue(configName);
-    return this.values.dynamic_configs[hash] != null;
-  }
-
-  private hasGate(gateName: string): boolean {
-    const hash = getHashValue(gateName);
-    return this.values.feature_gates[hash] != null;
+  private getCurrentUserCacheKey(): string {
+    return this.sdkInternal.getCurrentUserCacheKey();
   }
 
   private createDynamicConfig(
@@ -362,8 +366,8 @@ export default class StatsigStore {
     );
   }
 
-  private removeStickyValue(key: string) {
-    delete this.stickyUserExperiments.experiments[key];
+  private removeStickyValue(userCacheKey: string, key: string) {
+    delete this.values[userCacheKey]?.sticky_experiments[key];
     delete this.stickyDeviceExperiments[key];
     this.saveStickyValuesToStorage();
   }
@@ -371,8 +375,8 @@ export default class StatsigStore {
   private saveStickyValuesToStorage() {
     if (StatsigAsyncStorage.asyncStorage) {
       StatsigAsyncStorage.setItemAsync(
-        STICKY_USER_EXPERIMENTS_KEY,
-        JSON.stringify(this.stickyUserExperiments),
+        INTERNAL_STORE_KEY,
+        JSON.stringify(this.values),
       );
       StatsigAsyncStorage.setItemAsync(
         STICKY_DEVICE_EXPERIMENTS_KEY,
@@ -380,8 +384,8 @@ export default class StatsigStore {
       );
     } else {
       StatsigLocalStorage.setItem(
-        STICKY_USER_EXPERIMENTS_KEY,
-        JSON.stringify(this.stickyUserExperiments),
+        INTERNAL_STORE_KEY,
+        JSON.stringify(this.values),
       );
       StatsigLocalStorage.setItem(
         STICKY_DEVICE_EXPERIMENTS_KEY,
