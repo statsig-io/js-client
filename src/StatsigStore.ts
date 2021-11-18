@@ -44,10 +44,10 @@ const OVERRIDES_STORE_KEY = 'STATSIG_LOCAL_STORAGE_INTERNAL_STORE_OVERRIDES_V3';
 const STICKY_DEVICE_EXPERIMENTS_KEY =
   'STATSIG_LOCAL_STORAGE_STICKY_DEVICE_EXPERIMENTS';
 
-// V4 change: values are now cached on a specific user ID. We store values for up to 5 different user IDs at a time.
+// V4 change: values are now cached on a specific user ID. We store values for up to 10 different user IDs at a time.
 const INTERNAL_STORE_KEY = 'STATSIG_LOCAL_STORAGE_INTERNAL_STORE_V4';
 
-const MAX_USER_VALUE_CACHED = 5;
+const MAX_USER_VALUE_CACHED = 10;
 
 export default class StatsigStore {
   private sdkInternal: IHasStatsigInternal;
