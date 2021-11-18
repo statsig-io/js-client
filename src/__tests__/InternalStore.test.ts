@@ -386,7 +386,7 @@ describe('Verify behavior of InternalStore', () => {
   });
 
   test('test experiment sticky bucketing behavior when user changes', async () => {
-    expect.assertions(9);
+    expect.assertions(12);
     const statsig = new StatsigClient(sdkKey, { userID: '456' });
     await statsig.initializeAsync();
     const store = statsig.getStore();
@@ -421,10 +421,20 @@ describe('Verify behavior of InternalStore', () => {
     expect(store.getExperiment('exp_non_stick', false).get('key', '')).toEqual(
       'v2',
     );
+
+    // update user back (don't await for the response), should get all the same values last time 456 got
+    statsig.updateUser({ userID: '456' });
+    expect(store.getExperiment('exp', true).get('key', '')).toEqual('v1');
+    expect(store.getExperiment('device_exp', true).get('key', '')).toEqual(
+      'v1',
+    );
+    expect(store.getExperiment('exp_non_stick', false).get('key', '')).toEqual(
+      'v1',
+    );
   });
 
   test('test experiment sticky bucketing behavior across sessions', async () => {
-    expect.assertions(6);
+    expect.assertions(9);
     const statsig = new StatsigClient(sdkKey, { userID: '789' });
     await statsig.initializeAsync();
     const store = statsig.getStore();
@@ -450,5 +460,40 @@ describe('Verify behavior of InternalStore', () => {
     expect(store2.getExperiment('exp_non_stick', false).get('key', '')).toEqual(
       'v1',
     );
+
+    // update user back (don't await for the response), should get all the same values last time 789 got
+    statsig.updateUser({ userID: '789' });
+    expect(store.getExperiment('exp', true).get('key', '')).toEqual('v0');
+    expect(store.getExperiment('device_exp', true).get('key', '')).toEqual(
+      'v0',
+    );
+    expect(store.getExperiment('exp_non_stick', false).get('key', '')).toEqual(
+      'v0',
+    );
+  });
+
+  test('test that we purge the oldest cache when we have more than 5', async () => {
+    expect.assertions(6);
+    const statsig = new StatsigClient(sdkKey, { userID: '1' });
+    await statsig.initializeAsync();
+    const store = statsig.getStore();
+
+    store.save('2', generateTestConfigs('v0', true, true));
+    store.save('3', generateTestConfigs('v0', true, true));
+    store.save('4', generateTestConfigs('v0', true, true));
+    store.save('5', generateTestConfigs('v0', true, true));
+    let cache = JSON.parse(
+      window.localStorage.getItem('STATSIG_LOCAL_STORAGE_INTERNAL_STORE_V4'),
+    );
+    expect(Object.keys(cache).length).toEqual(5);
+    expect(cache['1']).toBeTruthy();
+    expect(cache['6']).toBeFalsy();
+    store.save('6', generateTestConfigs('v0', true, true));
+    cache = JSON.parse(
+      window.localStorage.getItem('STATSIG_LOCAL_STORAGE_INTERNAL_STORE_V4'),
+    );
+    expect(Object.keys(cache).length).toEqual(5);
+    expect(cache['1']).toBeFalsy();
+    expect(cache['6']).toBeTruthy();
   });
 });
