@@ -78,6 +78,7 @@ export interface IHasStatsigInternal {
   getLogger(): StatsigLogger;
   getOptions(): StatsigSDKOptions;
   getCurrentUser(): StatsigUser | null;
+  getCurrentUserCacheKey(): string;
   getSDKKey(): string;
   getStatsigMetadata(): Record<string, string | number>;
 }
@@ -129,6 +130,9 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   public getCurrentUser(): StatsigUser | null {
     return this.identity.getUser();
   }
+  public getCurrentUserCacheKey(): string {
+    return String(this.identity.getUser()?.userID ?? '');
+  }
   public getStatsigMetadata(): Record<string, string | number> {
     return this.identity.getStatsigMetadata();
   }
@@ -178,12 +182,13 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       this.appState.addEventListener('change', this.handleAppStateChange);
     }
 
+    const userCacheKey = this.getCurrentUserCacheKey();
     this.pendingInitPromise = this.network
       .fetchValues(
         this.identity.getUser(),
         this.options.getInitTimeoutMs(),
         async (json: Record<string, any>): Promise<void> => {
-          await this.store.save(json);
+          await this.store.save(userCacheKey, json);
           return;
         },
         (e: Error) => {},
@@ -298,19 +303,22 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     if (!this.initCalled) {
       throw new Error('Call initialize() first.');
     }
+
+    this.identity.updateUser(this.normalizeUser(user));
+
+    const currentUser = this.identity.getUser();
+    const userCacheKey = this.getCurrentUserCacheKey();
+
     if (this.pendingInitPromise != null) {
       await this.pendingInitPromise;
     }
 
-    const normalizedUser = this.normalizeUser(user);
-    this.identity.updateUser(normalizedUser);
-    this.store.updateUser(normalizedUser.userID ?? null);
     this.pendingInitPromise = this.network
       .fetchValues(
-        this.identity.getUser(),
+        currentUser,
         this.options.getInitTimeoutMs(),
         async (json: Record<string, any>): Promise<void> => {
-          await this.store.save(json);
+          await this.store.save(userCacheKey, json);
         },
         (e: Error) => {
           throw e;
