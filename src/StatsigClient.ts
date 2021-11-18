@@ -304,8 +304,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       throw new Error('Call initialize() first.');
     }
 
-    const normalizedUser = this.normalizeUser(user);
-    this.identity.updateUser(normalizedUser);
+    this.identity.updateUser(this.normalizeUser(user));
 
     const currentUser = this.identity.getUser();
     const userCacheKey = this.getCurrentUserCacheKey();
