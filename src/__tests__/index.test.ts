@@ -79,6 +79,7 @@ describe('Verify behavior of top level index functions', () => {
     expect.hasAssertions();
     requestCount = 0;
     hasCustomID = false;
+    window.localStorage.removeItem('STATSIG_LOCAL_STORAGE_INTERNAL_STORE_V4');
 
     // ensure Date.now() returns the same value in each test
     let now = Date.now();
@@ -298,6 +299,23 @@ describe('Verify behavior of top level index functions', () => {
     let client2 = new StatsigClient('client-key', { userID: 'pass_2' });
     client2.initializeAsync();
     expect(client2.checkGate('test_gate')).toBe(false);
+  });
+
+  test('initializing and updating user without awaiting for no userID', async () => {
+    await statsig.initialize('client-key', null, {
+      disableCurrentPageLogging: true,
+    });
+    // gate should be true first
+    expect(statsig.checkGate('test_gate')).toBe(true);
+
+    // update user, but don't wait for the request to return
+    let p = statsig.updateUser({ userID: 'fail' });
+    // should return the default value, false
+    expect(statsig.checkGate('test_gate')).toBe(false);
+
+    // switch back to the previous user 'pass', and we should use the cached value, true
+    statsig.updateUser(null);
+    expect(statsig.checkGate('test_gate')).toBe(true);
   });
 
   test('Verify getExperiment() behaves correctly when calling under correct conditions', () => {
