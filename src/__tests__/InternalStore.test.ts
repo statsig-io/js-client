@@ -482,18 +482,23 @@ describe('Verify behavior of InternalStore', () => {
     store.save('3', generateTestConfigs('v0', true, true));
     store.save('4', generateTestConfigs('v0', true, true));
     store.save('5', generateTestConfigs('v0', true, true));
+    store.save('6', generateTestConfigs('v0', true, true));
+    store.save('7', generateTestConfigs('v0', true, true));
+    store.save('8', generateTestConfigs('v0', true, true));
+    store.save('9', generateTestConfigs('v0', true, true));
+    store.save('10', generateTestConfigs('v0', true, true));
     let cache = JSON.parse(
       window.localStorage.getItem('STATSIG_LOCAL_STORAGE_INTERNAL_STORE_V4'),
     );
-    expect(Object.keys(cache).length).toEqual(5);
+    expect(Object.keys(cache).length).toEqual(10);
     expect(cache['1']).toBeTruthy();
-    expect(cache['6']).toBeFalsy();
-    store.save('6', generateTestConfigs('v0', true, true));
+    expect(cache['11']).toBeFalsy();
+    store.save('11', generateTestConfigs('v0', true, true));
     cache = JSON.parse(
       window.localStorage.getItem('STATSIG_LOCAL_STORAGE_INTERNAL_STORE_V4'),
     );
-    expect(Object.keys(cache).length).toEqual(5);
+    expect(Object.keys(cache).length).toEqual(10);
     expect(cache['1']).toBeFalsy();
-    expect(cache['6']).toBeTruthy();
+    expect(cache['11']).toBeTruthy();
   });
 });
