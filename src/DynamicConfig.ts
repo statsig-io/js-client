@@ -16,8 +16,15 @@ export default class DynamicConfig {
     this.secondaryExposures = secondaryExposures;
   }
 
-  public get<T>(key: string, defaultValue: T): T {
+  public get<T>(
+    key: string,
+    defaultValue: T,
+    typeGuard?: (value: unknown) => value is T,
+  ): T {
     const val = this.getValue(key, defaultValue);
+    if (typeGuard) {
+      return typeGuard(val) ? val : defaultValue;
+    }
     if (defaultValue != null) {
       if (Array.isArray(defaultValue)) {
         if (Array.isArray(val)) {
