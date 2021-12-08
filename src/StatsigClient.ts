@@ -179,7 +179,10 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       typeof this.appState.addEventListener === 'function'
     ) {
       this.currentAppState = this.appState.currentState;
-      this.appState.addEventListener('change', this.handleAppStateChange);
+      this.appState.addEventListener(
+        'change',
+        this.handleAppStateChange.bind(this),
+      );
     }
 
     const userCacheKey = this.getCurrentUserCacheKey();
@@ -347,7 +350,10 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       this.appState.removeEventListener &&
       typeof this.appState.removeEventListener === 'function'
     ) {
-      this.appState.removeEventListener('change', this.handleAppStateChange);
+      this.appState.removeEventListener(
+        'change',
+        this.handleAppStateChange.bind(this),
+      );
     }
   }
 
