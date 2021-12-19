@@ -12,6 +12,7 @@ const INTERNAL_EVENT_PREFIX = 'statsig::';
 const CONFIG_EXPOSURE_EVENT = INTERNAL_EVENT_PREFIX + 'config_exposure';
 const GATE_EXPOSURE_EVENT = INTERNAL_EVENT_PREFIX + 'gate_exposure';
 const LOG_FAILURE_EVENT = INTERNAL_EVENT_PREFIX + 'log_event_failed';
+const APP_ERROR_EVENT = INTERNAL_EVENT_PREFIX + 'app_error';
 
 type FailedLogEventBody = {
   events: object[];
@@ -124,6 +125,18 @@ export default class StatsigLogger {
     });
     configExposure.setSecondaryExposures(secondaryExposures);
     this.log(configExposure);
+  }
+
+  public logAppError(
+    user: StatsigUser | null,
+    message: string,
+    metadata: object,
+  ) {
+    const errorEvent = new LogEvent(APP_ERROR_EVENT);
+    errorEvent.setUser(user);
+    errorEvent.setValue(message);
+    errorEvent.setMetadata(metadata);
+    this.log(errorEvent);
   }
 
   public flush(isClosing: boolean = false): void {

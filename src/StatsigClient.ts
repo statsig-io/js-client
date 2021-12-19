@@ -202,6 +202,24 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         this.ready = true;
         this.logger.sendSavedRequests();
       });
+
+    if (!this.options.getDisableErrorLogging() && 
+        window && 
+        window.addEventListener
+    ) {
+      window.addEventListener('error', e => {
+        this.logger.logAppError(
+          this.identity.getUser(), 
+          e.message, 
+          {
+            filename: e.filename,
+            lineno: e.lineno,
+            colno: e.colno,
+            error_obj: e.error,
+          }
+        );
+      });
+    }
     return this.pendingInitPromise;
   }
 
