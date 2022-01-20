@@ -165,7 +165,7 @@ export default class StatsigLogger {
     this.sdkInternal
       .getNetwork()
       .postToEndpoint(
-        StatsigEndpoint.LogEvent,
+        StatsigEndpoint.Rgstr,
         {
           events: oldQueue,
           statsigMetadata: this.sdkInternal.getStatsigMetadata(),
@@ -270,7 +270,7 @@ export default class StatsigLogger {
       ) {
         this.sdkInternal
           .getNetwork()
-          .postToEndpoint(StatsigEndpoint.LogEvent, requestBody)
+          .postToEndpoint(StatsigEndpoint.Rgstr, requestBody)
           .then((response) => {
             if (!response.ok) {
               throw Error(response.status);
