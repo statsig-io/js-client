@@ -13,7 +13,7 @@ describe('Verify behavior of top level index functions', () => {
   // @ts-ignore
   global.fetch = jest.fn((url, params) => {
     requestCount++;
-    if (url.toString().includes('log_event')) {
+    if (url.toString().includes('rgstr')) {
       postedLogs = JSON.parse(params.body as string);
       return Promise.resolve({ ok: true });
     }

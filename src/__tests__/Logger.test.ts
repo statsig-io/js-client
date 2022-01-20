@@ -2,16 +2,17 @@
  * @jest-environment jsdom
  */
 
+import 'core-js';
+
 import LogEvent from '../LogEvent';
 import StatsigClient from '../StatsigClient';
-import 'core-js';
 
 describe('Verify behavior of StatsigLogger', () => {
   const sdkKey = 'client-loggertestkey';
   const waitAllPromises = () => new Promise(setImmediate);
   //@ts-ignore
   global.fetch = jest.fn((url) => {
-    if (url && typeof url === 'string' && url.includes('log_event')) {
+    if (url && typeof url === 'string' && url.includes('rgstr')) {
       return Promise.resolve({
         ok: false,
         text: () => 'error',

@@ -3,7 +3,7 @@ import { StatsigUser } from './StatsigUser';
 
 export enum StatsigEndpoint {
   Initialize = 'initialize',
-  LogEvent = 'log_event',
+  Rgstr = 'rgstr',
   LogEventBeacon = 'log_event_beacon',
 }
 
