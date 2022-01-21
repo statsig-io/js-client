@@ -505,7 +505,6 @@ describe('Verify behavior of InternalStore', () => {
   test('test user cache key when there are customIDs', async () => {
     expect.assertions(9);
     const statsig = new StatsigClient(sdkKey, {
-      userID: 'abc',
       customIDs: { deviceId: '' },
     });
     await statsig.initializeAsync();
@@ -525,7 +524,6 @@ describe('Verify behavior of InternalStore', () => {
 
     // updateUser with the same userID but different customID, non-device experiments should be updated
     await statsig.updateUser({
-      userID: 'abc',
       customIDs: { deviceId: 'device_id_abc' },
     });
 
@@ -543,7 +541,6 @@ describe('Verify behavior of InternalStore', () => {
 
     // update user back, should get same value with empty deviceId
     statsig.updateUser({
-      userID: 'abc',
       customIDs: { deviceId: '' },
     });
     expect(store.getExperiment('exp', true).get('key', '')).toEqual('v0');
@@ -555,7 +552,7 @@ describe('Verify behavior of InternalStore', () => {
     );
   });
 
-  test('test that we purge the oldest cache when we have more than 5', async () => {
+  test('test that we purge the oldest cache when we have more than 10', async () => {
     expect.assertions(2);
     const statsig = new StatsigClient(sdkKey, { userID: '1' });
     await statsig.initializeAsync();
