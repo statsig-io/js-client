@@ -13,6 +13,7 @@ import StatsigNetwork from './StatsigNetwork';
 import StatsigSDKOptions, { StatsigOptions } from './StatsigSDKOptions';
 import StatsigStore from './StatsigStore';
 import { StatsigUser } from './StatsigUser';
+import SimpleHash from './utils/SimpleHash';
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import type { AsyncStorage } from './utils/StatsigAsyncStorage';
 
@@ -131,8 +132,20 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     return this.identity.getUser();
   }
   public getCurrentUserCacheKey(): string {
-    return String(this.identity.getUser()?.userID ?? '');
+    let key = `userID:${String(
+      this.identity.getUser()?.userID ?? '',
+    )};stableID:${this.getStableID()}`;
+
+    const customIDs = this.identity.getUser()?.customIDs;
+    if (customIDs != null) {
+      for (const [type, value] of Object.entries(customIDs)) {
+        key += `;${type}:${value}`;
+      }
+    }
+
+    return SimpleHash(key);
   }
+
   public getStatsigMetadata(): Record<string, string | number> {
     return this.identity.getStatsigMetadata();
   }
