@@ -111,7 +111,7 @@ export default class StatsigNetwork {
     } catch (_e) {
       return false;
     }
-    return navigator.sendBeacon(url, stringPayload);
+    return navigator.sendBeacon(url.toString(), stringPayload);
   }
 
   public postToEndpoint(

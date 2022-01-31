@@ -15,6 +15,7 @@ export type StatsigOptions = {
   overrideStableID?: string;
   localMode?: boolean;
   initTimeoutMs?: number;
+  disableErrorLogging?: boolean;
 };
 
 type BoundedNumberInput = {
@@ -33,6 +34,7 @@ export default class StatsigSDKOptions {
   private overrideStableID: string | null;
   private localMode: boolean;
   private initTimeoutMs: number;
+  private disableErrorLogging: boolean;
 
   constructor(options?: StatsigOptions | null) {
     if (options == null) {
@@ -66,6 +68,7 @@ export default class StatsigSDKOptions {
       options.initTimeoutMs && options.initTimeoutMs >= 0
         ? options.initTimeoutMs
         : 3000;
+    this.disableErrorLogging = options.disableErrorLogging ?? false;
   }
 
   getApi(): string {
@@ -102,6 +105,10 @@ export default class StatsigSDKOptions {
 
   getInitTimeoutMs(): number {
     return this.initTimeoutMs;
+  }
+
+  getDisableErrorLogging(): boolean {
+    return this.disableErrorLogging;
   }
 
   private normalizeNumberInput(
