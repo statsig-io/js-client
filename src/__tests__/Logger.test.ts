@@ -44,7 +44,7 @@ describe('Verify behavior of StatsigLogger', () => {
   });
 
   test('Test constructor', () => {
-    expect.assertions(5);
+    expect.assertions(6);
     const client = new StatsigClient(sdkKey, { userID: 'user_key' });
     const logger = client.getLogger();
     const spyOnFlush = jest.spyOn(logger, 'flush');
@@ -82,6 +82,13 @@ describe('Verify behavior of StatsigLogger', () => {
       client.getExperiment('test_config');
       client.getExperiment('test_config');
       expect(spyOnLog).toHaveBeenCalledTimes(104);
+
+      client.updateUser({});
+      client.checkGate('test_gate');
+      client.checkGate('test_gate');
+      client.getExperiment('test_config');
+      client.getExperiment('test_config');
+      expect(spyOnLog).toHaveBeenCalledTimes(106);
     });
   });
 });

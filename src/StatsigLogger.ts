@@ -95,6 +95,10 @@ export default class StatsigLogger {
     }
   }
 
+  public resetDedupeKeys() {
+    this.exposureDedupeKeys = {};
+  }
+
   private shouldLogExposure(key: string): boolean {
     const lastTime = this.exposureDedupeKeys[key];
     const now = Date.now();

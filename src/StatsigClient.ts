@@ -336,6 +336,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     }
 
     this.identity.updateUser(this.normalizeUser(user));
+    this.logger.resetDedupeKeys();
 
     const currentUser = this.identity.getUser();
     const userCacheKey = this.getCurrentUserCacheKey();
