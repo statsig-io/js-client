@@ -216,21 +216,18 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         this.logger.sendSavedRequests();
       });
 
-    if (!this.options.getDisableErrorLogging() && 
-        window && 
-        window.addEventListener
+    if (
+      !this.options.getDisableErrorLogging() &&
+      window &&
+      window.addEventListener
     ) {
-      window.addEventListener('error', e => {
-        this.logger.logAppError(
-          this.identity.getUser(), 
-          e.message, 
-          {
-            filename: e.filename,
-            lineno: e.lineno,
-            colno: e.colno,
-            error_obj: e.error,
-          }
-        );
+      window.addEventListener('error', (e) => {
+        this.logger.logAppError(this.identity.getUser(), e.message, {
+          filename: e.filename,
+          lineno: e.lineno,
+          colno: e.colno,
+          error_obj: e.error,
+        });
       });
     }
     return this.pendingInitPromise;
@@ -295,6 +292,18 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       keepDeviceValue,
       ignoreOverrides,
     );
+  }
+
+  public getLayer(
+    layerName: string,
+    keepDeviceValue: boolean = false,
+  ): DynamicConfig {
+    this.ensureStoreLoaded();
+    if (typeof layerName !== 'string' || layerName.length === 0) {
+      throw new Error('Must pass a valid string as the gateName.');
+    }
+
+    return this.store.getLayer(layerName, keepDeviceValue);
   }
 
   public logEvent(

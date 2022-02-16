@@ -28,15 +28,22 @@ type APIDynamicConfig = {
   is_experiment_active?: boolean;
 };
 
+type APILayerConfig = {
+  default_values: { [key: string]: unknown };
+  allocated_experiment_hash: string | null;
+};
+
 type APIInitializeData = {
   dynamic_configs: Record<string, APIDynamicConfig | undefined>;
   feature_gates: Record<string, APIFeatureGate | undefined>;
+  layer_configs: Record<string, APILayerConfig | undefined>;
 };
 
 type UserCacheValues = {
   dynamic_configs: Record<string, APIDynamicConfig | undefined>;
   feature_gates: Record<string, APIFeatureGate | undefined>;
   sticky_experiments: Record<string, APIDynamicConfig | undefined>;
+  layer_configs: Record<string, APILayerConfig | undefined>;
   time: number;
 };
 
@@ -68,6 +75,7 @@ export default class StatsigStore {
       feature_gates: {},
       dynamic_configs: {},
       sticky_experiments: {},
+      layer_configs: {},
       time: 0,
     };
     this.stickyDeviceExperiments = {};
@@ -278,14 +286,7 @@ export default class StatsigStore {
           latestValue.is_experiment_active &&
           latestValue.is_user_in_experiment
         ) {
-          if (latestValue.is_device_based) {
-            // save sticky values in memory
-            this.stickyDeviceExperiments[expNameHash] = latestValue;
-          } else if (userValues) {
-            userValues.sticky_experiments[expNameHash] = latestValue;
-          }
-          // also save to persistent storage
-          this.saveStickyValuesToStorage();
+          this.saveStickyValue(userCacheKey, expNameHash, latestValue);
         }
         exp = this.createDynamicConfig(expName, latestValue);
       }
@@ -299,6 +300,49 @@ export default class StatsigStore {
         exp._getSecondaryExposures(),
       );
     return exp;
+  }
+
+  public getLayer(layerName: string, keepDeviceValue: boolean): DynamicConfig {
+    const layerNameHash = getHashValue(layerName);
+    const userCacheKey = this.getCurrentUserCacheKey();
+    const userValues = this.values[userCacheKey];
+
+    const stickyValue =
+      userValues?.sticky_experiments[layerNameHash] ??
+      this.stickyDeviceExperiments[layerNameHash];
+
+    if (stickyValue) {
+      if (keepDeviceValue) {
+        const stickyHash = stickyValue.name;
+        const stickyData = userValues?.dynamic_configs[stickyHash];
+
+        if (stickyData?.is_experiment_active) {
+          return this.createDynamicConfig(layerName, stickyValue);
+        }
+      }
+
+      this.removeStickyValue(userCacheKey, layerNameHash);
+    }
+
+    const layerConfigData = userValues?.layer_configs[layerNameHash];
+    const layerConfigDefaults = layerConfigData?.default_values;
+
+    if (!layerConfigDefaults) {
+      return new DynamicConfig(layerName);
+    }
+
+    const hashedExperimentName =
+      layerConfigData.allocated_experiment_hash ?? '';
+    const experimentConfig = userValues?.dynamic_configs[hashedExperimentName];
+    if (!experimentConfig) {
+      return new DynamicConfig(layerName, layerConfigDefaults);
+    }
+
+    if (keepDeviceValue && experimentConfig.is_experiment_active === true) {
+      this.saveStickyValue(userCacheKey, layerNameHash, experimentConfig);
+    }
+
+    return this.createDynamicConfig(layerName, experimentConfig);
   }
 
   public overrideConfig(configName: string, value: Record<string, any>): void {
@@ -364,6 +408,23 @@ export default class StatsigStore {
       apiConfig?.rule_id,
       apiConfig?.secondary_exposures,
     );
+  }
+
+  private saveStickyValue(
+    userCacheKey: string,
+    key: string,
+    config: APIDynamicConfig,
+  ) {
+    const userValues = this.values[userCacheKey];
+
+    if (config.is_device_based === true) {
+      // save sticky values in memory
+      this.stickyDeviceExperiments[key] = config;
+    } else if (userValues) {
+      userValues.sticky_experiments[key] = config;
+    }
+    // also save to persistent storage
+    this.saveStickyValuesToStorage();
   }
 
   private removeStickyValue(userCacheKey: string, key: string) {
