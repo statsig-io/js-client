@@ -557,12 +557,13 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   }
 
   private normalizeUser(user: StatsigUser | null): StatsigUser {
-    user = this.trimUserObjIfNeeded(user);
+    let userCopy = JSON.parse(JSON.stringify(user));
+    userCopy = this.trimUserObjIfNeeded(userCopy);
     if (this.options.getEnvironment() != null) {
       // @ts-ignore
-      user.statsigEnvironment = this.options.getEnvironment();
+      userCopy.statsigEnvironment = this.options.getEnvironment();
     }
-    return user;
+    return userCopy;
   }
 
   private trimUserObjIfNeeded(user: StatsigUser | null): StatsigUser {
