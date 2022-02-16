@@ -47,7 +47,7 @@ export default class StatsigSDKOptions {
     this.loggingIntervalMillis = this.normalizeNumberInput(
       options.loggingIntervalMillis,
       {
-        default: 5000,
+        default: 10000,
         min: 1000,
         max: 60000,
       },
@@ -55,7 +55,7 @@ export default class StatsigSDKOptions {
     this.loggingBufferMaxSize = this.normalizeNumberInput(
       options.loggingBufferMaxSize,
       {
-        default: 10,
+        default: 100,
         min: 2,
         max: 500,
       },

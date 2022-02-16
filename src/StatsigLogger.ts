@@ -30,6 +30,7 @@ export default class StatsigLogger {
   private flushInterval: ReturnType<typeof setInterval> | null;
   private loggedErrors: Set<string>;
   private failedLogEvents: FailedLogEventBody[];
+  private exposureDedupeKeys: Record<string, number>;
 
   public constructor(sdkInternal: IHasStatsigInternal) {
     this.sdkInternal = sdkInternal;
@@ -39,6 +40,7 @@ export default class StatsigLogger {
     this.loggedErrors = new Set();
 
     this.failedLogEvents = [];
+    this.exposureDedupeKeys = {};
     this.init();
   }
 
@@ -93,6 +95,20 @@ export default class StatsigLogger {
     }
   }
 
+  private shouldLogExposure(key: string): boolean {
+    const lastTime = this.exposureDedupeKeys[key];
+    const now = Date.now();
+    if (lastTime == null) {
+      this.exposureDedupeKeys[key] = now;
+      return true;
+    }
+    if (lastTime >= now - 600 * 1000) {
+      return false;
+    }
+    this.exposureDedupeKeys[key] = now;
+    return true;
+  }
+
   public logGateExposure(
     user: StatsigUser | null,
     gateName: string,
@@ -100,6 +116,10 @@ export default class StatsigLogger {
     ruleID: string,
     secondaryExposures: Record<string, string>[],
   ) {
+    const dedupeKey = gateName + String(gateValue) + ruleID;
+    if (!this.shouldLogExposure(dedupeKey)) {
+      return;
+    }
     const gateExposure = new LogEvent(GATE_EXPOSURE_EVENT);
     gateExposure.setUser(user);
     gateExposure.setMetadata({
@@ -117,6 +137,10 @@ export default class StatsigLogger {
     ruleID: string,
     secondaryExposures: Record<string, string>[],
   ) {
+    const dedupeKey = configName + ruleID;
+    if (!this.shouldLogExposure(dedupeKey)) {
+      return;
+    }
     const configExposure = new LogEvent(CONFIG_EXPOSURE_EVENT);
     configExposure.setUser(user);
     configExposure.setMetadata({

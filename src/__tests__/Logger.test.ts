@@ -44,7 +44,7 @@ describe('Verify behavior of StatsigLogger', () => {
   });
 
   test('Test constructor', () => {
-    expect.assertions(4);
+    expect.assertions(5);
     const client = new StatsigClient(sdkKey, { userID: 'user_key' });
     const logger = client.getLogger();
     const spyOnFlush = jest.spyOn(logger, 'flush');
@@ -60,17 +60,28 @@ describe('Verify behavior of StatsigLogger', () => {
       client.getExperiment('test_config');
       client.getExperiment('test_config');
       client.getExperiment('test_config');
-      expect(spyOnLog).toHaveBeenCalledTimes(10);
-      // should log 11 events, triggering a flush
+      expect(spyOnLog).toHaveBeenCalledTimes(6);
       client.getExperiment('test_config');
+      for (var i = 0; i < 95; i++) {
+        logger.log(new LogEvent('event'));
+      }
       expect(spyOnFlush).toHaveBeenCalledTimes(1);
       await waitAllPromises();
       // posting logs network request fails, causing a log event failure
-      expect(spyOnLog).toHaveBeenCalledTimes(12);
+      expect(spyOnLog).toHaveBeenCalledTimes(102);
       // manually flush again, failing again, but we dont log a second time
       logger.flush();
       await waitAllPromises();
-      expect(spyOnLog).toHaveBeenCalledTimes(12);
+      expect(spyOnLog).toHaveBeenCalledTimes(102);
+
+      const elevenminslater = Date.now() + 11 * 60 * 1000;
+      jest.spyOn(global.Date, 'now').mockImplementation(() => elevenminslater);
+
+      client.checkGate('test_gate');
+      client.checkGate('test_gate');
+      client.getExperiment('test_config');
+      client.getExperiment('test_config');
+      expect(spyOnLog).toHaveBeenCalledTimes(104);
     });
   });
 });

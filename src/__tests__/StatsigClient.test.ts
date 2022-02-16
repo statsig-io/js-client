@@ -93,8 +93,8 @@ describe('Verify behavior of StatsigClient', () => {
     expect.assertions(10);
     const statsig = new StatsigClient(sdkKey, { userID: '123' });
     await statsig.initializeAsync();
-    expect(statsig.getOptions().getLoggingBufferMaxSize()).toEqual(10);
-    expect(statsig.getOptions().getLoggingIntervalMillis()).toEqual(5000);
+    expect(statsig.getOptions().getLoggingBufferMaxSize()).toEqual(100);
+    expect(statsig.getOptions().getLoggingIntervalMillis()).toEqual(10000);
 
     // test_gate is true without override
     expect(statsig.checkGate('test_gate')).toBe(true);
