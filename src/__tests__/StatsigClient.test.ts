@@ -123,6 +123,26 @@ describe('Verify behavior of StatsigClient', () => {
     expect(statsig.getOverrides()).toEqual({});
   });
 
+  test('that environment does not modify the passed in user', async () => {
+    expect.assertions(3);
+    const user = { userID: '123' };
+    const statsig = new StatsigClient(sdkKey, user, {
+      environment: {
+        tier: 'development',
+      },
+    });
+    await statsig.initializeAsync();
+    expect(statsig.getOptions().getEnvironment()).toEqual({
+      tier: 'development',
+    });
+    expect(user).toEqual({ userID: '123' });
+
+    const newUser = { userID: 'abc' };
+    await statsig.updateUser(newUser);
+
+    expect(newUser).toEqual({ userID: 'abc' });
+  });
+
   test('that you can ignore an override to get the underlying value', async () => {
     expect.assertions(9);
     const statsig = new StatsigClient(sdkKey, { userID: '123' });

@@ -216,21 +216,18 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         this.logger.sendSavedRequests();
       });
 
-    if (!this.options.getDisableErrorLogging() && 
-        window && 
-        window.addEventListener
+    if (
+      !this.options.getDisableErrorLogging() &&
+      window &&
+      window.addEventListener
     ) {
-      window.addEventListener('error', e => {
-        this.logger.logAppError(
-          this.identity.getUser(), 
-          e.message, 
-          {
-            filename: e.filename,
-            lineno: e.lineno,
-            colno: e.colno,
-            error_obj: e.error,
-          }
-        );
+      window.addEventListener('error', (e) => {
+        this.logger.logAppError(this.identity.getUser(), e.message, {
+          filename: e.filename,
+          lineno: e.lineno,
+          colno: e.colno,
+          error_obj: e.error,
+        });
       });
     }
     return this.pendingInitPromise;
@@ -548,12 +545,13 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   }
 
   private normalizeUser(user: StatsigUser | null): StatsigUser {
-    user = this.trimUserObjIfNeeded(user);
+    let userCopy = JSON.parse(JSON.stringify(user));
+    userCopy = this.trimUserObjIfNeeded(userCopy);
     if (this.options.getEnvironment() != null) {
       // @ts-ignore
-      user.statsigEnvironment = this.options.getEnvironment();
+      userCopy.statsigEnvironment = this.options.getEnvironment();
     }
-    return user;
+    return userCopy;
   }
 
   private trimUserObjIfNeeded(user: StatsigUser | null): StatsigUser {
