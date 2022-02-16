@@ -20,7 +20,9 @@ export default class StatsigLocalStorage {
       window != null &&
       window.localStorage != null
     ) {
-      return window.localStorage.setItem(key, value);
+      try {
+        window.localStorage.setItem(key, value);
+      } catch (e) {}
     } else {
       this.fallbackSessionCache[key] = value;
     }
@@ -33,7 +35,7 @@ export default class StatsigLocalStorage {
       window != null &&
       window.localStorage != null
     ) {
-      return window.localStorage.removeItem(key);
+      window.localStorage.removeItem(key);
     } else {
       delete this.fallbackSessionCache[key];
     }
