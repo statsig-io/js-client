@@ -124,6 +124,7 @@ describe('Statsig Layers', () => {
   it('returns default values when no experiment is allocated', () => {
     let config = client.getLayer(layerConfigWithoutExperimentKey);
     expect(config.get('a_key', 'ERR')).toBe('another_layer_default_value');
+    expect(config.getRuleID()).toBe('layer_defaults');
   });
 
   it('switches experiments when allocation changes', async () => {

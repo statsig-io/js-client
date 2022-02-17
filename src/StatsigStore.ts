@@ -337,7 +337,11 @@ export default class StatsigStore {
       const experimentConfig =
         userValues?.dynamic_configs[hashedExperimentName];
       if (!experimentConfig) {
-        return new DynamicConfig(layerName, layerConfigDefaults);
+        return new DynamicConfig(
+          layerName,
+          layerConfigDefaults,
+          'layer_defaults',
+        );
       }
 
       if (keepDeviceValue && experimentConfig.is_experiment_active === true) {
