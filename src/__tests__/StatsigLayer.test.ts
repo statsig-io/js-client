@@ -49,13 +49,13 @@ const layerConfigs = {
     default_values: {
       a_key: 'a_layer_default_value',
     },
-    allocated_experiment_hash: hashedConfigKey,
+    allocated_experiment_name: hashedConfigKey,
   },
   [hashedLayerConfigWithoutExperimentKey]: {
     default_values: {
       a_key: 'another_layer_default_value',
     },
-    allocated_experiment_hash: null,
+    allocated_experiment_name: null,
   },
 };
 
@@ -129,7 +129,7 @@ describe('Statsig Layers', () => {
   it('switches experiments when allocation changes', async () => {
     const data = JSON.parse(JSON.stringify(initialResponse));
     data['layer_configs'][hashedLayerConfigWithExperimentKey][
-      'allocated_experiment_hash'
+      'allocated_experiment_name'
     ] = hashedAnotherConfigKey;
 
     await client.getStore().save(client.getCurrentUserCacheKey(), data);
@@ -144,7 +144,7 @@ describe('Statsig Layers', () => {
 
     const data = JSON.parse(JSON.stringify(initialResponse));
     data['layer_configs'][hashedLayerConfigWithExperimentKey][
-      'allocated_experiment_hash'
+      'allocated_experiment_name'
     ] = hashedAnotherConfigKey;
 
     await client.getStore().save(client.getCurrentUserCacheKey(), data);
@@ -159,7 +159,7 @@ describe('Statsig Layers', () => {
 
     const data = JSON.parse(JSON.stringify(initialResponse));
     data['layer_configs'][hashedLayerConfigWithExperimentKey][
-      'allocated_experiment_hash'
+      'allocated_experiment_name'
     ] = hashedAnotherConfigKey;
 
     await client.getStore().save(client.getCurrentUserCacheKey(), data);
@@ -174,7 +174,7 @@ describe('Statsig Layers', () => {
 
     const data = JSON.parse(JSON.stringify(initialResponse));
     data['layer_configs'][hashedLayerConfigWithExperimentKey][
-      'allocated_experiment_hash'
+      'allocated_experiment_name'
     ] = hashedAnotherConfigKey;
     data['dynamic_configs'][hashedConfigKey]['is_experiment_active'] = false;
 

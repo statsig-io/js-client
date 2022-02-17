@@ -30,7 +30,7 @@ type APIDynamicConfig = {
 
 type APILayerConfig = {
   default_values: { [key: string]: unknown };
-  allocated_experiment_hash: string | null;
+  allocated_experiment_name: string | null;
 };
 
 type APIInitializeData = {
@@ -333,7 +333,7 @@ export default class StatsigStore {
       }
 
       const hashedExperimentName =
-        layerConfigData.allocated_experiment_hash ?? '';
+        layerConfigData.allocated_experiment_name ?? '';
       const experimentConfig =
         userValues?.dynamic_configs[hashedExperimentName];
       if (!experimentConfig) {
