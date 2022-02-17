@@ -303,46 +303,61 @@ export default class StatsigStore {
   }
 
   public getLayer(layerName: string, keepDeviceValue: boolean): DynamicConfig {
-    const layerNameHash = getHashValue(layerName);
-    const userCacheKey = this.getCurrentUserCacheKey();
-    const userValues = this.values[userCacheKey];
+    const config = (() => {
+      const layerNameHash = getHashValue(layerName);
+      const userCacheKey = this.getCurrentUserCacheKey();
+      const userValues = this.values[userCacheKey];
 
-    const stickyValue =
-      userValues?.sticky_experiments[layerNameHash] ??
-      this.stickyDeviceExperiments[layerNameHash];
+      const stickyValue =
+        userValues?.sticky_experiments[layerNameHash] ??
+        this.stickyDeviceExperiments[layerNameHash];
 
-    if (stickyValue) {
-      if (keepDeviceValue) {
-        const stickyHash = stickyValue.name;
-        const stickyData = userValues?.dynamic_configs[stickyHash];
+      if (stickyValue) {
+        if (keepDeviceValue) {
+          const stickyHash = stickyValue.name;
+          const stickyData = userValues?.dynamic_configs[stickyHash];
 
-        if (stickyData?.is_experiment_active) {
-          return this.createDynamicConfig(layerName, stickyValue);
+          if (stickyData?.is_experiment_active) {
+            return this.createDynamicConfig(layerName, stickyValue);
+          }
         }
+
+        this.removeStickyValue(userCacheKey, layerNameHash);
       }
 
-      this.removeStickyValue(userCacheKey, layerNameHash);
-    }
+      const layerConfigData = userValues?.layer_configs[layerNameHash];
+      const layerConfigDefaults = layerConfigData?.default_values;
 
-    const layerConfigData = userValues?.layer_configs[layerNameHash];
-    const layerConfigDefaults = layerConfigData?.default_values;
+      if (!layerConfigDefaults) {
+        return new DynamicConfig(layerName);
+      }
 
-    if (!layerConfigDefaults) {
-      return new DynamicConfig(layerName);
-    }
+      const hashedExperimentName =
+        layerConfigData.allocated_experiment_hash ?? '';
+      const experimentConfig =
+        userValues?.dynamic_configs[hashedExperimentName];
+      if (!experimentConfig) {
+        return new DynamicConfig(layerName, layerConfigDefaults);
+      }
 
-    const hashedExperimentName =
-      layerConfigData.allocated_experiment_hash ?? '';
-    const experimentConfig = userValues?.dynamic_configs[hashedExperimentName];
-    if (!experimentConfig) {
-      return new DynamicConfig(layerName, layerConfigDefaults);
-    }
+      if (keepDeviceValue && experimentConfig.is_experiment_active === true) {
+        this.saveStickyValue(userCacheKey, layerNameHash, experimentConfig);
+      }
 
-    if (keepDeviceValue && experimentConfig.is_experiment_active === true) {
-      this.saveStickyValue(userCacheKey, layerNameHash, experimentConfig);
-    }
+      return this.createDynamicConfig(layerName, experimentConfig);
+    })();
 
-    return this.createDynamicConfig(layerName, experimentConfig);
+    this.sdkInternal
+      .getLogger()
+      .logConfigExposure(
+        this.sdkInternal.getCurrentUser(),
+        layerName,
+        config.getRuleID(),
+        config._getSecondaryExposures(),
+        config._getHash(),
+      );
+
+    return config;
   }
 
   public overrideConfig(configName: string, value: Record<string, any>): void {
@@ -407,6 +422,7 @@ export default class StatsigStore {
       apiConfig?.value,
       apiConfig?.rule_id,
       apiConfig?.secondary_exposures,
+      apiConfig?.name,
     );
   }
 

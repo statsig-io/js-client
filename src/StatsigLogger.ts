@@ -116,13 +116,20 @@ export default class StatsigLogger {
     configName: string,
     ruleID: string,
     secondaryExposures: Record<string, string>[],
+    allocatedExperiment?: string,
   ) {
-    const configExposure = new LogEvent(CONFIG_EXPOSURE_EVENT);
-    configExposure.setUser(user);
-    configExposure.setMetadata({
+    const metadata: Record<string, unknown> = {
       config: configName,
       ruleID: ruleID,
-    });
+    };
+
+    if (allocatedExperiment) {
+      metadata['allocatedExperiment'] = allocatedExperiment;
+    }
+
+    const configExposure = new LogEvent(CONFIG_EXPOSURE_EVENT);
+    configExposure.setUser(user);
+    configExposure.setMetadata(metadata);
     configExposure.setSecondaryExposures(secondaryExposures);
     this.log(configExposure);
   }

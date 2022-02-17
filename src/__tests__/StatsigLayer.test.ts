@@ -183,4 +183,19 @@ describe('Statsig Layers', () => {
     const anotherConfig = client.getLayer(layerConfigWithExperimentKey, true);
     expect(anotherConfig.get('a_key', 'ERR')).toBe('another_config_value');
   });
+
+  it('logs the correct exposure', () => {
+    const logger = client.getLogger();
+    const spyOnLog = jest.spyOn(logger, 'log');
+    client.getLayer(layerConfigWithExperimentKey);
+
+    expect(spyOnLog).toHaveBeenCalled();
+    const event = spyOnLog.mock.calls[0][0];
+    expect(event['eventName']).toEqual('statsig::config_exposure');
+    expect(event['metadata']).toEqual({
+      config: 'layer_with_exp',
+      ruleID: 'default',
+      allocatedExperiment: hashedConfigKey,
+    });
+  });
 });
