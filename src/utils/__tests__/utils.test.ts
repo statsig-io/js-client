@@ -64,4 +64,42 @@ describe('Verify behavior of core utility functions', () => {
       });
     });
   });
+
+  test('Cleanup removes old keys but leaves non-statsig keys intact', () => {
+    expect.assertions(7);
+    StatsigLocalStorage.setItem('STATSIG_LOCAL_STORAGE_STABLE_ID', '123');
+    expect(
+      StatsigLocalStorage.getItem('STATSIG_LOCAL_STORAGE_STABLE_ID'),
+    ).toEqual('123');
+
+    StatsigLocalStorage.setItem(
+      'STATSIG_LOCAL_STORAGE_INTERNAL_STORE_V4',
+      'abc',
+    );
+    expect(
+      StatsigLocalStorage.getItem('STATSIG_LOCAL_STORAGE_INTERNAL_STORE_V4'),
+    ).toEqual('abc');
+
+    StatsigLocalStorage.setItem(
+      'STATSIG_LOCAL_STORAGE_INTERNAL_STORE_V1',
+      'def',
+    );
+    expect(
+      StatsigLocalStorage.getItem('STATSIG_LOCAL_STORAGE_INTERNAL_STORE_V1'),
+    ).toEqual('def');
+
+    StatsigLocalStorage.setItem('config', 'not statsig');
+    expect(StatsigLocalStorage.getItem('config')).toEqual('not statsig');
+
+    StatsigLocalStorage.cleanup();
+    expect(StatsigLocalStorage.getItem('config')).toEqual('not statsig');
+
+    expect(
+      StatsigLocalStorage.getItem('STATSIG_LOCAL_STORAGE_INTERNAL_STORE_V1'),
+    ).toEqual(null);
+
+    expect(
+      StatsigLocalStorage.getItem('STATSIG_LOCAL_STORAGE_INTERNAL_STORE_V4'),
+    ).toEqual('abc');
+  });
 });

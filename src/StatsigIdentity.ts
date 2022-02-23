@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { _SDKPackageInfo } from './StatsigClient';
 import { StatsigUser } from './StatsigUser';
+import { STATSIG_STABLE_ID_KEY } from './utils/Constants';
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
 
@@ -59,8 +60,6 @@ type StatsigMetadata = {
   deviceModelName?: string;
   deviceModel?: string;
 };
-
-const STATSIG_STABLE_ID_KEY = 'STATSIG_LOCAL_STORAGE_STABLE_ID';
 
 export default class Identity {
   private user: StatsigUser | null;
