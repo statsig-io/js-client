@@ -21,6 +21,9 @@ type FailedLogEventBody = {
 };
 
 const MS_RETRY_LOGS_CUTOFF = 5 * 24 * 60 * 60 * 1000;
+const MAX_BATCHES_TO_RETRY = 100;
+const MAX_FAILED_EVENTS = 1000;
+const MAX_LOCAL_STORAGE_SIZE = 1024 * MAX_FAILED_EVENTS;
 
 export default class StatsigLogger {
   private sdkInternal: IHasStatsigInternal;
@@ -31,6 +34,7 @@ export default class StatsigLogger {
   private loggedErrors: Set<string>;
   private failedLogEvents: FailedLogEventBody[];
   private exposureDedupeKeys: Record<string, number>;
+  private failedLogEventCount = 0;
 
   public constructor(sdkInternal: IHasStatsigInternal) {
     this.sdkInternal = sdkInternal;
@@ -41,6 +45,7 @@ export default class StatsigLogger {
 
     this.failedLogEvents = [];
     this.exposureDedupeKeys = {};
+    this.failedLogEventCount = 0;
     this.init();
   }
 
@@ -190,7 +195,7 @@ export default class StatsigLogger {
       if (!beacon) {
         this.queue = oldQueue.concat(this.queue);
         if (this.queue.length > 0) {
-          this.failedLogEvents.push({
+          this.addFailedRequest({
             events: this.queue,
             statsigMetadata: this.sdkInternal.getStatsigMetadata(),
             time: Date.now(),
@@ -250,7 +255,7 @@ export default class StatsigLogger {
       .finally(async () => {
         if (isClosing) {
           if (this.queue.length > 0) {
-            this.failedLogEvents.push({
+            this.addFailedRequest({
               events: this.queue,
               statsigMetadata: this.sdkInternal.getStatsigMetadata(),
               time: Date.now(),
@@ -267,6 +272,10 @@ export default class StatsigLogger {
   private async saveFailedRequests(): Promise<void> {
     if (this.failedLogEvents.length > 0) {
       const requestsCopy = JSON.stringify(this.failedLogEvents);
+      if (requestsCopy.length > MAX_LOCAL_STORAGE_SIZE) {
+        this.clearLocalStorageRequests();
+        return;
+      }
       if (StatsigAsyncStorage.asyncStorage) {
         await StatsigAsyncStorage.setItemAsync(
           STATSIG_LOCAL_STORAGE_LOGGING_REQUEST_KEY,
@@ -283,6 +292,7 @@ export default class StatsigLogger {
 
   public async sendSavedRequests(): Promise<void> {
     let failedRequests;
+    let fireAndForget = false;
     if (StatsigAsyncStorage.asyncStorage) {
       failedRequests = await StatsigAsyncStorage.getItemAsync(
         STATSIG_LOCAL_STORAGE_LOGGING_REQUEST_KEY,
@@ -293,7 +303,11 @@ export default class StatsigLogger {
       );
     }
     if (failedRequests == null) {
+      this.clearLocalStorageRequests();
       return;
+    }
+    if (failedRequests.length > MAX_LOCAL_STORAGE_SIZE) {
+      fireAndForget = true;
     }
     let requestBodies = [];
     try {
@@ -318,12 +332,28 @@ export default class StatsigLogger {
             }
           })
           .catch((_e) => {
-            if (requestBody.time > Date.now() - MS_RETRY_LOGS_CUTOFF) {
-              this.failedLogEvents.push(requestBody);
+            if (fireAndForget) {
+              return;
             }
+            this.addFailedRequest(requestBody);
           });
       }
     }
+  }
+
+  private addFailedRequest(requestBody: FailedLogEventBody): void {
+    if (requestBody.time < Date.now() - MS_RETRY_LOGS_CUTOFF) {
+      return;
+    }
+    if (this.failedLogEvents.length > MAX_BATCHES_TO_RETRY) {
+      return;
+    }
+    const additionalEvents = requestBody.events.length;
+    if (this.failedLogEventCount + additionalEvents > MAX_FAILED_EVENTS) {
+      return;
+    }
+    this.failedLogEvents.push(requestBody);
+    this.failedLogEventCount += additionalEvents;
   }
 
   private clearLocalStorageRequests(): void {
