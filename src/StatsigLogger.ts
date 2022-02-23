@@ -226,14 +226,6 @@ export default class StatsigLogger {
         }
       })
       .catch((error) => {
-        this.failedLogEvents.push({
-          events: oldQueue,
-          statsigMetadata: this.sdkInternal.getStatsigMetadata(),
-          time: Date.now(),
-        });
-
-        processor.saveFailedRequests();
-
         if (typeof error.text === 'function') {
           error.text().then((errorText: string) => {
             const logFailureEvent = new LogEvent(LOG_FAILURE_EVENT);
@@ -241,7 +233,7 @@ export default class StatsigLogger {
               error: `${error.status}: ${errorText}`,
             });
             logFailureEvent.setUser(processor.sdkInternal.getCurrentUser());
-            processor.logInternal(logFailureEvent);
+            processor.appendFailureLog(logFailureEvent, oldQueue);
           });
         } else {
           const logFailureEvent = new LogEvent(LOG_FAILURE_EVENT);
@@ -249,7 +241,7 @@ export default class StatsigLogger {
             error: error.message,
           });
           logFailureEvent.setUser(processor.sdkInternal.getCurrentUser());
-          processor.logInternal(logFailureEvent);
+          processor.appendFailureLog(logFailureEvent, oldQueue);
         }
       })
       .finally(async () => {
@@ -366,11 +358,19 @@ export default class StatsigLogger {
     }
   }
 
-  private logInternal(event: LogEvent): void {
+  private appendFailureLog(event: LogEvent, queue: object[]): void {
     if (this.loggedErrors.has(event.getName())) {
       return;
     }
     this.loggedErrors.add(event.getName());
-    this.log(event);
+    queue.push(event);
+
+    this.failedLogEvents.push({
+      events: queue,
+      statsigMetadata: this.sdkInternal.getStatsigMetadata(),
+      time: Date.now(),
+    });
+
+    this.saveFailedRequests();
   }
 }
