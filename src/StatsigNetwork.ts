@@ -7,10 +7,10 @@ export enum StatsigEndpoint {
   LogEventBeacon = 'log_event_beacon',
 }
 
+const RETRY_CODES = new Set([408, 500, 502, 503, 504, 522, 524, 599]);
+
 export default class StatsigNetwork {
   private sdkInternal: IHasStatsigInternal;
-
-  private readonly retryCodes = [408, 500, 502, 503, 504, 522, 524, 599];
 
   private leakyBucket: Record<string, number>;
 
@@ -159,7 +159,7 @@ export default class StatsigNetwork {
         if (res.ok) {
           return Promise.resolve(res);
         }
-        if (!this.retryCodes.includes(res.status)) {
+        if (!(res.status in RETRY_CODES)) {
           retries = 0;
         }
         return res.text().then((errorText) => {
