@@ -141,27 +141,24 @@ export default class StatsigStore {
     userCacheKey: string,
     jsonConfigs: Record<string, any>,
   ): Promise<void> {
+    // We append to the values after removing one, so must have at most MAX - 1
+    const filteredValues = Object.entries(this.values)
+      .sort(({ 1: a }, { 1: b }) => {
+        if (a == null) {
+          return 1;
+        }
+        if (b == null) {
+          return -1;
+        }
+        return b?.time - a?.time;
+      })
+      .slice(0, MAX_USER_VALUE_CACHED - 1);
+    this.values = Object.fromEntries(filteredValues);
     this.values[userCacheKey] = {
       ...(jsonConfigs as APIInitializeData),
       sticky_experiments: this.values[userCacheKey]?.sticky_experiments ?? {},
       time: Date.now(),
     };
-    if (Object.entries(this.values).length > MAX_USER_VALUE_CACHED) {
-      let minTime = null;
-      let minKey = null;
-      for (const entry of Object.entries(this.values)) {
-        if (entry[1] == null) {
-          continue;
-        }
-        if (minTime == null || minTime > entry[1].time) {
-          minTime = entry[1].time;
-          minKey = entry[0];
-        }
-      }
-      if (minKey) {
-        delete this.values[minKey];
-      }
-    }
     if (StatsigAsyncStorage.asyncStorage) {
       await StatsigAsyncStorage.setItemAsync(
         INTERNAL_STORE_KEY,
