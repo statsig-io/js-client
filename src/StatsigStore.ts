@@ -3,6 +3,11 @@ import { sha256 } from 'js-sha256';
 import DynamicConfig from './DynamicConfig';
 import { IHasStatsigInternal, StatsigOverrides } from './StatsigClient';
 import { Base64 } from './utils/Base64';
+import {
+  INTERNAL_STORE_KEY,
+  OVERRIDES_STORE_KEY,
+  STICKY_DEVICE_EXPERIMENTS_KEY,
+} from './utils/Constants';
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
 
@@ -46,13 +51,6 @@ type UserCacheValues = {
   layer_configs: Record<string, APILayerConfig | undefined>;
   time: number;
 };
-
-const OVERRIDES_STORE_KEY = 'STATSIG_LOCAL_STORAGE_INTERNAL_STORE_OVERRIDES_V3';
-const STICKY_DEVICE_EXPERIMENTS_KEY =
-  'STATSIG_LOCAL_STORAGE_STICKY_DEVICE_EXPERIMENTS';
-
-// V4 change: values are now cached on a specific user ID. We store values for up to 10 different user IDs at a time.
-const INTERNAL_STORE_KEY = 'STATSIG_LOCAL_STORAGE_INTERNAL_STORE_V4';
 
 const MAX_USER_VALUE_CACHED = 10;
 

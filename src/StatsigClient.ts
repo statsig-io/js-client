@@ -16,6 +16,7 @@ import { StatsigUser } from './StatsigUser';
 import SimpleHash from './utils/SimpleHash';
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import type { AsyncStorage } from './utils/StatsigAsyncStorage';
+import StatsigLocalStorage from './utils/StatsigLocalStorage';
 
 const MAX_VALUE_SIZE = 64;
 const MAX_OBJ_SIZE = 1024;
@@ -396,6 +397,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         this.handleAppStateChange.bind(this),
       );
     }
+    StatsigLocalStorage.cleanup();
   }
 
   /**
