@@ -71,6 +71,10 @@ export default class Statsig {
     );
   }
 
+  public static getLayer(layerName: string, keepDeviceValue: boolean = false) {
+    return Statsig.instance.getLayer(layerName, keepDeviceValue);
+  }
+
   public static logEvent(
     eventName: string,
     value: string | number | null = null,
