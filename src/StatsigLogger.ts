@@ -13,6 +13,7 @@ const CONFIG_EXPOSURE_EVENT = INTERNAL_EVENT_PREFIX + 'config_exposure';
 const GATE_EXPOSURE_EVENT = INTERNAL_EVENT_PREFIX + 'gate_exposure';
 const LOG_FAILURE_EVENT = INTERNAL_EVENT_PREFIX + 'log_event_failed';
 const APP_ERROR_EVENT = INTERNAL_EVENT_PREFIX + 'app_error';
+const APP_METRICS_EVENT = INTERNAL_EVENT_PREFIX + 'app_metrics';
 
 type FailedLogEventBody = {
   events: object[];
@@ -170,6 +171,28 @@ export default class StatsigLogger {
     errorEvent.setValue(message);
     errorEvent.setMetadata(metadata);
     this.log(errorEvent);
+  }
+
+  public logAppMetrics(user: StatsigUser | null) {
+    if (!window || !window.performance) {
+      return;
+    }
+    const entries = window.performance.getEntriesByType('navigation');
+    if (!entries || entries.length < 1) {
+      return;
+    }
+
+    const navEntry = entries[0] as any;
+    const metricsEvent = new LogEvent(APP_METRICS_EVENT);
+    metricsEvent.setUser(user);
+    metricsEvent.setValue(navEntry.name);
+    metricsEvent.setMetadata({
+      pageLoadTimeMs: navEntry.duration,
+      domInteractiveMs: navEntry.domInteractive - navEntry.startTime,
+      redirectCount: navEntry.redirectCount,
+    });
+    
+    this.log(metricsEvent);
   }
 
   public flush(isClosing: boolean = false): void {
