@@ -174,7 +174,7 @@ export default class StatsigLogger {
   }
 
   public logAppMetrics(user: StatsigUser | null) {
-    if (!window || !window.performance) {
+    if (typeof window?.performance?.getEntriesByType !== 'function') {
       return;
     }
     const entries = window.performance.getEntriesByType('navigation');
