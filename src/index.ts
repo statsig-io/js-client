@@ -72,6 +72,7 @@ export default class Statsig {
   }
 
   public static getLayer(layerName: string, keepDeviceValue: boolean = false) {
+    this.ensureInitialized();
     return Statsig.instance.getLayer(layerName, keepDeviceValue);
   }
 

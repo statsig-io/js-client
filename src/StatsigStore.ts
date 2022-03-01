@@ -264,15 +264,13 @@ export default class StatsigStore {
       const userCacheKey = this.getCurrentUserCacheKey();
       const userValues = this.values[userCacheKey];
 
-      let stickyValue =
-        userValues?.sticky_experiments[expNameHash] ??
-        this.stickyDeviceExperiments[expNameHash];
+      let stickyValue = this.getStickyValue(userCacheKey, expNameHash);
       let latestValue = userValues?.dynamic_configs[expNameHash];
 
       // If flag is false, or experiment is NOT active, simply remove the
       // sticky experiment value, and return the latest value
       if (!keepDeviceValue || latestValue?.is_experiment_active == false) {
-        this.removeStickyValue(userCacheKey, expName);
+        this.removeStickyValue(userCacheKey, expNameHash);
         exp = this.createDynamicConfig(expName, latestValue);
       } else if (stickyValue != null) {
         // If sticky value is already in cache, use it
@@ -280,11 +278,8 @@ export default class StatsigStore {
       } else if (latestValue != null) {
         // Here the user has NOT been exposed before.
         // If they are IN this ACTIVE experiment, then we save the value as sticky
-        if (
-          latestValue.is_experiment_active &&
-          latestValue.is_user_in_experiment
-        ) {
-          this.saveStickyValue(userCacheKey, expNameHash, latestValue);
+        if (keepDeviceValue) {
+          this.saveStickyValueIfNeeded(userCacheKey, expNameHash, latestValue);
         }
         exp = this.createDynamicConfig(expName, latestValue);
       }
@@ -306,9 +301,7 @@ export default class StatsigStore {
       const userCacheKey = this.getCurrentUserCacheKey();
       const userValues = this.values[userCacheKey];
 
-      const stickyValue =
-        userValues?.sticky_experiments[layerNameHash] ??
-        this.stickyDeviceExperiments[layerNameHash];
+      const stickyValue = this.getStickyValue(userCacheKey, layerNameHash);
 
       if (stickyValue) {
         if (keepDeviceValue) {
@@ -325,15 +318,13 @@ export default class StatsigStore {
 
       const layerConfigData = userValues?.layer_configs[layerNameHash];
       const layerConfigDefaults = layerConfigData?.default_values;
-
-      if (!layerConfigDefaults) {
-        return new DynamicConfig(layerName);
-      }
-
       const hashedExperimentName =
-        layerConfigData.allocated_experiment_name ?? '';
+        layerConfigData?.allocated_experiment_name ?? '';
       const experimentConfig =
-        userValues?.dynamic_configs[hashedExperimentName];
+        hashedExperimentName.length > 0
+          ? userValues?.dynamic_configs[hashedExperimentName]
+          : null;
+
       if (!experimentConfig) {
         return new DynamicConfig(
           layerName,
@@ -342,8 +333,12 @@ export default class StatsigStore {
         );
       }
 
-      if (keepDeviceValue && experimentConfig.is_experiment_active === true) {
-        this.saveStickyValue(userCacheKey, layerNameHash, experimentConfig);
+      if (keepDeviceValue) {
+        this.saveStickyValueIfNeeded(
+          userCacheKey,
+          layerNameHash,
+          experimentConfig,
+        );
       }
 
       return this.createDynamicConfig(layerName, experimentConfig);
@@ -351,12 +346,12 @@ export default class StatsigStore {
 
     this.sdkInternal
       .getLogger()
-      .logConfigExposure(
+      .logLayerExposure(
         this.sdkInternal.getCurrentUser(),
         layerName,
         config.getRuleID(),
         config._getSecondaryExposures(),
-        config._getHash(),
+        config._getHashedName(),
       );
 
     return config;
@@ -428,11 +423,23 @@ export default class StatsigStore {
     );
   }
 
-  private saveStickyValue(
+  private getStickyValue(userCacheKey: string, key: string) {
+    const userValues = this.values[userCacheKey];
+
+    return (
+      userValues?.sticky_experiments[key] ?? this.stickyDeviceExperiments[key]
+    );
+  }
+
+  private saveStickyValueIfNeeded(
     userCacheKey: string,
     key: string,
     config: APIDynamicConfig,
   ) {
+    if (!config.is_user_in_experiment || !config.is_experiment_active) {
+      return;
+    }
+
     const userValues = this.values[userCacheKey];
 
     if (config.is_device_based === true) {

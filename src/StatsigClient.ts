@@ -301,7 +301,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   ): DynamicConfig {
     this.ensureStoreLoaded();
     if (typeof layerName !== 'string' || layerName.length === 0) {
-      throw new Error('Must pass a valid string as the gateName.');
+      throw new Error('Must pass a valid string as the layerName.');
     }
 
     return this.store.getLayer(layerName, keepDeviceValue);

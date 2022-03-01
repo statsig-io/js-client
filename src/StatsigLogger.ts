@@ -145,7 +145,28 @@ export default class StatsigLogger {
     configName: string,
     ruleID: string,
     secondaryExposures: Record<string, string>[],
-    allocatedExperiment?: string,
+  ) {
+    const dedupeKey = configName + ruleID;
+    if (!this.shouldLogExposure(dedupeKey)) {
+      return;
+    }
+
+    const configExposure = new LogEvent(CONFIG_EXPOSURE_EVENT);
+    configExposure.setUser(user);
+    configExposure.setMetadata({
+      config: configName,
+      ruleID: ruleID,
+    });
+    configExposure.setSecondaryExposures(secondaryExposures);
+    this.log(configExposure);
+  }
+
+  public logLayerExposure(
+    user: StatsigUser | null,
+    configName: string,
+    ruleID: string,
+    secondaryExposures: Record<string, string>[],
+    allocatedExperiment: string,
   ) {
     const dedupeKey = configName + ruleID;
     if (!this.shouldLogExposure(dedupeKey)) {
