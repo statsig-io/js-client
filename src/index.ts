@@ -11,6 +11,7 @@ export { default as StatsigAsyncStorage } from './utils/StatsigAsyncStorage';
 export { StatsigOptions, StatsigEnvironment } from './StatsigSDKOptions';
 export { StatsigUser } from './StatsigUser';
 export { default as DynamicConfig } from './DynamicConfig';
+export { default as Layer } from './Layer';
 export { default as StatsigClient } from './StatsigClient';
 export { IStatsig, StatsigOverrides } from './StatsigClient';
 
