@@ -1,6 +1,7 @@
 import { sha256 } from 'js-sha256';
 
 import DynamicConfig from './DynamicConfig';
+import Layer from './Layer';
 import { IHasStatsigInternal, StatsigOverrides } from './StatsigClient';
 import { Base64 } from './utils/Base64';
 import {
@@ -31,17 +32,20 @@ type APIDynamicConfig = {
   is_device_based?: boolean;
   is_user_in_experiment?: boolean;
   is_experiment_active?: boolean;
+  allocated_experiment_name: string | null;
 };
 
 type APIInitializeData = {
   dynamic_configs: Record<string, APIDynamicConfig | undefined>;
   feature_gates: Record<string, APIFeatureGate | undefined>;
+  layer_configs: Record<string, APIDynamicConfig | undefined>;
 };
 
 type UserCacheValues = {
   dynamic_configs: Record<string, APIDynamicConfig | undefined>;
   feature_gates: Record<string, APIFeatureGate | undefined>;
   sticky_experiments: Record<string, APIDynamicConfig | undefined>;
+  layer_configs: Record<string, APIDynamicConfig | undefined>;
   time: number;
 };
 
@@ -66,6 +70,7 @@ export default class StatsigStore {
       feature_gates: {},
       dynamic_configs: {},
       sticky_experiments: {},
+      layer_configs: {},
       time: 0,
     };
     this.stickyDeviceExperiments = {};
@@ -241,8 +246,7 @@ export default class StatsigStore {
     keepDeviceValue: boolean = false,
     ignoreOverrides: boolean = false,
   ): DynamicConfig {
-    const expNameHash = getHashValue(expName);
-    let exp = new DynamicConfig(expName);
+    let exp: DynamicConfig = new DynamicConfig(expName);
     if (!ignoreOverrides && this.overrides.configs[expName] != null) {
       exp = new DynamicConfig(
         expName,
@@ -250,41 +254,15 @@ export default class StatsigStore {
         'override',
       );
     } else {
-      const userCacheKey = this.getCurrentUserCacheKey();
-      const userValues = this.values[userCacheKey];
-
-      let stickyValue =
-        userValues?.sticky_experiments[expNameHash] ??
-        this.stickyDeviceExperiments[expNameHash];
-      let latestValue = userValues?.dynamic_configs[expNameHash];
-
-      // If flag is false, or experiment is NOT active, simply remove the
-      // sticky experiment value, and return the latest value
-      if (!keepDeviceValue || latestValue?.is_experiment_active == false) {
-        this.removeStickyValue(userCacheKey, expName);
-        exp = this.createDynamicConfig(expName, latestValue);
-      } else if (stickyValue != null) {
-        // If sticky value is already in cache, use it
-        exp = this.createDynamicConfig(expName, stickyValue);
-      } else if (latestValue != null) {
-        // Here the user has NOT been exposed before.
-        // If they are IN this ACTIVE experiment, then we save the value as sticky
-        if (
-          latestValue.is_experiment_active &&
-          latestValue.is_user_in_experiment
-        ) {
-          if (latestValue.is_device_based) {
-            // save sticky values in memory
-            this.stickyDeviceExperiments[expNameHash] = latestValue;
-          } else if (userValues) {
-            userValues.sticky_experiments[expNameHash] = latestValue;
-          }
-          // also save to persistent storage
-          this.saveStickyValuesToStorage();
-        }
-        exp = this.createDynamicConfig(expName, latestValue);
-      }
+      const latestValue = this.getLatestValue(expName, 'dynamic_configs');
+      const finalValue = this.getPossiblyStickyValue(
+        expName,
+        latestValue,
+        keepDeviceValue,
+      );
+      exp = this.createDynamicConfig(expName, finalValue);
     }
+
     this.sdkInternal
       .getLogger()
       .logConfigExposure(
@@ -294,6 +272,34 @@ export default class StatsigStore {
         exp._getSecondaryExposures(),
       );
     return exp;
+  }
+
+  public getLayer(layerName: string, keepDeviceValue: boolean): Layer {
+    const latestValue = this.getLatestValue(layerName, 'layer_configs');
+    const finalValue = this.getPossiblyStickyValue(
+      layerName,
+      latestValue,
+      keepDeviceValue,
+    );
+    const config = new Layer(
+      layerName,
+      finalValue?.value,
+      finalValue?.rule_id,
+      finalValue?.secondary_exposures,
+      finalValue?.allocated_experiment_name ?? '',
+    );
+
+    this.sdkInternal
+      .getLogger()
+      .logLayerExposure(
+        this.sdkInternal.getCurrentUser(),
+        layerName,
+        config.getRuleID(),
+        config._getSecondaryExposures(),
+        config._getAllocatedExperimentName(),
+      );
+
+    return config;
   }
 
   public overrideConfig(configName: string, value: Record<string, any>): void {
@@ -349,6 +355,47 @@ export default class StatsigStore {
     return this.sdkInternal.getCurrentUserCacheKey();
   }
 
+  private getLatestValue(
+    name: string,
+    topLevelKey: 'layer_configs' | 'dynamic_configs',
+  ): APIDynamicConfig | undefined {
+    const hash = getHashValue(name);
+    const userCacheKey = this.getCurrentUserCacheKey();
+    const userValues = this.values[userCacheKey];
+    return userValues?.[topLevelKey]?.[hash];
+  }
+
+  private getPossiblyStickyValue(
+    name: string,
+    latestValue: APIDynamicConfig | undefined,
+    keepDeviceValue: boolean,
+  ): APIDynamicConfig | undefined {
+    const hashedName = getHashValue(name);
+
+    const userCacheKey = this.getCurrentUserCacheKey();
+    let stickyValue = this.getStickyValue(userCacheKey, hashedName);
+
+    // If flag is false, or experiment is NOT active, simply remove the
+    // sticky experiment value, and return the latest value
+    if (!keepDeviceValue || latestValue?.is_experiment_active == false) {
+      this.removeStickyValue(userCacheKey, hashedName);
+      return latestValue;
+    }
+
+    if (stickyValue != null) {
+      // If sticky value is already in cache, use it
+      return stickyValue;
+    }
+
+    if (latestValue != null && keepDeviceValue) {
+      // Here the user has NOT been exposed before.
+      // If they are IN this ACTIVE experiment, then we save the value as sticky
+      this.saveStickyValueIfNeeded(userCacheKey, hashedName, latestValue);
+    }
+
+    return latestValue;
+  }
+
   private createDynamicConfig(
     name: string,
     apiConfig: APIDynamicConfig | undefined,
@@ -358,7 +405,37 @@ export default class StatsigStore {
       apiConfig?.value,
       apiConfig?.rule_id,
       apiConfig?.secondary_exposures,
+      apiConfig?.allocated_experiment_name ?? '',
     );
+  }
+
+  private getStickyValue(userCacheKey: string, key: string) {
+    const userValues = this.values[userCacheKey];
+
+    return (
+      userValues?.sticky_experiments[key] ?? this.stickyDeviceExperiments[key]
+    );
+  }
+
+  private saveStickyValueIfNeeded(
+    userCacheKey: string,
+    key: string,
+    config: APIDynamicConfig,
+  ) {
+    if (!config.is_user_in_experiment || !config.is_experiment_active) {
+      return;
+    }
+
+    const userValues = this.values[userCacheKey];
+
+    if (config.is_device_based === true) {
+      // save sticky values in memory
+      this.stickyDeviceExperiments[key] = config;
+    } else if (userValues) {
+      userValues.sticky_experiments[key] = config;
+    }
+    // also save to persistent storage
+    this.saveStickyValuesToStorage();
   }
 
   private removeStickyValue(userCacheKey: string, key: string) {

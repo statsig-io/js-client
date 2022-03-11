@@ -1,6 +1,6 @@
-export default class DynamicConfig {
+export default class Layer {
   private name: string;
-  public value: Record<string, any>;
+  private value: Record<string, any>;
   private ruleID: string;
   private secondaryExposures: Record<string, string>[];
   private allocatedExperimentName: string;

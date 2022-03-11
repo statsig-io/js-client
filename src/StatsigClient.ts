@@ -17,6 +17,7 @@ import SimpleHash from './utils/SimpleHash';
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import type { AsyncStorage } from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
+import Layer from './Layer';
 
 const MAX_VALUE_SIZE = 64;
 const MAX_OBJ_SIZE = 1024;
@@ -293,6 +294,15 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       keepDeviceValue,
       ignoreOverrides,
     );
+  }
+
+  public getLayer(layerName: string, keepDeviceValue: boolean = false): Layer {
+    this.ensureStoreLoaded();
+    if (typeof layerName !== 'string' || layerName.length === 0) {
+      throw new Error('Must pass a valid string as the layerName.');
+    }
+
+    return this.store.getLayer(layerName, keepDeviceValue);
   }
 
   public logEvent(
