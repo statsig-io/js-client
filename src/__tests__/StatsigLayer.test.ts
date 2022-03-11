@@ -122,7 +122,7 @@ describe('Statsig Layers', () => {
   it('returns experiment values when allocated', () => {
     let config = client.getLayer(layerConfigWithExperimentKey);
     expect(config.get('a_key', 'ERR')).toBe('a_config_value');
-    console.log(hashedLayerConfigWithoutExperimentKey);
+
     let another = client.getLayer(layerConfigWithoutExperimentKey);
     expect(another.getValue('a_key', 'ERR')).toBe(
       'another_layer_default_value',

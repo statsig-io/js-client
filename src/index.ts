@@ -1,4 +1,5 @@
 import DynamicConfig from './DynamicConfig';
+import Layer from './Layer';
 import StatsigClient, {
   StatsigOverrides,
   _SDKPackageInfo,
@@ -71,7 +72,10 @@ export default class Statsig {
     );
   }
 
-  public static getLayer(layerName: string, keepDeviceValue: boolean = false) {
+  public static getLayer(
+    layerName: string,
+    keepDeviceValue: boolean = false,
+  ): Layer {
     this.ensureInitialized();
     return Statsig.instance.getLayer(layerName, keepDeviceValue);
   }
