@@ -3,20 +3,20 @@ export default class DynamicConfig {
   public value: Record<string, any>;
   private ruleID: string;
   private secondaryExposures: Record<string, string>[];
-  private hashedName: string;
+  private allocatedExperimentName: string;
 
   public constructor(
     configName: string,
     configValue: Record<string, any> = {},
     ruleID: string = '',
     secondaryExposures: Record<string, string>[] = [],
-    hashedName: string = '',
+    allocatedExperimentName: string = '',
   ) {
     this.name = configName;
     this.value = JSON.parse(JSON.stringify(configValue));
     this.ruleID = ruleID;
     this.secondaryExposures = secondaryExposures;
-    this.hashedName = hashedName;
+    this.allocatedExperimentName = allocatedExperimentName;
   }
 
   public get<T>(
@@ -70,7 +70,7 @@ export default class DynamicConfig {
     return this.secondaryExposures;
   }
 
-  public _getHashedName(): string {
-    return this.hashedName;
+  public _getAllocatedExperimentName(): string {
+    return this.allocatedExperimentName;
   }
 }

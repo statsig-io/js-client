@@ -31,24 +31,20 @@ type APIDynamicConfig = {
   is_device_based?: boolean;
   is_user_in_experiment?: boolean;
   is_experiment_active?: boolean;
-};
-
-type APILayerConfig = {
-  default_values: { [key: string]: unknown };
   allocated_experiment_name: string | null;
 };
 
 type APIInitializeData = {
   dynamic_configs: Record<string, APIDynamicConfig | undefined>;
   feature_gates: Record<string, APIFeatureGate | undefined>;
-  layer_configs: Record<string, APILayerConfig | undefined>;
+  layer_configs: Record<string, APIDynamicConfig | undefined>;
 };
 
 type UserCacheValues = {
   dynamic_configs: Record<string, APIDynamicConfig | undefined>;
   feature_gates: Record<string, APIFeatureGate | undefined>;
   sticky_experiments: Record<string, APIDynamicConfig | undefined>;
-  layer_configs: Record<string, APILayerConfig | undefined>;
+  layer_configs: Record<string, APIDynamicConfig | undefined>;
   time: number;
 };
 
@@ -250,7 +246,7 @@ export default class StatsigStore {
     ignoreOverrides: boolean = false,
   ): DynamicConfig {
     const expNameHash = getHashValue(expName);
-    let exp = new DynamicConfig(expName);
+    let exp: DynamicConfig = new DynamicConfig(expName);
     if (!ignoreOverrides && this.overrides.configs[expName] != null) {
       exp = new DynamicConfig(
         expName,
@@ -298,47 +294,32 @@ export default class StatsigStore {
       const userCacheKey = this.getCurrentUserCacheKey();
       const userValues = this.values[userCacheKey];
 
-      const stickyValue = this.getStickyValue(userCacheKey, layerNameHash);
+      let stickyValue = this.getStickyValue(userCacheKey, layerNameHash);
+      let latestValue = userValues?.layer_configs[layerNameHash];
 
-      if (stickyValue) {
-        if (keepDeviceValue) {
-          const stickyHash = stickyValue.name;
-          const stickyData = userValues?.dynamic_configs[stickyHash];
-
-          if (stickyData?.is_experiment_active) {
-            return this.createDynamicConfig(layerName, stickyValue);
-          }
-        }
-
+      let exp: DynamicConfig = new DynamicConfig(layerName);
+      // If flag is false, or experiment is NOT active, simply remove the
+      // sticky experiment value, and return the latest value
+      if (!keepDeviceValue || latestValue?.is_experiment_active == false) {
         this.removeStickyValue(userCacheKey, layerNameHash);
+        exp = this.createDynamicConfig(layerName, latestValue);
+      } else if (stickyValue != null) {
+        // If sticky value is already in cache, use it
+        exp = this.createDynamicConfig(layerName, stickyValue);
+      } else if (latestValue != null) {
+        // Here the user has NOT been exposed before.
+        // If they are IN this ACTIVE experiment, then we save the value as sticky
+        if (keepDeviceValue) {
+          this.saveStickyValueIfNeeded(
+            userCacheKey,
+            layerNameHash,
+            latestValue,
+          );
+        }
+        exp = this.createDynamicConfig(layerName, latestValue);
       }
 
-      const layerConfigData = userValues?.layer_configs[layerNameHash];
-      const layerConfigDefaults = layerConfigData?.default_values;
-      const hashedExperimentName =
-        layerConfigData?.allocated_experiment_name ?? '';
-      const experimentConfig =
-        hashedExperimentName.length > 0
-          ? userValues?.dynamic_configs[hashedExperimentName]
-          : null;
-
-      if (!experimentConfig) {
-        return new DynamicConfig(
-          layerName,
-          layerConfigDefaults,
-          'layer_defaults',
-        );
-      }
-
-      if (keepDeviceValue) {
-        this.saveStickyValueIfNeeded(
-          userCacheKey,
-          layerNameHash,
-          experimentConfig,
-        );
-      }
-
-      return this.createDynamicConfig(layerName, experimentConfig);
+      return exp;
     })();
 
     this.sdkInternal
@@ -348,7 +329,7 @@ export default class StatsigStore {
         layerName,
         config.getRuleID(),
         config._getSecondaryExposures(),
-        config._getHashedName(),
+        config._getAllocatedExperimentName(),
       );
 
     return config;
@@ -416,7 +397,7 @@ export default class StatsigStore {
       apiConfig?.value,
       apiConfig?.rule_id,
       apiConfig?.secondary_exposures,
-      apiConfig?.name,
+      apiConfig?.allocated_experiment_name ?? '',
     );
   }
 

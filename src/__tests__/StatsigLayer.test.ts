@@ -34,28 +34,31 @@ const dynamicConfigs = {
   },
 };
 
-const layerConfigWithExperimentKey = 'layer_with_exp';
+const layerConfigWithExperimentKey = 'allocated_experiment';
 const hashedLayerConfigWithExperimentKey = getHashValue(
   layerConfigWithExperimentKey,
 );
 
-const layerConfigWithoutExperimentKey = 'layer_without_exp';
+const layerConfigWithoutExperimentKey = 'unallocated_experiment';
 const hashedLayerConfigWithoutExperimentKey = getHashValue(
   layerConfigWithoutExperimentKey,
 );
 
 const layerConfigs = {
   [hashedLayerConfigWithExperimentKey]: {
-    default_values: {
-      a_key: 'a_layer_default_value',
-    },
+    name: hashedLayerConfigWithExperimentKey,
+    rule_id: 'default',
+    value: { a_key: 'a_config_value' },
+    is_user_in_experiment: true,
+    is_experiment_active: true,
     allocated_experiment_name: hashedConfigKey,
   },
   [hashedLayerConfigWithoutExperimentKey]: {
-    default_values: {
-      a_key: 'another_layer_default_value',
-    },
-    allocated_experiment_name: null,
+    name: hashedLayerConfigWithoutExperimentKey,
+    rule_id: 'default',
+    value: { a_key: 'another_layer_default_value' },
+    is_user_in_experiment: true,
+    is_experiment_active: true,
   },
 };
 
@@ -119,84 +122,48 @@ describe('Statsig Layers', () => {
   it('returns experiment values when allocated', () => {
     let config = client.getLayer(layerConfigWithExperimentKey);
     expect(config.get('a_key', 'ERR')).toBe('a_config_value');
+    console.log(hashedLayerConfigWithoutExperimentKey);
+    let another = client.getLayer(layerConfigWithoutExperimentKey);
+    expect(another.getValue('a_key', 'ERR')).toBe(
+      'another_layer_default_value',
+    );
   });
 
-  it('returns default values when no experiment is allocated', () => {
-    let config = client.getLayer(layerConfigWithoutExperimentKey);
-    expect(config.get('a_key', 'ERR')).toBe('another_layer_default_value');
-    expect(config.getRuleID()).toBe('layer_defaults');
-  });
-
-  it('switches experiments when allocation changes', async () => {
-    const data = JSON.parse(JSON.stringify(initialResponse));
-    data['layer_configs'][hashedLayerConfigWithExperimentKey][
-      'allocated_experiment_name'
-    ] = hashedAnotherConfigKey;
-
-    await client.getStore().save(client.getCurrentUserCacheKey(), data);
-
-    let config = client.getLayer(layerConfigWithExperimentKey);
-    expect(config.get('a_key', 'ERR')).toBe('another_config_value');
-  });
-
-  it('switches experiments when allocation changes and the first check was sticky', async () => {
+  it('returns a sticky value', async () => {
     let config = client.getLayer(layerConfigWithExperimentKey, true);
     expect(config.get('a_key', 'ERR')).toBe('a_config_value');
 
     const data = JSON.parse(JSON.stringify(initialResponse));
-    data['layer_configs'][hashedLayerConfigWithExperimentKey][
-      'allocated_experiment_name'
-    ] = hashedAnotherConfigKey;
-
+    data['layer_configs'][hashedLayerConfigWithExperimentKey] = {
+      name: hashedLayerConfigWithExperimentKey,
+      rule_id: 'default',
+      value: { a_key: 'another_value' },
+      is_user_in_experiment: true,
+      is_experiment_active: true,
+      allocated_experiment_name: hashedAnotherConfigKey,
+    };
     await client.getStore().save(client.getCurrentUserCacheKey(), data);
 
-    let anotherConfig = client.getLayer(layerConfigWithExperimentKey);
-    expect(anotherConfig.get('a_key', 'ERR')).toBe('another_config_value');
+    config = client.getLayer(layerConfigWithExperimentKey, true);
+    expect(config.get('a_key', 'ERR')).toBe('a_config_value');
   });
 
-  it('returns first sticky experiment if allocation changes', async () => {
-    const config = client.getLayer(layerConfigWithExperimentKey, true);
+  it('wipes the sticky value when keepDeviceValue is false', async () => {
+    let config = client.getLayer(layerConfigWithExperimentKey, true);
     expect(config.get('a_key', 'ERR')).toBe('a_config_value');
 
     const data = JSON.parse(JSON.stringify(initialResponse));
-    data['layer_configs'][hashedLayerConfigWithExperimentKey][
-      'allocated_experiment_name'
-    ] = hashedAnotherConfigKey;
-
+    data['layer_configs'][hashedLayerConfigWithExperimentKey] = {
+      name: hashedLayerConfigWithExperimentKey,
+      rule_id: 'default',
+      value: { a_key: 'another_value' },
+      is_user_in_experiment: true,
+      is_experiment_active: true,
+      allocated_experiment_name: hashedAnotherConfigKey,
+    };
     await client.getStore().save(client.getCurrentUserCacheKey(), data);
 
-    const anotherConfig = client.getLayer(layerConfigWithExperimentKey, true);
-    expect(anotherConfig.get('a_key', 'ERR')).toBe('a_config_value');
-  });
-
-  it('clears the first sticky experiment if allocation changes and the first is no longer active', async () => {
-    const config = client.getLayer(layerConfigWithExperimentKey, true);
-    expect(config.get('a_key', 'ERR')).toBe('a_config_value');
-
-    const data = JSON.parse(JSON.stringify(initialResponse));
-    data['layer_configs'][hashedLayerConfigWithExperimentKey][
-      'allocated_experiment_name'
-    ] = hashedAnotherConfigKey;
-    data['dynamic_configs'][hashedConfigKey]['is_experiment_active'] = false;
-
-    await client.getStore().save(client.getCurrentUserCacheKey(), data);
-
-    const anotherConfig = client.getLayer(layerConfigWithExperimentKey, true);
-    expect(anotherConfig.get('a_key', 'ERR')).toBe('another_config_value');
-  });
-
-  it('logs the correct exposure', () => {
-    const logger = client.getLogger();
-    const spyOnLog = jest.spyOn(logger, 'log');
-    client.getLayer(layerConfigWithExperimentKey);
-
-    expect(spyOnLog).toHaveBeenCalled();
-    const event = spyOnLog.mock.calls[0][0];
-    expect(event['eventName']).toEqual('statsig::config_exposure');
-    expect(event['metadata']).toEqual({
-      config: 'layer_with_exp',
-      ruleID: 'default',
-      allocatedExperiment: hashedConfigKey,
-    });
+    config = client.getLayer(layerConfigWithExperimentKey, false);
+    expect(config.get('a_key', 'ERR')).toBe('another_value');
   });
 });

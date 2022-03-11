@@ -10,6 +10,7 @@ const STATSIG_LOCAL_STORAGE_LOGGING_REQUEST_KEY =
 
 const INTERNAL_EVENT_PREFIX = 'statsig::';
 const CONFIG_EXPOSURE_EVENT = INTERNAL_EVENT_PREFIX + 'config_exposure';
+const LAYER_EXPOSURE_EVENT = INTERNAL_EVENT_PREFIX + 'layer_exposure';
 const GATE_EXPOSURE_EVENT = INTERNAL_EVENT_PREFIX + 'gate_exposure';
 const LOG_FAILURE_EVENT = INTERNAL_EVENT_PREFIX + 'log_event_failed';
 const APP_ERROR_EVENT = INTERNAL_EVENT_PREFIX + 'app_error';
@@ -173,18 +174,13 @@ export default class StatsigLogger {
       return;
     }
 
-    const metadata: Record<string, unknown> = {
+    const configExposure = new LogEvent(LAYER_EXPOSURE_EVENT);
+    configExposure.setUser(user);
+    configExposure.setMetadata({
       config: configName,
       ruleID: ruleID,
-    };
-
-    if (allocatedExperiment) {
-      metadata['allocatedExperiment'] = allocatedExperiment;
-    }
-
-    const configExposure = new LogEvent(CONFIG_EXPOSURE_EVENT);
-    configExposure.setUser(user);
-    configExposure.setMetadata(metadata);
+      allocatedExperiment,
+    });
     configExposure.setSecondaryExposures(secondaryExposures);
     this.log(configExposure);
   }
