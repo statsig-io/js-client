@@ -1,15 +1,9 @@
 /**
  * @jest-environment jsdom
  */
-import { sha256 } from 'js-sha256';
 import StatsigClient from '../StatsigClient';
-import { Base64 } from '../utils/Base64';
+import { getHashValue } from '../utils/Hashing';
 import StatsigAsyncStorage from '../utils/StatsigAsyncStorage';
-
-function getHashValue(value: string) {
-  let buffer = sha256.create().update(value).arrayBuffer();
-  return Base64.encodeArrayBuffer(buffer);
-}
 
 const configKey = 'a_config';
 const hashedConfigKey = getHashValue(configKey);

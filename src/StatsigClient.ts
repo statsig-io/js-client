@@ -13,7 +13,7 @@ import StatsigNetwork from './StatsigNetwork';
 import StatsigSDKOptions, { StatsigOptions } from './StatsigSDKOptions';
 import StatsigStore from './StatsigStore';
 import { StatsigUser } from './StatsigUser';
-import SimpleHash from './utils/SimpleHash';
+import { SimpleHash } from './utils/Hashing';
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import type { AsyncStorage } from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
@@ -173,6 +173,11 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     this.network = new StatsigNetwork(this);
     this.store = new StatsigStore(this);
     this.logger = new StatsigLogger(this);
+
+    if (options?.initializeValues != null) {
+      this.store.bootstrap();
+      this.ready = true;
+    }
   }
 
   public async initializeAsync(): Promise<void> {

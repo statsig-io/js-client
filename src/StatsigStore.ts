@@ -1,21 +1,14 @@
-import { sha256 } from 'js-sha256';
-
 import DynamicConfig from './DynamicConfig';
 import Layer from './Layer';
 import { IHasStatsigInternal, StatsigOverrides } from './StatsigClient';
-import { Base64 } from './utils/Base64';
 import {
   INTERNAL_STORE_KEY,
   OVERRIDES_STORE_KEY,
   STICKY_DEVICE_EXPERIMENTS_KEY,
 } from './utils/Constants';
+import { getHashValue } from './utils/Hashing';
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
-
-function getHashValue(value: string) {
-  let buffer = sha256.create().update(value).arrayBuffer();
-  return Base64.encodeArrayBuffer(buffer);
-}
 
 type APIFeatureGate = {
   name: string;
@@ -84,6 +77,37 @@ export default class StatsigStore {
       await StatsigAsyncStorage.getItemAsync(STICKY_DEVICE_EXPERIMENTS_KEY),
     );
     this.loaded = true;
+  }
+
+  public bootstrap(): void {
+    const initializeValues = this.sdkInternal
+      .getOptions()
+      .getInitializeValues();
+    if (initializeValues == null) {
+      return;
+    }
+    const key = this.sdkInternal.getCurrentUserCacheKey();
+    // clients are going to assume that the SDK is bootstraped after this method runs
+    // if we fail to parse, we will fall back to defaults, but we dont want to throw
+    // when clients try to check gates/configs/etc after this point
+    this.loaded = true;
+    try {
+      let userValues = this.values[key] ?? {
+        feature_gates: {},
+        dynamic_configs: {},
+        layer_configs: {},
+        sticky_experiments: {},
+        time: Date.now(),
+      };
+      userValues.feature_gates = initializeValues.feature_gates ?? {};
+      userValues.dynamic_configs = initializeValues.dynamic_configs ?? {};
+      userValues.layer_configs = initializeValues.layer_configs ?? {};
+      userValues.time = Date.now();
+      this.values[key] = userValues;
+      this.loadOverrides();
+    } catch (_e) {
+      return;
+    }
   }
 
   private loadFromLocalStorage(): void {
