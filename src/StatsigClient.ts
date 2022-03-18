@@ -537,13 +537,20 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       });
     }
     if (!this.options.getDisableAutoMetricsLogging()) {
+      if (!document || !setTimeout) {
+        return;
+      }
+      
       const work = () => {
-        this.logger.logAppMetrics(user);
+        setTimeout(() => {
+          this.logger.logAppMetrics(user);
+        }, 1000);
       };
-      if (document && document.readyState === 'complete' && setTimeout) {
-        setTimeout(work, 1000);
+      
+      if (document.readyState === 'complete') {
+        work();
       } else {
-        window.addEventListener('load', work);
+        window.addEventListener('load', () => work());
       }
     }
   }
