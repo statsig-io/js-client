@@ -66,6 +66,24 @@ describe('Verify behavior of top level index functions', () => {
                 rule_id: 'ruleID',
               },
             },
+            layer_configs: {
+              'gsBe14p33zVn1adfq3eh14ZPWm9xgPqwGpJgbhvYp7Q=': {
+                name: 'gsBe14p33zVn1adfq3eh14ZPWm9xgPqwGpJgbhvYp7Q=',
+                value: {
+                  key: 'a_value',
+                },
+                rule_id: 'ruleID',
+                allocated_experiment_name:
+                  'RMv0YJlLOBe7cY7HgZ3Jox34R0Wrk7jLv3DZyBETA7I=',
+              },
+              'SJarj28wocHXt6BoXoJeb0evusUYHalxbZk0XHkBfmE=': {
+                name: 'SJarj28wocHXt6BoXoJeb0evusUYHalxbZk0XHkBfmE',
+                value: {
+                  foo: 'bar',
+                },
+                rule_id: 'default',
+              },
+            },
           }),
       });
     }
@@ -258,6 +276,50 @@ describe('Verify behavior of top level index functions', () => {
           numberStr1: '3',
           numberStr2: '3.3',
           numberStr3: '3.3.3',
+        });
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(spy).toHaveBeenCalledWith(configExposure);
+      });
+  });
+
+  test('Verify getLayer() behaves correctly when calling under correct conditions', () => {
+    expect.assertions(7);
+
+    return statsig
+      .initialize('client-key', null, { disableCurrentPageLogging: true })
+      .then(() => {
+        const ready = statsig.instance.ready;
+        expect(ready).toBe(true);
+
+        //@ts-ignore
+        let spy = jest.spyOn(statsig.instance.logger, 'log');
+        let configExposure = new LogEvent('statsig::layer_exposure');
+        configExposure.setUser({});
+        configExposure.setMetadata({
+          config: 'allocated_experiment',
+          ruleID: 'ruleID',
+          allocatedExperiment: 'RMv0YJlLOBe7cY7HgZ3Jox34R0Wrk7jLv3DZyBETA7I=',
+        });
+        configExposure.setSecondaryExposures([]);
+        let config = statsig.getLayer('allocated_experiment');
+        expect(config?.value).toStrictEqual({
+          key: 'a_value',
+        });
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(spy).toHaveBeenCalledWith(configExposure);
+
+        spy.mockReset();
+        configExposure = new LogEvent('statsig::layer_exposure');
+        configExposure.setUser({});
+        configExposure.setMetadata({
+          config: 'unallocated_experiment',
+          ruleID: 'default',
+          allocatedExperiment: '',
+        });
+        configExposure.setSecondaryExposures([]);
+        config = statsig.getLayer('unallocated_experiment');
+        expect(config?.value).toStrictEqual({
+          foo: 'bar',
         });
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy).toHaveBeenCalledWith(configExposure);

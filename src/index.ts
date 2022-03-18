@@ -1,4 +1,5 @@
 import DynamicConfig from './DynamicConfig';
+import Layer from './Layer';
 import StatsigClient, {
   StatsigOverrides,
   _SDKPackageInfo,
@@ -10,6 +11,7 @@ export { default as StatsigAsyncStorage } from './utils/StatsigAsyncStorage';
 export { StatsigOptions, StatsigEnvironment } from './StatsigSDKOptions';
 export { StatsigUser } from './StatsigUser';
 export { default as DynamicConfig } from './DynamicConfig';
+export { default as Layer } from './Layer';
 export { default as StatsigClient } from './StatsigClient';
 export { IStatsig, StatsigOverrides } from './StatsigClient';
 
@@ -69,6 +71,14 @@ export default class Statsig {
       keepDeviceValue,
       ignoreOverrides,
     );
+  }
+
+  public static getLayer(
+    layerName: string,
+    keepDeviceValue: boolean = false,
+  ): Layer {
+    this.ensureInitialized();
+    return Statsig.instance.getLayer(layerName, keepDeviceValue);
   }
 
   public static logEvent(

@@ -4,6 +4,7 @@
 
 import StatsigClient from '../StatsigClient';
 import StatsigAsyncStorage from '../utils/StatsigAsyncStorage';
+import * as TestData from './initialize_response.json';
 
 describe('Verify behavior of StatsigClient', () => {
   const sdkKey = 'client-clienttestkey';
@@ -296,6 +297,50 @@ describe('Verify behavior of StatsigClient', () => {
 
     expect(statsig.checkGate('test_gate')).toEqual(false);
     expect(statsig.getConfig('test_config').getValue()).toEqual({});
+  });
+
+  test('That bootstrapping values works', async () => {
+    expect.assertions(12);
+
+    const client = new StatsigClient(
+      'client-xyz',
+      { email: 'tore@statsig.com' },
+      { initializeValues: TestData },
+    );
+    // usable immediately, without an async initialize
+    expect(client.checkGate('test_gate')).toBe(false);
+    expect(client.checkGate('i_dont_exist')).toBe(false);
+    expect(client.checkGate('always_on_gate')).toBe(true);
+    expect(client.checkGate('on_for_statsig_email')).toBe(true);
+    expect(client.getConfig('test_config').get('number', 10)).toEqual(7);
+
+    await client.initializeAsync();
+    // nothing changed, network not hit
+    expect(parsedRequestBody).toBeNull();
+    expect(client.checkGate('test_gate')).toBe(false);
+    expect(client.checkGate('i_dont_exist')).toBe(false);
+    expect(client.checkGate('always_on_gate')).toBe(true);
+    expect(client.checkGate('on_for_statsig_email')).toBe(true);
+    expect(client.getConfig('test_config').get('number', 10)).toEqual(7);
+    expect(
+      client.getLayer('c_layer_with_holdout').get('holdout_layer_param', 'x'),
+    ).toEqual('layer_default');
+  });
+
+  test('That bootstrapping values with empty will just use defaults instead', async () => {
+    expect.assertions(4);
+
+    const client = new StatsigClient(
+      'client-xyz',
+      { email: 'tore@statsig.com' },
+      { initializeValues: {} },
+    );
+
+    // we get defaults everywhere else
+    expect(client.checkGate('test_gate')).toBe(false);
+    expect(client.checkGate('always_on_gate')).toBe(false);
+    expect(client.checkGate('on_for_statsig_email')).toBe(false);
+    expect(client.getConfig('test_config').get('number', 10)).toEqual(10);
   });
 });
 

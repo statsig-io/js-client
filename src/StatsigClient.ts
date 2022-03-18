@@ -13,10 +13,11 @@ import StatsigNetwork from './StatsigNetwork';
 import StatsigSDKOptions, { StatsigOptions } from './StatsigSDKOptions';
 import StatsigStore from './StatsigStore';
 import { StatsigUser } from './StatsigUser';
-import SimpleHash from './utils/SimpleHash';
+import { SimpleHash } from './utils/Hashing';
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import type { AsyncStorage } from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
+import Layer from './Layer';
 
 const MAX_VALUE_SIZE = 64;
 const MAX_OBJ_SIZE = 1024;
@@ -172,6 +173,11 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     this.network = new StatsigNetwork(this);
     this.store = new StatsigStore(this);
     this.logger = new StatsigLogger(this);
+
+    if (options?.initializeValues != null) {
+      this.store.bootstrap();
+      this.ready = true;
+    }
   }
 
   public async initializeAsync(): Promise<void> {
@@ -280,6 +286,15 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       keepDeviceValue,
       ignoreOverrides,
     );
+  }
+
+  public getLayer(layerName: string, keepDeviceValue: boolean = false): Layer {
+    this.ensureStoreLoaded();
+    if (typeof layerName !== 'string' || layerName.length === 0) {
+      throw new Error('Must pass a valid string as the layerName.');
+    }
+
+    return this.store.getLayer(layerName, keepDeviceValue);
   }
 
   public logEvent(
