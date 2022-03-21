@@ -24,14 +24,13 @@ export default class Layer {
     defaultValue: T,
     typeGuard?: (value: unknown) => value is T,
   ): T {
-    const val = this.getValue(key, defaultValue);
+    const val = (this.value[key] ?? null) as T;
     if (typeGuard) {
       return typeGuard(val) ? val : defaultValue;
     }
     if (defaultValue != null) {
       if (Array.isArray(defaultValue)) {
         if (Array.isArray(val)) {
-          // @ts-ignore
           return val;
         }
         return defaultValue;
@@ -40,22 +39,6 @@ export default class Layer {
       }
     }
     return val as unknown as T;
-  }
-
-  public getValue(
-    key?: string,
-    defaultValue?: any | null,
-  ): boolean | number | string | object | Array<any> | null {
-    if (key == null) {
-      return this.value;
-    }
-    if (defaultValue == null) {
-      defaultValue = null;
-    }
-    if (this.value[key] == null) {
-      return defaultValue;
-    }
-    return this.value[key];
   }
 
   public getRuleID(): string {
