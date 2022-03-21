@@ -173,9 +173,14 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     this.network = new StatsigNetwork(this);
     this.store = new StatsigStore(this);
     this.logger = new StatsigLogger(this);
-
     if (options?.initializeValues != null) {
-      this.store.bootstrap();
+      this.setInitializeValues(options?.initializeValues);
+    }
+  }
+
+  public setInitializeValues(initializeValues: Record<string, any>): void {
+    this.store.bootstrap(initializeValues);
+    if (!this.ready) {
       this.ready = true;
     }
   }

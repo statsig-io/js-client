@@ -114,10 +114,6 @@ export default class StatsigSDKOptions {
     return this.disableErrorLogging;
   }
 
-  getInitializeValues(): Record<string, any> | null {
-    return this.initializeValues ?? null;
-  }
-
   private normalizeNumberInput(
     input: number | undefined,
     bounds: BoundedNumberInput,

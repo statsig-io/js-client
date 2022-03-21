@@ -79,13 +79,7 @@ export default class StatsigStore {
     this.loaded = true;
   }
 
-  public bootstrap(): void {
-    const initializeValues = this.sdkInternal
-      .getOptions()
-      .getInitializeValues();
-    if (initializeValues == null) {
-      return;
-    }
+  public bootstrap(initializeValues: Record<string, any>): void {
     const key = this.sdkInternal.getCurrentUserCacheKey();
     // clients are going to assume that the SDK is bootstraped after this method runs
     // if we fail to parse, we will fall back to defaults, but we dont want to throw
