@@ -45,7 +45,7 @@ export default class Statsig {
   }
 
   public static setInitializeValues(
-    initializeValues: Record<string, any>,
+    initializeValues: Record<string, unknown>,
   ): void {
     this.ensureInitialized();
     return Statsig.instance.setInitializeValues(initializeValues);

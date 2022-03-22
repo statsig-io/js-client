@@ -178,7 +178,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     }
   }
 
-  public setInitializeValues(initializeValues: Record<string, any>): void {
+  public setInitializeValues(initializeValues: Record<string, unknown>): void {
     this.store.bootstrap(initializeValues);
     if (!this.ready) {
       this.ready = true;
