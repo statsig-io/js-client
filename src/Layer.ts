@@ -6,14 +6,14 @@ export default class Layer {
   private allocatedExperimentName: string;
 
   public constructor(
-    configName: string,
-    configValue: Record<string, any> = {},
+    layerName: string,
+    layerValue: Record<string, any> = {},
     ruleID: string = '',
     secondaryExposures: Record<string, string>[] = [],
     allocatedExperimentName: string = '',
   ) {
-    this.name = configName;
-    this.value = JSON.parse(JSON.stringify(configValue));
+    this.name = layerName;
+    this.value = JSON.parse(JSON.stringify(layerValue));
     this.ruleID = ruleID;
     this.secondaryExposures = secondaryExposures;
     this.allocatedExperimentName = allocatedExperimentName;
@@ -24,7 +24,7 @@ export default class Layer {
     defaultValue: T,
     typeGuard?: (value: unknown) => value is T,
   ): T {
-    const val = this.getValue(key, defaultValue);
+    const val = this.value[key] ?? null;
     if (typeGuard) {
       return typeGuard(val) ? val : defaultValue;
     }
@@ -40,22 +40,6 @@ export default class Layer {
       }
     }
     return val as unknown as T;
-  }
-
-  public getValue(
-    key?: string,
-    defaultValue?: any | null,
-  ): boolean | number | string | object | Array<any> | null {
-    if (key == null) {
-      return this.value;
-    }
-    if (defaultValue == null) {
-      defaultValue = null;
-    }
-    if (this.value[key] == null) {
-      return defaultValue;
-    }
-    return this.value[key];
   }
 
   public getRuleID(): string {

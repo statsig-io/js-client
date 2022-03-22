@@ -118,7 +118,7 @@ describe('Statsig Layers', () => {
     expect(config.get('a_key', 'ERR')).toBe('a_config_value');
 
     let another = client.getLayer(layerConfigWithoutExperimentKey);
-    expect(another.getValue('a_key', 'ERR')).toBe(
+    expect(another.get('a_key', 'ERR')).toBe(
       'another_layer_default_value',
     );
   });
