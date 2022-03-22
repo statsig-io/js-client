@@ -6,14 +6,14 @@ export default class Layer {
   private allocatedExperimentName: string;
 
   public constructor(
-    configName: string,
-    configValue: Record<string, any> = {},
+    layerName: string,
+    layerValue: Record<string, any> = {},
     ruleID: string = '',
     secondaryExposures: Record<string, string>[] = [],
     allocatedExperimentName: string = '',
   ) {
-    this.name = configName;
-    this.value = JSON.parse(JSON.stringify(configValue));
+    this.name = layerName;
+    this.value = JSON.parse(JSON.stringify(layerValue));
     this.ruleID = ruleID;
     this.secondaryExposures = secondaryExposures;
     this.allocatedExperimentName = allocatedExperimentName;
@@ -24,13 +24,14 @@ export default class Layer {
     defaultValue: T,
     typeGuard?: (value: unknown) => value is T,
   ): T {
-    const val = (this.value[key] ?? null) as T;
+    const val = this.value[key] ?? null;
     if (typeGuard) {
       return typeGuard(val) ? val : defaultValue;
     }
     if (defaultValue != null) {
       if (Array.isArray(defaultValue)) {
         if (Array.isArray(val)) {
+          // @ts-ignore
           return val;
         }
         return defaultValue;
