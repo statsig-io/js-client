@@ -16,6 +16,7 @@ describe('Verify behavior of DynamicConfig', () => {
       numberStr1: '3',
       numberStr2: '3.3',
       arr: [1, 2, 'three'],
+      nullKey: null,
     },
     'default',
   );
@@ -85,6 +86,20 @@ describe('Verify behavior of DynamicConfig', () => {
       key: 'value',
       key2: 123,
     });
+  });
+
+  test('Test null', () => {
+    expect(testConfig.getValue('bool', null)).toStrictEqual(true);
+    expect(testConfig.getValue('bool', undefined)).toStrictEqual(true);
+    expect(testConfig.getValue('nullKey')).toStrictEqual(null);
+    expect(testConfig.getValue('nullKey', undefined)).toStrictEqual(null);
+    expect(testConfig.getValue('nullKey', 'val')).toStrictEqual('val');
+
+    expect(testConfig.get('nullKey', undefined)).toStrictEqual(undefined);
+    expect(testConfig.get('nullKey', 'val')).toStrictEqual('val');
+    expect(testConfig.get('nullKey', null)).toStrictEqual(null);
+    expect(testConfig.get('no_key', undefined)).toStrictEqual(undefined);
+    expect(testConfig.get('no_key', null)).toStrictEqual(null);
   });
 
   test('Behavior of dummy configs', () => {

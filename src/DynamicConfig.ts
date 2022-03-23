@@ -25,21 +25,20 @@ export default class DynamicConfig {
     typeGuard?: (value: unknown) => value is T,
   ): T {
     const val = this.getValue(key, defaultValue);
+
     if (typeGuard) {
       return typeGuard(val) ? val : defaultValue;
     }
-    if (defaultValue != null) {
-      if (Array.isArray(defaultValue)) {
-        if (Array.isArray(val)) {
-          // @ts-ignore
-          return val;
-        }
-        return defaultValue;
-      } else if (typeof val !== typeof defaultValue) {
-        return defaultValue;
-      }
+
+    if (
+      val != null &&
+      typeof val === typeof defaultValue &&
+      Array.isArray(defaultValue) === Array.isArray(val)
+    ) {
+      return val as unknown as T;
     }
-    return val as unknown as T;
+
+    return defaultValue;
   }
 
   public getValue(
