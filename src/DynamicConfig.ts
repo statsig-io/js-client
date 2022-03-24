@@ -26,12 +26,19 @@ export default class DynamicConfig {
   ): T {
     const val = this.getValue(key, defaultValue);
 
+    if (val == null) {
+      return defaultValue;
+    }
+
     if (typeGuard) {
       return typeGuard(val) ? val : defaultValue;
     }
 
+    if (defaultValue == null) {
+      return val as unknown as T;
+    }
+
     if (
-      val != null &&
       typeof val === typeof defaultValue &&
       Array.isArray(defaultValue) === Array.isArray(val)
     ) {

@@ -90,15 +90,16 @@ describe('Verify behavior of Layer', () => {
   test('Test null', () => {
     expect(testLayer.getValue('bool', null)).toStrictEqual(true);
     expect(testLayer.getValue('bool', undefined)).toStrictEqual(true);
-    expect(testLayer.getValue('nullKey')).toStrictEqual(null);
-    expect(testLayer.getValue('nullKey', undefined)).toStrictEqual(null);
-    expect(testLayer.getValue('nullKey', 'val')).toStrictEqual('val');
 
     expect(testLayer.getValue('nullKey')).toStrictEqual(null);
     expect(testLayer.getValue('nullKey', 'val')).toStrictEqual('val');
-    expect(testLayer.get('nullKey', undefined)).toStrictEqual(undefined);
-    expect(testLayer.get('nullKey', 'val')).toStrictEqual('val');
+    expect(testLayer.getValue('nullKey', undefined)).toStrictEqual(null);
+    expect(testLayer.getValue('nullKey', null)).toStrictEqual(null);
+
     expect(testLayer.get('nullKey', null)).toStrictEqual(null);
+    expect(testLayer.get('nullKey', 'val')).toStrictEqual('val');
+    expect(testLayer.get('nullKey', undefined)).toStrictEqual(undefined);
+
     expect(testLayer.get('no_key', undefined)).toStrictEqual(undefined);
     expect(testLayer.get('no_key', null)).toStrictEqual(null);
   });
