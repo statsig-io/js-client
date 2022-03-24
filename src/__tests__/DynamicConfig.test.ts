@@ -91,13 +91,16 @@ describe('Verify behavior of DynamicConfig', () => {
   test('Test null', () => {
     expect(testConfig.getValue('bool', null)).toStrictEqual(true);
     expect(testConfig.getValue('bool', undefined)).toStrictEqual(true);
-    expect(testConfig.getValue('nullKey')).toStrictEqual(null);
-    expect(testConfig.getValue('nullKey', undefined)).toStrictEqual(null);
-    expect(testConfig.getValue('nullKey', 'val')).toStrictEqual('val');
 
-    expect(testConfig.get('nullKey', undefined)).toStrictEqual(undefined);
-    expect(testConfig.get('nullKey', 'val')).toStrictEqual('val');
+    expect(testConfig.getValue('nullKey')).toStrictEqual(null);
+    expect(testConfig.getValue('nullKey', 'val')).toStrictEqual('val');
+    expect(testConfig.getValue('nullKey', undefined)).toStrictEqual(null);
+    expect(testConfig.getValue('nullKey', null)).toStrictEqual(null);
+
     expect(testConfig.get('nullKey', null)).toStrictEqual(null);
+    expect(testConfig.get('nullKey', 'val')).toStrictEqual('val');
+    expect(testConfig.get('nullKey', undefined)).toStrictEqual(undefined);
+
     expect(testConfig.get('no_key', undefined)).toStrictEqual(undefined);
     expect(testConfig.get('no_key', null)).toStrictEqual(null);
   });
