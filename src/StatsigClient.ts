@@ -231,20 +231,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         this.logger.sendSavedRequests();
       });
 
-    if (
-      !this.options.getDisableErrorLogging() &&
-      window &&
-      window.addEventListener
-    ) {
-      window.addEventListener('error', (e) => {
-        this.logger.logAppError(this.identity.getUser(), e.message, {
-          filename: e.filename,
-          lineno: e.lineno,
-          colno: e.colno,
-          error_obj: e.error,
-        });
-      });
-    }
+    this.handleOptionalLogging();
     return this.pendingInitPromise;
   }
 
@@ -539,6 +526,40 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   public setExpoDevice(expoDevice?: ExpoDevice | null): void {
     if (expoDevice != null) {
       this.identity.setExpoDevice(expoDevice);
+    }
+  }
+
+  private handleOptionalLogging(): void {
+    if (!window || !window.addEventListener) {
+      return;
+    }
+    const user = this.identity.getUser();
+    if (!this.options.getDisableErrorLogging()) {
+      window.addEventListener('error', (e) => {
+        this.logger.logAppError(user, e.message, {
+          filename: e.filename,
+          lineno: e.lineno,
+          colno: e.colno,
+          error_obj: e.error,
+        });
+      });
+    }
+    if (!this.options.getDisableAutoMetricsLogging()) {
+      if (!document || !setTimeout) {
+        return;
+      }
+      
+      const work = () => {
+        setTimeout(() => {
+          this.logger.logAppMetrics(user);
+        }, 1000);
+      };
+      
+      if (document.readyState === 'complete') {
+        work();
+      } else {
+        window.addEventListener('load', () => work());
+      }
     }
   }
 

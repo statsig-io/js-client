@@ -16,6 +16,7 @@ export type StatsigOptions = {
   localMode?: boolean;
   initTimeoutMs?: number;
   disableErrorLogging?: boolean;
+  disableAutoMetricsLogging?: boolean;
   initializeValues?: Record<string, any> | null;
 };
 
@@ -36,6 +37,7 @@ export default class StatsigSDKOptions {
   private localMode: boolean;
   private initTimeoutMs: number;
   private disableErrorLogging: boolean;
+  private disableAutoMetricsLogging: boolean;
   private initializeValues?: Record<string, any> | null;
 
   constructor(options?: StatsigOptions | null) {
@@ -71,6 +73,7 @@ export default class StatsigSDKOptions {
         ? options.initTimeoutMs
         : 3000;
     this.disableErrorLogging = options.disableErrorLogging ?? false;
+    this.disableAutoMetricsLogging = options.disableAutoMetricsLogging ?? false;
     this.initializeValues = options.initializeValues ?? null;
   }
 
@@ -112,6 +115,10 @@ export default class StatsigSDKOptions {
 
   getDisableErrorLogging(): boolean {
     return this.disableErrorLogging;
+  }
+
+  getDisableAutoMetricsLogging(): boolean {
+    return this.disableAutoMetricsLogging;
   }
 
   private normalizeNumberInput(
