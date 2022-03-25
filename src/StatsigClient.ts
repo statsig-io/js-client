@@ -181,7 +181,10 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   public setInitializeValues(initializeValues: Record<string, unknown>): void {
     this.store.bootstrap(initializeValues);
     if (!this.ready) {
+      // the sdk is usable and considered initialized when configured
+      // with initializeValues
       this.ready = true;
+      this.initCalled = true;
     }
   }
 
