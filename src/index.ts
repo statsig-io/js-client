@@ -44,6 +44,13 @@ export default class Statsig {
     return Statsig.instance.initializeAsync();
   }
 
+  public static setInitializeValues(
+    initializeValues: Record<string, unknown>,
+  ): void {
+    this.ensureInitialized();
+    return Statsig.instance.setInitializeValues(initializeValues);
+  }
+
   public static checkGate(
     gateName: string,
     ignoreOverrides: boolean = false,

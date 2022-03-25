@@ -6,14 +6,14 @@ export default class Layer {
   private allocatedExperimentName: string;
 
   public constructor(
-    configName: string,
-    configValue: Record<string, any> = {},
+    layerName: string,
+    layerValue: Record<string, any> = {},
     ruleID: string = '',
     secondaryExposures: Record<string, string>[] = [],
     allocatedExperimentName: string = '',
   ) {
-    this.name = configName;
-    this.value = JSON.parse(JSON.stringify(configValue));
+    this.name = layerName;
+    this.value = JSON.parse(JSON.stringify(layerValue));
     this.ruleID = ruleID;
     this.secondaryExposures = secondaryExposures;
     this.allocatedExperimentName = allocatedExperimentName;
@@ -25,37 +25,38 @@ export default class Layer {
     typeGuard?: (value: unknown) => value is T,
   ): T {
     const val = this.getValue(key, defaultValue);
+
+    if (val == null) {
+      return defaultValue;
+    }
+
     if (typeGuard) {
       return typeGuard(val) ? val : defaultValue;
     }
-    if (defaultValue != null) {
-      if (Array.isArray(defaultValue)) {
-        if (Array.isArray(val)) {
-          // @ts-ignore
-          return val;
-        }
-        return defaultValue;
-      } else if (typeof val !== typeof defaultValue) {
-        return defaultValue;
-      }
+
+    if (defaultValue == null) {
+      return val as unknown as T;
     }
-    return val as unknown as T;
+
+    if (
+      typeof val === typeof defaultValue &&
+      Array.isArray(defaultValue) === Array.isArray(val)
+    ) {
+      return val as unknown as T;
+    }
+
+    return defaultValue;
   }
 
   public getValue(
-    key?: string,
+    key: string,
     defaultValue?: any | null,
   ): boolean | number | string | object | Array<any> | null {
-    if (key == null) {
-      return this.value;
-    }
     if (defaultValue == null) {
       defaultValue = null;
     }
-    if (this.value[key] == null) {
-      return defaultValue;
-    }
-    return this.value[key];
+
+    return this.value[key] ?? defaultValue;
   }
 
   public getRuleID(): string {
