@@ -277,6 +277,7 @@ export default class StatsigStore {
         expName,
         latestValue,
         keepDeviceValue,
+        false /* isLayer */,
       );
       exp = this.createDynamicConfig(expName, finalValue);
     }
@@ -298,6 +299,7 @@ export default class StatsigStore {
       layerName,
       latestValue,
       keepDeviceValue,
+      true /* isLayer */,
     );
     const config = new Layer(
       layerName,
@@ -380,35 +382,50 @@ export default class StatsigStore {
     const hash = getHashValue(name);
     const userCacheKey = this.getCurrentUserCacheKey();
     const userValues = this.values[userCacheKey];
-    return userValues?.[topLevelKey]?.[hash];
+    return (
+      userValues?.[topLevelKey]?.[hash] ?? userValues?.[topLevelKey]?.[name]
+    );
   }
 
+  // Sticky Logic: https://gist.github.com/daniel-statsig/3d8dfc9bdee531cffc96901c1a06a402
   private getPossiblyStickyValue(
     name: string,
     latestValue: APIDynamicConfig | undefined,
     keepDeviceValue: boolean,
+    isLayer: boolean,
   ): APIDynamicConfig | undefined {
-    const hashedName = getHashValue(name);
-
-    const userCacheKey = this.getCurrentUserCacheKey();
-    let stickyValue = this.getStickyValue(userCacheKey, hashedName);
-
-    // If flag is false, or experiment is NOT active, simply remove the
-    // sticky experiment value, and return the latest value
-    if (!keepDeviceValue || latestValue?.is_experiment_active == false) {
-      this.removeStickyValue(userCacheKey, hashedName);
+    // We don't want sticky behavior. Clear any sticky values and return latest.
+    if (!keepDeviceValue) {
+      this.removeStickyValue(name);
       return latestValue;
     }
 
-    if (stickyValue != null) {
-      // If sticky value is already in cache, use it
+    // If there is no sticky value, save latest as sticky and return latest.
+    const stickyValue = this.getStickyValue(name);
+    if (!stickyValue) {
+      this.attemptToSaveStickyValue(name, latestValue);
+      return latestValue;
+    }
+
+    // Get the latest config value. Layers require a lookup by allocated_experiment_name.
+    let latestExperimentValue = null;
+    if (isLayer) {
+      latestExperimentValue = this.getLatestValue(
+        stickyValue?.allocated_experiment_name ?? '',
+        'dynamic_configs',
+      );
+    } else {
+      latestExperimentValue = latestValue;
+    }
+
+    if (latestExperimentValue?.is_experiment_active == true) {
       return stickyValue;
     }
 
-    if (latestValue != null && keepDeviceValue) {
-      // Here the user has NOT been exposed before.
-      // If they are IN this ACTIVE experiment, then we save the value as sticky
-      this.saveStickyValueIfNeeded(userCacheKey, hashedName, latestValue);
+    if (latestValue?.is_experiment_active == true) {
+      this.attemptToSaveStickyValue(name, latestValue);
+    } else {
+      this.removeStickyValue(name);
     }
 
     return latestValue;
@@ -427,7 +444,10 @@ export default class StatsigStore {
     );
   }
 
-  private getStickyValue(userCacheKey: string, key: string) {
+  private getStickyValue(name: string) {
+    const key = getHashValue(name);
+    const userCacheKey = this.getCurrentUserCacheKey();
+
     const userValues = this.values[userCacheKey];
 
     return (
@@ -435,15 +455,17 @@ export default class StatsigStore {
     );
   }
 
-  private saveStickyValueIfNeeded(
-    userCacheKey: string,
-    key: string,
-    config: APIDynamicConfig,
-  ) {
+  private attemptToSaveStickyValue(name: string, config?: APIDynamicConfig) {
+    if (!config) {
+      return;
+    }
+
     if (!config.is_user_in_experiment || !config.is_experiment_active) {
       return;
     }
 
+    const userCacheKey = this.getCurrentUserCacheKey();
+    const key = getHashValue(name);
     const userValues = this.values[userCacheKey];
 
     if (config.is_device_based === true) {
@@ -456,7 +478,10 @@ export default class StatsigStore {
     this.saveStickyValuesToStorage();
   }
 
-  private removeStickyValue(userCacheKey: string, key: string) {
+  private removeStickyValue(name: string) {
+    const userCacheKey = this.getCurrentUserCacheKey();
+    const key = getHashValue(name);
+
     delete this.values[userCacheKey]?.sticky_experiments[key];
     delete this.stickyDeviceExperiments[key];
     this.saveStickyValuesToStorage();

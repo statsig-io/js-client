@@ -108,7 +108,7 @@ describe('Verify behavior of top level index functions', () => {
     expect(() => {
       statsig.checkGate('gate_that_doesnt_exist');
     }).toThrowError('Call and wait for initialize() to finish first.');
-    expect(statsig.instance).toBeUndefined();
+    expect(statsig.instance).toBeNull();
   });
 
   test('Verify checkGate throws with no gate name', () => {
@@ -165,14 +165,14 @@ describe('Verify behavior of top level index functions', () => {
     expect(() => {
       statsig.getExperiment('config_that_doesnt_exist');
     }).toThrowError('Call and wait for initialize() to finish first.');
-    expect(statsig.instance).toBeUndefined();
+    expect(statsig.instance).toBeNull();
   });
 
   test('Verify logEvent throws if called before initialize()', () => {
     expect(() => {
       statsig.logEvent('test_event');
     }).toThrowError('Call and wait for initialize() to finish first.');
-    expect(statsig.instance).toBeUndefined();
+    expect(statsig.instance).toBeNull();
   });
 
   test('Verify checkGate() returns the correct value under correct circumstances', () => {

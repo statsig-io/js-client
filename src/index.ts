@@ -29,7 +29,7 @@ export type {
 } from './StatsigIdentity';
 
 export default class Statsig {
-  private static instance: StatsigClient;
+  private static instance: StatsigClient | null = null;
 
   private constructor() {}
 
@@ -47,24 +47,21 @@ export default class Statsig {
   public static setInitializeValues(
     initializeValues: Record<string, unknown>,
   ): void {
-    this.ensureInitialized();
-    return Statsig.instance.setInitializeValues(initializeValues);
+    return Statsig.getClientX().setInitializeValues(initializeValues);
   }
 
   public static checkGate(
     gateName: string,
     ignoreOverrides: boolean = false,
   ): boolean {
-    this.ensureInitialized();
-    return Statsig.instance.checkGate(gateName, ignoreOverrides);
+    return Statsig.getClientX().checkGate(gateName, ignoreOverrides);
   }
 
   public static getConfig(
     configName: string,
     ignoreOverrides: boolean = false,
   ): DynamicConfig {
-    this.ensureInitialized();
-    return Statsig.instance.getConfig(configName, ignoreOverrides);
+    return Statsig.getClientX().getConfig(configName, ignoreOverrides);
   }
 
   public static getExperiment(
@@ -72,8 +69,7 @@ export default class Statsig {
     keepDeviceValue: boolean = false,
     ignoreOverrides: boolean = false,
   ): DynamicConfig {
-    this.ensureInitialized();
-    return Statsig.instance.getExperiment(
+    return Statsig.getClientX().getExperiment(
       experimentName,
       keepDeviceValue,
       ignoreOverrides,
@@ -84,8 +80,7 @@ export default class Statsig {
     layerName: string,
     keepDeviceValue: boolean = false,
   ): Layer {
-    this.ensureInitialized();
-    return Statsig.instance.getLayer(layerName, keepDeviceValue);
+    return Statsig.getClientX().getLayer(layerName, keepDeviceValue);
   }
 
   public static logEvent(
@@ -93,18 +88,16 @@ export default class Statsig {
     value: string | number | null = null,
     metadata: Record<string, string> | null = null,
   ): void {
-    this.ensureInitialized();
-    Statsig.instance.logEvent(eventName, value, metadata);
+    Statsig.getClientX().logEvent(eventName, value, metadata);
   }
 
   public static updateUser(user: StatsigUser | null): Promise<boolean> {
-    this.ensureInitialized();
-    return Statsig.instance.updateUser(user);
+    return Statsig.getClientX().updateUser(user);
   }
 
   public static shutdown() {
-    this.ensureInitialized();
-    Statsig.instance.shutdown();
+    Statsig.getClientX().shutdown();
+    Statsig.instance = null;
   }
 
   /**
@@ -113,8 +106,7 @@ export default class Statsig {
    * @param value - value to assign to the gate
    */
   public static overrideGate(gateName: string, value: boolean): void {
-    this.ensureInitialized();
-    Statsig.instance.overrideGate(gateName, value);
+    Statsig.getClientX().overrideGate(gateName, value);
   }
 
   /**
@@ -123,8 +115,7 @@ export default class Statsig {
    * @param value - value to assign to the config
    */
   public static overrideConfig(configName: string, value: object): void {
-    this.ensureInitialized();
-    Statsig.instance.overrideConfig(configName, value);
+    Statsig.getClientX().overrideConfig(configName, value);
   }
 
   /**
@@ -132,24 +123,21 @@ export default class Statsig {
    * @param name the gate override to remove
    */
   public static removeOverride(name?: string): void {
-    this.ensureInitialized();
-    Statsig.instance.removeOverride(name);
+    Statsig.getClientX().removeOverride(name);
   }
 
   /**
    * @param name the gate override to remove
    */
   public static removeGateOverride(name?: string): void {
-    this.ensureInitialized();
-    Statsig.instance.removeGateOverride(name);
+    Statsig.getClientX().removeGateOverride(name);
   }
 
   /**
    * @param name the config override to remove
    */
   public static removeConfigOverride(name?: string): void {
-    this.ensureInitialized();
-    Statsig.instance.removeConfigOverride(name);
+    Statsig.getClientX().removeConfigOverride(name);
   }
 
   /**
@@ -157,29 +145,27 @@ export default class Statsig {
    * @returns the gate overrides
    */
   public static getOverrides(): Record<string, any> {
-    this.ensureInitialized();
-    return Statsig.instance.getOverrides();
+    return Statsig.getClientX().getOverrides();
   }
 
   /**
    * @returns The local gate and config overrides
    */
   public static getAllOverrides(): StatsigOverrides {
-    this.ensureInitialized();
-    return Statsig.instance.getAllOverrides();
+    return Statsig.getClientX().getAllOverrides();
   }
 
   /**
    * @returns The Statsig stable ID used for device level experiments
    */
   public static getStableID(): string {
-    this.ensureInitialized();
-    return Statsig.instance.getStableID();
+    return Statsig.getClientX().getStableID();
   }
 
-  private static ensureInitialized() {
+  private static getClientX(): StatsigClient {
     if (!Statsig.instance) {
       throw new Error('Call and wait for initialize() to finish first.');
     }
+    return Statsig.instance;
   }
 }
