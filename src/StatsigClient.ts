@@ -536,7 +536,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     const user = this.identity.getUser();
     if (!this.options.getDisableErrorLogging()) {
       window.addEventListener('error', (e) => {
-        this.logger.logAppError(user, e.message, {
+        this.logger.logAppError(user, e.message ?? '', {
           filename: e.filename,
           lineno: e.lineno,
           colno: e.colno,
