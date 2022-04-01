@@ -26,6 +26,8 @@ type APIDynamicConfig = {
   is_user_in_experiment?: boolean;
   is_experiment_active?: boolean;
   allocated_experiment_name: string | null;
+  undelegated_secondary_exposures?: [];
+  explicit_parameters?: string[];
 };
 
 type APIInitializeData = {
@@ -301,23 +303,16 @@ export default class StatsigStore {
       keepDeviceValue,
       true /* isLayer */,
     );
-    const config = new Layer(
+    const config = Layer._create(
+      this.sdkInternal,
       layerName,
       finalValue?.value,
       finalValue?.rule_id,
       finalValue?.secondary_exposures,
+      finalValue?.undelegated_secondary_exposures,
       finalValue?.allocated_experiment_name ?? '',
+      finalValue?.explicit_parameters,
     );
-
-    this.sdkInternal
-      .getLogger()
-      .logLayerExposure(
-        this.sdkInternal.getCurrentUser(),
-        layerName,
-        config.getRuleID(),
-        config._getSecondaryExposures(),
-        config._getAllocatedExperimentName(),
-      );
 
     return config;
   }

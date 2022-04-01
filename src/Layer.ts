@@ -1,22 +1,55 @@
+import StatsigClient, { IHasStatsigInternal } from './StatsigClient';
+
 export default class Layer {
+  private sdkInternal: IHasStatsigInternal | null;
   private name: string;
   private value: Record<string, any>;
   private ruleID: string;
   private secondaryExposures: Record<string, string>[];
+  private undelegatedSecondaryExposures: Record<string, string>[];
   private allocatedExperimentName: string;
+  private explicitParameters: string[];
 
-  public constructor(
-    layerName: string,
+  private constructor(
+    sdkInternal: IHasStatsigInternal | null,
+    name: string,
     layerValue: Record<string, any> = {},
     ruleID: string = '',
     secondaryExposures: Record<string, string>[] = [],
+    undelegatedSecondaryExposures: Record<string, string>[] = [],
     allocatedExperimentName: string = '',
+    explicitParameters: string[] = [],
   ) {
-    this.name = layerName;
+    this.sdkInternal = sdkInternal;
+    this.name = name;
     this.value = JSON.parse(JSON.stringify(layerValue));
     this.ruleID = ruleID;
     this.secondaryExposures = secondaryExposures;
+    this.undelegatedSecondaryExposures = undelegatedSecondaryExposures;
     this.allocatedExperimentName = allocatedExperimentName;
+    this.explicitParameters = explicitParameters;
+  }
+
+  public static _create(
+    sdkInternal: IHasStatsigInternal,
+    name: string,
+    value: Record<string, any> = {},
+    ruleID: string = '',
+    secondaryExposures: Record<string, string>[] = [],
+    undelegatedSecondaryExposures: Record<string, string>[] = [],
+    allocatedExperimentName: string = '',
+    explicitParameters: string[] = [],
+  ): Layer {
+    return new Layer(
+      sdkInternal,
+      name,
+      value,
+      ruleID,
+      secondaryExposures,
+      undelegatedSecondaryExposures,
+      allocatedExperimentName,
+      explicitParameters,
+    );
   }
 
   public get<T>(
@@ -24,25 +57,30 @@ export default class Layer {
     defaultValue: T,
     typeGuard?: (value: unknown) => value is T,
   ): T {
-    const val = this.getValue(key, defaultValue);
+    const val = this.value[key];
 
     if (val == null) {
       return defaultValue;
     }
 
+    const logAndReturn = () => {
+      this.logLayerParameterExposure(key);
+      return val as unknown as T;
+    };
+
     if (typeGuard) {
-      return typeGuard(val) ? val : defaultValue;
+      return typeGuard(val) ? logAndReturn() : defaultValue;
     }
 
     if (defaultValue == null) {
-      return val as unknown as T;
+      return logAndReturn();
     }
 
     if (
       typeof val === typeof defaultValue &&
       Array.isArray(defaultValue) === Array.isArray(val)
     ) {
-      return val as unknown as T;
+      return logAndReturn();
     }
 
     return defaultValue;
@@ -52,11 +90,16 @@ export default class Layer {
     key: string,
     defaultValue?: any | null,
   ): boolean | number | string | object | Array<any> | null {
-    if (defaultValue == null) {
+    if (defaultValue == undefined) {
       defaultValue = null;
     }
 
-    return this.value[key] ?? defaultValue;
+    const val = this.value[key];
+    if (val != null) {
+      this.logLayerParameterExposure(key);
+    }
+
+    return val ?? defaultValue;
   }
 
   public getRuleID(): string {
@@ -73,5 +116,27 @@ export default class Layer {
 
   public _getAllocatedExperimentName(): string {
     return this.allocatedExperimentName;
+  }
+
+  private logLayerParameterExposure(parameterName: string) {
+    let allocatedExperiment = '';
+    let exposures = this.undelegatedSecondaryExposures;
+    const isExplicit = this.explicitParameters.includes(parameterName);
+    if (isExplicit) {
+      allocatedExperiment = this.allocatedExperimentName;
+      exposures = this.secondaryExposures;
+    }
+
+    this.sdkInternal
+      ?.getLogger()
+      .logLayerExposure(
+        this.sdkInternal.getCurrentUser(),
+        this.name,
+        this.ruleID,
+        exposures,
+        allocatedExperiment,
+        parameterName,
+        isExplicit,
+      );
   }
 }

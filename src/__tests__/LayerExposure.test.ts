@@ -1,0 +1,234 @@
+/**
+ * @jest-environment jsdom
+ */
+
+import Statsig from '../index';
+import { getHashValue } from '../utils/Hashing';
+
+describe('Layer Exposure Logging', () => {
+  const response = {
+    feature_gates: {},
+    dynamic_configs: {},
+    layer_configs: {},
+    sdkParams: {},
+    has_updates: true,
+    time: 1647984444418,
+  };
+  var logs;
+
+  beforeAll(async () => {
+    // @ts-ignore
+    global.fetch = jest.fn((url, params) => {
+      if (url.toString().includes('rgstr')) {
+        logs = JSON.parse(params.body as string);
+        return Promise.resolve({ ok: true });
+      }
+
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve(response),
+      });
+    });
+  });
+
+  beforeEach(() => {
+    logs = {};
+    response.layer_configs = {};
+  });
+
+  it('does not log on invalid types', async () => {
+    response.layer_configs[getHashValue('layer')] = {
+      value: { an_int: 99 },
+    };
+
+    await Statsig.initialize('client-key');
+
+    let layer = Statsig.getLayer('layer');
+    layer.get('an_int', '');
+    Statsig.shutdown();
+
+    expect(logs).toEqual({});
+  });
+
+  describe.each([['getValue'], ['get']])('with method "%s"', (method) => {
+    it('does not log a non-existent key', async () => {
+      await Statsig.initialize('client-key');
+
+      let layer = Statsig.getLayer('layer');
+      layer[method]('an_int', 0);
+      Statsig.shutdown();
+
+      expect(logs).toEqual({});
+    });
+
+    it('logs layers without an allocated experiment correctly', async () => {
+      response.layer_configs[getHashValue('layer')] = {
+        value: { an_int: 99 },
+        rule_id: 'default',
+        secondary_exposures: [{ gate: 'secondary_exp' }],
+        undelegated_secondary_exposures: [
+          { gate: 'undelegated_secondary_exp' },
+        ],
+        allocated_experiment_name: '',
+        explicit_parameters: [],
+      };
+
+      await Statsig.initialize('client-key');
+
+      let layer = Statsig.getLayer('layer');
+      layer[method]('an_int', 0);
+      Statsig.shutdown();
+
+      expect(logs['events'].length).toEqual(1);
+
+      expect(logs['events'][0]).toEqual(
+        expect.objectContaining({
+          metadata: {
+            config: 'layer',
+            ruleID: 'default',
+            allocatedExperiment: '',
+            parameterName: 'an_int',
+            isExplicitParameter: 'false',
+          },
+          secondaryExposures: [{ gate: 'undelegated_secondary_exp' }],
+        }),
+      );
+    });
+
+    it('logs explicit and implicit parameters correctly', async () => {
+      response.layer_configs[getHashValue('layer')] = {
+        value: { an_int: 99, a_string: 'value' },
+        rule_id: 'default',
+        secondary_exposures: [{ gate: 'secondary_exp' }],
+        undelegated_secondary_exposures: [
+          { gate: 'undelegated_secondary_exp' },
+        ],
+        allocated_experiment_name: 'the_allocated_experiment',
+        explicit_parameters: ['an_int'],
+      };
+
+      await Statsig.initialize('client-key');
+
+      let layer = Statsig.getLayer('layer');
+      layer[method]('an_int', 0);
+      layer[method]('a_string', '');
+      Statsig.shutdown();
+
+      expect(logs['events'].length).toEqual(2);
+
+      expect(logs['events'][0]).toEqual(
+        expect.objectContaining({
+          metadata: {
+            config: 'layer',
+            ruleID: 'default',
+            allocatedExperiment: 'the_allocated_experiment',
+            parameterName: 'an_int',
+            isExplicitParameter: 'true',
+          },
+          secondaryExposures: [{ gate: 'secondary_exp' }],
+        }),
+      );
+
+      expect(logs['events'][1]).toEqual(
+        expect.objectContaining({
+          metadata: {
+            config: 'layer',
+            ruleID: 'default',
+            allocatedExperiment: '',
+            parameterName: 'a_string',
+            isExplicitParameter: 'false',
+          },
+          secondaryExposures: [{ gate: 'undelegated_secondary_exp' }],
+        }),
+      );
+    });
+
+    it('logs different object types correctly', async () => {
+      response.layer_configs[getHashValue('layer')] = {
+        value: {
+          a_bool: true,
+          an_int: 99,
+          a_double: 1.23,
+          a_long: 1,
+          a_string: 'value',
+          an_array: ['a', 'b'],
+          an_object: { key: 'value' },
+        },
+      };
+
+      await Statsig.initialize('client-key');
+
+      let layer = Statsig.getLayer('layer');
+      layer[method]('a_bool', false);
+      layer[method]('an_int', 0);
+      layer[method]('a_double', 0.0);
+      layer[method]('a_long', 0);
+      layer[method]('a_string', '');
+      layer[method]('an_array', []);
+      layer[method]('an_object', {});
+      Statsig.shutdown();
+
+      expect(logs['events'].length).toEqual(7);
+
+      expect(logs['events'][0]['metadata']['parameterName']).toEqual('a_bool');
+      expect(logs['events'][1]['metadata']['parameterName']).toEqual('an_int');
+      expect(logs['events'][2]['metadata']['parameterName']).toEqual(
+        'a_double',
+      );
+      expect(logs['events'][3]['metadata']['parameterName']).toEqual('a_long');
+      expect(logs['events'][4]['metadata']['parameterName']).toEqual(
+        'a_string',
+      );
+      expect(logs['events'][5]['metadata']['parameterName']).toEqual(
+        'an_array',
+      );
+      expect(logs['events'][6]['metadata']['parameterName']).toEqual(
+        'an_object',
+      );
+    });
+
+    it('does not log when shutdown', async () => {
+      response.layer_configs[getHashValue('layer')] = {
+        value: {
+          a_bool: true,
+        },
+      };
+
+      await Statsig.initialize('client-key');
+
+      let layer = Statsig.getLayer('layer');
+      Statsig.shutdown();
+
+      layer[method]('a_bool', false);
+
+      expect(logs).toEqual({});
+    });
+
+    it('logs the correct name and user values', async () => {
+      response.layer_configs[getHashValue('layer')] = {
+        value: { an_int: 99 },
+      };
+
+      await Statsig.initialize('client-key', {
+        userID: 'dloomb',
+        email: 'dan@loomb.io',
+      });
+
+      let layer = Statsig.getLayer('layer');
+      layer[method]('an_int', 0);
+      Statsig.shutdown();
+
+      expect(logs['events'].length).toEqual(1);
+
+      expect(logs['events'][0]).toEqual(
+        expect.objectContaining({
+          eventName: 'statsig::layer_exposure',
+          user: {
+            userID: 'dloomb',
+            email: 'dan@loomb.io',
+          },
+        }),
+      );
+    });
+  });
+});

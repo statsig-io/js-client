@@ -169,8 +169,17 @@ export default class StatsigLogger {
     ruleID: string,
     secondaryExposures: Record<string, string>[],
     allocatedExperiment: string,
+    parameterName: string,
+    isExplicitParameter: boolean,
   ) {
-    const dedupeKey = configName + ruleID;
+    const dedupeKey = [
+      configName,
+      ruleID,
+      allocatedExperiment,
+      parameterName,
+      String(isExplicitParameter),
+    ].join('|');
+
     if (!this.shouldLogExposure(dedupeKey)) {
       return;
     }
@@ -181,6 +190,8 @@ export default class StatsigLogger {
       config: configName,
       ruleID: ruleID,
       allocatedExperiment,
+      parameterName,
+      isExplicitParameter: String(isExplicitParameter),
     });
     configExposure.setSecondaryExposures(secondaryExposures);
     this.log(configExposure);
@@ -216,7 +227,7 @@ export default class StatsigLogger {
       domInteractiveMs: navEntry.domInteractive - navEntry.startTime,
       redirectCount: navEntry.redirectCount,
     });
-    
+
     this.log(metricsEvent);
   }
 
