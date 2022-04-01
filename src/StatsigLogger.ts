@@ -26,6 +26,9 @@ const MS_RETRY_LOGS_CUTOFF = 5 * 24 * 60 * 60 * 1000;
 const MAX_BATCHES_TO_RETRY = 100;
 const MAX_FAILED_EVENTS = 1000;
 const MAX_LOCAL_STORAGE_SIZE = 1024 * MAX_FAILED_EVENTS;
+const MAX_ERRORS_TO_LOG = 10;
+
+const errorsLogged = new Set();
 
 export default class StatsigLogger {
   private sdkInternal: IHasStatsigInternal;
@@ -191,11 +194,20 @@ export default class StatsigLogger {
     message: string,
     metadata: object,
   ) {
+    const trimmedMessage = message.substring(0, 128);
+    if (
+      this.loggedErrors.has(trimmedMessage) || 
+      this.loggedErrors.size > MAX_ERRORS_TO_LOG
+    ) {
+      return;
+    }
+
     const errorEvent = new LogEvent(APP_ERROR_EVENT);
     errorEvent.setUser(user);
-    errorEvent.setValue(message);
+    errorEvent.setValue(trimmedMessage);
     errorEvent.setMetadata(metadata);
     this.log(errorEvent);
+    this.loggedErrors.add(trimmedMessage);
   }
 
   public logAppMetrics(user: StatsigUser | null) {
