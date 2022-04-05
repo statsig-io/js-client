@@ -271,7 +271,7 @@ describe('Verify behavior of StatsigClient', () => {
   });
 
   test('that localMode supports a dummy statsig complete with overrides', async () => {
-    expect.assertions(7);
+    expect.assertions(8);
     parsedRequestBody = null;
     const statsig = new StatsigClient(
       sdkKey,
@@ -297,6 +297,8 @@ describe('Verify behavior of StatsigClient', () => {
 
     expect(statsig.checkGate('test_gate')).toEqual(false);
     expect(statsig.getConfig('test_config').getValue()).toEqual({});
+
+    expect(statsig.updateUser({ userID: '123456' })).resolves.not.toThrow();
   });
 
   test('That bootstrapping values works', async () => {

@@ -525,7 +525,7 @@ describe('Verify behavior of top level index functions', () => {
 
     const spy = jest.spyOn(statsig.instance.network, 'fetchValues');
     await expect(statsig.updateUser({ userID: '456' })).resolves.not.toThrow();
-    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy).toHaveBeenCalledTimes(0);
   });
 
   // React Native specific tests

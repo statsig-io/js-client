@@ -214,6 +214,11 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     }
 
     const userCacheKey = this.getCurrentUserCacheKey();
+
+    if (this.options.getLocalModeEnabled()) {
+      return Promise.resolve();
+    }
+
     this.pendingInitPromise = this.network
       .fetchValues(
         this.identity.getUser(),
@@ -342,7 +347,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   }
 
   public async updateUser(user: StatsigUser | null): Promise<boolean> {
-    if (!this.initCalled) {
+    if (!this.initializeCalled()) {
       throw new Error('Call initialize() first.');
     }
 
@@ -356,6 +361,10 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       await this.pendingInitPromise;
     }
 
+    if (this.options.getLocalModeEnabled()) {
+      return Promise.resolve(true);
+    }
+
     this.pendingInitPromise = this.network
       .fetchValues(
         currentUser,
@@ -363,9 +372,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         async (json: Record<string, any>): Promise<void> => {
           await this.store.save(userCacheKey, json);
         },
-        (e: Error) => {
-          throw e;
-        },
+        (e: Error) => {},
       )
       .finally(() => {
         this.pendingInitPromise = null;
@@ -548,13 +555,13 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       if (!document || !setTimeout) {
         return;
       }
-      
+
       const work = () => {
         setTimeout(() => {
           this.logger.logAppMetrics(user);
         }, 1000);
       };
-      
+
       if (document.readyState === 'complete') {
         work();
       } else {
