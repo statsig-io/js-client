@@ -514,6 +514,20 @@ describe('Verify behavior of top level index functions', () => {
     expect(statsig.getStableID()).toEqual('666');
   });
 
+  test('LocalMode with updateUser short circuits the network requests', async () => {
+    expect.assertions(2);
+
+    await statsig.initialize(
+      'client-key',
+      { userID: '123' },
+      { localMode: true },
+    );
+
+    const spy = jest.spyOn(statsig.instance.network, 'fetchValues');
+    await expect(statsig.updateUser({ userID: '456' })).resolves.not.toThrow();
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
   // React Native specific tests
   test('set react native uuid', async () => {
     const RNUUID = {
