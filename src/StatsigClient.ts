@@ -185,6 +185,8 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       // with initializeValues
       this.ready = true;
       this.initCalled = true;
+      this.handleOptionalLogging();
+      this.logger.sendSavedRequests();
     }
   }
 
