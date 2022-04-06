@@ -2,7 +2,6 @@ import Layer from '../Layer';
 
 describe('Verify behavior of Layer', () => {
   const testLayer = Layer._create(
-    null,
     'test_layer',
     {
       bool: true,
@@ -27,7 +26,7 @@ describe('Verify behavior of Layer', () => {
   });
 
   test('Test constructor', () => {
-    const layer = Layer._create(null, 'name', { test: 123 }, 'default');
+    const layer = Layer._create('name', { test: 123 }, 'default');
     expect(layer.getRuleID()).toStrictEqual('default');
   });
 
@@ -106,7 +105,7 @@ describe('Verify behavior of Layer', () => {
   });
 
   test('Behavior of dummy layers', () => {
-    const dummyLayer = Layer._create(null, 'layerName');
+    const dummyLayer = Layer._create('layerName');
     expect(dummyLayer.get('', {})).toEqual({});
     expect(dummyLayer.get('test_field', null)).toEqual(null);
     expect(dummyLayer.get('str', 'default_value')).toEqual('default_value');

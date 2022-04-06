@@ -304,10 +304,10 @@ export default class StatsigStore {
       true /* isLayer */,
     );
     const config = Layer._create(
-      this.sdkInternal,
       layerName,
       finalValue?.value,
       finalValue?.rule_id,
+      this.sdkInternal,
       finalValue?.secondary_exposures,
       finalValue?.undelegated_secondary_exposures,
       finalValue?.allocated_experiment_name ?? '',

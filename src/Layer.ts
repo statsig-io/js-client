@@ -11,10 +11,10 @@ export default class Layer {
   private explicitParameters: string[];
 
   private constructor(
-    sdkInternal: IHasStatsigInternal | null,
     name: string,
     layerValue: Record<string, any> = {},
     ruleID: string = '',
+    sdkInternal: IHasStatsigInternal | null = null,
     secondaryExposures: Record<string, string>[] = [],
     undelegatedSecondaryExposures: Record<string, string>[] = [],
     allocatedExperimentName: string = '',
@@ -31,20 +31,20 @@ export default class Layer {
   }
 
   public static _create(
-    sdkInternal: IHasStatsigInternal,
     name: string,
     value: Record<string, any> = {},
     ruleID: string = '',
+    sdkInternal: IHasStatsigInternal | null = null,
     secondaryExposures: Record<string, string>[] = [],
     undelegatedSecondaryExposures: Record<string, string>[] = [],
     allocatedExperimentName: string = '',
     explicitParameters: string[] = [],
   ): Layer {
     return new Layer(
-      sdkInternal,
       name,
       value,
       ruleID,
+      sdkInternal,
       secondaryExposures,
       undelegatedSecondaryExposures,
       allocatedExperimentName,

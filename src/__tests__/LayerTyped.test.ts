@@ -2,7 +2,6 @@ import Layer from '../Layer';
 
 describe('Verify behavior of Layer', () => {
   const testLayer = Layer._create(
-    null,
     'test_layer',
     {
       bool: true,
