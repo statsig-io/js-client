@@ -100,6 +100,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   private ready: boolean;
   private initCalled: boolean = false;
   private pendingInitPromise: Promise<void> | null = null;
+  private optionalLoggingSetup: boolean = false;
 
   private network: StatsigNetwork;
   public getNetwork(): StatsigNetwork {
@@ -185,9 +186,11 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       // with initializeValues
       this.ready = true;
       this.initCalled = true;
-      this.handleOptionalLogging();
-      this.logger.sendSavedRequests();
     }
+    // we wont have access to window/document/localStorage if these run on the server
+    // so try to run whenever this is called
+    this.handleOptionalLogging();
+    this.logger.sendSavedRequests();
   }
 
   public async initializeAsync(): Promise<void> {
@@ -539,7 +542,10 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   }
 
   private handleOptionalLogging(): void {
-    if (!window || !window.addEventListener) {
+    if (typeof window === 'undefined' || !window || !window.addEventListener) {
+      return;
+    }
+    if (this.optionalLoggingSetup) {
       return;
     }
     const user = this.identity.getUser();
@@ -554,7 +560,12 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       });
     }
     if (!this.options.getDisableAutoMetricsLogging()) {
-      if (!document || !setTimeout) {
+      if (
+        typeof document === 'undefined' ||
+        !document ||
+        typeof setTimeout === 'undefined' ||
+        !setTimeout
+      ) {
         return;
       }
 
@@ -570,6 +581,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         window.addEventListener('load', () => work());
       }
     }
+    this.optionalLoggingSetup = true;
   }
 
   private handleAppStateChange(nextAppState: AppStateStatus): void {
