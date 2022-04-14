@@ -9,10 +9,11 @@ export default class StatsigLocalStorage {
       window != null &&
       window.localStorage != null
     ) {
-      return window.localStorage.getItem(key);
-    } else {
-      return this.fallbackSessionCache[key];
+      try {
+        return window.localStorage.getItem(key);
+      } catch (e) {}
     }
+    return this.fallbackSessionCache[key] ?? null;
   }
 
   public static setItem(key: string, value: string): void {
@@ -24,10 +25,10 @@ export default class StatsigLocalStorage {
     ) {
       try {
         window.localStorage.setItem(key, value);
+        return;
       } catch (e) {}
-    } else {
-      this.fallbackSessionCache[key] = value;
     }
+    this.fallbackSessionCache[key] = value;
   }
 
   public static removeItem(key: string): void {
@@ -37,10 +38,12 @@ export default class StatsigLocalStorage {
       window != null &&
       window.localStorage != null
     ) {
-      window.localStorage.removeItem(key);
-    } else {
-      delete this.fallbackSessionCache[key];
+      try {
+        window.localStorage.removeItem(key);
+        return;
+      } catch (e) {}
     }
+    delete this.fallbackSessionCache[key];
   }
 
   public static cleanup(): void {
