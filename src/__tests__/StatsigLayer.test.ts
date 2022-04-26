@@ -118,9 +118,7 @@ describe('Statsig Layers', () => {
     expect(config.get('a_key', 'ERR')).toBe('a_config_value');
 
     let another = client.getLayer(layerConfigWithoutExperimentKey);
-    expect(another.get('a_key', 'ERR')).toBe(
-      'another_layer_default_value',
-    );
+    expect(another.get('a_key', 'ERR')).toBe('another_layer_default_value');
   });
 
   it('returns a sticky value', async () => {
@@ -136,7 +134,7 @@ describe('Statsig Layers', () => {
       is_experiment_active: true,
       allocated_experiment_name: hashedAnotherConfigKey,
     };
-    await client.getStore().save(client.getCurrentUserCacheKey(), data);
+    await client.getStore().save(data);
 
     config = client.getLayer(layerConfigWithExperimentKey, true);
     expect(config.get('a_key', 'ERR')).toBe('a_config_value');
@@ -155,7 +153,7 @@ describe('Statsig Layers', () => {
       is_experiment_active: true,
       allocated_experiment_name: hashedAnotherConfigKey,
     };
-    await client.getStore().save(client.getCurrentUserCacheKey(), data);
+    await client.getStore().save(data);
 
     config = client.getLayer(layerConfigWithExperimentKey, false);
     expect(config.get('a_key', 'ERR')).toBe('another_value');

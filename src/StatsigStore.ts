@@ -56,12 +56,15 @@ export default class StatsigStore {
 
   private loaded: boolean;
   private values: Record<string, UserCacheValues | undefined>;
+  private userValues: UserCacheValues;
   private stickyDeviceExperiments: Record<string, APIDynamicConfig>;
+  private userCacheKey: string;
 
   public constructor(sdkInternal: IHasStatsigInternal) {
     this.sdkInternal = sdkInternal;
+    this.userCacheKey = this.sdkInternal.getCurrentUserCacheKey();
     this.values = {};
-    this.values[this.getCurrentUserCacheKey()] = {
+    this.userValues = {
       feature_gates: {},
       dynamic_configs: {},
       sticky_experiments: {},
@@ -71,6 +74,11 @@ export default class StatsigStore {
     this.stickyDeviceExperiments = {};
     this.loaded = false;
     this.loadFromLocalStorage();
+  }
+
+  public updateUser() {
+    this.userCacheKey = this.sdkInternal.getCurrentUserCacheKey();
+    this.setUserValueFromCache();
   }
 
   public async loadFromAsyncStorage(): Promise<void> {
@@ -88,18 +96,11 @@ export default class StatsigStore {
     // when clients try to check gates/configs/etc after this point
     this.loaded = true;
     try {
-      let userValues = this.values[key] ?? {
-        feature_gates: {},
-        dynamic_configs: {},
-        layer_configs: {},
-        sticky_experiments: {},
-        time: Date.now(),
-      };
-      userValues.feature_gates = initializeValues.feature_gates ?? {};
-      userValues.dynamic_configs = initializeValues.dynamic_configs ?? {};
-      userValues.layer_configs = initializeValues.layer_configs ?? {};
-      userValues.time = Date.now();
-      this.values[key] = userValues;
+      this.userValues.feature_gates = initializeValues.feature_gates ?? {};
+      this.userValues.dynamic_configs = initializeValues.dynamic_configs ?? {};
+      this.userValues.layer_configs = initializeValues.layer_configs ?? {};
+      this.userValues.time = Date.now();
+      this.values[key] = this.userValues;
       this.loadOverrides();
     } catch (_e) {
       return;
@@ -127,6 +128,7 @@ export default class StatsigStore {
   ): void {
     try {
       this.values = allValues ? JSON.parse(allValues) : this.values;
+      this.setUserValueFromCache();
     } catch (e) {
       // Cached value corrupted, remove cache
       this.removeFromStorage(INTERNAL_STORE_KEY);
@@ -146,6 +148,21 @@ export default class StatsigStore {
     this.loadOverrides();
   }
 
+  private setUserValueFromCache() {
+    let cachedValues = this.values[this.userCacheKey];
+    if (cachedValues == null) {
+      this.userValues = {
+        feature_gates: {},
+        dynamic_configs: {},
+        sticky_experiments: {},
+        layer_configs: {},
+        time: 0,
+      };
+    } else {
+      this.userValues = cachedValues;
+    }
+  }
+
   private removeFromStorage(key: string) {
     StatsigAsyncStorage.removeItemAsync(key);
     StatsigLocalStorage.removeItem(key);
@@ -162,11 +179,17 @@ export default class StatsigStore {
     }
   }
 
-  public async save(
-    userCacheKey: string,
-    jsonConfigs: Record<string, any>,
-  ): Promise<void> {
-    // We append to the values after removing one, so must have at most MAX - 1
+  public async save(jsonConfigs: Record<string, any>): Promise<void> {
+    this.userValues = {
+      ...(jsonConfigs as APIInitializeData),
+      sticky_experiments:
+        this.values[this.userCacheKey]?.sticky_experiments ?? {},
+      time: Date.now(),
+    };
+
+    this.values[this.userCacheKey] = this.userValues;
+
+    // trim values to only have the max allowed
     const filteredValues = Object.entries(this.values)
       .sort(({ 1: a }, { 1: b }) => {
         if (a == null) {
@@ -177,13 +200,8 @@ export default class StatsigStore {
         }
         return b?.time - a?.time;
       })
-      .slice(0, MAX_USER_VALUE_CACHED - 1);
+      .slice(0, MAX_USER_VALUE_CACHED);
     this.values = Object.fromEntries(filteredValues);
-    this.values[userCacheKey] = {
-      ...(jsonConfigs as APIInitializeData),
-      sticky_experiments: this.values[userCacheKey]?.sticky_experiments ?? {},
-      time: Date.now(),
-    };
     if (StatsigAsyncStorage.asyncStorage) {
       await StatsigAsyncStorage.setItemAsync(
         INTERNAL_STORE_KEY,
@@ -210,10 +228,7 @@ export default class StatsigStore {
         secondary_exposures: [],
       };
     } else {
-      gateValue =
-        this.values[this.getCurrentUserCacheKey()]?.feature_gates[
-          gateNameHash
-        ] ?? gateValue;
+      gateValue = this.userValues?.feature_gates[gateNameHash] ?? gateValue;
     }
     this.sdkInternal
       .getLogger()
@@ -239,15 +254,8 @@ export default class StatsigStore {
         this.overrides.configs[configName],
         'override',
       );
-    } else if (
-      this.values[this.getCurrentUserCacheKey()]?.dynamic_configs[
-        configNameHash
-      ] != null
-    ) {
-      const rawConfigValue =
-        this.values[this.getCurrentUserCacheKey()]?.dynamic_configs[
-          configNameHash
-        ];
+    } else if (this.userValues?.dynamic_configs[configNameHash] != null) {
+      const rawConfigValue = this.userValues?.dynamic_configs[configNameHash];
       configValue = this.createDynamicConfig(configName, rawConfigValue);
     }
     this.sdkInternal
@@ -366,19 +374,14 @@ export default class StatsigStore {
     }
   }
 
-  private getCurrentUserCacheKey(): string {
-    return this.sdkInternal.getCurrentUserCacheKey();
-  }
-
   private getLatestValue(
     name: string,
     topLevelKey: 'layer_configs' | 'dynamic_configs',
   ): APIDynamicConfig | undefined {
     const hash = getHashValue(name);
-    const userCacheKey = this.getCurrentUserCacheKey();
-    const userValues = this.values[userCacheKey];
     return (
-      userValues?.[topLevelKey]?.[hash] ?? userValues?.[topLevelKey]?.[name]
+      this.userValues?.[topLevelKey]?.[hash] ??
+      this.userValues?.[topLevelKey]?.[name]
     );
   }
 
@@ -441,12 +444,10 @@ export default class StatsigStore {
 
   private getStickyValue(name: string) {
     const key = getHashValue(name);
-    const userCacheKey = this.getCurrentUserCacheKey();
-
-    const userValues = this.values[userCacheKey];
 
     return (
-      userValues?.sticky_experiments[key] ?? this.stickyDeviceExperiments[key]
+      this.userValues?.sticky_experiments[key] ??
+      this.stickyDeviceExperiments[key]
     );
   }
 
@@ -459,30 +460,27 @@ export default class StatsigStore {
       return;
     }
 
-    const userCacheKey = this.getCurrentUserCacheKey();
     const key = getHashValue(name);
-    const userValues = this.values[userCacheKey];
-
     if (config.is_device_based === true) {
       // save sticky values in memory
       this.stickyDeviceExperiments[key] = config;
-    } else if (userValues) {
-      userValues.sticky_experiments[key] = config;
+    } else if (this.userValues?.sticky_experiments) {
+      this.userValues.sticky_experiments[key] = config;
     }
     // also save to persistent storage
     this.saveStickyValuesToStorage();
   }
 
   private removeStickyValue(name: string) {
-    const userCacheKey = this.getCurrentUserCacheKey();
     const key = getHashValue(name);
 
-    delete this.values[userCacheKey]?.sticky_experiments[key];
+    delete this.userValues?.sticky_experiments[key];
     delete this.stickyDeviceExperiments[key];
     this.saveStickyValuesToStorage();
   }
 
   private saveStickyValuesToStorage() {
+    this.values[this.userCacheKey] = this.userValues;
     if (StatsigAsyncStorage.asyncStorage) {
       StatsigAsyncStorage.setItemAsync(
         INTERNAL_STORE_KEY,
