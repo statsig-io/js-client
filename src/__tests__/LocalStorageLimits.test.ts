@@ -163,63 +163,61 @@ describe('Verify local storage limits are enforced', () => {
     };
   });
 
-  test('Verify loading a large list gets truncated', () => {
+  test('Verify loading a large list gets truncated', async () => {
     expect.assertions(14);
     const client = new StatsigClient(sdkKey, null);
     expect(client.getStore()).not.toBeNull();
-    return client.initializeAsync().then(() => {
-      // @ts-ignore
-      const store = client.getStore();
-      expect(store).not.toBeNull();
+    await client.initializeAsync();
+    const store = client.getStore();
+    expect(store).not.toBeNull();
+    const storeObject = JSON.parse(localStorage.getItem(INTERNAL_STORE_KEY));
 
-      const storeObject = JSON.parse(localStorage.getItem(INTERNAL_STORE_KEY));
+    // When we save the new user we initialized with, the limit will get applied
+    expect(Object.keys(storeObject).length).toEqual(10);
 
-      // When we save the new user we initialized with, the limit will get applied
-      expect(Object.keys(storeObject).length).toEqual(10);
+    // empty string is correctly removed on save
+    expect('' in storeObject).toBeFalsy();
+    expect('third' in storeObject).toBeFalsy();
+    expect('first' in storeObject).toBeFalsy();
+    expect('second' in storeObject).toBeTruthy();
+    expect('seventh' in storeObject).toBeFalsy();
+    expect('eighth' in storeObject).toBeFalsy();
+    expect('overflow3' in storeObject).toBeTruthy();
 
-      // empty string is correctly removed on save
-      expect('' in storeObject).toBeFalsy();
-      expect('third' in storeObject).toBeFalsy();
-      expect('first' in storeObject).toBeFalsy();
-      expect('second' in storeObject).toBeTruthy();
-      expect('seventh' in storeObject).toBeFalsy();
-      expect('eighth' in storeObject).toBeFalsy();
-      expect('overflow3' in storeObject).toBeTruthy();
-
-      store.save('newUser', {
-        feature_gates: gates,
-        dynamic_configs: configs,
-      });
-
-      expect(
-        Object.keys(JSON.parse(localStorage.getItem(INTERNAL_STORE_KEY)))
-          .length,
-      ).toEqual(10);
-
-      store.save('newUser2', {
-        feature_gates: gates,
-        dynamic_configs: configs,
-      });
-
-      expect(
-        Object.keys(JSON.parse(localStorage.getItem(INTERNAL_STORE_KEY)))
-          .length,
-      ).toEqual(10);
-
-      // Try adding back an empty string, verify something else is evicted
-      store.save('', {
-        feature_gates: gates,
-        dynamic_configs: configs,
-      });
-
-      expect(
-        Object.keys(JSON.parse(localStorage.getItem(INTERNAL_STORE_KEY)))
-          .length,
-      ).toEqual(10);
-
-      expect(
-        '' in JSON.parse(localStorage.getItem(INTERNAL_STORE_KEY)),
-      ).toBeTruthy();
+    await client.updateUser({ userID: 'newUser' });
+    store.save({
+      feature_gates: gates,
+      dynamic_configs: configs,
     });
+
+    expect(
+      Object.keys(JSON.parse(localStorage.getItem(INTERNAL_STORE_KEY))).length,
+    ).toEqual(10);
+
+    await client.updateUser({ userID: 'newUser2' });
+    store.save({
+      feature_gates: gates,
+      dynamic_configs: configs,
+    });
+
+    expect(
+      Object.keys(JSON.parse(localStorage.getItem(INTERNAL_STORE_KEY))).length,
+    ).toEqual(10);
+
+    // Try adding back an empty string, verify something else is evicted
+    await client.updateUser({ userID: '' });
+    store.save({
+      feature_gates: gates,
+      dynamic_configs: configs,
+    });
+
+    expect(
+      Object.keys(JSON.parse(localStorage.getItem(INTERNAL_STORE_KEY))).length,
+    ).toEqual(10);
+
+    expect(
+      client.getCurrentUserCacheKey() in
+        JSON.parse(localStorage.getItem(INTERNAL_STORE_KEY)),
+    ).toBeTruthy();
   });
 });

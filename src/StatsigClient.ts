@@ -1,4 +1,5 @@
 import DynamicConfig from './DynamicConfig';
+import Layer from './Layer';
 import LogEvent from './LogEvent';
 import StatsigIdentity, { UUID } from './StatsigIdentity';
 import type {
@@ -17,7 +18,6 @@ import { SimpleHash } from './utils/Hashing';
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import type { AsyncStorage } from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
-import Layer from './Layer';
 
 const MAX_VALUE_SIZE = 64;
 const MAX_OBJ_SIZE = 1024;
@@ -229,7 +229,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         this.identity.getUser(),
         this.options.getInitTimeoutMs(),
         async (json: Record<string, any>): Promise<void> => {
-          await this.store.save(userCacheKey, json);
+          await this.store.save(json);
           return;
         },
         (e: Error) => {},
@@ -357,10 +357,10 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     }
 
     this.identity.updateUser(this.normalizeUser(user));
+    this.store.updateUser();
     this.logger.resetDedupeKeys();
 
     const currentUser = this.identity.getUser();
-    const userCacheKey = this.getCurrentUserCacheKey();
 
     if (this.pendingInitPromise != null) {
       await this.pendingInitPromise;
@@ -375,7 +375,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         currentUser,
         this.options.getInitTimeoutMs(),
         async (json: Record<string, any>): Promise<void> => {
-          await this.store.save(userCacheKey, json);
+          await this.store.save(json);
         },
         (e: Error) => {},
       )
