@@ -228,7 +228,7 @@ export default class StatsigStore {
         secondary_exposures: [],
       };
     } else {
-      gateValue = this.userValues.feature_gates[gateNameHash] ?? gateValue;
+      gateValue = this.userValues?.feature_gates[gateNameHash] ?? gateValue;
     }
     this.sdkInternal
       .getLogger()
@@ -254,8 +254,8 @@ export default class StatsigStore {
         this.overrides.configs[configName],
         'override',
       );
-    } else if (this.userValues.dynamic_configs[configNameHash] != null) {
-      const rawConfigValue = this.userValues.dynamic_configs[configNameHash];
+    } else if (this.userValues?.dynamic_configs[configNameHash] != null) {
+      const rawConfigValue = this.userValues?.dynamic_configs[configNameHash];
       configValue = this.createDynamicConfig(configName, rawConfigValue);
     }
     this.sdkInternal
@@ -446,7 +446,7 @@ export default class StatsigStore {
     const key = getHashValue(name);
 
     return (
-      this.userValues.sticky_experiments[key] ??
+      this.userValues?.sticky_experiments[key] ??
       this.stickyDeviceExperiments[key]
     );
   }
@@ -464,7 +464,7 @@ export default class StatsigStore {
     if (config.is_device_based === true) {
       // save sticky values in memory
       this.stickyDeviceExperiments[key] = config;
-    } else {
+    } else if (this.userValues?.sticky_experiments) {
       this.userValues.sticky_experiments[key] = config;
     }
     // also save to persistent storage
@@ -474,7 +474,7 @@ export default class StatsigStore {
   private removeStickyValue(name: string) {
     const key = getHashValue(name);
 
-    delete this.userValues.sticky_experiments[key];
+    delete this.userValues?.sticky_experiments[key];
     delete this.stickyDeviceExperiments[key];
     this.saveStickyValuesToStorage();
   }

@@ -516,28 +516,38 @@ describe('Verify behavior of InternalStore', () => {
     );
   });
 
-  // test('test that we purge the oldest cache when we have more than 10', async () => {
-  //   expect.assertions(2);
-  //   const statsig = new StatsigClient(sdkKey, { userID: '1' });
-  //   await statsig.initializeAsync();
-  //   const store = statsig.getStore();
+  test('test that we purge the oldest cache when we have more than 10', async () => {
+    expect.assertions(2);
+    const statsig = new StatsigClient(sdkKey, { userID: '1' });
+    await statsig.initializeAsync();
+    const store = statsig.getStore();
 
-  //   store.save('2', generateTestConfigs('v0', true, true));
-  //   store.save('3', generateTestConfigs('v0', true, true));
-  //   store.save('4', generateTestConfigs('v0', true, true));
-  //   store.save('5', generateTestConfigs('v0', true, true));
-  //   store.save('6', generateTestConfigs('v0', true, true));
-  //   store.save('7', generateTestConfigs('v0', true, true));
-  //   store.save('8', generateTestConfigs('v0', true, true));
-  //   store.save('9', generateTestConfigs('v0', true, true));
-  //   store.save('10', generateTestConfigs('v0', true, true));
-  //   let cache = JSON.parse(
-  //     window.localStorage.getItem('STATSIG_LOCAL_STORAGE_INTERNAL_STORE_V4'),
-  //   );
-  //   expect(Object.keys(cache).length).toEqual(10);
+    await statsig.updateUser({ userID: '2' });
+    store.save(generateTestConfigs('v0', true, true));
+    await statsig.updateUser({ userID: '3' });
+    store.save(generateTestConfigs('v0', true, true));
+    await statsig.updateUser({ userID: '4' });
+    store.save(generateTestConfigs('v0', true, true));
+    await statsig.updateUser({ userID: '5' });
+    store.save(generateTestConfigs('v0', true, true));
+    await statsig.updateUser({ userID: '6' });
+    store.save(generateTestConfigs('v0', true, true));
+    await statsig.updateUser({ userID: '7' });
+    store.save(generateTestConfigs('v0', true, true));
+    await statsig.updateUser({ userID: '8' });
+    store.save(generateTestConfigs('v0', true, true));
+    await statsig.updateUser({ userID: '9' });
+    store.save(generateTestConfigs('v0', true, true));
+    await statsig.updateUser({ userID: '10' });
+    store.save(generateTestConfigs('v0', true, true));
+    let cache = JSON.parse(
+      window.localStorage.getItem('STATSIG_LOCAL_STORAGE_INTERNAL_STORE_V4'),
+    );
+    expect(Object.keys(cache).length).toEqual(10);
 
-  //   store.save('11', generateTestConfigs('v0', true, true));
+    await statsig.updateUser({ userID: '11' });
+    store.save(generateTestConfigs('v0', true, true));
 
-  //   expect(Object.keys(cache).length).toEqual(10);
-  // });
+    expect(Object.keys(cache).length).toEqual(10);
+  });
 });
