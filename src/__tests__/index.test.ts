@@ -4,6 +4,7 @@
 
 import LogEvent from '../LogEvent';
 import StatsigClient from '../StatsigClient';
+import { EvaluationReason } from '../StatsigStore';
 let statsig;
 
 describe('Verify behavior of top level index functions', () => {
@@ -187,6 +188,10 @@ describe('Verify behavior of top level index functions', () => {
             ruleID: 'default',
           },
         ]);
+        gateExposure.setEvaluationDetails({
+          reason: EvaluationReason.Network,
+          time: Date.now(),
+        });
         const gateValue = statsig.checkGate('test_gate');
         expect(gateValue).toBe(true);
         expect(spy).toHaveBeenCalledTimes(1);
@@ -245,6 +250,10 @@ describe('Verify behavior of top level index functions', () => {
           ruleID: 'ruleID',
         });
         configExposure.setSecondaryExposures([]);
+        configExposure.setEvaluationDetails({
+          reason: EvaluationReason.Network,
+          time: Date.now(),
+        });
         const config = statsig.getConfig('test_config');
         expect(config?.value).toStrictEqual({
           bool: true,
@@ -337,6 +346,10 @@ describe('Verify behavior of top level index functions', () => {
           ruleID: 'ruleID',
         });
         configExposure.setSecondaryExposures([]);
+        configExposure.setEvaluationDetails({
+          reason: EvaluationReason.Network,
+          time: Date.now(),
+        });
         const exp = statsig.getExperiment('test_config');
         expect(exp?.value).toStrictEqual({
           bool: true,

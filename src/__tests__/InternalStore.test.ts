@@ -4,6 +4,7 @@
 
 import DynamicConfig from '../DynamicConfig';
 import StatsigClient from '../StatsigClient';
+import { EvaluationReason } from '../StatsigStore';
 
 function generateTestConfigs(value, inExperiment, active) {
   return {
@@ -40,6 +41,7 @@ function generateTestConfigs(value, inExperiment, active) {
 
 describe('Verify behavior of InternalStore', () => {
   const sdkKey = 'client-internalstorekey';
+  const now = Date.now();
   const feature_gates = {
     'AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=': {
       value: true,
@@ -71,6 +73,7 @@ describe('Verify behavior of InternalStore', () => {
     'test_config',
     { bool: true },
     'default',
+    { reason: EvaluationReason.Network, time: now },
     [
       {
         gate: 'dependent_gate_1',
@@ -134,6 +137,9 @@ describe('Verify behavior of InternalStore', () => {
     jest.resetModules();
     jest.restoreAllMocks();
     localStorage.clear();
+
+    // ensure Date.now() returns the same value in each test
+    jest.spyOn(global.Date, 'now').mockImplementation(() => now);
   });
 
   test('Verify top level function initializes instance variables.', () => {
@@ -148,7 +154,7 @@ describe('Verify behavior of InternalStore', () => {
   });
 
   test('Verify save correctly saves into cache.', () => {
-    expect.assertions(4);
+    expect.assertions(5);
     const spyOnSet = jest.spyOn(window.localStorage.__proto__, 'setItem');
     const spyOnGet = jest.spyOn(window.localStorage.__proto__, 'getItem');
     const client = new StatsigClient(sdkKey);
@@ -160,17 +166,25 @@ describe('Verify behavior of InternalStore', () => {
     });
     expect(spyOnSet).toHaveBeenCalledTimes(2);
     expect(spyOnGet).toHaveBeenCalledTimes(4); // load 2 cache values, overrides, and stableid
-    expect(store.getConfig('test_config', false)).toEqual(config_obj);
+    const config = store.getConfig('test_config', false);
+    expect(config).toEqual(config_obj);
+    expect(config.getEvaluationDetails()).toEqual({
+      reason: EvaluationReason.Network,
+      time: now,
+    });
     expect(store.checkGate('test_gate', false)).toEqual(true);
   });
 
   test('Verify cache before init and save correctly saves into cache.', () => {
-    expect.assertions(5);
+    expect.assertions(7);
     const spyOnSet = jest.spyOn(window.localStorage.__proto__, 'setItem');
     const spyOnGet = jest.spyOn(window.localStorage.__proto__, 'getItem');
     const client = new StatsigClient(sdkKey);
     expect(spyOnSet).toHaveBeenCalledTimes(1);
     const store = client.getStore();
+    expect(
+      store.getConfig('test_config', false).getEvaluationDetails().reason,
+    ).toEqual(EvaluationReason.Uninitialized);
 
     store.save({
       feature_gates: feature_gates,
@@ -178,7 +192,12 @@ describe('Verify behavior of InternalStore', () => {
     });
     expect(spyOnSet).toHaveBeenCalledTimes(2);
     expect(spyOnGet).toHaveBeenCalledTimes(4); // load 2 cache values and 1 overrides and 1 stableid
-    expect(store.getConfig('test_config', false)).toEqual(config_obj);
+    const config = store.getConfig('test_config', false);
+    expect(config).toEqual(config_obj);
+    expect(config.getEvaluationDetails()).toEqual({
+      reason: EvaluationReason.Network,
+      time: now,
+    });
     expect(store.checkGate('test_gate', false)).toEqual(true);
   });
 
@@ -209,14 +228,19 @@ describe('Verify behavior of InternalStore', () => {
   });
 
   test('Verify getConfig returns a dummy config and logs exposure when configName does not exist.', () => {
-    expect.assertions(2);
+    expect.assertions(5);
     const client = new StatsigClient(sdkKey, { userID: 'user_key' });
     return client.initializeAsync().then(() => {
       const store = client.getStore();
       const spy = jest.spyOn(client.getLogger(), 'log');
-      expect(store.getConfig('fake_config', false)).toEqual(
-        new DynamicConfig('fake_config'),
-      );
+      const config = store.getConfig('fake_config', false);
+      expect(config.getName()).toEqual('fake_config');
+      expect(config.getValue()).toEqual({});
+      expect(config.getRuleID()).toEqual('');
+      expect(config.getEvaluationDetails()).toEqual({
+        reason: EvaluationReason.Unrecognized,
+        time: now,
+      });
       expect(spy).toHaveBeenCalledTimes(1);
     });
   });
@@ -266,7 +290,7 @@ describe('Verify behavior of InternalStore', () => {
   });
 
   test('that override gate/config APIs work', async () => {
-    expect.assertions(14);
+    expect.assertions(15);
     const statsig = new StatsigClient(sdkKey, { userID: '123' });
     await statsig.initializeAsync();
     // test_config matches without override
@@ -280,9 +304,12 @@ describe('Verify behavior of InternalStore', () => {
       count: 1,
     };
     statsig.getStore().overrideConfig('test_config', overrideConfig);
-    expect(
-      statsig.getStore().getConfig('test_config', false).getValue(),
-    ).toEqual(overrideConfig);
+    let config = statsig.getStore().getConfig('test_config', false);
+    expect(config.getValue()).toEqual(overrideConfig);
+    expect(config.getEvaluationDetails()).toEqual({
+      reason: EvaluationReason.LocalOverride,
+      time: now,
+    });
     expect(statsig.getAllOverrides().configs).toEqual({
       test_config: overrideConfig,
     });
@@ -329,60 +356,115 @@ describe('Verify behavior of InternalStore', () => {
   });
 
   test('test experiment sticky bucketing behavior', async () => {
-    expect.assertions(15);
+    expect.assertions(30);
     const statsig = new StatsigClient(sdkKey, { userID: '123' });
     await statsig.initializeAsync();
     const store = statsig.getStore();
 
     // getting values with flag set to false, should get latest values
     store.save(generateTestConfigs('v0', true, true));
-    expect(store.getExperiment('exp', false).get('key', '')).toEqual('v0');
-    expect(store.getExperiment('device_exp', false).get('key', '')).toEqual(
-      'v0',
-    );
-    expect(store.getExperiment('exp_non_stick', false).get('key', '')).toEqual(
-      'v0',
-    );
+    let exp = store.getExperiment('exp', false);
+    let deviceExp = store.getExperiment('device_exp', false);
+    let expNonSticky = store.getExperiment('exp_non_stick', false);
+    expect(exp.get('key', '')).toEqual('v0');
+    expect(exp.getEvaluationDetails()).toEqual({
+      reason: EvaluationReason.Network,
+      time: now,
+    });
+    expect(deviceExp.get('key', '')).toEqual('v0');
+    expect(deviceExp.getEvaluationDetails()).toEqual({
+      reason: EvaluationReason.Network,
+      time: now,
+    });
+    expect(expNonSticky.get('key', '')).toEqual('v0');
+    expect(expNonSticky.getEvaluationDetails()).toEqual({
+      reason: EvaluationReason.Network,
+      time: now,
+    });
 
     // update values, and then get with flag set to true. All values should update
     store.save(generateTestConfigs('v1', true, true));
-    expect(store.getExperiment('exp', true).get('key', '')).toEqual('v1');
-    expect(store.getExperiment('device_exp', true).get('key', '')).toEqual(
-      'v1',
-    );
-    expect(store.getExperiment('exp_non_stick', false).get('key', '')).toEqual(
-      'v1',
-    );
+    exp = store.getExperiment('exp', true);
+    deviceExp = store.getExperiment('device_exp', true);
+    expNonSticky = store.getExperiment('exp_non_stick', false);
+    expect(exp.get('key', '')).toEqual('v1');
+    expect(exp.getEvaluationDetails()).toEqual({
+      reason: EvaluationReason.Network,
+      time: now,
+    });
+    expect(deviceExp.get('key', '')).toEqual('v1');
+    expect(deviceExp.getEvaluationDetails()).toEqual({
+      reason: EvaluationReason.Network,
+      time: now,
+    });
+    expect(expNonSticky.get('key', '')).toEqual('v1');
+    expect(expNonSticky.getEvaluationDetails()).toEqual({
+      reason: EvaluationReason.Network,
+      time: now,
+    });
 
     // update values again. Now some values should be sticky except the non-sticky ones
     store.save(generateTestConfigs('v2', true, true));
-    expect(store.getExperiment('exp', true).get('key', '')).toEqual('v1');
-    expect(store.getExperiment('device_exp', true).get('key', '')).toEqual(
-      'v1',
-    );
-    expect(store.getExperiment('exp_non_stick', false).get('key', '')).toEqual(
-      'v2',
-    );
+    exp = store.getExperiment('exp', true);
+    deviceExp = store.getExperiment('device_exp', true);
+    expNonSticky = store.getExperiment('exp_non_stick', false);
+    expect(exp.get('key', '')).toEqual('v1');
+    expect(exp.getEvaluationDetails()).toEqual({
+      reason: EvaluationReason.Sticky,
+      time: now,
+    });
+    expect(deviceExp.get('key', '')).toEqual('v1');
+    expect(deviceExp.getEvaluationDetails()).toEqual({
+      reason: EvaluationReason.Sticky,
+      time: now,
+    });
+    expect(expNonSticky.get('key', '')).toEqual('v2');
+    expect(expNonSticky.getEvaluationDetails()).toEqual({
+      reason: EvaluationReason.Network,
+      time: now,
+    });
 
     // update the experiments so that the user is no longer in experiments, should still be sticky for the right ones
     store.save(generateTestConfigs('v3', false, true));
-    expect(store.getExperiment('exp', true).get('key', '')).toEqual('v1');
-    expect(store.getExperiment('device_exp', true).get('key', '')).toEqual(
-      'v1',
-    );
-    expect(store.getExperiment('exp_non_stick', false).get('key', '')).toEqual(
-      'v3',
-    );
+    exp = store.getExperiment('exp', true);
+    deviceExp = store.getExperiment('device_exp', true);
+    expNonSticky = store.getExperiment('exp_non_stick', false);
+    expect(exp.get('key', '')).toEqual('v1');
+    expect(exp.getEvaluationDetails()).toEqual({
+      reason: EvaluationReason.Sticky,
+      time: now,
+    });
+    expect(deviceExp.get('key', '')).toEqual('v1');
+    expect(deviceExp.getEvaluationDetails()).toEqual({
+      reason: EvaluationReason.Sticky,
+      time: now,
+    });
+    expect(expNonSticky.get('key', '')).toEqual('v3');
+    expect(expNonSticky.getEvaluationDetails()).toEqual({
+      reason: EvaluationReason.Network,
+      time: now,
+    });
 
     // update the experiments to no longer be active, values should update NOW
     store.save(generateTestConfigs('v4', false, false));
-    expect(store.getExperiment('exp', true).get('key', '')).toEqual('v4');
-    expect(store.getExperiment('device_exp', true).get('key', '')).toEqual(
-      'v4',
-    );
-    expect(store.getExperiment('exp_non_stick', false).get('key', '')).toEqual(
-      'v4',
-    );
+    exp = store.getExperiment('exp', true);
+    deviceExp = store.getExperiment('device_exp', true);
+    expNonSticky = store.getExperiment('exp_non_stick', false);
+    expect(exp.get('key', '')).toEqual('v4');
+    expect(exp.getEvaluationDetails()).toEqual({
+      reason: EvaluationReason.Network,
+      time: now,
+    });
+    expect(deviceExp.get('key', '')).toEqual('v4');
+    expect(deviceExp.getEvaluationDetails()).toEqual({
+      reason: EvaluationReason.Network,
+      time: now,
+    });
+    expect(expNonSticky.get('key', '')).toEqual('v4');
+    expect(expNonSticky.getEvaluationDetails()).toEqual({
+      reason: EvaluationReason.Network,
+      time: now,
+    });
   });
 
   test('test experiment sticky bucketing behavior when user changes', async () => {

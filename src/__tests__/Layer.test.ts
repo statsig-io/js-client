@@ -1,4 +1,5 @@
 import Layer from '../Layer';
+import { EvaluationReason } from '../StatsigStore';
 
 describe('Verify behavior of Layer', () => {
   const testLayer = Layer._create(
@@ -19,6 +20,10 @@ describe('Verify behavior of Layer', () => {
       nullKey: null,
     },
     'default',
+    {
+      reason: EvaluationReason.Uninitialized,
+      time: Date.now(),
+    },
   );
 
   beforeEach(() => {
@@ -26,7 +31,10 @@ describe('Verify behavior of Layer', () => {
   });
 
   test('Test constructor', () => {
-    const layer = Layer._create('name', { test: 123 }, 'default');
+    const layer = Layer._create('name', { test: 123 }, 'default', {
+      reason: EvaluationReason.Network,
+      time: Date.now(),
+    });
     expect(layer.getRuleID()).toStrictEqual('default');
   });
 
@@ -105,7 +113,10 @@ describe('Verify behavior of Layer', () => {
   });
 
   test('Behavior of dummy layers', () => {
-    const dummyLayer = Layer._create('layerName');
+    const dummyLayer = Layer._create('layerName', {}, '', {
+      reason: EvaluationReason.Uninitialized,
+      time: Date.now(),
+    });
     expect(dummyLayer.get('', {})).toEqual({});
     expect(dummyLayer.get('test_field', null)).toEqual(null);
     expect(dummyLayer.get('str', 'default_value')).toEqual('default_value');

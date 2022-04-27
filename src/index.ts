@@ -27,6 +27,7 @@ export type {
   ExpoDevice,
   UUID,
 } from './StatsigIdentity';
+export type { EvaluationDetails } from './StatsigStore';
 
 export default class Statsig {
   private static instance: StatsigClient | null = null;

@@ -1,22 +1,27 @@
+import { EvaluationDetails } from './StatsigStore';
+
 export default class DynamicConfig {
   private name: string;
   public value: Record<string, any>;
   private ruleID: string;
   private secondaryExposures: Record<string, string>[];
   private allocatedExperimentName: string;
+  private evaluationDetails: EvaluationDetails;
 
   public constructor(
     configName: string,
-    configValue: Record<string, any> = {},
-    ruleID: string = '',
+    configValue: Record<string, any>,
+    ruleID: string,
+    evaluationDetails: EvaluationDetails,
     secondaryExposures: Record<string, string>[] = [],
     allocatedExperimentName: string = '',
   ) {
     this.name = configName;
-    this.value = JSON.parse(JSON.stringify(configValue));
-    this.ruleID = ruleID;
+    this.value = JSON.parse(JSON.stringify(configValue ?? {}));
+    this.ruleID = ruleID ?? '';
     this.secondaryExposures = secondaryExposures;
     this.allocatedExperimentName = allocatedExperimentName;
+    this.evaluationDetails = evaluationDetails;
   }
 
   public get<T>(
@@ -70,6 +75,10 @@ export default class DynamicConfig {
 
   public getName(): string {
     return this.name;
+  }
+
+  public getEvaluationDetails(): EvaluationDetails {
+    return this.evaluationDetails;
   }
 
   public _getSecondaryExposures(): Record<string, string>[] {

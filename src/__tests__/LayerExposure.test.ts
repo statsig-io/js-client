@@ -3,6 +3,7 @@
  */
 
 import Statsig from '../index';
+import { EvaluationReason } from '../StatsigStore';
 import { getHashValue } from '../utils/Hashing';
 
 describe('Layer Exposure Logging', () => {
@@ -91,6 +92,10 @@ describe('Layer Exposure Logging', () => {
             isExplicitParameter: 'false',
           },
           secondaryExposures: [{ gate: 'undelegated_secondary_exp' }],
+          evaluationDetails: {
+            reason: EvaluationReason.Network,
+            time: expect.any(Number),
+          },
         }),
       );
     });
@@ -126,6 +131,10 @@ describe('Layer Exposure Logging', () => {
             isExplicitParameter: 'true',
           },
           secondaryExposures: [{ gate: 'secondary_exp' }],
+          evaluationDetails: {
+            reason: EvaluationReason.Network,
+            time: expect.any(Number),
+          },
         }),
       );
 
@@ -139,6 +148,10 @@ describe('Layer Exposure Logging', () => {
             isExplicitParameter: 'false',
           },
           secondaryExposures: [{ gate: 'undelegated_secondary_exp' }],
+          evaluationDetails: {
+            reason: EvaluationReason.Network,
+            time: expect.any(Number),
+          },
         }),
       );
     });

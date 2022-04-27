@@ -1,4 +1,5 @@
 import Layer from '../Layer';
+import { EvaluationReason } from '../StatsigStore';
 
 describe('Verify behavior of Layer', () => {
   const testLayer = Layer._create(
@@ -18,6 +19,10 @@ describe('Verify behavior of Layer', () => {
       arr: [1, 2, 'three'],
     },
     'default',
+    {
+      reason: EvaluationReason.Network,
+      time: Date.now(),
+    },
   );
 
   type TestObject = {
