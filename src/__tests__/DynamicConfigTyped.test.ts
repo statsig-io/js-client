@@ -1,4 +1,5 @@
 import DynamicConfig from '../DynamicConfig';
+import { EvaluationReason } from '../StatsigStore';
 
 describe('Verify behavior of DynamicConfig', () => {
   const testConfig = new DynamicConfig(
@@ -18,6 +19,10 @@ describe('Verify behavior of DynamicConfig', () => {
       arr: [1, 2, 'three'],
     },
     'default',
+    {
+      reason: EvaluationReason.Network,
+      time: Date.now(),
+    },
   );
 
   type TestObject = {

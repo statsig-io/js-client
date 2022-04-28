@@ -1,4 +1,5 @@
-import StatsigClient, { IHasStatsigInternal } from './StatsigClient';
+import { IHasStatsigInternal } from './StatsigClient';
+import { EvaluationDetails } from './StatsigStore';
 
 export default class Layer {
   private sdkInternal: IHasStatsigInternal | null;
@@ -9,11 +10,13 @@ export default class Layer {
   private undelegatedSecondaryExposures: Record<string, string>[];
   private allocatedExperimentName: string;
   private explicitParameters: string[];
+  private evaluationDetails: EvaluationDetails;
 
   private constructor(
     name: string,
-    layerValue: Record<string, any> = {},
-    ruleID: string = '',
+    layerValue: Record<string, any>,
+    ruleID: string,
+    evaluationDetails: EvaluationDetails,
     sdkInternal: IHasStatsigInternal | null = null,
     secondaryExposures: Record<string, string>[] = [],
     undelegatedSecondaryExposures: Record<string, string>[] = [],
@@ -22,8 +25,9 @@ export default class Layer {
   ) {
     this.sdkInternal = sdkInternal;
     this.name = name;
-    this.value = JSON.parse(JSON.stringify(layerValue));
-    this.ruleID = ruleID;
+    this.value = JSON.parse(JSON.stringify(layerValue ?? {}));
+    this.ruleID = ruleID ?? '';
+    this.evaluationDetails = evaluationDetails;
     this.secondaryExposures = secondaryExposures;
     this.undelegatedSecondaryExposures = undelegatedSecondaryExposures;
     this.allocatedExperimentName = allocatedExperimentName;
@@ -32,8 +36,9 @@ export default class Layer {
 
   public static _create(
     name: string,
-    value: Record<string, any> = {},
-    ruleID: string = '',
+    value: Record<string, any>,
+    ruleID: string,
+    evaluationDetails: EvaluationDetails,
     sdkInternal: IHasStatsigInternal | null = null,
     secondaryExposures: Record<string, string>[] = [],
     undelegatedSecondaryExposures: Record<string, string>[] = [],
@@ -44,6 +49,7 @@ export default class Layer {
       name,
       value,
       ruleID,
+      evaluationDetails,
       sdkInternal,
       secondaryExposures,
       undelegatedSecondaryExposures,
@@ -110,6 +116,10 @@ export default class Layer {
     return this.name;
   }
 
+  public getEvaluationDetails(): EvaluationDetails {
+    return this.evaluationDetails;
+  }
+
   public _getSecondaryExposures(): Record<string, string>[] {
     return this.secondaryExposures;
   }
@@ -137,6 +147,7 @@ export default class Layer {
         allocatedExperiment,
         parameterName,
         isExplicit,
+        this.evaluationDetails,
       );
   }
 }

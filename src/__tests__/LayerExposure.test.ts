@@ -3,6 +3,7 @@
  */
 
 import Statsig from '../index';
+import { EvaluationReason } from '../StatsigStore';
 import { getHashValue } from '../utils/Hashing';
 
 describe('Layer Exposure Logging', () => {
@@ -89,6 +90,8 @@ describe('Layer Exposure Logging', () => {
             allocatedExperiment: '',
             parameterName: 'an_int',
             isExplicitParameter: 'false',
+            reason: EvaluationReason.Network,
+            time: expect.any(Number),
           },
           secondaryExposures: [{ gate: 'undelegated_secondary_exp' }],
         }),
@@ -124,6 +127,8 @@ describe('Layer Exposure Logging', () => {
             allocatedExperiment: 'the_allocated_experiment',
             parameterName: 'an_int',
             isExplicitParameter: 'true',
+            reason: EvaluationReason.Network,
+            time: expect.any(Number),
           },
           secondaryExposures: [{ gate: 'secondary_exp' }],
         }),
@@ -137,6 +142,8 @@ describe('Layer Exposure Logging', () => {
             allocatedExperiment: '',
             parameterName: 'a_string',
             isExplicitParameter: 'false',
+            reason: EvaluationReason.Network,
+            time: expect.any(Number),
           },
           secondaryExposures: [{ gate: 'undelegated_secondary_exp' }],
         }),

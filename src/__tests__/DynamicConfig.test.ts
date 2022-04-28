@@ -1,4 +1,5 @@
 import DynamicConfig from '../DynamicConfig';
+import { EvaluationReason } from '../StatsigStore';
 
 describe('Verify behavior of DynamicConfig', () => {
   const testConfig = new DynamicConfig(
@@ -19,6 +20,10 @@ describe('Verify behavior of DynamicConfig', () => {
       nullKey: null,
     },
     'default',
+    {
+      reason: EvaluationReason.Network,
+      time: Date.now(),
+    },
   );
 
   beforeEach(() => {
@@ -26,7 +31,10 @@ describe('Verify behavior of DynamicConfig', () => {
   });
 
   test('Test constructor', () => {
-    const config = new DynamicConfig('name', { test: 123 }, 'default');
+    const config = new DynamicConfig('name', { test: 123 }, 'default', {
+      reason: EvaluationReason.Network,
+      time: Date.now(),
+    });
     expect(config.getValue()).toStrictEqual({ test: 123 });
     expect(config.getRuleID()).toStrictEqual('default');
   });
@@ -106,7 +114,10 @@ describe('Verify behavior of DynamicConfig', () => {
   });
 
   test('Behavior of dummy configs', () => {
-    const dummyConfig = new DynamicConfig('configName');
+    const dummyConfig = new DynamicConfig('configName', {}, '', {
+      reason: EvaluationReason.Uninitialized,
+      time: Date.now(),
+    });
     expect(dummyConfig.get('', {})).toEqual({});
     expect(dummyConfig.get('test_field', null)).toEqual(null);
     expect(dummyConfig.get('str', 'default_value')).toEqual('default_value');

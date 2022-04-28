@@ -218,8 +218,6 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       );
     }
 
-    const userCacheKey = this.getCurrentUserCacheKey();
-
     if (this.options.getLocalModeEnabled()) {
       return Promise.resolve();
     }

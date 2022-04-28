@@ -3,6 +3,7 @@
  */
 
 import StatsigClient from '../StatsigClient';
+import { EvaluationReason } from '../StatsigStore';
 import StatsigAsyncStorage from '../utils/StatsigAsyncStorage';
 import * as TestData from './initialize_response.json';
 
@@ -302,7 +303,7 @@ describe('Verify behavior of StatsigClient', () => {
   });
 
   test('That bootstrapping values works', async () => {
-    expect.assertions(12);
+    expect.assertions(13);
 
     const client = new StatsigClient(
       'client-xyz',
@@ -315,6 +316,10 @@ describe('Verify behavior of StatsigClient', () => {
     expect(client.checkGate('always_on_gate')).toBe(true);
     expect(client.checkGate('on_for_statsig_email')).toBe(true);
     expect(client.getConfig('test_config').get('number', 10)).toEqual(7);
+    expect(client.getConfig('test_config').getEvaluationDetails()).toEqual({
+      reason: EvaluationReason.Bootstrap,
+      time: expect.any(Number),
+    });
 
     await client.initializeAsync();
     // nothing changed, network not hit
@@ -330,7 +335,7 @@ describe('Verify behavior of StatsigClient', () => {
   });
 
   test('That bootstrapping values with empty will just use defaults instead', async () => {
-    expect.assertions(4);
+    expect.assertions(5);
 
     const client = new StatsigClient(
       'client-xyz',
@@ -343,6 +348,10 @@ describe('Verify behavior of StatsigClient', () => {
     expect(client.checkGate('always_on_gate')).toBe(false);
     expect(client.checkGate('on_for_statsig_email')).toBe(false);
     expect(client.getConfig('test_config').get('number', 10)).toEqual(10);
+    expect(client.getConfig('test_config').getEvaluationDetails()).toEqual({
+      reason: EvaluationReason.Unrecognized,
+      time: expect.any(Number),
+    });
   });
 });
 

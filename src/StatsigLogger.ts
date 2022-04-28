@@ -1,6 +1,7 @@
 import LogEvent from './LogEvent';
 import { IHasStatsigInternal } from './StatsigClient';
 import { StatsigEndpoint } from './StatsigNetwork';
+import { EvaluationDetails } from './StatsigStore';
 import { StatsigUser } from './StatsigUser';
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
@@ -129,8 +130,9 @@ export default class StatsigLogger {
     gateValue: boolean,
     ruleID: string,
     secondaryExposures: Record<string, string>[],
+    details: EvaluationDetails,
   ) {
-    const dedupeKey = gateName + String(gateValue) + ruleID;
+    const dedupeKey = gateName + String(gateValue) + ruleID + details.reason;
     if (!this.shouldLogExposure(dedupeKey)) {
       return;
     }
@@ -140,6 +142,8 @@ export default class StatsigLogger {
       gate: gateName,
       gateValue: String(gateValue),
       ruleID: ruleID,
+      reason: details.reason,
+      time: details.time,
     });
     gateExposure.setSecondaryExposures(secondaryExposures);
     this.log(gateExposure);
@@ -150,8 +154,9 @@ export default class StatsigLogger {
     configName: string,
     ruleID: string,
     secondaryExposures: Record<string, string>[],
+    details: EvaluationDetails,
   ) {
-    const dedupeKey = configName + ruleID;
+    const dedupeKey = configName + ruleID + details.reason;
     if (!this.shouldLogExposure(dedupeKey)) {
       return;
     }
@@ -161,6 +166,8 @@ export default class StatsigLogger {
     configExposure.setMetadata({
       config: configName,
       ruleID: ruleID,
+      reason: details.reason,
+      time: details.time,
     });
     configExposure.setSecondaryExposures(secondaryExposures);
     this.log(configExposure);
@@ -174,6 +181,7 @@ export default class StatsigLogger {
     allocatedExperiment: string,
     parameterName: string,
     isExplicitParameter: boolean,
+    details: EvaluationDetails,
   ) {
     const dedupeKey = [
       configName,
@@ -181,6 +189,7 @@ export default class StatsigLogger {
       allocatedExperiment,
       parameterName,
       String(isExplicitParameter),
+      details.reason,
     ].join('|');
 
     if (!this.shouldLogExposure(dedupeKey)) {
@@ -195,6 +204,8 @@ export default class StatsigLogger {
       allocatedExperiment,
       parameterName,
       isExplicitParameter: String(isExplicitParameter),
+      reason: details.reason,
+      time: details.time,
     });
     configExposure.setSecondaryExposures(secondaryExposures);
     this.log(configExposure);
@@ -207,7 +218,7 @@ export default class StatsigLogger {
   ) {
     const trimmedMessage = message.substring(0, 128);
     if (
-      this.loggedErrors.has(trimmedMessage) || 
+      this.loggedErrors.has(trimmedMessage) ||
       this.loggedErrors.size > MAX_ERRORS_TO_LOG
     ) {
       return;
