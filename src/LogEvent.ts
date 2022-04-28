@@ -1,4 +1,3 @@
-import { EvaluationDetails } from './StatsigStore';
 import type { StatsigUser } from './StatsigUser';
 
 export default class LogEvent {
@@ -9,7 +8,6 @@ export default class LogEvent {
   private time: number;
   private statsigMetadata: Record<string, string | number>;
   private secondaryExposures?: Record<string, string>[];
-  private details?: EvaluationDetails;
 
   public constructor(eventName: string) {
     this.eventName = eventName;
@@ -43,10 +41,6 @@ export default class LogEvent {
     this.secondaryExposures = exposures;
   }
 
-  public setEvaluationDetails(details: EvaluationDetails) {
-    this.details = details;
-  }
-
   public toJsonObject(): Record<string, any> {
     return {
       eventName: this.eventName,
@@ -56,7 +50,6 @@ export default class LogEvent {
       time: this.time,
       statsigMetadata: this.statsigMetadata,
       secondaryExposures: this.secondaryExposures ?? undefined,
-      evaluationDetails: this.details ?? undefined,
     };
   }
 }

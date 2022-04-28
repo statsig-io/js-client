@@ -132,7 +132,7 @@ export default class StatsigLogger {
     secondaryExposures: Record<string, string>[],
     details: EvaluationDetails,
   ) {
-    const dedupeKey = gateName + String(gateValue) + ruleID;
+    const dedupeKey = gateName + String(gateValue) + ruleID + details.reason;
     if (!this.shouldLogExposure(dedupeKey)) {
       return;
     }
@@ -142,9 +142,10 @@ export default class StatsigLogger {
       gate: gateName,
       gateValue: String(gateValue),
       ruleID: ruleID,
+      reason: details.reason,
+      time: details.time,
     });
     gateExposure.setSecondaryExposures(secondaryExposures);
-    gateExposure.setEvaluationDetails(details);
     this.log(gateExposure);
   }
 
@@ -155,7 +156,7 @@ export default class StatsigLogger {
     secondaryExposures: Record<string, string>[],
     details: EvaluationDetails,
   ) {
-    const dedupeKey = configName + ruleID;
+    const dedupeKey = configName + ruleID + details.reason;
     if (!this.shouldLogExposure(dedupeKey)) {
       return;
     }
@@ -165,9 +166,10 @@ export default class StatsigLogger {
     configExposure.setMetadata({
       config: configName,
       ruleID: ruleID,
+      reason: details.reason,
+      time: details.time,
     });
     configExposure.setSecondaryExposures(secondaryExposures);
-    configExposure.setEvaluationDetails(details);
     this.log(configExposure);
   }
 
@@ -187,6 +189,7 @@ export default class StatsigLogger {
       allocatedExperiment,
       parameterName,
       String(isExplicitParameter),
+      details.reason,
     ].join('|');
 
     if (!this.shouldLogExposure(dedupeKey)) {
@@ -201,9 +204,10 @@ export default class StatsigLogger {
       allocatedExperiment,
       parameterName,
       isExplicitParameter: String(isExplicitParameter),
+      reason: details.reason,
+      time: details.time,
     });
     configExposure.setSecondaryExposures(secondaryExposures);
-    configExposure.setEvaluationDetails(details);
     this.log(configExposure);
   }
 

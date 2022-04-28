@@ -175,6 +175,8 @@ describe('Verify behavior of top level index functions', () => {
           gate: 'test_gate',
           gateValue: String(true),
           ruleID: 'ruleID123',
+          reason: EvaluationReason.Network,
+          time: Date.now(),
         });
         gateExposure.setSecondaryExposures([
           {
@@ -188,10 +190,6 @@ describe('Verify behavior of top level index functions', () => {
             ruleID: 'default',
           },
         ]);
-        gateExposure.setEvaluationDetails({
-          reason: EvaluationReason.Network,
-          time: Date.now(),
-        });
         const gateValue = statsig.checkGate('test_gate');
         expect(gateValue).toBe(true);
         expect(spy).toHaveBeenCalledTimes(1);
@@ -248,12 +246,10 @@ describe('Verify behavior of top level index functions', () => {
         configExposure.setMetadata({
           config: 'test_config',
           ruleID: 'ruleID',
-        });
-        configExposure.setSecondaryExposures([]);
-        configExposure.setEvaluationDetails({
           reason: EvaluationReason.Network,
           time: Date.now(),
         });
+        configExposure.setSecondaryExposures([]);
         const config = statsig.getConfig('test_config');
         expect(config?.value).toStrictEqual({
           bool: true,
@@ -344,12 +340,10 @@ describe('Verify behavior of top level index functions', () => {
         configExposure.setMetadata({
           config: 'test_config',
           ruleID: 'ruleID',
-        });
-        configExposure.setSecondaryExposures([]);
-        configExposure.setEvaluationDetails({
           reason: EvaluationReason.Network,
           time: Date.now(),
         });
+        configExposure.setSecondaryExposures([]);
         const exp = statsig.getExperiment('test_config');
         expect(exp?.value).toStrictEqual({
           bool: true,
@@ -456,7 +450,13 @@ describe('Verify behavior of top level index functions', () => {
     expect(postedLogs['events'][0]).toEqual(
       expect.objectContaining({
         eventName: 'statsig::gate_exposure',
-        metadata: { gate: 'test_gate', gateValue: 'true', ruleID: 'ruleID123' },
+        metadata: {
+          gate: 'test_gate',
+          gateValue: 'true',
+          ruleID: 'ruleID123',
+          reason: EvaluationReason.Network,
+          time: expect.any(Number),
+        },
         secondaryExposures: [
           { gate: 'dependent_gate_1', gateValue: 'true', ruleID: 'rule_1' },
           { gate: 'dependent_gate_2', gateValue: 'false', ruleID: 'default' },
@@ -477,6 +477,8 @@ describe('Verify behavior of top level index functions', () => {
         metadata: {
           config: 'test_config',
           ruleID: 'ruleID',
+          reason: EvaluationReason.Network,
+          time: expect.any(Number),
         },
         secondaryExposures: [],
         user: {

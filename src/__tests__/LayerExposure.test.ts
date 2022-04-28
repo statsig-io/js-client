@@ -90,12 +90,10 @@ describe('Layer Exposure Logging', () => {
             allocatedExperiment: '',
             parameterName: 'an_int',
             isExplicitParameter: 'false',
-          },
-          secondaryExposures: [{ gate: 'undelegated_secondary_exp' }],
-          evaluationDetails: {
             reason: EvaluationReason.Network,
             time: expect.any(Number),
           },
+          secondaryExposures: [{ gate: 'undelegated_secondary_exp' }],
         }),
       );
     });
@@ -129,12 +127,10 @@ describe('Layer Exposure Logging', () => {
             allocatedExperiment: 'the_allocated_experiment',
             parameterName: 'an_int',
             isExplicitParameter: 'true',
-          },
-          secondaryExposures: [{ gate: 'secondary_exp' }],
-          evaluationDetails: {
             reason: EvaluationReason.Network,
             time: expect.any(Number),
           },
+          secondaryExposures: [{ gate: 'secondary_exp' }],
         }),
       );
 
@@ -146,12 +142,10 @@ describe('Layer Exposure Logging', () => {
             allocatedExperiment: '',
             parameterName: 'a_string',
             isExplicitParameter: 'false',
-          },
-          secondaryExposures: [{ gate: 'undelegated_secondary_exp' }],
-          evaluationDetails: {
             reason: EvaluationReason.Network,
             time: expect.any(Number),
           },
+          secondaryExposures: [{ gate: 'undelegated_secondary_exp' }],
         }),
       );
     });
