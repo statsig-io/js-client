@@ -20,7 +20,7 @@ import type { AsyncStorage } from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
 
 const MAX_VALUE_SIZE = 64;
-const MAX_OBJ_SIZE = 1024;
+const MAX_OBJ_SIZE = 2048;
 
 export type AppStateEvent = 'change' | 'memoryWarning' | 'blur' | 'focus';
 export type AppStateStatus =

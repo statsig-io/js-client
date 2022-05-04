@@ -366,19 +366,19 @@ describe('Verify behavior of top level index functions', () => {
 
   test('Verify big user object and log event are getting trimmed', () => {
     expect.assertions(7);
-    let str_1k = str_64;
+    let str_2k = str_64;
     // create a 32k long string
-    for (let i = 0; i < 4; i++) {
-      str_1k += str_1k;
+    for (let i = 0; i < 5; i++) {
+      str_2k += str_2k;
     }
-    expect(str_1k.length).toBe(1024);
+    expect(str_2k.length).toBe(2048);
     return statsig
       .initialize(
         'client-key',
         {
           userID: str_64 + 'more',
           email: 'jest@statsig.com',
-          custom: { extradata: str_1k },
+          custom: { extradata: str_2k },
         },
         {
           environment: { tier: 'production' },
@@ -394,7 +394,7 @@ describe('Verify behavior of top level index functions', () => {
         // @ts-ignore
         const spy = jest.spyOn(statsig.instance.logger, 'log');
         statsig.logEvent(str_64 + 'extra', str_64 + 'extra', {
-          extradata: str_1k,
+          extradata: str_2k,
         });
         const trimmedEvent = new LogEvent(str_64.substring(0, 64));
         trimmedEvent.setValue(str_64.substring(0, 64));
