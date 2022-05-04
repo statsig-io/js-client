@@ -14,6 +14,7 @@ export { default as DynamicConfig } from './DynamicConfig';
 export { default as Layer } from './Layer';
 export { default as StatsigClient } from './StatsigClient';
 export { IStatsig, StatsigOverrides } from './StatsigClient';
+export { EvaluationReason } from './StatsigStore';
 
 export type { AsyncStorage } from './utils/StatsigAsyncStorage';
 export type { _SDKPackageInfo as _SDKPackageInfo } from './StatsigClient';
