@@ -549,11 +549,17 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     const user = this.identity.getUser();
     if (!this.options.getDisableErrorLogging()) {
       window.addEventListener('error', (e) => {
+        let errorObj = e.error;
+        if (errorObj != null && typeof errorObj === 'object') {
+          try {
+            errorObj = JSON.stringify(errorObj);
+          } catch (e) {}
+        }
         this.logger.logAppError(user, e.message ?? '', {
           filename: e.filename,
           lineno: e.lineno,
           colno: e.colno,
-          error_obj: e.error,
+          error_obj: errorObj,
         });
       });
     }
