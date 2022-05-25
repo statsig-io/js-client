@@ -32,8 +32,11 @@ describe('Verify local storage limits are enforced', () => {
     }
   }
 
+  const localStorage = new LocalStorageMock();
   // @ts-ignore
-  window.localStorage = new LocalStorageMock();
+  Object.defineProperty(window, 'localStorage', {
+    value: localStorage,
+  });
 
   // @ts-ignore
   global.fetch = jest.fn(() =>
@@ -42,12 +45,6 @@ describe('Verify local storage limits are enforced', () => {
       json: () => Promise.resolve({}),
     }),
   );
-
-  const localStorage = new LocalStorageMock();
-  // @ts-ignore
-  Object.defineProperty(window, 'localStorage', {
-    value: localStorage,
-  });
 
   beforeEach(() => {
     jest.resetModules();
