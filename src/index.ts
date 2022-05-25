@@ -30,6 +30,45 @@ export type {
 } from './StatsigIdentity';
 export type { EvaluationDetails } from './StatsigStore';
 
+if (!Object.entries) {
+  // @ts-ignore pollyfill from https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/entries
+  Object.entries = function (obj) {
+    var ownProps = Object.keys(obj),
+      i = ownProps.length,
+      resArray = new Array(i); // preallocate the Array
+    while (i--) resArray[i] = [ownProps[i], obj[ownProps[i]]];
+
+    return resArray;
+  };
+}
+
+if (!Object.fromEntries) {
+  // @ts-ignore pollyfill from https://github.com/tc39/proposal-object-from-entries/blob/main/polyfill.js
+  Object.fromEntries = function (iter) {
+    const obj = {};
+
+    for (const pair of iter) {
+      if (Object(pair) !== pair) {
+        throw new TypeError('iterable for fromEntries should yield objects');
+      }
+
+      // Consistency with Map: contract is that entry has "0" and "1" keys, not
+      // that it is an array or iterable.
+
+      const { '0': key, '1': val } = pair;
+
+      Object.defineProperty(obj, key, {
+        configurable: true,
+        enumerable: true,
+        writable: true,
+        value: val,
+      });
+    }
+
+    return obj;
+  };
+}
+
 export default class Statsig {
   private static instance: StatsigClient | null = null;
 
