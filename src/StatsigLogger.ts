@@ -268,6 +268,7 @@ export default class StatsigLogger {
       isClosing &&
       !this.sdkInternal.getNetwork().supportsKeepalive() &&
       navigator &&
+      // @ts-ignore
       navigator.sendBeacon
     ) {
       const beacon = this.sdkInternal.getNetwork().sendLogBeacon({
