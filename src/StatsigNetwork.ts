@@ -133,6 +133,10 @@ export default class StatsigNetwork {
     if (this.sdkInternal.getOptions().getLocalModeEnabled()) {
       return Promise.reject('no network requests in localMode');
     }
+    if (typeof fetch !== 'function') {
+      // fetch is not defined in this environment, short circuit
+      return Promise.reject('fetch is not defined');
+    }
     const url = this.sdkInternal.getOptions().getApi() + endpointName;
     const counter = this.leakyBucket[url];
     if (counter != null && counter >= 30) {

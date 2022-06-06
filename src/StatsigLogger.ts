@@ -73,7 +73,10 @@ export default class StatsigLogger {
         }
       });
     }
-
+    if (typeof window === 'undefined' || window == null) {
+      // dont set the flush interval outside of client browser environments
+      return;
+    }
     const me = this;
     this.flushInterval = setInterval(() => {
       me.flush();
@@ -98,6 +101,7 @@ export default class StatsigLogger {
     } catch (_e) {}
 
     this.queue.push(event.toJsonObject());
+
     if (
       this.queue.length >=
       this.sdkInternal.getOptions().getLoggingBufferMaxSize()
@@ -267,7 +271,8 @@ export default class StatsigLogger {
     if (
       isClosing &&
       !this.sdkInternal.getNetwork().supportsKeepalive() &&
-      navigator &&
+      typeof navigator !== 'undefined' &&
+      navigator != null &&
       // @ts-ignore
       navigator.sendBeacon
     ) {
