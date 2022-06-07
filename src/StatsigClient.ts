@@ -12,12 +12,20 @@ import type {
 import StatsigLogger from './StatsigLogger';
 import StatsigNetwork from './StatsigNetwork';
 import StatsigSDKOptions, { StatsigOptions } from './StatsigSDKOptions';
-import StatsigStore from './StatsigStore';
+import StatsigStore, {
+  EvaluationDetails,
+  EvaluationReason,
+} from './StatsigStore';
 import { StatsigUser } from './StatsigUser';
 import { SimpleHash } from './utils/Hashing';
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import type { AsyncStorage } from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
+import {
+  StatsigInvalidArgumentError,
+  StatsigUninitializedError,
+} from './Errors';
+import ErrorBoundary from './ErrorBoundary';
 
 const MAX_VALUE_SIZE = 64;
 const MAX_OBJ_SIZE = 2048;
@@ -84,6 +92,7 @@ export interface IHasStatsigInternal {
   getCurrentUserCacheKey(): string;
   getSDKKey(): string;
   getStatsigMetadata(): Record<string, string | number>;
+  getErrorBoundary(): ErrorBoundary;
 }
 
 export type StatsigOverrides = {
@@ -101,6 +110,11 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   private initCalled: boolean = false;
   private pendingInitPromise: Promise<void> | null = null;
   private optionalLoggingSetup: boolean = false;
+
+  private errorBoundary: ErrorBoundary;
+  public getErrorBoundary(): ErrorBoundary {
+    return this.errorBoundary;
+  }
 
   private network: StatsigNetwork;
   public getNetwork(): StatsigNetwork {
@@ -159,10 +173,11 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     options?: StatsigOptions | null,
   ) {
     if (typeof sdkKey !== 'string' || !sdkKey.startsWith('client-')) {
-      throw new Error(
+      throw new StatsigInvalidArgumentError(
         'Invalid key provided.  You must use a Client SDK Key from the Statsig console to initialize the sdk',
       );
     }
+    this.errorBoundary = new ErrorBoundary(sdkKey);
     this.ready = false;
     this.sdkKey = sdkKey;
     this.options = new StatsigSDKOptions(options);
@@ -177,70 +192,85 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     if (options?.initializeValues != null) {
       this.setInitializeValues(options?.initializeValues);
     }
+
+    this.errorBoundary.setStatsigMetadata(this.getStatsigMetadata());
   }
 
   public setInitializeValues(initializeValues: Record<string, unknown>): void {
-    this.store.bootstrap(initializeValues);
-    if (!this.ready) {
-      // the sdk is usable and considered initialized when configured
-      // with initializeValues
-      this.ready = true;
-      this.initCalled = true;
-    }
-    // we wont have access to window/document/localStorage if these run on the server
-    // so try to run whenever this is called
-    this.handleOptionalLogging();
-    this.logger.sendSavedRequests();
+    this.errorBoundary.capture(
+      () => {
+        this.store.bootstrap(initializeValues);
+        if (!this.ready) {
+          // the sdk is usable and considered initialized when configured
+          // with initializeValues
+          this.ready = true;
+          this.initCalled = true;
+        }
+        // we wont have access to window/document/localStorage if these run on the server
+        // so try to run whenever this is called
+        this.handleOptionalLogging();
+        this.logger.sendSavedRequests();
+      },
+      () => {
+        this.ready = false;
+        this.initCalled = false;
+      },
+    );
   }
 
   public async initializeAsync(): Promise<void> {
-    if (this.pendingInitPromise != null) {
-      return this.pendingInitPromise;
-    }
-    if (this.ready) {
-      return Promise.resolve();
-    }
-    this.initCalled = true;
-    if (StatsigAsyncStorage.asyncStorage) {
-      await this.identity.initAsync();
-      await this.store.loadFromAsyncStorage();
-    }
+    return this.errorBoundary.capture(
+      async () => {
+        if (this.pendingInitPromise != null) {
+          return this.pendingInitPromise;
+        }
+        if (this.ready) {
+          return Promise.resolve();
+        }
+        this.initCalled = true;
+        if (StatsigAsyncStorage.asyncStorage) {
+          await this.identity.initAsync();
+          await this.store.loadFromAsyncStorage();
+        }
 
-    if (
-      this.appState &&
-      this.appState.addEventListener &&
-      typeof this.appState.addEventListener === 'function'
-    ) {
-      this.currentAppState = this.appState.currentState;
-      this.appState.addEventListener(
-        'change',
-        this.handleAppStateChange.bind(this),
-      );
-    }
+        if (
+          this.appState &&
+          this.appState.addEventListener &&
+          typeof this.appState.addEventListener === 'function'
+        ) {
+          this.currentAppState = this.appState.currentState;
+          this.appState.addEventListener(
+            'change',
+            this.handleAppStateChange.bind(this),
+          );
+        }
 
-    if (this.options.getLocalModeEnabled()) {
-      return Promise.resolve();
-    }
+        if (this.options.getLocalModeEnabled()) {
+          return Promise.resolve();
+        }
 
-    this.pendingInitPromise = this.network
-      .fetchValues(
-        this.identity.getUser(),
-        this.options.getInitTimeoutMs(),
-        async (json: Record<string, any>): Promise<void> => {
-          await this.store.save(json);
-          return;
-        },
-        (e: Error) => {},
-      )
-      .catch((e) => {})
-      .finally(async () => {
-        this.pendingInitPromise = null;
-        this.ready = true;
-        this.logger.sendSavedRequests();
-      });
+        this.pendingInitPromise = this.network
+          .fetchValues(
+            this.identity.getUser(),
+            this.options.getInitTimeoutMs(),
+            async (json: Record<string, any>): Promise<void> => {
+              await this.store.save(json);
+              return;
+            },
+            (e: Error) => {},
+          )
+          .catch((e) => {})
+          .finally(async () => {
+            this.pendingInitPromise = null;
+            this.ready = true;
+            this.logger.sendSavedRequests();
+          });
 
-    this.handleOptionalLogging();
-    return this.pendingInitPromise;
+        this.handleOptionalLogging();
+        return this.pendingInitPromise;
+      },
+      () => Promise.resolve(),
+    );
   }
 
   /**
@@ -254,11 +284,18 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     gateName: string,
     ignoreOverrides: boolean = false,
   ): boolean {
-    this.ensureStoreLoaded();
-    if (typeof gateName !== 'string' || gateName.length === 0) {
-      throw new Error('Must pass a valid string as the gateName.');
-    }
-    return this.store.checkGate(gateName, ignoreOverrides);
+    return this.errorBoundary.capture(
+      () => {
+        this.ensureStoreLoaded();
+        if (typeof gateName !== 'string' || gateName.length === 0) {
+          throw new StatsigInvalidArgumentError(
+            'Must pass a valid string as the gateName.',
+          );
+        }
+        return this.store.checkGate(gateName, ignoreOverrides);
+      },
+      () => false,
+    );
   }
 
   /**
@@ -272,12 +309,25 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     configName: string,
     ignoreOverrides: boolean = false,
   ): DynamicConfig {
-    this.ensureStoreLoaded();
-    if (typeof configName !== 'string' || configName.length === 0) {
-      throw new Error('Must pass a valid string as the configName.');
-    }
+    return this.errorBoundary.capture(
+      () => {
+        this.ensureStoreLoaded();
+        if (typeof configName !== 'string' || configName.length === 0) {
+          throw new StatsigInvalidArgumentError(
+            'Must pass a valid string as the configName.',
+          );
+        }
 
-    return this.store.getConfig(configName, ignoreOverrides);
+        return this.store.getConfig(configName, ignoreOverrides);
+      },
+      () =>
+        new DynamicConfig(
+          configName,
+          {},
+          '',
+          this.getEvalutionDetailsForError(),
+        ),
+    );
   }
 
   /**
@@ -293,24 +343,45 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     keepDeviceValue: boolean = false,
     ignoreOverrides: boolean = false,
   ): DynamicConfig {
-    this.ensureStoreLoaded();
-    if (typeof experimentName !== 'string' || experimentName.length === 0) {
-      throw new Error('Must pass a valid string as the experimentName.');
-    }
-    return this.store.getExperiment(
-      experimentName,
-      keepDeviceValue,
-      ignoreOverrides,
+    return this.errorBoundary.capture(
+      () => {
+        this.ensureStoreLoaded();
+        if (typeof experimentName !== 'string' || experimentName.length === 0) {
+          throw new StatsigInvalidArgumentError(
+            'Must pass a valid string as the experimentName.',
+          );
+        }
+        return this.store.getExperiment(
+          experimentName,
+          keepDeviceValue,
+          ignoreOverrides,
+        );
+      },
+      () =>
+        new DynamicConfig(
+          experimentName,
+          {},
+          '',
+          this.getEvalutionDetailsForError(),
+        ),
     );
   }
 
   public getLayer(layerName: string, keepDeviceValue: boolean = false): Layer {
-    this.ensureStoreLoaded();
-    if (typeof layerName !== 'string' || layerName.length === 0) {
-      throw new Error('Must pass a valid string as the layerName.');
-    }
+    return this.errorBoundary.capture(
+      () => {
+        this.ensureStoreLoaded();
+        if (typeof layerName !== 'string' || layerName.length === 0) {
+          throw new StatsigInvalidArgumentError(
+            'Must pass a valid string as the layerName.',
+          );
+        }
 
-    return this.store.getLayer(layerName, keepDeviceValue);
+        return this.store.getLayer(layerName, keepDeviceValue);
+      },
+      () =>
+        Layer._create(layerName, {}, '', this.getEvalutionDetailsForError()),
+    );
   }
 
   public logEvent(
@@ -318,75 +389,86 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     value: string | number | null = null,
     metadata: Record<string, string> | null = null,
   ): void {
-    if (!this.logger || !this.sdkKey) {
-      throw new Error('Must initialize() before logging events.');
-    }
-    if (typeof eventName !== 'string' || eventName.length === 0) {
-      console.error('Event not logged. No valid eventName passed.');
-      return;
-    }
-    if (this.shouldTrimParam(eventName, MAX_VALUE_SIZE)) {
-      console.warn(
-        'eventName is too long, trimming to ' + MAX_VALUE_SIZE + ' characters.',
-      );
-      eventName = eventName.substring(0, MAX_VALUE_SIZE);
-    }
-    if (
-      typeof value === 'string' &&
-      this.shouldTrimParam(value, MAX_VALUE_SIZE)
-    ) {
-      console.warn('value is too long, trimming to ' + MAX_VALUE_SIZE + '.');
-      value = value.substring(0, MAX_VALUE_SIZE);
-    }
-    if (this.shouldTrimParam(metadata, MAX_OBJ_SIZE)) {
-      console.warn('metadata is too big. Dropping the metadata.');
-      metadata = { error: 'not logged due to size too large' };
-    }
-    const event = new LogEvent(eventName);
-    event.setValue(value);
-    event.setMetadata(metadata);
-    event.setUser(this.getCurrentUser());
-    this.logger.log(event);
+    this.errorBoundary.swallow(() => {
+      if (!this.logger || !this.sdkKey) {
+        throw new StatsigUninitializedError(
+          'Must initialize() before logging events.',
+        );
+      }
+      if (typeof eventName !== 'string' || eventName.length === 0) {
+        console.error('Event not logged. No valid eventName passed.');
+        return;
+      }
+      if (this.shouldTrimParam(eventName, MAX_VALUE_SIZE)) {
+        console.warn(
+          'eventName is too long, trimming to ' +
+            MAX_VALUE_SIZE +
+            ' characters.',
+        );
+        eventName = eventName.substring(0, MAX_VALUE_SIZE);
+      }
+      if (
+        typeof value === 'string' &&
+        this.shouldTrimParam(value, MAX_VALUE_SIZE)
+      ) {
+        console.warn('value is too long, trimming to ' + MAX_VALUE_SIZE + '.');
+        value = value.substring(0, MAX_VALUE_SIZE);
+      }
+      if (this.shouldTrimParam(metadata, MAX_OBJ_SIZE)) {
+        console.warn('metadata is too big. Dropping the metadata.');
+        metadata = { error: 'not logged due to size too large' };
+      }
+      const event = new LogEvent(eventName);
+      event.setValue(value);
+      event.setMetadata(metadata);
+      event.setUser(this.getCurrentUser());
+      this.logger.log(event);
+    });
   }
 
   public async updateUser(user: StatsigUser | null): Promise<boolean> {
-    if (!this.initializeCalled()) {
-      throw new Error('Call initialize() first.');
-    }
+    return this.errorBoundary.capture(
+      async () => {
+        if (!this.initializeCalled()) {
+          throw new StatsigUninitializedError('Call initialize() first.');
+        }
 
-    this.identity.updateUser(this.normalizeUser(user));
-    this.store.updateUser();
-    this.logger.resetDedupeKeys();
+        this.identity.updateUser(this.normalizeUser(user));
+        this.store.updateUser();
+        this.logger.resetDedupeKeys();
 
-    const currentUser = this.identity.getUser();
+        const currentUser = this.identity.getUser();
 
-    if (this.pendingInitPromise != null) {
-      await this.pendingInitPromise;
-    }
+        if (this.pendingInitPromise != null) {
+          await this.pendingInitPromise;
+        }
 
-    if (this.options.getLocalModeEnabled()) {
-      return Promise.resolve(true);
-    }
+        if (this.options.getLocalModeEnabled()) {
+          return Promise.resolve(true);
+        }
 
-    this.pendingInitPromise = this.network
-      .fetchValues(
-        currentUser,
-        this.options.getInitTimeoutMs(),
-        async (json: Record<string, any>): Promise<void> => {
-          await this.store.save(json);
-        },
-        (e: Error) => {},
-      )
-      .finally(() => {
-        this.pendingInitPromise = null;
-      });
-    return this.pendingInitPromise
-      .then(() => {
-        return Promise.resolve(true);
-      })
-      .catch(() => {
-        return Promise.resolve(false);
-      });
+        this.pendingInitPromise = this.network
+          .fetchValues(
+            currentUser,
+            this.options.getInitTimeoutMs(),
+            async (json: Record<string, any>): Promise<void> => {
+              await this.store.save(json);
+            },
+            (e: Error) => {},
+          )
+          .finally(() => {
+            this.pendingInitPromise = null;
+          });
+        return this.pendingInitPromise
+          .then(() => {
+            return Promise.resolve(true);
+          })
+          .catch(() => {
+            return Promise.resolve(false);
+          });
+      },
+      () => Promise.resolve(false),
+    );
   }
 
   /**
@@ -394,18 +476,20 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
    * so the SDK can clean up internal state
    */
   public shutdown(): void {
-    this.logger.flush(true);
-    if (
-      this.appState &&
-      this.appState.removeEventListener &&
-      typeof this.appState.removeEventListener === 'function'
-    ) {
-      this.appState.removeEventListener(
-        'change',
-        this.handleAppStateChange.bind(this),
-      );
-    }
-    StatsigLocalStorage.cleanup();
+    this.errorBoundary.swallow(() => {
+      this.logger.flush(true);
+      if (
+        this.appState &&
+        this.appState.removeEventListener &&
+        typeof this.appState.removeEventListener === 'function'
+      ) {
+        this.appState.removeEventListener(
+          'change',
+          this.handleAppStateChange.bind(this),
+        );
+      }
+      StatsigLocalStorage.cleanup();
+    });
   }
 
   /**
@@ -414,8 +498,10 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
    * @param value the value to override the gate to
    */
   public overrideGate(gateName: string, value: boolean): void {
-    this.ensureStoreLoaded();
-    this.store.overrideGate(gateName, value);
+    this.errorBoundary.swallow(() => {
+      this.ensureStoreLoaded();
+      this.store.overrideGate(gateName, value);
+    });
   }
 
   /**
@@ -424,8 +510,10 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
    * @param value the json value to override the config to
    */
   public overrideConfig(configName: string, value: Record<string, any>): void {
-    this.ensureStoreLoaded();
-    this.store.overrideConfig(configName, value);
+    this.errorBoundary.swallow(() => {
+      this.ensureStoreLoaded();
+      this.store.overrideConfig(configName, value);
+    });
   }
 
   /**
@@ -433,8 +521,10 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
    * @param gateName
    */
   public removeGateOverride(gateName?: string): void {
-    this.ensureStoreLoaded();
-    this.store.removeGateOverride(gateName);
+    this.errorBoundary.swallow(() => {
+      this.ensureStoreLoaded();
+      this.store.removeGateOverride(gateName);
+    });
   }
 
   /**
@@ -442,8 +532,10 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
    * @param configName
    */
   public removeConfigOverride(configName?: string): void {
-    this.ensureStoreLoaded();
-    this.store.removeConfigOverride(configName);
+    this.errorBoundary.swallow(() => {
+      this.ensureStoreLoaded();
+      this.store.removeConfigOverride(configName);
+    });
   }
 
   /**
@@ -452,8 +544,10 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
    * @param gateName
    */
   public removeOverride(gateName?: string): void {
-    this.ensureStoreLoaded();
-    this.store.removeGateOverride(gateName);
+    this.errorBoundary.swallow(() => {
+      this.ensureStoreLoaded();
+      this.store.removeGateOverride(gateName);
+    });
   }
 
   /**
@@ -461,23 +555,36 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
    * @returns Gate overrides
    */
   public getOverrides(): Record<string, any> {
-    this.ensureStoreLoaded();
-    return this.store.getAllOverrides().gates;
+    return this.errorBoundary.capture(
+      () => {
+        this.ensureStoreLoaded();
+        return this.store.getAllOverrides().gates;
+      },
+      () => ({}),
+    );
   }
 
   /**
    * @returns The local gate and config overrides
    */
   public getAllOverrides(): StatsigOverrides {
-    this.ensureStoreLoaded();
-    return this.store.getAllOverrides();
+    return this.errorBoundary.capture(
+      () => {
+        this.ensureStoreLoaded();
+        return this.store.getAllOverrides();
+      },
+      () => ({ gates: {}, configs: {} }),
+    );
   }
 
   /**
    * @returns The Statsig stable ID used for device level experiments
    */
   public getStableID(): string {
-    return this.identity.getStatsigMetadata().stableID;
+    return this.errorBoundary.capture(
+      () => this.identity.getStatsigMetadata().stableID,
+      () => '',
+    );
   }
 
   public initializeCalled(): boolean {
@@ -650,7 +757,16 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
 
   private ensureStoreLoaded(): void {
     if (!this.store.isLoaded()) {
-      throw new Error('Call and wait for initialize() to finish first.');
+      throw new StatsigUninitializedError(
+        'Call and wait for initialize() to finish first.',
+      );
     }
+  }
+
+  private getEvalutionDetailsForError(): EvaluationDetails {
+    return {
+      time: Date.now(),
+      reason: EvaluationReason.Error,
+    };
   }
 }

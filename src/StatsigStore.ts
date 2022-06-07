@@ -18,6 +18,7 @@ export enum EvaluationReason {
   LocalOverride = 'LocalOverride',
   Unrecognized = 'Unrecognized',
   Uninitialized = 'Uninitialized',
+  Error = 'Error',
 }
 
 export type EvaluationDetails = {

@@ -75,10 +75,14 @@ export default class StatsigNetwork {
     )
       .then((res) => {
         if (res.ok) {
-          return res.json().then((json: Record<string, any>) => {
-            resolveCallback(json);
-            return Promise.resolve(json);
-          });
+          return this.sdkInternal.getErrorBoundary().capture(
+            () =>
+              res.json().then((json: Record<string, any>) => {
+                resolveCallback(json);
+                return Promise.resolve(json);
+              }),
+            () => Promise.resolve({}),
+          );
         }
 
         return Promise.reject(

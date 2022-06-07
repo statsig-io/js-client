@@ -8,6 +8,7 @@
     "prepare": "rm -rf build/ && rm -rf dist/ && tsc && webpack",
     "postbuild": "rm -rf build/**/*.map",
     "test": "jest",
+    "test:watch": "jest --watch",
     "types": "npx tsc"
   },
   "files": [

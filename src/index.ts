@@ -1,34 +1,37 @@
 import DynamicConfig from './DynamicConfig';
+import { StatsigUninitializedError } from './Errors';
 import Layer from './Layer';
-import StatsigClient, {
-  StatsigOverrides,
-  _SDKPackageInfo,
-} from './StatsigClient';
+import StatsigClient, { StatsigOverrides } from './StatsigClient';
 import { StatsigOptions } from './StatsigSDKOptions';
 import { StatsigUser } from './StatsigUser';
 
-export { default as StatsigAsyncStorage } from './utils/StatsigAsyncStorage';
-export { StatsigOptions, StatsigEnvironment } from './StatsigSDKOptions';
-export { StatsigUser } from './StatsigUser';
 export { default as DynamicConfig } from './DynamicConfig';
 export { default as Layer } from './Layer';
-export { default as StatsigClient } from './StatsigClient';
-export { IStatsig, StatsigOverrides } from './StatsigClient';
-export { EvaluationReason } from './StatsigStore';
-
-export type { AsyncStorage } from './utils/StatsigAsyncStorage';
-export type { _SDKPackageInfo as _SDKPackageInfo } from './StatsigClient';
-
-export type { AppState, AppStateEvent, AppStateStatus } from './StatsigClient';
+export {
+  default as StatsigClient,
+  IStatsig,
+  StatsigOverrides,
+} from './StatsigClient';
 export type {
-  NativeModules,
-  Platform,
+  AppState,
+  AppStateEvent,
+  AppStateStatus,
+  _SDKPackageInfo as _SDKPackageInfo,
+} from './StatsigClient';
+export type {
   DeviceInfo,
   ExpoConstants,
   ExpoDevice,
+  NativeModules,
+  Platform,
   UUID,
 } from './StatsigIdentity';
+export { StatsigEnvironment, StatsigOptions } from './StatsigSDKOptions';
+export { EvaluationReason } from './StatsigStore';
 export type { EvaluationDetails } from './StatsigStore';
+export { StatsigUser } from './StatsigUser';
+export { default as StatsigAsyncStorage } from './utils/StatsigAsyncStorage';
+export type { AsyncStorage } from './utils/StatsigAsyncStorage';
 
 if (!Object.entries) {
   // @ts-ignore pollyfill from https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/entries
@@ -79,16 +82,19 @@ export default class Statsig {
     user?: StatsigUser | null,
     options?: StatsigOptions | null,
   ): Promise<void> {
+    const inst = Statsig.instance ?? new StatsigClient(sdkKey, user, options);
+
     if (!Statsig.instance) {
-      Statsig.instance = new StatsigClient(sdkKey, user, options);
+      Statsig.instance = inst;
     }
-    return Statsig.instance.initializeAsync();
+
+    return inst.initializeAsync();
   }
 
   public static setInitializeValues(
     initializeValues: Record<string, unknown>,
   ): void {
-    return Statsig.getClientX().setInitializeValues(initializeValues);
+    Statsig.getClientX().setInitializeValues(initializeValues);
   }
 
   public static checkGate(
@@ -129,7 +135,7 @@ export default class Statsig {
     value: string | number | null = null,
     metadata: Record<string, string> | null = null,
   ): void {
-    Statsig.getClientX().logEvent(eventName, value, metadata);
+    return Statsig.getClientX().logEvent(eventName, value, metadata);
   }
 
   public static updateUser(user: StatsigUser | null): Promise<boolean> {
@@ -205,7 +211,7 @@ export default class Statsig {
 
   private static getClientX(): StatsigClient {
     if (!Statsig.instance) {
-      throw new Error('Call and wait for initialize() to finish first.');
+      throw new StatsigUninitializedError();
     }
     return Statsig.instance;
   }
