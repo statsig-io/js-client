@@ -15,7 +15,10 @@ const LAYER_EXPOSURE_EVENT = INTERNAL_EVENT_PREFIX + 'layer_exposure';
 const GATE_EXPOSURE_EVENT = INTERNAL_EVENT_PREFIX + 'gate_exposure';
 const LOG_FAILURE_EVENT = INTERNAL_EVENT_PREFIX + 'log_event_failed';
 const APP_ERROR_EVENT = INTERNAL_EVENT_PREFIX + 'app_error';
-const APP_METRICS_EVENT = INTERNAL_EVENT_PREFIX + 'app_metrics';
+const APP_METRICS_PAGE_LOAD_EVENT =
+  INTERNAL_EVENT_PREFIX + 'app_metrics::page_load_time';
+const APP_METRICS_DOM_INTERACTIVE_EVENT =
+  INTERNAL_EVENT_PREFIX + 'app_metrics::dom_interactive_time';
 
 type FailedLogEventBody = {
   events: object[];
@@ -246,16 +249,23 @@ export default class StatsigLogger {
     }
 
     const navEntry = entries[0] as any;
-    const metricsEvent = new LogEvent(APP_METRICS_EVENT);
-    metricsEvent.setUser(user);
-    metricsEvent.setValue(navEntry.name);
-    metricsEvent.setMetadata({
-      pageLoadTimeMs: navEntry.duration,
-      domInteractiveMs: navEntry.domInteractive - navEntry.startTime,
-      redirectCount: navEntry.redirectCount,
-    });
+    const metadata = {
+      statsig_dimensions: {
+        url: navEntry.name,
+      },
+    };
 
-    this.log(metricsEvent);
+    const latencyEvent = new LogEvent(APP_METRICS_PAGE_LOAD_EVENT);
+    latencyEvent.setUser(user);
+    latencyEvent.setValue(navEntry.duration);
+    latencyEvent.setMetadata(metadata);
+    this.log(latencyEvent);
+
+    const domInteractiveEvent = new LogEvent(APP_METRICS_DOM_INTERACTIVE_EVENT);
+    domInteractiveEvent.setUser(user);
+    domInteractiveEvent.setValue(navEntry.domInteractive - navEntry.startTime);
+    domInteractiveEvent.setMetadata(metadata);
+    this.log(domInteractiveEvent);
   }
 
   public flush(isClosing: boolean = false): void {
