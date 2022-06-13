@@ -595,6 +595,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   public setSDKPackageInfo(sdkPackageInfo?: _SDKPackageInfo) {
     if (sdkPackageInfo != null) {
       this.identity.setSDKPackageInfo(sdkPackageInfo);
+      this.errorBoundary.setStatsigMetadata(this.getStatsigMetadata());
     }
   }
 
