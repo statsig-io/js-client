@@ -185,7 +185,7 @@ describe('Verify behavior of StatsigClient', () => {
   });
 
   test('that async storage works', async () => {
-    expect.assertions(4);
+    expect.assertions(5);
     setFakeAsyncStorage();
     const spyOnSet = jest.spyOn(StatsigAsyncStorage, 'setItemAsync');
     const spyOnGet = jest.spyOn(StatsigAsyncStorage, 'getItemAsync');
@@ -200,6 +200,7 @@ describe('Verify behavior of StatsigClient', () => {
 
     await statsig.initializeAsync();
 
+    expect(statsig.getOptions().getApi()).toEqual('https://statsigapi.net/v1/');
     expect(statsig.getOptions().getLoggingBufferMaxSize()).toEqual(500);
     expect(statsig.getOptions().getLoggingIntervalMillis()).toEqual(1000);
 

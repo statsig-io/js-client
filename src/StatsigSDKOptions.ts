@@ -1,4 +1,4 @@
-const DEFAULT_API = 'https://api.statsig.com/v1/';
+const DEFAULT_API = 'https://statsigapi.net/v1/';
 
 export type StatsigEnvironment = {
   tier?: 'production' | 'staging' | 'development';
