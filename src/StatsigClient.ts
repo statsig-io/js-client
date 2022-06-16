@@ -212,8 +212,8 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         this.logger.sendSavedRequests();
       },
       () => {
-        this.ready = false;
-        this.initCalled = false;
+        this.ready = true;
+        this.initCalled = true;
       },
     );
   }
@@ -269,7 +269,11 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         this.handleOptionalLogging();
         return this.pendingInitPromise;
       },
-      () => Promise.resolve(),
+      () => {
+        this.ready = true;
+        this.initCalled = true;
+        return Promise.resolve();
+      },
     );
   }
 

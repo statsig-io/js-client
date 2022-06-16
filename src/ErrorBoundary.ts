@@ -62,15 +62,18 @@ export default class ErrorBoundary {
       this.seen.add(name);
 
       const info = isError ? unwrapped.stack : this.getDescription(unwrapped);
+      const metadata = this.statsigMetadata ?? {};
       const body = JSON.stringify({
         exception: name,
         info,
-        statsigMetadata: this.statsigMetadata ?? {},
+        statsigMetadata: metadata,
       });
       fetch(ExceptionEndpoint, {
         method: 'POST',
         headers: {
           'STATSIG-API-KEY': this.sdkKey,
+          'STATSIG-SDK-TYPE': String(metadata['sdkType']),
+          'STATSIG-SDK-VERSION': String(metadata['sdkVersion']),
           'Content-Type': 'application/json',
           'Content-Length': `${body.length}`,
         },

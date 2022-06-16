@@ -130,8 +130,13 @@ describe('Statsig ErrorBoundary Usage', () => {
   });
 
   it('recovers from errors with setInitializeValues', () => {
+    // @ts-ignore
+    client.ready = false;
+
     client.setInitializeValues({});
     expect(requests).toEqual(oneLoggedError('store.bootstrap'));
+    // @ts-ignore
+    expect(client.ready).toBeTruthy();
   });
 
   it('recovers from errors with getStableID', () => {
@@ -148,6 +153,8 @@ describe('Statsig ErrorBoundary Usage', () => {
     localClient.network = 1;
     await localClient.initializeAsync();
     expect(requests).toEqual(oneLoggedError('network.fetchValues'));
+    // @ts-ignore
+    expect(localClient.ready).toBeTruthy();
   });
 
   it('recovers from errors with updateUser', async () => {

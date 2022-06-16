@@ -99,7 +99,8 @@ describe('ErrorBoundary', () => {
   });
 
   it('logs statsig metadata', () => {
-    boundary.setStatsigMetadata({ sdkType: 'js-client' });
+    const metadata = { sdkType: 'js-client', sdkVersion: '1.2.3' };
+    boundary.setStatsigMetadata(metadata);
 
     boundary.swallow(() => {
       throw new Error();
@@ -107,7 +108,14 @@ describe('ErrorBoundary', () => {
 
     expect(JSON.parse(request[0].params['body'])).toEqual(
       expect.objectContaining({
-        statsigMetadata: { sdkType: 'js-client' },
+        statsigMetadata: metadata,
+      }),
+    );
+
+    expect(request[0].params['headers']).toEqual(
+      expect.objectContaining({
+        'STATSIG-SDK-TYPE': 'js-client',
+        'STATSIG-SDK-VERSION': '1.2.3',
       }),
     );
   });
