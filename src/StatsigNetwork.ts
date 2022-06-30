@@ -141,6 +141,11 @@ export default class StatsigNetwork {
       // fetch is not defined in this environment, short circuit
       return Promise.reject('fetch is not defined');
     }
+
+    if (typeof window === 'undefined') {
+      // dont issue requests from the server
+      return Promise.reject('window is not defined');
+    }
     const url = this.sdkInternal.getOptions().getApi() + endpointName;
     const counter = this.leakyBucket[url];
     if (counter != null && counter >= 30) {
