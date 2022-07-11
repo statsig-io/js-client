@@ -3,11 +3,9 @@ import { IHasStatsigInternal } from './StatsigClient';
 import { StatsigEndpoint } from './StatsigNetwork';
 import { EvaluationDetails } from './StatsigStore';
 import { StatsigUser } from './StatsigUser';
+import { STATSIG_LOCAL_STORAGE_LOGGING_REQUEST_KEY } from './utils/Constants';
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
-
-const STATSIG_LOCAL_STORAGE_LOGGING_REQUEST_KEY =
-  'STATSIG_LOCAL_STORAGE_LOGGING_REQUEST';
 
 const INTERNAL_EVENT_PREFIX = 'statsig::';
 const CONFIG_EXPOSURE_EVENT = INTERNAL_EVENT_PREFIX + 'config_exposure';

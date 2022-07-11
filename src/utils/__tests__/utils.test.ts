@@ -66,7 +66,7 @@ describe('Verify behavior of core utility functions', () => {
   });
 
   test('Cleanup removes old keys but leaves non-statsig keys intact', () => {
-    expect.assertions(7);
+    expect.assertions(9);
     StatsigLocalStorage.setItem('STATSIG_LOCAL_STORAGE_STABLE_ID', '123');
     expect(
       StatsigLocalStorage.getItem('STATSIG_LOCAL_STORAGE_STABLE_ID'),
@@ -91,6 +91,11 @@ describe('Verify behavior of core utility functions', () => {
     StatsigLocalStorage.setItem('config', 'not statsig');
     expect(StatsigLocalStorage.getItem('config')).toEqual('not statsig');
 
+    StatsigLocalStorage.setItem('STATSIG_LOCAL_STORAGE_LOGGING_REQUEST', 'ghi');
+    expect(
+      StatsigLocalStorage.getItem('STATSIG_LOCAL_STORAGE_LOGGING_REQUEST'),
+    ).toEqual('ghi');
+
     StatsigLocalStorage.cleanup();
     expect(StatsigLocalStorage.getItem('config')).toEqual('not statsig');
 
@@ -101,5 +106,9 @@ describe('Verify behavior of core utility functions', () => {
     expect(
       StatsigLocalStorage.getItem('STATSIG_LOCAL_STORAGE_INTERNAL_STORE_V4'),
     ).toEqual('abc');
+
+    expect(
+      StatsigLocalStorage.getItem('STATSIG_LOCAL_STORAGE_LOGGING_REQUEST'),
+    ).toEqual('ghi');
   });
 });
