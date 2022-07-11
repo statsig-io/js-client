@@ -67,6 +67,8 @@ export default class Identity {
   private platform: Platform | null = null;
   private nativeModules: NativeModules | null = null;
   private reactNativeUUID?: UUID;
+  private sdkType: string = 'js-client';
+  private sdkVersion: string;
 
   public constructor(
     user: StatsigUser | null,
@@ -75,10 +77,11 @@ export default class Identity {
   ) {
     this.reactNativeUUID = reactNativeUUID;
     this.user = user;
+    this.sdkVersion = require('../package.json')?.version ?? '';
     this.statsigMetadata = {
       sessionID: this.getUUID(),
-      sdkType: 'js-client',
-      sdkVersion: require('../package.json')?.version ?? '',
+      sdkType: this.sdkType,
+      sdkVersion: this.sdkVersion,
     };
 
     let stableID = overrideStableID;
@@ -105,7 +108,17 @@ export default class Identity {
     return this;
   }
 
+  public getSDKType(): string {
+    return this.sdkType;
+  }
+
+  public getSDKVersion(): string {
+    return this.sdkVersion;
+  }
+
   public getStatsigMetadata(): Record<string, string> {
+    this.statsigMetadata.sdkType = this.sdkType;
+    this.statsigMetadata.sdkVersion = this.sdkVersion;
     return this.statsigMetadata;
   }
 
@@ -119,8 +132,8 @@ export default class Identity {
   }
 
   public setSDKPackageInfo(SDKPackageInfo: _SDKPackageInfo): void {
-    this.statsigMetadata.sdkType = SDKPackageInfo.sdkType;
-    this.statsigMetadata.sdkVersion = SDKPackageInfo.sdkVersion;
+    this.sdkType = SDKPackageInfo.sdkType;
+    this.sdkVersion = SDKPackageInfo.sdkVersion;
   }
 
   public setPlatform(platform: Platform): void {

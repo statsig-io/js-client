@@ -54,7 +54,7 @@ export default class StatsigNetwork {
       resolveCallback,
       rejectCallback,
       timeout, // timeout for early returns
-      10, // retries
+      3, // retries
     );
   }
 
@@ -114,7 +114,8 @@ export default class StatsigNetwork {
       return true;
     }
     const url = new URL(
-      this.sdkInternal.getOptions().getApi() + StatsigEndpoint.LogEventBeacon,
+      this.sdkInternal.getOptions().getEventLoggingApi() +
+        StatsigEndpoint.LogEventBeacon,
     );
     url.searchParams.append('k', this.sdkInternal.getSDKKey());
     payload.clientTime = Date.now() + '';
@@ -146,7 +147,11 @@ export default class StatsigNetwork {
       // dont issue requests from the server
       return Promise.reject('window is not defined');
     }
-    const url = this.sdkInternal.getOptions().getApi() + endpointName;
+    const api =
+      endpointName == StatsigEndpoint.Initialize
+        ? this.sdkInternal.getOptions().getApi()
+        : this.sdkInternal.getOptions().getEventLoggingApi();
+    const url = api + endpointName;
     const counter = this.leakyBucket[url];
     if (counter != null && counter >= 30) {
       return Promise.reject(
@@ -169,6 +174,8 @@ export default class StatsigNetwork {
         'Content-type': 'application/json; charset=UTF-8',
         'STATSIG-API-KEY': this.sdkInternal.getSDKKey(),
         'STATSIG-CLIENT-TIME': Date.now() + '',
+        'STATSIG-SDK-TYPE': this.sdkInternal.getSDKType(),
+        'STATSIG-SDK-VERSION': this.sdkInternal.getSDKVersion(),
       },
     };
 

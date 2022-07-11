@@ -13,6 +13,9 @@ describe('Verify behavior of StatsigLogger', () => {
   //@ts-ignore
   global.fetch = jest.fn((url) => {
     if (url && typeof url === 'string' && url.includes('rgstr')) {
+      if (url !== 'https://events.statsigapi.net/v1/rgstr') {
+        fail('invalid logevent endpoint');
+      }
       return Promise.resolve({
         ok: false,
         text: () => 'error',

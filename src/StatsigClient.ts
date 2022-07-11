@@ -93,6 +93,8 @@ export interface IHasStatsigInternal {
   getSDKKey(): string;
   getStatsigMetadata(): Record<string, string | number>;
   getErrorBoundary(): ErrorBoundary;
+  getSDKType(): string;
+  getSDKVersion(): string;
 }
 
 export type StatsigOverrides = {
@@ -165,6 +167,14 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
 
   public getStatsigMetadata(): Record<string, string | number> {
     return this.identity.getStatsigMetadata();
+  }
+
+  public getSDKType(): string {
+    return this.identity.getSDKType();
+  }
+
+  public getSDKVersion(): string {
+    return this.identity.getSDKVersion();
   }
 
   public constructor(

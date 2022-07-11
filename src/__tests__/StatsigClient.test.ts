@@ -12,6 +12,14 @@ describe('Verify behavior of StatsigClient', () => {
   var parsedRequestBody;
   // @ts-ignore
   global.fetch = jest.fn((url, params) => {
+    if (
+      url &&
+      typeof url === 'string' &&
+      url.includes('initialize') &&
+      url !== 'https://featuregates.org/v1/initialize'
+    ) {
+      fail('invalid initialize endpoint');
+    }
     parsedRequestBody = JSON.parse(params.body as string);
     return Promise.resolve({
       ok: true,
@@ -185,7 +193,7 @@ describe('Verify behavior of StatsigClient', () => {
   });
 
   test('that async storage works', async () => {
-    expect.assertions(5);
+    expect.assertions(6);
     setFakeAsyncStorage();
     const spyOnSet = jest.spyOn(StatsigAsyncStorage, 'setItemAsync');
     const spyOnGet = jest.spyOn(StatsigAsyncStorage, 'getItemAsync');
@@ -200,14 +208,67 @@ describe('Verify behavior of StatsigClient', () => {
 
     await statsig.initializeAsync();
 
-    expect(statsig.getOptions().getApi()).toEqual('https://statsigapi.net/v1/');
+    expect(statsig.getOptions().getApi()).toEqual(
+      'https://featuregates.org/v1/',
+    );
     expect(statsig.getOptions().getLoggingBufferMaxSize()).toEqual(500);
     expect(statsig.getOptions().getLoggingIntervalMillis()).toEqual(1000);
+    expect(statsig.getOptions().getEventLoggingApi()).toEqual(
+      'https://events.statsigapi.net/v1/',
+    );
 
     // Set the stable id, save the configs
     expect(spyOnSet).toHaveBeenCalledTimes(2);
     // Get the stable id, 2 saved configs, and saved logs
     expect(spyOnGet).toHaveBeenCalledTimes(4);
+  });
+
+  test('that overriding api overrides both api and logevent api', async () => {
+    expect.assertions(4);
+    const statsig = new StatsigClient(
+      sdkKey,
+      { userID: '123' },
+      {
+        api: 'https://statsig.jkw.com/v1',
+      },
+    );
+
+    await statsig.initializeAsync();
+
+    expect(statsig.getOptions().getApi()).toEqual(
+      'https://statsig.jkw.com/v1/',
+    );
+    expect(statsig.getOptions().getEventLoggingApi()).toEqual(
+      'https://statsig.jkw.com/v1/',
+    );
+
+    statsig.setSDKPackageInfo({
+      sdkType: 'test-type',
+      sdkVersion: '1.0.0',
+    });
+
+    expect(statsig.getSDKType()).toEqual('test-type');
+    expect(statsig.getSDKVersion()).toEqual('1.0.0');
+  });
+
+  test('that separate event and initialize endpoints work', async () => {
+    expect.assertions(2);
+    const statsig = new StatsigClient(
+      sdkKey,
+      { userID: '123' },
+      {
+        eventLoggingApi: 'https://logging.jkw.com/v1',
+      },
+    );
+
+    await statsig.initializeAsync();
+
+    expect(statsig.getOptions().getApi()).toEqual(
+      'https://featuregates.org/v1/',
+    );
+    expect(statsig.getOptions().getEventLoggingApi()).toEqual(
+      'https://logging.jkw.com/v1/',
+    );
   });
 
   test('that overrideStableID works for local storage and gets set correctly in request', async () => {

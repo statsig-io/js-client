@@ -1,4 +1,5 @@
-const DEFAULT_API = 'https://statsigapi.net/v1/';
+const DEFAULT_FEATURE_GATE_API = 'https://featuregates.org/v1/';
+const DEFAULT_EVENT_LOGGING_API = 'https://events.statsigapi.net/v1/';
 
 export type StatsigEnvironment = {
   tier?: 'production' | 'staging' | 'development';
@@ -18,6 +19,7 @@ export type StatsigOptions = {
   disableErrorLogging?: boolean;
   disableAutoMetricsLogging?: boolean;
   initializeValues?: Record<string, any> | null;
+  eventLoggingApi?: string;
 };
 
 type BoundedNumberInput = {
@@ -39,12 +41,13 @@ export default class StatsigSDKOptions {
   private disableErrorLogging: boolean;
   private disableAutoMetricsLogging: boolean;
   private initializeValues?: Record<string, any> | null;
+  private eventLoggingApi: string;
 
   constructor(options?: StatsigOptions | null) {
     if (options == null) {
       options = {};
     }
-    let api = options.api ?? DEFAULT_API;
+    let api = options.api ?? DEFAULT_FEATURE_GATE_API;
     this.api = api.endsWith('/') ? api : api + '/';
     this.disableCurrentPageLogging = options.disableCurrentPageLogging ?? false;
     this.environment = options.environment ?? null;
@@ -75,6 +78,11 @@ export default class StatsigSDKOptions {
     this.disableErrorLogging = options.disableErrorLogging ?? false;
     this.disableAutoMetricsLogging = options.disableAutoMetricsLogging ?? false;
     this.initializeValues = options.initializeValues ?? null;
+    let eventLoggingApi =
+      options.eventLoggingApi ?? options.api ?? DEFAULT_EVENT_LOGGING_API;
+    this.eventLoggingApi = eventLoggingApi.endsWith('/')
+      ? eventLoggingApi
+      : eventLoggingApi + '/';
   }
 
   getApi(): string {
@@ -119,6 +127,10 @@ export default class StatsigSDKOptions {
 
   getDisableAutoMetricsLogging(): boolean {
     return this.disableAutoMetricsLogging;
+  }
+
+  getEventLoggingApi(): string {
+    return this.eventLoggingApi;
   }
 
   private normalizeNumberInput(
