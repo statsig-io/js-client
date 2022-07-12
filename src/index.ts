@@ -5,8 +5,10 @@ import StatsigClient, { StatsigOverrides } from './StatsigClient';
 import { StatsigOptions } from './StatsigSDKOptions';
 import { StatsigUser } from './StatsigUser';
 
-// @ts-ignore
-export * from './Polyfill';
+import { default as PolyfillObjectEntries } from './utils/Object.entries';
+import { default as PolyfillObjectFromEntries } from './utils/Object.fromEntries';
+import { default as PolyfillPromiseFinally } from './utils/Promise.finally';
+
 export { default as DynamicConfig } from './DynamicConfig';
 export { default as Layer } from './Layer';
 export {
@@ -34,6 +36,10 @@ export type { EvaluationDetails } from './StatsigStore';
 export { StatsigUser } from './StatsigUser';
 export { default as StatsigAsyncStorage } from './utils/StatsigAsyncStorage';
 export type { AsyncStorage } from './utils/StatsigAsyncStorage';
+
+PolyfillObjectEntries();
+PolyfillObjectFromEntries();
+PolyfillPromiseFinally();
 
 export default class Statsig {
   private static instance: StatsigClient | null = null;
