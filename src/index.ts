@@ -3,7 +3,7 @@ import { StatsigUninitializedError } from './Errors';
 import Layer from './Layer';
 import StatsigClient, { StatsigOverrides } from './StatsigClient';
 import { StatsigOptions } from './StatsigSDKOptions';
-import { EvaluationDetails } from './StatsigStore';
+import { EvaluationDetails, EvaluationReason } from './StatsigStore';
 import { StatsigUser } from './StatsigUser';
 
 import { default as PolyfillObjectEntries } from './utils/Object.entries';
@@ -185,7 +185,12 @@ export default class Statsig {
    * of gates and configs
    */
   public static getEvaluationDetails(): EvaluationDetails {
-    return Statsig.getClientX().getEvaluationDetails();
+    return (
+      Statsig.instance?.getEvaluationDetails() ?? {
+        reason: EvaluationReason.Uninitialized,
+        time: 0,
+      }
+    );
   }
 
   private static getClientX(): StatsigClient {

@@ -288,11 +288,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   }
 
   public getEvaluationDetails(): EvaluationDetails {
-    const details = this.store.getGlobalEvaluationDetails();
-    if (details.reason === EvaluationReason.Unrecognized) {
-      details.reason = EvaluationReason.Uninitialized;
-    }
-    return details;
+    return this.store.getGlobalEvaluationDetails();
   }
 
   /**

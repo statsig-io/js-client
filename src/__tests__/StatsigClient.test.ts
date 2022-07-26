@@ -380,12 +380,12 @@ describe('Verify behavior of StatsigClient', () => {
     expect(client.getConfig('test_config').get('number', 10)).toEqual(7);
     expect(client.getConfig('test_config').getEvaluationDetails()).toEqual({
       reason: EvaluationReason.Bootstrap,
-      time: expect.any(Number),
+      time: 1,
     });
 
     expect(client.getEvaluationDetails()).toEqual({
       reason: EvaluationReason.Bootstrap,
-      time: expect.any(Number),
+      time: 1,
     });
 
     await client.initializeAsync();

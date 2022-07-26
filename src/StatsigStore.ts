@@ -85,6 +85,7 @@ export default class StatsigStore {
       sticky_experiments: {},
       layer_configs: {},
       time: 0,
+      evaluation_time: 0,
     };
     this.stickyDeviceExperiments = {};
     this.loaded = false;
@@ -115,9 +116,8 @@ export default class StatsigStore {
       this.userValues.feature_gates = initializeValues.feature_gates ?? {};
       this.userValues.dynamic_configs = initializeValues.dynamic_configs ?? {};
       this.userValues.layer_configs = initializeValues.layer_configs ?? {};
-      this.userValues.time = Date.now();
-      this.userValues.evaluation_time =
-        initializeValues.evaluation_time ?? Date.now();
+      this.userValues.evaluation_time = initializeValues.time ?? Date.now();
+      this.userValues.time = initializeValues.time ?? Date.now();
       this.values[key] = this.userValues;
       this.reason = EvaluationReason.Bootstrap;
       this.loadOverrides();
@@ -176,6 +176,7 @@ export default class StatsigStore {
         sticky_experiments: {},
         layer_configs: {},
         time: 0,
+        evaluation_time: 0,
       };
       this.reason = EvaluationReason.Uninitialized;
     } else {
@@ -568,7 +569,7 @@ export default class StatsigStore {
   public getGlobalEvaluationDetails(): EvaluationDetails {
     return {
       reason: this.reason ?? EvaluationReason.Uninitialized,
-      time: this.userValues.evaluation_time ?? Date.now(),
+      time: this.userValues.evaluation_time ?? 0,
     };
   }
 
