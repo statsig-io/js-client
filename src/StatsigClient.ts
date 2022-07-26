@@ -287,6 +287,14 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     );
   }
 
+  public getEvaluationDetails(): EvaluationDetails {
+    const details = this.store.getGlobalEvaluationDetails();
+    if (details.reason === EvaluationReason.Unrecognized) {
+      details.reason = EvaluationReason.Uninitialized;
+    }
+    return details;
+  }
+
   /**
    * Checks the value of a gate for the current user
    * @param {string} gateName - the name of the gate to check

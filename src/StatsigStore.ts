@@ -565,6 +565,13 @@ export default class StatsigStore {
     }
   }
 
+  public getGlobalEvaluationDetails(): EvaluationDetails {
+    return {
+      reason: this.reason ?? EvaluationReason.Uninitialized,
+      time: this.userValues.evaluation_time ?? Date.now(),
+    };
+  }
+
   private getEvaluationDetails(
     valueExists: Boolean,
     reasonOverride?: EvaluationReason,

@@ -3,6 +3,7 @@ import { StatsigUninitializedError } from './Errors';
 import Layer from './Layer';
 import StatsigClient, { StatsigOverrides } from './StatsigClient';
 import { StatsigOptions } from './StatsigSDKOptions';
+import { EvaluationDetails } from './StatsigStore';
 import { StatsigUser } from './StatsigUser';
 
 import { default as PolyfillObjectEntries } from './utils/Object.entries';
@@ -176,6 +177,15 @@ export default class Statsig {
    */
   public static getStableID(): string {
     return Statsig.getClientX().getStableID();
+  }
+
+  /**
+   *
+   * @returns The reason and time associated with the evaluation for the current set
+   * of gates and configs
+   */
+  public static getEvaluationDetails(): EvaluationDetails {
+    return Statsig.getClientX().getEvaluationDetails();
   }
 
   private static getClientX(): StatsigClient {
