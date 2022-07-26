@@ -365,7 +365,7 @@ describe('Verify behavior of StatsigClient', () => {
   });
 
   test('That bootstrapping values works', async () => {
-    expect.assertions(13);
+    expect.assertions(14);
 
     const client = new StatsigClient(
       'client-xyz',
@@ -379,6 +379,11 @@ describe('Verify behavior of StatsigClient', () => {
     expect(client.checkGate('on_for_statsig_email')).toBe(true);
     expect(client.getConfig('test_config').get('number', 10)).toEqual(7);
     expect(client.getConfig('test_config').getEvaluationDetails()).toEqual({
+      reason: EvaluationReason.Bootstrap,
+      time: expect.any(Number),
+    });
+
+    expect(client.getEvaluationDetails()).toEqual({
       reason: EvaluationReason.Bootstrap,
       time: expect.any(Number),
     });
