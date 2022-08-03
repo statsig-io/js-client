@@ -43,6 +43,7 @@ PolyfillObjectFromEntries();
 PolyfillPromiseFinally();
 
 export default class Statsig {
+  public static encodeIntializeCall = true;
   private static instance: StatsigClient | null = null;
 
   private constructor() {}

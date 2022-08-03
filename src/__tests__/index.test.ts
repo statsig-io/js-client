@@ -2,6 +2,7 @@
  * @jest-environment jsdom
  */
 
+import Statsig from '..';
 import LogEvent from '../LogEvent';
 import StatsigClient from '../StatsigClient';
 import { EvaluationReason } from '../StatsigStore';
@@ -78,6 +79,8 @@ describe('Verify behavior of top level index functions', () => {
   beforeEach(() => {
     jest.resetModules();
     statsig = require('../index').default;
+    statsig.encodeIntializeCall = false;
+    Statsig.encodeIntializeCall = false;
     expect.hasAssertions();
     requestCount = 0;
     hasCustomID = false;

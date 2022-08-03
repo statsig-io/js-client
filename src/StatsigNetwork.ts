@@ -1,3 +1,4 @@
+import Statsig from '.';
 import { IHasStatsigInternal } from './StatsigClient';
 import { StatsigUser } from './StatsigUser';
 
@@ -147,6 +148,7 @@ export default class StatsigNetwork {
       // dont issue requests from the server
       return Promise.reject('window is not defined');
     }
+
     const api =
       endpointName == StatsigEndpoint.Initialize
         ? this.sdkInternal.getOptions().getApi()
@@ -167,15 +169,26 @@ export default class StatsigNetwork {
       this.leakyBucket[url] = counter + 1;
     }
 
+    const shouldEncode =
+      endpointName === StatsigEndpoint.Initialize &&
+      Statsig.encodeIntializeCall &&
+      typeof window?.btoa === 'function';
+
+    let postBody = JSON.stringify(body);
+    if (shouldEncode) {
+      postBody = window.btoa(postBody).split('').reverse().join('');
+    }
+
     const params: RequestInit = {
       method: 'POST',
-      body: JSON.stringify(body),
+      body: postBody,
       headers: {
         'Content-type': 'application/json; charset=UTF-8',
         'STATSIG-API-KEY': this.sdkInternal.getSDKKey(),
         'STATSIG-CLIENT-TIME': Date.now() + '',
         'STATSIG-SDK-TYPE': this.sdkInternal.getSDKType(),
         'STATSIG-SDK-VERSION': this.sdkInternal.getSDKVersion(),
+        'STATSIG-ENCODED': shouldEncode ? '1' : '0',
       },
     };
 

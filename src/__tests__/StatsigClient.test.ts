@@ -2,6 +2,7 @@
  * @jest-environment jsdom
  */
 
+import Statsig from '..';
 import StatsigClient from '../StatsigClient';
 import { EvaluationReason } from '../StatsigStore';
 import StatsigAsyncStorage from '../utils/StatsigAsyncStorage';
@@ -75,6 +76,7 @@ describe('Verify behavior of StatsigClient', () => {
     jest.resetModules();
     parsedRequestBody = null;
 
+    Statsig.encodeIntializeCall = false;
     window.localStorage.clear();
   });
 
