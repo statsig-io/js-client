@@ -2,7 +2,7 @@ const DEFAULT_FEATURE_GATE_API = 'https://featuregates.org/v1/';
 const DEFAULT_EVENT_LOGGING_API = 'https://events.statsigapi.net/v1/';
 
 export type StatsigEnvironment = {
-  tier?: 'production' | 'staging' | 'development';
+  tier?: 'production' | 'staging' | 'development' | string;
   [key: string]: string | undefined;
 };
 

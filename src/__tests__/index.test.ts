@@ -16,11 +16,11 @@ describe('Verify behavior of top level index functions', () => {
   global.fetch = jest.fn((url, params) => {
     requestCount++;
     if (url.toString().includes('rgstr')) {
-      postedLogs = JSON.parse(params.body as string);
+      postedLogs = JSON.parse(params?.body as string);
       return Promise.resolve({ ok: true });
     }
     if (url.toString().includes('initialize')) {
-      let body = JSON.parse(params.body as string);
+      let body = JSON.parse(params?.body as string);
       hasCustomID = body.user.customIDs?.['customID'] != null;
       return Promise.resolve({
         ok: true,

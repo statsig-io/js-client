@@ -77,6 +77,7 @@ export default class StatsigNetwork {
       .then((res) => {
         if (res.ok) {
           return this.sdkInternal.getErrorBoundary().capture(
+            'postWithTimeout',
             () =>
               res.json().then((json: Record<string, any>) => {
                 resolveCallback(json);

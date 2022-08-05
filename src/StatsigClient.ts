@@ -208,6 +208,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
 
   public setInitializeValues(initializeValues: Record<string, unknown>): void {
     this.errorBoundary.capture(
+      'setInitializeValues',
       () => {
         this.store.bootstrap(initializeValues);
         if (!this.ready) {
@@ -230,6 +231,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
 
   public async initializeAsync(): Promise<void> {
     return this.errorBoundary.capture(
+      'initializeAsync',
       async () => {
         if (this.pendingInitPromise != null) {
           return this.pendingInitPromise;
@@ -303,6 +305,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     ignoreOverrides: boolean = false,
   ): boolean {
     return this.errorBoundary.capture(
+      'checkGate',
       () => {
         this.ensureStoreLoaded();
         if (typeof gateName !== 'string' || gateName.length === 0) {
@@ -328,6 +331,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     ignoreOverrides: boolean = false,
   ): DynamicConfig {
     return this.errorBoundary.capture(
+      'getConfig',
       () => {
         this.ensureStoreLoaded();
         if (typeof configName !== 'string' || configName.length === 0) {
@@ -362,6 +366,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     ignoreOverrides: boolean = false,
   ): DynamicConfig {
     return this.errorBoundary.capture(
+      'getExperiment',
       () => {
         this.ensureStoreLoaded();
         if (typeof experimentName !== 'string' || experimentName.length === 0) {
@@ -387,6 +392,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
 
   public getLayer(layerName: string, keepDeviceValue: boolean = false): Layer {
     return this.errorBoundary.capture(
+      'getLayer',
       () => {
         this.ensureStoreLoaded();
         if (typeof layerName !== 'string' || layerName.length === 0) {
@@ -407,7 +413,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     value: string | number | null = null,
     metadata: Record<string, string> | null = null,
   ): void {
-    this.errorBoundary.swallow(() => {
+    this.errorBoundary.swallow('logEvent', () => {
       if (!this.logger || !this.sdkKey) {
         throw new StatsigUninitializedError(
           'Must initialize() before logging events.',
@@ -446,6 +452,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
 
   public async updateUser(user: StatsigUser | null): Promise<boolean> {
     return this.errorBoundary.capture(
+      'updateUser',
       async () => {
         if (!this.initializeCalled()) {
           throw new StatsigUninitializedError('Call initialize() first.');
@@ -494,7 +501,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
    * so the SDK can clean up internal state
    */
   public shutdown(): void {
-    this.errorBoundary.swallow(() => {
+    this.errorBoundary.swallow('shutdown', () => {
       this.logger.flush(true);
       if (
         this.appState &&
@@ -516,7 +523,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
    * @param value the value to override the gate to
    */
   public overrideGate(gateName: string, value: boolean): void {
-    this.errorBoundary.swallow(() => {
+    this.errorBoundary.swallow('overrideGate', () => {
       this.ensureStoreLoaded();
       this.store.overrideGate(gateName, value);
     });
@@ -528,7 +535,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
    * @param value the json value to override the config to
    */
   public overrideConfig(configName: string, value: Record<string, any>): void {
-    this.errorBoundary.swallow(() => {
+    this.errorBoundary.swallow('overrideConfig', () => {
       this.ensureStoreLoaded();
       this.store.overrideConfig(configName, value);
     });
@@ -539,7 +546,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
    * @param gateName
    */
   public removeGateOverride(gateName?: string): void {
-    this.errorBoundary.swallow(() => {
+    this.errorBoundary.swallow('removeGateOverride', () => {
       this.ensureStoreLoaded();
       this.store.removeGateOverride(gateName);
     });
@@ -550,7 +557,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
    * @param configName
    */
   public removeConfigOverride(configName?: string): void {
-    this.errorBoundary.swallow(() => {
+    this.errorBoundary.swallow('removeConfigOverride', () => {
       this.ensureStoreLoaded();
       this.store.removeConfigOverride(configName);
     });
@@ -562,7 +569,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
    * @param gateName
    */
   public removeOverride(gateName?: string): void {
-    this.errorBoundary.swallow(() => {
+    this.errorBoundary.swallow('removeOverride', () => {
       this.ensureStoreLoaded();
       this.store.removeGateOverride(gateName);
     });
@@ -574,6 +581,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
    */
   public getOverrides(): Record<string, any> {
     return this.errorBoundary.capture(
+      'getOverrides',
       () => {
         this.ensureStoreLoaded();
         return this.store.getAllOverrides().gates;
@@ -587,6 +595,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
    */
   public getAllOverrides(): StatsigOverrides {
     return this.errorBoundary.capture(
+      'getAllOverrides',
       () => {
         this.ensureStoreLoaded();
         return this.store.getAllOverrides();
@@ -600,6 +609,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
    */
   public getStableID(): string {
     return this.errorBoundary.capture(
+      'getStableID',
       () => this.identity.getStatsigMetadata().stableID,
       () => '',
     );

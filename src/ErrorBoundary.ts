@@ -17,27 +17,27 @@ export default class ErrorBoundary {
     this.statsigMetadata = statsigMetadata;
   }
 
-  swallow<T>(task: () => T) {
-    this.capture(task, () => {
+  swallow<T>(tag: string, task: () => T) {
+    this.capture(tag, task, () => {
       return undefined;
     });
   }
 
-  capture<T>(task: () => T, recover: () => T): T {
+  capture<T>(tag: string, task: () => T, recover: () => T): T {
     try {
       const result = task();
       if (result instanceof Promise) {
         return (result as any).catch((e: unknown) => {
-          return this.onCaught(e, recover);
+          return this.onCaught(tag, e, recover);
         });
       }
       return result;
     } catch (error) {
-      return this.onCaught(error, recover);
+      return this.onCaught(tag, error, recover);
     }
   }
 
-  private onCaught<T>(error: unknown, recover: () => T): T {
+  private onCaught<T>(tag: string, error: unknown, recover: () => T): T {
     if (
       error instanceof StatsigUninitializedError ||
       error instanceof StatsigInvalidArgumentError
@@ -47,12 +47,12 @@ export default class ErrorBoundary {
 
     console.error('[Statsig] An unexpected exception occurred.', error);
 
-    this.logError(error);
+    this.logError(tag, error);
 
     return recover();
   }
 
-  private logError(error: unknown) {
+  private logError(tag: string, error: unknown) {
     try {
       const unwrapped = (error ?? Error('[Statsig] Error was empty')) as any;
       const isError = unwrapped instanceof Error;
@@ -64,6 +64,7 @@ export default class ErrorBoundary {
       const info = isError ? unwrapped.stack : this.getDescription(unwrapped);
       const metadata = this.statsigMetadata ?? {};
       const body = JSON.stringify({
+        tag,
         exception: name,
         info,
         statsigMetadata: metadata,
