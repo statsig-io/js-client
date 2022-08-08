@@ -201,16 +201,22 @@ export default class StatsigStore {
     }
   }
 
-  public async save(jsonConfigs: Record<string, any>): Promise<void> {
-    this.userValues = {
+  public async save(
+    userCacheKey: string,
+    jsonConfigs: Record<string, any>,
+  ): Promise<void> {
+    const userValues = {
       ...(jsonConfigs as APIInitializeData),
-      sticky_experiments:
-        this.values[this.userCacheKey]?.sticky_experiments ?? {},
+      sticky_experiments: this.values[userCacheKey]?.sticky_experiments ?? {},
       time: Date.now(),
       evaluation_time: Date.now(),
     };
-    this.values[this.userCacheKey] = this.userValues;
-    this.reason = EvaluationReason.Network;
+
+    this.values[userCacheKey] = userValues;
+    if (userCacheKey === this.userCacheKey) {
+      this.userValues = userValues;
+      this.reason = EvaluationReason.Network;
+    }
 
     // trim values to only have the max allowed
     const filteredValues = Object.entries(this.values)

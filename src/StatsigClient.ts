@@ -261,12 +261,13 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
           return Promise.resolve();
         }
 
+        const capturedUserCacheKey = this.getCurrentUserCacheKey();
         this.pendingInitPromise = this.network
           .fetchValues(
             this.identity.getUser(),
             this.options.getInitTimeoutMs(),
             async (json: Record<string, any>): Promise<void> => {
-              await this.store.save(json);
+              await this.store.save(capturedUserCacheKey, json);
               return;
             },
             (e: Error) => {},
@@ -458,26 +459,27 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
           throw new StatsigUninitializedError('Call initialize() first.');
         }
 
-        this.identity.updateUser(this.normalizeUser(user));
-        this.store.updateUser();
-        this.logger.resetDedupeKeys();
-
-        const currentUser = this.identity.getUser();
-
         if (this.pendingInitPromise != null) {
           await this.pendingInitPromise;
         }
 
+        this.identity.updateUser(this.normalizeUser(user));
+        this.store.updateUser();
+        this.logger.resetDedupeKeys();
+
         if (this.options.getLocalModeEnabled()) {
           return Promise.resolve(true);
         }
+
+        const currentUser = this.identity.getUser();
+        const capturedUserCacheKey = this.getCurrentUserCacheKey();
 
         this.pendingInitPromise = this.network
           .fetchValues(
             currentUser,
             this.options.getInitTimeoutMs(),
             async (json: Record<string, any>): Promise<void> => {
-              await this.store.save(json);
+              await this.store.save(capturedUserCacheKey, json);
             },
             (e: Error) => {},
           )
