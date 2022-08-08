@@ -459,13 +459,13 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
           throw new StatsigUninitializedError('Call initialize() first.');
         }
 
-        if (this.pendingInitPromise != null) {
-          await this.pendingInitPromise;
-        }
-
         this.identity.updateUser(this.normalizeUser(user));
         this.store.updateUser();
         this.logger.resetDedupeKeys();
+
+        if (this.pendingInitPromise != null) {
+          await this.pendingInitPromise;
+        }
 
         if (this.options.getLocalModeEnabled()) {
           return Promise.resolve(true);

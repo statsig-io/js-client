@@ -110,7 +110,8 @@ describe('Statsig Layers', () => {
   });
 
   afterEach(() => {
-    StatsigAsyncStorage.asyncStorage = null;
+    // @ts-ignore
+    (StatsigAsyncStorage as any).asyncStorage = null;
   });
 
   it('returns experiment values when allocated', () => {
@@ -134,7 +135,7 @@ describe('Statsig Layers', () => {
       is_experiment_active: true,
       allocated_experiment_name: hashedAnotherConfigKey,
     };
-    await client.getStore().save(data);
+    await client.getStore().save(client.getCurrentUserCacheKey(), data);
 
     config = client.getLayer(layerConfigWithExperimentKey, true);
     expect(config.get('a_key', 'ERR')).toBe('a_config_value');
@@ -153,7 +154,7 @@ describe('Statsig Layers', () => {
       is_experiment_active: true,
       allocated_experiment_name: hashedAnotherConfigKey,
     };
-    await client.getStore().save(data);
+    await client.getStore().save(client.getCurrentUserCacheKey(), data);
 
     config = client.getLayer(layerConfigWithExperimentKey, false);
     expect(config.get('a_key', 'ERR')).toBe('another_value');
