@@ -19,6 +19,7 @@ const USER = {
 
 describe('StatsigEncoded', () => {
   let body: BodyInit | string | null = null;
+  let headers: HeadersInit | null;
   let client: StatsigClient;
 
   // @ts-ignore
@@ -27,11 +28,13 @@ describe('StatsigEncoded', () => {
       return;
     }
     body = params?.body ?? null;
+    headers = params?.headers ?? null;
   });
 
   beforeEach(() => {
     client = new StatsigClient('client-key', USER);
     client.getStatsigMetadata = () => MOCK_METADATA;
+    body = null;
   });
 
   it('encodes initialize calls when encodeIntializeCall is true', async () => {
@@ -39,6 +42,7 @@ describe('StatsigEncoded', () => {
 
     await client.initializeAsync();
     expect(body).toEqual(ENCODED_INIT_BODY);
+    expect(headers).toMatchObject({ 'STATSIG-ENCODED': '1' });
   });
 
   it('does not encode initialize calls when encodeIntializeCall is false', async () => {
@@ -48,5 +52,20 @@ describe('StatsigEncoded', () => {
     expect(body).toEqual(
       JSON.stringify({ user: USER, statsigMetadata: MOCK_METADATA }),
     );
+    expect(headers).toMatchObject({ 'STATSIG-ENCODED': '0' });
+  });
+
+  it('does not encode bodies with non latin characters', async () => {
+    Statsig.encodeIntializeCall = true;
+    const local = new StatsigClient('client-key', { userID: '大' });
+    local.getStatsigMetadata = () => MOCK_METADATA;
+    await local.initializeAsync();
+    expect(body).toEqual(
+      JSON.stringify({
+        user: { userID: '大' },
+        statsigMetadata: MOCK_METADATA,
+      }),
+    );
+    expect(headers).toMatchObject({ 'STATSIG-ENCODED': '0' });
   });
 });

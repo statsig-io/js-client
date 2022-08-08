@@ -170,14 +170,19 @@ export default class StatsigNetwork {
       this.leakyBucket[url] = counter + 1;
     }
 
-    const shouldEncode =
+    let shouldEncode =
       endpointName === StatsigEndpoint.Initialize &&
       Statsig.encodeIntializeCall &&
       typeof window?.btoa === 'function';
 
     let postBody = JSON.stringify(body);
     if (shouldEncode) {
-      postBody = window.btoa(postBody).split('').reverse().join('');
+      try {
+        const encoded = window.btoa(postBody).split('').reverse().join('');
+        postBody = encoded;
+      } catch (_e) {
+        shouldEncode = false;
+      }
     }
 
     const params: RequestInit = {
