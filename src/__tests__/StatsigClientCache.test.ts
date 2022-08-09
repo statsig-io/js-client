@@ -57,7 +57,7 @@ describe('Verify behavior of StatsigClient', () => {
   test('cache used before initialize resolves, then network result used', async () => {
     expect.assertions(4);
     const statsig = new StatsigClient(sdkKey, { userID: '123' });
-    statsig.getStore().save(values);
+    statsig.getStore().save(statsig.getCurrentUserCacheKey(), values);
 
     const init = statsig.initializeAsync();
 
