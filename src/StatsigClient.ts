@@ -267,8 +267,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
             this.identity.getUser(),
             this.options.getInitTimeoutMs(),
             async (json: Record<string, any>): Promise<void> => {
-              await this.store.save(capturedUserCacheKey, json);
-              return;
+              return this.store.save(capturedUserCacheKey, json);
             },
             (e: Error) => {},
           )
@@ -479,7 +478,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
             currentUser,
             this.options.getInitTimeoutMs(),
             async (json: Record<string, any>): Promise<void> => {
-              await this.store.save(capturedUserCacheKey, json);
+              return this.store.save(capturedUserCacheKey, json);
             },
             (e: Error) => {},
           )

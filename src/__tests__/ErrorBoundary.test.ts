@@ -14,7 +14,7 @@ describe('ErrorBoundary', () => {
 
     // @ts-ignore
     global.fetch = jest.fn((url, params) => {
-      request.push({ url: url.toString(), params });
+      request.push({ url: url.toString(), params: params ?? {} });
       return Promise.resolve();
     });
   });

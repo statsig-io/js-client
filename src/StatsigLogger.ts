@@ -416,7 +416,7 @@ export default class StatsigLogger {
           .postToEndpoint(StatsigEndpoint.Rgstr, requestBody)
           .then((response) => {
             if (!response.ok) {
-              throw Error(response.status);
+              throw Error(response.status + '');
             }
           })
           .catch((_e) => {

@@ -43,7 +43,7 @@ export default class StatsigNetwork {
   public fetchValues(
     user: StatsigUser | null,
     timeout: number,
-    resolveCallback: (json: Record<string, any>) => void,
+    resolveCallback: (json: Record<string, any>) => Promise<void>,
     rejectCallback: (e: Error) => void,
   ): Promise<void> {
     return this.postWithTimeout(
@@ -62,7 +62,7 @@ export default class StatsigNetwork {
   private postWithTimeout(
     endpointName: StatsigEndpoint,
     body: object,
-    resolveCallback: (json: Record<string, any>) => void,
+    resolveCallback: (json: Record<string, any>) => Promise<void>,
     rejectCallback: (e: Error) => void,
     timeout: number = 0,
     retries: number = 0,
@@ -83,7 +83,12 @@ export default class StatsigNetwork {
                 resolveCallback(json);
                 return Promise.resolve(json);
               }),
-            () => Promise.resolve({}),
+            () => {
+              return Promise.resolve({});
+            },
+            async () => {
+              return this.getErrorDataFromResponse(res);
+            },
           );
         }
 
@@ -92,6 +97,9 @@ export default class StatsigNetwork {
             'Request to ' + endpointName + ' failed with status ' + res.status,
           ),
         );
+      })
+      .then(() => {
+        /* return Promise<void> */
       })
       .catch((e) => {
         if (typeof rejectCallback === 'function') {
@@ -130,13 +138,13 @@ export default class StatsigNetwork {
     return navigator.sendBeacon(url.toString(), stringPayload);
   }
 
-  public postToEndpoint(
+  public async postToEndpoint(
     endpointName: StatsigEndpoint,
     body: object,
     retries: number = 0,
     backoff: number = 1000,
     useKeepalive: boolean = false,
-  ): Promise<any> {
+  ): Promise<Response> {
     if (this.sdkInternal.getOptions().getLocalModeEnabled()) {
       return Promise.reject('no network requests in localMode');
     }
@@ -203,23 +211,28 @@ export default class StatsigNetwork {
     }
 
     return fetch(url, params)
-      .then((res) => {
+      .then(async (res) => {
         if (res.ok) {
           return Promise.resolve(res);
         }
         if (!this.retryCodes[res.status]) {
           retries = 0;
         }
-        return res.text().then((errorText) => {
-          return Promise.reject(new Error(`${res.status}: ${errorText}`));
-        });
+        const errorText = await res.text();
+        return await Promise.reject(new Error(`${res.status}: ${errorText}`));
       })
       .catch((e) => {
         if (retries > 0) {
-          return new Promise((resolve, reject) => {
+          return new Promise<Response>((resolve, reject) => {
             setTimeout(() => {
               this.leakyBucket[url] = Math.max(this.leakyBucket[url] - 1, 0);
-              this.postToEndpoint(endpointName, body, retries - 1, backoff * 2)
+              this.postToEndpoint(
+                endpointName,
+                body,
+                retries - 1,
+                backoff * 2,
+                useKeepalive,
+              )
                 .then(resolve)
                 .catch(reject);
             }, backoff);
@@ -234,5 +247,25 @@ export default class StatsigNetwork {
 
   public supportsKeepalive(): boolean {
     return this.canUseKeepalive;
+  }
+
+  private async getErrorDataFromResponse(
+    res: Response,
+  ): Promise<Record<string, unknown>> {
+    try {
+      const text = res.bodyUsed !== false ? '__USED__' : await res.text();
+
+      return {
+        headers: Object.fromEntries(Array.from(res.headers ?? [])),
+        status: res.status,
+        statusText: res.statusText,
+        type: res.type,
+        url: res.url,
+        redirected: res.redirected,
+        text: text.slice(-100),
+      };
+    } catch (_e) {
+      return {};
+    }
   }
 }

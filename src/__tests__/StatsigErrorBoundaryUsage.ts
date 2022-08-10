@@ -38,7 +38,7 @@ describe('Statsig ErrorBoundary Usage', () => {
         });
       }
 
-      requests.push({ url, params });
+      requests.push({ url: url.toString(), params: params ?? {} });
       // @ts-ignore causes initialize to fail
       Statsig.instance.logger = 1;
       return Promise.resolve({
