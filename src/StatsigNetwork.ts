@@ -75,19 +75,21 @@ export default class StatsigNetwork {
       backoff,
     )
       .then((res) => {
+        let text = '__NOT_LOADED__';
         if (res.ok) {
           return this.sdkInternal.getErrorBoundary().capture(
             'postWithTimeout',
-            () =>
-              res.json().then((json: Record<string, any>) => {
-                resolveCallback(json);
-                return Promise.resolve(json);
-              }),
+            async () => {
+              text = await res.text();
+              const json = JSON.parse(text);
+              resolveCallback(json);
+              return Promise.resolve(json);
+            },
             () => {
               return Promise.resolve({});
             },
             async () => {
-              return this.getErrorDataFromResponse(res);
+              return this.getErrorData(res, text);
             },
           );
         }
@@ -249,14 +251,17 @@ export default class StatsigNetwork {
     return this.canUseKeepalive;
   }
 
-  private async getErrorDataFromResponse(
+  private async getErrorData(
     res: Response,
+    text: string,
   ): Promise<Record<string, unknown>> {
     try {
-      const text = res.bodyUsed !== false ? '__USED__' : await res.text();
-
+      const headers: Record<string, string> = {};
+      (res.headers ?? []).forEach((value, key) => {
+        headers[key] = value;
+      });
       return {
-        headers: Object.fromEntries(Array.from(res.headers ?? [])),
+        headers,
         status: res.status,
         statusText: res.statusText,
         type: res.type,
@@ -265,7 +270,9 @@ export default class StatsigNetwork {
         text: text.slice(-100),
       };
     } catch (_e) {
-      return {};
+      return {
+        statusText: 'statsig::failed to extract extra data',
+      };
     }
   }
 }

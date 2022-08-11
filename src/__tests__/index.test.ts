@@ -24,52 +24,54 @@ describe('Verify behavior of top level index functions', () => {
       hasCustomID = body.user.customIDs?.['customID'] != null;
       return Promise.resolve({
         ok: true,
-        json: () =>
-          Promise.resolve({
-            disableAutoEventLogging: true,
-            gates: {
-              'AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=': true,
-            },
-            feature_gates: {
-              'AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=': {
-                value: true,
-                rule_id: 'ruleID123',
-                name: 'AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=',
-                secondary_exposures: [
-                  {
-                    gate: 'dependent_gate_1',
-                    gateValue: 'true',
-                    ruleID: 'rule_1',
-                  },
-                  {
-                    gate: 'dependent_gate_2',
-                    gateValue: 'false',
-                    ruleID: 'default',
-                  },
-                ],
+        text: () =>
+          Promise.resolve(
+            JSON.stringify({
+              disableAutoEventLogging: true,
+              gates: {
+                'AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=': true,
               },
-            },
-            dynamic_configs: {
-              'RMv0YJlLOBe7cY7HgZ3Jox34R0Wrk7jLv3DZyBETA7I=': {
-                value: {
-                  bool: true,
-                  number: 2,
-                  string: 'string',
-                  object: {
-                    key: 'value',
-                    key2: 123,
-                  },
-                  boolStr1: 'true',
-                  boolStr2: 'FALSE',
-                  numberStr1: '3',
-                  numberStr2: '3.3',
-                  numberStr3: '3.3.3',
+              feature_gates: {
+                'AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=': {
+                  value: true,
+                  rule_id: 'ruleID123',
+                  name: 'AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=',
+                  secondary_exposures: [
+                    {
+                      gate: 'dependent_gate_1',
+                      gateValue: 'true',
+                      ruleID: 'rule_1',
+                    },
+                    {
+                      gate: 'dependent_gate_2',
+                      gateValue: 'false',
+                      ruleID: 'default',
+                    },
+                  ],
                 },
-                rule_id: 'ruleID',
               },
-            },
-            layer_configs: {},
-          }),
+              dynamic_configs: {
+                'RMv0YJlLOBe7cY7HgZ3Jox34R0Wrk7jLv3DZyBETA7I=': {
+                  value: {
+                    bool: true,
+                    number: 2,
+                    string: 'string',
+                    object: {
+                      key: 'value',
+                      key2: 123,
+                    },
+                    boolStr1: 'true',
+                    boolStr2: 'FALSE',
+                    numberStr1: '3',
+                    numberStr2: '3.3',
+                    numberStr3: '3.3.3',
+                  },
+                  rule_id: 'ruleID',
+                },
+              },
+              layer_configs: {},
+            }),
+          ),
       });
     }
   });

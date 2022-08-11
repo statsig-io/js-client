@@ -21,13 +21,13 @@ describe('Layer Exposure Logging', () => {
     // @ts-ignore
     global.fetch = jest.fn((url, params) => {
       if (url.toString().includes('rgstr')) {
-        logs = JSON.parse(params.body as string);
+        logs = JSON.parse(params?.body as string);
         return Promise.resolve({ ok: true });
       }
 
       return Promise.resolve({
         ok: true,
-        json: () => Promise.resolve(response),
+        text: () => Promise.resolve(JSON.stringify(response)),
       });
     });
   });

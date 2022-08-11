@@ -116,18 +116,20 @@ describe('Verify behavior of InternalStore', () => {
   global.fetch = jest.fn(() =>
     Promise.resolve({
       ok: true,
-      json: () =>
-        Promise.resolve({
-          gates: {},
-          feature_gates: {
-            'AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=': {
-              value: true,
-              rule_id: 'ruleID123',
+      text: () =>
+        Promise.resolve(
+          JSON.stringify({
+            gates: {},
+            feature_gates: {
+              'AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=': {
+                value: true,
+                rule_id: 'ruleID123',
+              },
             },
-          },
-          dynamic_configs: configs,
-          configs: {},
-        }),
+            dynamic_configs: configs,
+            configs: {},
+          }),
+        ),
     }),
   );
 

@@ -42,7 +42,7 @@ describe('Verify local storage limits are enforced', () => {
   global.fetch = jest.fn(() =>
     Promise.resolve({
       ok: true,
-      json: () => Promise.resolve({}),
+      text: () => Promise.resolve('{}'),
     }),
   );
 

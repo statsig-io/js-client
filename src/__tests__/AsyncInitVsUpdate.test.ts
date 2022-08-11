@@ -6,7 +6,7 @@ import Statsig from '..';
 import StatsigClient from '../StatsigClient';
 
 const makeResponse = (ruleID: string, value: string) => {
-  return {
+  return JSON.stringify({
     feature_gates: {},
     dynamic_configs: {
       'klGzwI7eIlw4LSeTwhb4C0NCIhHJrIf441Dni6g7DkE=': {
@@ -22,22 +22,20 @@ const makeResponse = (ruleID: string, value: string) => {
     sdkParams: {},
     has_updates: true,
     time: 1647984444418,
-  };
+  });
 };
 
 const waitOneFrame = async () => {
   await new Promise((r) => setTimeout(r, 1));
 };
 
-type PromiseStringRecord = Promise<Record<string, any>>;
-
 describe('Race conditions between initializeAsync and updateUser', () => {
   Promise.all([]);
-  let promiseForInitializeOnUserA: PromiseStringRecord;
-  let resolveInitializeForUserA: (response: Record<string, any>) => void;
+  let promiseForInitializeOnUserA: Promise<string>;
+  let resolveInitializeForUserA: (response: string) => void;
 
-  let promiseForUpdateUserOnUserB: PromiseStringRecord;
-  let resolveUpdateUserForUserB: (response: Record<string, any>) => void;
+  let promiseForUpdateUserOnUserB: Promise<string>;
+  let resolveUpdateUserForUserB: (response: string) => void;
 
   let logs: Record<string, any>[] = [];
 
@@ -47,14 +45,14 @@ describe('Race conditions between initializeAsync and updateUser', () => {
       logs.push(JSON.parse(params?.body));
       return Promise.resolve({
         ok: true,
-        json: () => Promise.resolve({}),
+        text: () => Promise.resolve('{}'),
       });
     }
 
     const body = JSON.parse(params?.body);
     return Promise.resolve({
       ok: true,
-      json: () =>
+      text: () =>
         body.user.userID === 'user-a'
           ? promiseForInitializeOnUserA
           : promiseForUpdateUserOnUserB,

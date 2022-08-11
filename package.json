@@ -9,6 +9,7 @@
     "postbuild": "rm -rf build/**/*.map",
     "test": "jest",
     "test:watch": "jest --watch",
+    "build:dryrun": "npx tsc src/**/*.ts --noEmit --resolveJsonModule true",
     "types": "npx tsc"
   },
   "files": [

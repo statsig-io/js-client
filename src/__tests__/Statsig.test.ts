@@ -5,6 +5,7 @@ import Statsig from '../index';
 import { getHashValue } from '../utils/Hashing';
 
 describe('Statsig', () => {
+  let initCalledTimes = 0;
   const response = {
     feature_gates: {},
     dynamic_configs: {},
@@ -15,11 +16,17 @@ describe('Statsig', () => {
   };
 
   beforeAll(async () => {
+    initCalledTimes = 0;
+
     // @ts-ignore
     global.fetch = jest.fn((url, params) => {
+      if (url.toString().includes('/initialize')) {
+        initCalledTimes++;
+      }
+
       return Promise.resolve({
         ok: true,
-        json: () => Promise.resolve(response),
+        text: () => Promise.resolve(JSON.stringify(response)),
       });
     });
   });
@@ -62,7 +69,7 @@ describe('Statsig', () => {
       is_experiment_active: true,
       allocated_experiment_name: expHash,
     };
-    await Statsig.initialize('client-key', { userID: 'dloomb' });
+    await Statsig.updateUser({ userID: 'dloomb' });
 
     expect(Statsig.getExperiment('exp', true).get('key', '')).toEqual('exp_v1');
     expect(Statsig.getLayer('layer', true).get('key', '')).toEqual('layer_v1');
@@ -88,7 +95,7 @@ describe('Statsig', () => {
       is_experiment_active: true,
       allocated_experiment_name: newExpHash,
     };
-    await Statsig.initialize('client-key', { userID: 'dloomb' });
+    await Statsig.updateUser({ userID: 'dloomb' });
 
     expect(Statsig.getExperiment('exp', true).get('key', '')).toEqual('exp_v3');
     expect(Statsig.getLayer('layer', true).get('key', '')).toEqual('layer_v3');
@@ -113,7 +120,7 @@ describe('Statsig', () => {
       is_experiment_active: true,
       allocated_experiment_name: newExpHash,
     };
-    await Statsig.initialize('client-key', { userID: 'dloomb' });
+    await Statsig.updateUser({ userID: 'dloomb' });
 
     expect(Statsig.getExperiment('exp', true).get('key', '')).toEqual('exp_v4');
     expect(Statsig.getLayer('layer', true).get('key', '')).toEqual('layer_v3');
@@ -131,7 +138,7 @@ describe('Statsig', () => {
       is_experiment_active: false,
       allocated_experiment_name: expHash,
     };
-    await Statsig.initialize('client-key', { userID: 'dloomb' });
+    await Statsig.updateUser({ userID: 'dloomb' });
 
     expect(Statsig.getExperiment('exp', false).get('key', '')).toEqual(
       'exp_v5',
@@ -154,9 +161,11 @@ describe('Statsig', () => {
       is_experiment_active: true,
       allocated_experiment_name: expHash,
     };
-    await Statsig.initialize('client-key', { userID: 'dloomb' });
+    await Statsig.updateUser({ userID: 'dloomb' });
 
     expect(Statsig.getExperiment('exp', true).get('key', '')).toEqual('exp_v6');
     expect(Statsig.getLayer('layer', true).get('key', '')).toEqual('layer_v6');
+
+    expect(initCalledTimes).toBe(6);
   });
 });

@@ -17,7 +17,7 @@ import StatsigStore, {
   EvaluationReason,
 } from './StatsigStore';
 import { StatsigUser } from './StatsigUser';
-import { SimpleHash } from './utils/Hashing';
+import { getUserCacheKey, SimpleHash } from './utils/Hashing';
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import type { AsyncStorage } from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
@@ -151,18 +151,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     return this.identity.getUser();
   }
   public getCurrentUserCacheKey(): string {
-    let key = `userID:${String(
-      this.identity.getUser()?.userID ?? '',
-    )};stableID:${this.getStableID()}`;
-
-    const customIDs = this.identity.getUser()?.customIDs;
-    if (customIDs != null) {
-      for (const [type, value] of Object.entries(customIDs)) {
-        key += `;${type}:${value}`;
-      }
-    }
-
-    return SimpleHash(key);
+    return getUserCacheKey(this.getStableID(), this.getCurrentUser());
   }
 
   public getStatsigMetadata(): Record<string, string | number> {

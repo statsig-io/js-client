@@ -98,7 +98,7 @@ describe('Statsig Layers', () => {
   global.fetch = jest.fn((_url, _params) => {
     return Promise.resolve({
       ok: true,
-      json: () => Promise.resolve(initialResponse),
+      text: () => Promise.resolve(JSON.stringify(initialResponse)),
     });
   });
 

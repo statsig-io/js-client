@@ -8,23 +8,26 @@ import Statsig from '../index';
 import Layer from '../Layer';
 import StatsigClient from '../StatsigClient';
 
-const oneLoggedError = (errorMessage: string, kind = 'TypeError') => {
-  return [
-    expect.objectContaining({
-      url: ExceptionEndpoint,
-      params: expect.objectContaining({
-        body:
-          expect.stringContaining(`"exception":"${TypeError}"`) &&
-          expect.stringContaining(errorMessage),
-      }),
-    }),
-  ];
-};
-
 describe('Statsig ErrorBoundary Usage', () => {
   let requests: { url: RequestInfo; params: RequestInit }[] = [];
   let client: StatsigClient;
   let shouldRespondWithBadJson = false;
+
+  function expectSingleError(
+    info: string,
+    exception: 'TypeError' | 'SyntaxError' = 'TypeError',
+    extra: Record<string, unknown> = {},
+  ) {
+    expect(requests.length).toBe(1);
+    const request = requests[0];
+    expect(request.url).toEqual(ExceptionEndpoint);
+    const body = JSON.parse((request.params.body as string) ?? '');
+    expect(body).toMatchObject({
+      info: expect.stringContaining(info),
+      exception,
+      extra,
+    });
+  }
 
   beforeEach(async () => {
     shouldRespondWithBadJson = false;
@@ -34,7 +37,8 @@ describe('Statsig ErrorBoundary Usage', () => {
       if ((url + '').includes('/v1/initialize') && shouldRespondWithBadJson) {
         return Promise.resolve({
           ok: true,
-          json: () => Promise.resolve(JSON.parse('{ <-- Unclosed JSON')),
+          headers: new Headers({ a: 'b' }),
+          text: () => Promise.resolve('{ <-- Unclosed JSON'),
         });
       }
 
@@ -43,7 +47,8 @@ describe('Statsig ErrorBoundary Usage', () => {
       Statsig.instance.logger = 1;
       return Promise.resolve({
         ok: true,
-        json: () => Promise.resolve({}),
+        headers: new Headers(),
+        text: () => Promise.resolve('{}'),
       });
     });
 
@@ -63,70 +68,70 @@ describe('Statsig ErrorBoundary Usage', () => {
   it('recovers from errors and returns default gate value', async () => {
     const result = client.checkGate('a_gate');
     expect(result).toBe(false);
-    expect(requests).toEqual(oneLoggedError('store.checkGate'));
+    expectSingleError('store.checkGate');
   });
 
   it('recovers from errors and returns default config value', async () => {
     const result = client.getConfig('a_config');
     expect(result instanceof DynamicConfig).toBe(true);
-    expect(requests).toEqual(oneLoggedError('store.getConfig'));
+    expectSingleError('store.getConfig');
   });
 
   it('recovers from errors and returns default experiment value', async () => {
     const result = client.getExperiment('an_experiment');
     expect(result instanceof DynamicConfig).toBe(true);
-    expect(requests).toEqual(oneLoggedError('store.getExperiment'));
+    expectSingleError('store.getExperiment');
   });
 
   it('recovers from errors and returns default layer value', async () => {
     const result = client.getLayer('a_layer');
     expect(result instanceof Layer).toBe(true);
-    expect(requests).toEqual(oneLoggedError('store.getLayer'));
+    expectSingleError('store.getLayer');
   });
 
   it('recovers from errors with logEvent', () => {
     client.logEvent('an_event');
-    expect(requests).toEqual(oneLoggedError('logger.log'));
+    expectSingleError('logger.log');
   });
 
   it('recovers from errors with shutdown', () => {
     client.shutdown();
-    expect(requests).toEqual(oneLoggedError('logger.flush'));
+    expectSingleError('logger.flush');
   });
 
   it('recovers from errors with overrideGate', () => {
     client.overrideGate('a_gate', true);
-    expect(requests).toEqual(oneLoggedError('store.overrideGate'));
+    expectSingleError('store.overrideGate');
   });
 
   it('recovers from errors with overrideConfig', () => {
     client.overrideConfig('a_config', {});
-    expect(requests).toEqual(oneLoggedError('store.overrideConfig'));
+    expectSingleError('store.overrideConfig');
   });
 
   it('recovers from errors with removeOverride', () => {
     client.removeOverride('something');
-    expect(requests).toEqual(oneLoggedError('store.removeGateOverride'));
+    expectSingleError('store.removeGateOverride');
   });
 
   it('recovers from errors with removeGateOverride', () => {
     client.removeGateOverride('a_gate');
-    expect(requests).toEqual(oneLoggedError('store.removeGateOverride'));
+    expectSingleError('store.removeGateOverride');
   });
 
   it('recovers from errors with removeConfigOverride', () => {
     client.removeConfigOverride('a_config');
-    expect(requests).toEqual(oneLoggedError('store.removeConfigOverride'));
+    expectSingleError('store.removeConfigOverride');
   });
 
   it('recovers from errors with getOverrides', () => {
     client.getOverrides();
-    expect(requests).toEqual(oneLoggedError('store.getAllOverrides'));
+    expectSingleError('store.getAllOverrides');
   });
 
   it('recovers from errors with getAllOverrides', () => {
     client.getAllOverrides();
-    expect(requests).toEqual(oneLoggedError('store.getAllOverrides'));
+    expectSingleError('store.getAllOverrides');
   });
 
   it('recovers from errors with setInitializeValues', () => {
@@ -134,7 +139,7 @@ describe('Statsig ErrorBoundary Usage', () => {
     client.ready = false;
 
     client.setInitializeValues({});
-    expect(requests).toEqual(oneLoggedError('store.bootstrap'));
+    expectSingleError('store.bootstrap');
     // @ts-ignore
     expect(client.ready).toBeTruthy();
   });
@@ -144,7 +149,8 @@ describe('Statsig ErrorBoundary Usage', () => {
     client.identity = 1;
 
     client.getStableID();
-    expect(requests).toEqual(oneLoggedError('identity.getStatsigMetadata'));
+
+    expectSingleError('identity.getStatsigMetadata');
   });
 
   it('recovers from errors with initialize', async () => {
@@ -152,22 +158,24 @@ describe('Statsig ErrorBoundary Usage', () => {
     // @ts-ignore
     localClient.network = 1;
     await localClient.initializeAsync();
-    expect(requests).toEqual(oneLoggedError('network.fetchValues'));
+    expectSingleError('network.fetchValues');
     // @ts-ignore
     expect(localClient.ready).toBeTruthy();
   });
 
   it('recovers from errors with updateUser', async () => {
     await client.updateUser({ userID: 'jkw' });
-    expect(requests).toEqual(oneLoggedError('store.updateUser'));
+    expectSingleError('store.updateUser');
   });
 
   it('captures crashes in response', async () => {
     shouldRespondWithBadJson = true;
     const localClient = new StatsigClient('client-key');
     await localClient.initializeAsync();
-    expect(requests).toEqual(
-      oneLoggedError('Unexpected token < in JSON at position 2', 'SyntaxError'),
+    expectSingleError(
+      'Unexpected token < in JSON at position 2',
+      'SyntaxError',
+      { headers: { a: 'b' }, text: '{ <-- Unclosed JSON' },
     );
   });
 });

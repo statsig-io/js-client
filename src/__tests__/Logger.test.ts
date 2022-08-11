@@ -23,23 +23,25 @@ describe('Verify behavior of StatsigLogger', () => {
     }
     return Promise.resolve({
       ok: true,
-      json: () =>
-        Promise.resolve({
-          gates: {},
-          feature_gates: {
-            'AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=': {
-              value: true,
-              rule_id: 'ruleID123',
+      text: () =>
+        Promise.resolve(
+          JSON.stringify({
+            gates: {},
+            feature_gates: {
+              'AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=': {
+                value: true,
+                rule_id: 'ruleID123',
+              },
             },
-          },
-          dynamic_configs: {
-            'RMv0YJlLOBe7cY7HgZ3Jox34R0Wrk7jLv3DZyBETA7I=': {
-              value: { bool: true },
-              rule_id: 'default',
+            dynamic_configs: {
+              'RMv0YJlLOBe7cY7HgZ3Jox34R0Wrk7jLv3DZyBETA7I=': {
+                value: { bool: true },
+                rule_id: 'default',
+              },
             },
-          },
-          configs: {},
-        }),
+            configs: {},
+          }),
+        ),
     });
   });
   beforeEach(() => {

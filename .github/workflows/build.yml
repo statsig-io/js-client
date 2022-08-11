@@ -1,4 +1,4 @@
-name: tests
+name: build
 
 on:
   pull_request:
@@ -20,4 +20,4 @@ jobs:
           path: ~/.npm
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
       - run: npm ci
-      - run: npm run test
+      - run: npm run build:dryrun

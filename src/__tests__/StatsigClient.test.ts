@@ -21,25 +21,27 @@ describe('Verify behavior of StatsigClient', () => {
     ) {
       fail('invalid initialize endpoint');
     }
-    parsedRequestBody = JSON.parse(params.body as string);
+    parsedRequestBody = JSON.parse(params?.body as string);
     return Promise.resolve({
       ok: true,
-      json: () =>
-        Promise.resolve({
-          feature_gates: {
-            'AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=': {
-              value: true,
-              rule_id: 'ruleID123',
-            },
-          },
-          dynamic_configs: {
-            'RMv0YJlLOBe7cY7HgZ3Jox34R0Wrk7jLv3DZyBETA7I=': {
-              value: {
-                num: 4,
+      text: () =>
+        Promise.resolve(
+          JSON.stringify({
+            feature_gates: {
+              'AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=': {
+                value: true,
+                rule_id: 'ruleID123',
               },
             },
-          },
-        }),
+            dynamic_configs: {
+              'RMv0YJlLOBe7cY7HgZ3Jox34R0Wrk7jLv3DZyBETA7I=': {
+                value: {
+                  num: 4,
+                },
+              },
+            },
+          }),
+        ),
     });
   });
 
