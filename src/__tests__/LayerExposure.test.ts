@@ -22,7 +22,7 @@ describe('Layer Exposure Logging', () => {
     global.fetch = jest.fn((url, params) => {
       if (url.toString().includes('rgstr')) {
         logs = JSON.parse(params?.body as string);
-        return Promise.resolve({ ok: true });
+        return Promise.resolve({ ok: true, text: () => Promise.resolve('{}') });
       }
 
       return Promise.resolve({

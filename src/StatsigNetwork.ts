@@ -8,6 +8,10 @@ export enum StatsigEndpoint {
   LogEventBeacon = 'log_event_beacon',
 }
 
+type NetworkResponse = Response & {
+  data?: Record<string, unknown>;
+};
+
 export default class StatsigNetwork {
   private sdkInternal: IHasStatsigInternal;
 
@@ -75,13 +79,11 @@ export default class StatsigNetwork {
       backoff,
     )
       .then((res) => {
-        let text = '__NOT_LOADED__';
-        if (res.ok) {
+        if (res.ok && typeof res.data === 'object') {
+          const json = res.data;
           return this.sdkInternal.getErrorBoundary().capture(
             'postWithTimeout',
             async () => {
-              text = await res.text();
-              const json = JSON.parse(text);
               resolveCallback(json);
               return Promise.resolve(json);
             },
@@ -89,7 +91,7 @@ export default class StatsigNetwork {
               return Promise.resolve({});
             },
             async () => {
-              return this.getErrorData(res, text);
+              return this.getErrorData(res);
             },
           );
         }
@@ -146,7 +148,7 @@ export default class StatsigNetwork {
     retries: number = 0,
     backoff: number = 1000,
     useKeepalive: boolean = false,
-  ): Promise<Response> {
+  ): Promise<NetworkResponse> {
     if (this.sdkInternal.getOptions().getLocalModeEnabled()) {
       return Promise.reject('no network requests in localMode');
     }
@@ -215,17 +217,21 @@ export default class StatsigNetwork {
     return fetch(url, params)
       .then(async (res) => {
         if (res.ok) {
-          return Promise.resolve(res);
+          const text = await res.text();
+          return {
+            ...res,
+            data: JSON.parse(text),
+          };
         }
         if (!this.retryCodes[res.status]) {
           retries = 0;
         }
         const errorText = await res.text();
-        return await Promise.reject(new Error(`${res.status}: ${errorText}`));
+        return Promise.reject(new Error(`${res.status}: ${errorText}`));
       })
       .catch((e) => {
         if (retries > 0) {
-          return new Promise<Response>((resolve, reject) => {
+          return new Promise<NetworkResponse>((resolve, reject) => {
             setTimeout(() => {
               this.leakyBucket[url] = Math.max(this.leakyBucket[url] - 1, 0);
               this.postToEndpoint(
@@ -252,8 +258,7 @@ export default class StatsigNetwork {
   }
 
   private async getErrorData(
-    res: Response,
-    text: string,
+    res: NetworkResponse,
   ): Promise<Record<string, unknown>> {
     try {
       const headers: Record<string, string> = {};
@@ -267,7 +272,7 @@ export default class StatsigNetwork {
         type: res.type,
         url: res.url,
         redirected: res.redirected,
-        text: text.slice(-100),
+        text: res.data ? JSON.stringify(res.data).slice(-100) : null,
       };
     } catch (_e) {
       return {

@@ -4,14 +4,12 @@
 
 import DynamicConfig from '../DynamicConfig';
 import { ExceptionEndpoint } from '../ErrorBoundary';
-import Statsig from '../index';
 import Layer from '../Layer';
 import StatsigClient from '../StatsigClient';
 
 describe('Statsig ErrorBoundary Usage', () => {
   let requests: { url: RequestInfo; params: RequestInit }[] = [];
   let client: StatsigClient;
-  let shouldRespondWithBadJson = false;
 
   function expectSingleError(
     info: string,
@@ -30,24 +28,12 @@ describe('Statsig ErrorBoundary Usage', () => {
   }
 
   beforeEach(async () => {
-    shouldRespondWithBadJson = false;
-
     // @ts-ignore
     global.fetch = jest.fn((url, params) => {
-      if ((url + '').includes('/v1/initialize') && shouldRespondWithBadJson) {
-        return Promise.resolve({
-          ok: true,
-          headers: new Headers({ a: 'b' }),
-          text: () => Promise.resolve('{ <-- Unclosed JSON'),
-        });
-      }
-
       requests.push({ url: url.toString(), params: params ?? {} });
-      // @ts-ignore causes initialize to fail
-      Statsig.instance.logger = 1;
+
       return Promise.resolve({
         ok: true,
-        headers: new Headers(),
         text: () => Promise.resolve('{}'),
       });
     });
@@ -166,16 +152,5 @@ describe('Statsig ErrorBoundary Usage', () => {
   it('recovers from errors with updateUser', async () => {
     await client.updateUser({ userID: 'jkw' });
     expectSingleError('store.updateUser');
-  });
-
-  it('captures crashes in response', async () => {
-    shouldRespondWithBadJson = true;
-    const localClient = new StatsigClient('client-key');
-    await localClient.initializeAsync();
-    expectSingleError(
-      'Unexpected token < in JSON at position 2',
-      'SyntaxError',
-      { headers: { a: 'b' }, text: '{ <-- Unclosed JSON' },
-    );
   });
 });
