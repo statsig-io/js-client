@@ -218,10 +218,9 @@ export default class StatsigNetwork {
       .then(async (res) => {
         if (res.ok) {
           const text = await res.text();
-          return {
-            ...res,
-            data: JSON.parse(text),
-          };
+          const networkResponse = res as NetworkResponse;
+          networkResponse.data = JSON.parse(text);
+          return networkResponse;
         }
         if (!this.retryCodes[res.status]) {
           retries = 0;
