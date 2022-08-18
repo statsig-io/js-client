@@ -1,3 +1,5 @@
+import { StatsigUser } from './StatsigUser';
+
 const DEFAULT_FEATURE_GATE_API = 'https://featuregates.org/v1/';
 const DEFAULT_EVENT_LOGGING_API = 'https://events.statsigapi.net/v1/';
 
@@ -20,6 +22,7 @@ export type StatsigOptions = {
   disableAutoMetricsLogging?: boolean;
   initializeValues?: Record<string, any> | null;
   eventLoggingApi?: string;
+  prefetchUsers?: StatsigUser[];
 };
 
 type BoundedNumberInput = {
@@ -42,6 +45,7 @@ export default class StatsigSDKOptions {
   private disableAutoMetricsLogging: boolean;
   private initializeValues?: Record<string, any> | null;
   private eventLoggingApi: string;
+  private prefetchUsers: StatsigUser[];
 
   constructor(options?: StatsigOptions | null) {
     if (options == null) {
@@ -83,6 +87,7 @@ export default class StatsigSDKOptions {
     this.eventLoggingApi = eventLoggingApi.endsWith('/')
       ? eventLoggingApi
       : eventLoggingApi + '/';
+    this.prefetchUsers = options.prefetchUsers ?? [];
   }
 
   getApi(): string {
@@ -131,6 +136,10 @@ export default class StatsigSDKOptions {
 
   getEventLoggingApi(): string {
     return this.eventLoggingApi;
+  }
+
+  getPrefetchUsers(): StatsigUser[] {
+    return this.prefetchUsers;
   }
 
   private normalizeNumberInput(

@@ -17,7 +17,7 @@ import StatsigStore, {
   EvaluationReason,
 } from './StatsigStore';
 import { StatsigUser } from './StatsigUser';
-import { getUserCacheKey, SimpleHash } from './utils/Hashing';
+import { getUserCacheKey } from './utils/Hashing';
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import type { AsyncStorage } from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
@@ -112,6 +112,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   private initCalled: boolean = false;
   private pendingInitPromise: Promise<void> | null = null;
   private optionalLoggingSetup: boolean = false;
+  private prefetchedUsersByCacheKey: Record<string, StatsigUser> = {};
 
   private errorBoundary: ErrorBoundary;
   public getErrorBoundary(): ErrorBoundary {
@@ -250,22 +251,14 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
           return Promise.resolve();
         }
 
-        const capturedUserCacheKey = this.getCurrentUserCacheKey();
-        this.pendingInitPromise = this.network
-          .fetchValues(
-            this.identity.getUser(),
-            this.options.getInitTimeoutMs(),
-            async (json: Record<string, any>): Promise<void> => {
-              return this.store.save(capturedUserCacheKey, json);
-            },
-            (e: Error) => {},
-          )
-          .catch((e) => {})
-          .finally(async () => {
-            this.pendingInitPromise = null;
-            this.ready = true;
-            this.logger.sendSavedRequests();
-          });
+        this.pendingInitPromise = this.fetchAndSaveValues(
+          this.identity.getUser(),
+          this.options.getPrefetchUsers(),
+        ).finally(async () => {
+          this.pendingInitPromise = null;
+          this.ready = true;
+          this.logger.sendSavedRequests();
+        });
 
         this.handleOptionalLogging();
         return this.pendingInitPromise;
@@ -276,6 +269,14 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         return Promise.resolve();
       },
     );
+  }
+
+  public async prefetchUsers(users: StatsigUser[]): Promise<void> {
+    if (!users || users.length == 0) {
+      return;
+    }
+
+    return this.fetchAndSaveValues(null, users);
   }
 
   public getEvaluationDetails(): EvaluationDetails {
@@ -448,8 +449,15 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         }
 
         this.identity.updateUser(this.normalizeUser(user));
-        this.store.updateUser();
+        const isUserPrefetched = Boolean(
+          this.prefetchedUsersByCacheKey[this.getCurrentUserCacheKey()],
+        );
+        const foundCacheValue = this.store.updateUser(isUserPrefetched);
         this.logger.resetDedupeKeys();
+
+        if (foundCacheValue && isUserPrefetched) {
+          return Promise.resolve(true);
+        }
 
         if (this.pendingInitPromise != null) {
           await this.pendingInitPromise;
@@ -460,20 +468,12 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         }
 
         const currentUser = this.identity.getUser();
-        const capturedUserCacheKey = this.getCurrentUserCacheKey();
-
-        this.pendingInitPromise = this.network
-          .fetchValues(
-            currentUser,
-            this.options.getInitTimeoutMs(),
-            async (json: Record<string, any>): Promise<void> => {
-              return this.store.save(capturedUserCacheKey, json);
-            },
-            (e: Error) => {},
-          )
-          .finally(() => {
+        this.pendingInitPromise = this.fetchAndSaveValues(currentUser).finally(
+          () => {
             this.pendingInitPromise = null;
-          });
+          },
+        );
+
         return this.pendingInitPromise
           .then(() => {
             return Promise.resolve(true);
@@ -787,5 +787,40 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       time: Date.now(),
       reason: EvaluationReason.Error,
     };
+  }
+
+  private async fetchAndSaveValues(
+    user: StatsigUser | null,
+    prefetchUsers: StatsigUser[] = [],
+  ): Promise<void> {
+    if (prefetchUsers.length > 5) {
+      console.warn('Cannot prefetch more than 5 users.');
+    }
+
+    const keyedPrefetchUsers = prefetchUsers.slice(0, 5).reduce((acc, curr) => {
+      acc[getUserCacheKey(this.getStableID(), curr)] = curr;
+      return acc;
+    }, {} as Record<string, StatsigUser>);
+
+    return this.network
+      .fetchValues(
+        user,
+        this.options.getInitTimeoutMs(),
+        async (json: Record<string, any>): Promise<void> => {
+          return this.errorBoundary.swallow('fetchAndSaveValues', async () => {
+            await this.store.save(
+              getUserCacheKey(this.getStableID(), user),
+              json,
+            );
+            this.prefetchedUsersByCacheKey = {
+              ...this.prefetchedUsersByCacheKey,
+              ...keyedPrefetchUsers,
+            };
+          });
+        },
+        (e: Error) => {},
+        prefetchUsers.length > 0 ? keyedPrefetchUsers : undefined,
+      )
+      .catch((e) => {});
   }
 }

@@ -31,7 +31,6 @@ describe('Statsig ErrorBoundary Usage', () => {
     // @ts-ignore
     global.fetch = jest.fn((url, params) => {
       requests.push({ url: url.toString(), params: params ?? {} });
-
       return Promise.resolve({
         ok: true,
         text: () => Promise.resolve('{}'),
@@ -152,5 +151,14 @@ describe('Statsig ErrorBoundary Usage', () => {
   it('recovers from errors with updateUser', async () => {
     await client.updateUser({ userID: 'jkw' });
     expectSingleError('store.updateUser');
+  });
+
+  it('captures crashes in saving', async () => {
+    const localClient = new StatsigClient('client-key');
+    // @ts-ignore
+    localClient.store = 1;
+    await localClient.initializeAsync();
+    requests.shift(); // remove the /initialize call
+    expectSingleError('this.store.save is not a function');
   });
 });

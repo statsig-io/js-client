@@ -14,6 +14,7 @@ export enum EvaluationReason {
   Network = 'Network',
   Bootstrap = 'Bootstrap',
   Cache = 'Cache',
+  Prefetch = 'Prefetch',
   Sticky = 'Sticky',
   LocalOverride = 'LocalOverride',
   Unrecognized = 'Unrecognized',
@@ -52,7 +53,11 @@ type APIInitializeData = {
   layer_configs: Record<string, APIDynamicConfig | undefined>;
 };
 
-type UserCacheValues = APIInitializeData & {
+type APIInitializeDataWithPrefetchedUsers = APIInitializeData & {
+  prefetched_user_values?: Record<string, APIInitializeData>;
+};
+
+type UserCacheValues = APIInitializeDataWithPrefetchedUsers & {
   sticky_experiments: Record<string, APIDynamicConfig | undefined>;
   time: number;
   evaluation_time?: number;
@@ -93,9 +98,9 @@ export default class StatsigStore {
     this.loadFromLocalStorage();
   }
 
-  public updateUser() {
+  public updateUser(isUserPrefetched: boolean): boolean {
     this.userCacheKey = this.sdkInternal.getCurrentUserCacheKey();
-    this.setUserValueFromCache();
+    return this.setUserValueFromCache(isUserPrefetched);
   }
 
   public async loadFromAsyncStorage(): Promise<void> {
@@ -167,22 +172,19 @@ export default class StatsigStore {
     this.loadOverrides();
   }
 
-  private setUserValueFromCache() {
+  private setUserValueFromCache(isUserPrefetched: boolean = false): boolean {
     let cachedValues = this.values[this.userCacheKey];
     if (cachedValues == null) {
-      this.userValues = {
-        feature_gates: {},
-        dynamic_configs: {},
-        sticky_experiments: {},
-        layer_configs: {},
-        time: 0,
-        evaluation_time: 0,
-      };
+      this.resetUserValues();
       this.reason = EvaluationReason.Uninitialized;
-    } else {
-      this.userValues = cachedValues;
-      this.reason = EvaluationReason.Cache;
+      return false;
     }
+
+    this.userValues = cachedValues;
+    this.reason = isUserPrefetched
+      ? EvaluationReason.Prefetch
+      : EvaluationReason.Cache;
+    return true;
   }
 
   private removeFromStorage(key: string) {
@@ -202,20 +204,29 @@ export default class StatsigStore {
   }
 
   public async save(
-    userCacheKey: string,
+    requestedUserCacheKey: string | null,
     jsonConfigs: Record<string, any>,
   ): Promise<void> {
-    const userValues = {
-      ...(jsonConfigs as APIInitializeData),
-      sticky_experiments: this.values[userCacheKey]?.sticky_experiments ?? {},
-      time: Date.now(),
-      evaluation_time: Date.now(),
-    };
+    const data = jsonConfigs as APIInitializeDataWithPrefetchedUsers;
+    if (data.prefetched_user_values) {
+      const cacheKeys = Object.keys(data.prefetched_user_values);
+      for (const key of cacheKeys) {
+        const prefetched = data.prefetched_user_values[key];
+        this.values[key] = this.convertAPIDataToCacheValues(prefetched, key);
+      }
+    }
 
-    this.values[userCacheKey] = userValues;
-    if (userCacheKey === this.userCacheKey) {
-      this.userValues = userValues;
-      this.reason = EvaluationReason.Network;
+    if (requestedUserCacheKey) {
+      const requestedUserValues = this.convertAPIDataToCacheValues(
+        data,
+        requestedUserCacheKey,
+      );
+      this.values[requestedUserCacheKey] = requestedUserValues;
+
+      if (requestedUserCacheKey == this.userCacheKey) {
+        this.userValues = requestedUserValues;
+        this.reason = EvaluationReason.Network;
+      }
     }
 
     // trim values to only have the max allowed
@@ -598,5 +609,31 @@ export default class StatsigStore {
         time: Date.now(),
       };
     }
+  }
+
+  private resetUserValues() {
+    this.userValues = {
+      feature_gates: {},
+      dynamic_configs: {},
+      sticky_experiments: {},
+      layer_configs: {},
+      time: 0,
+      evaluation_time: 0,
+    };
+  }
+
+  private convertAPIDataToCacheValues(
+    data: APIInitializeData,
+    cacheKey: string,
+  ): UserCacheValues {
+    // Specifically pulling keys from data here to avoid pulling in unwanted keys
+    return {
+      feature_gates: data.feature_gates,
+      layer_configs: data.layer_configs,
+      dynamic_configs: data.dynamic_configs,
+      sticky_experiments: this.values[cacheKey]?.sticky_experiments ?? {},
+      time: Date.now(),
+      evaluation_time: Date.now(),
+    };
   }
 }

@@ -49,11 +49,13 @@ export default class StatsigNetwork {
     timeout: number,
     resolveCallback: (json: Record<string, any>) => Promise<void>,
     rejectCallback: (e: Error) => void,
+    prefetchUsers?: Record<string, StatsigUser>,
   ): Promise<void> {
     return this.postWithTimeout(
       StatsigEndpoint.Initialize,
       {
-        user: user,
+        user,
+        prefetchUsers,
         statsigMetadata: this.sdkInternal.getStatsigMetadata(),
       },
       resolveCallback,
