@@ -4,6 +4,7 @@
 
 import Statsig from '..';
 import StatsigClient from '../StatsigClient';
+import { INTERNAL_STORE_KEY } from '../utils/Constants';
 
 const makeResponse = (ruleID: string, value: string) => {
   return JSON.stringify({
@@ -31,6 +32,7 @@ const waitOneFrame = async () => {
 
 describe('Race conditions between initializeAsync and updateUser', () => {
   Promise.all([]);
+  const time = Date.now();
   let promiseForInitializeOnUserA: Promise<string>;
   let resolveInitializeForUserA: (response: string) => void;
 
@@ -38,6 +40,38 @@ describe('Race conditions between initializeAsync and updateUser', () => {
   let resolveUpdateUserForUserB: (response: string) => void;
 
   let logs: Record<string, any>[] = [];
+
+  class LocalStorageMock {
+    public store: Record<string, string>;
+    constructor() {
+      this.store = {};
+    }
+
+    clear() {
+      this.store = {};
+    }
+
+    getItem(key: string) {
+      return this.store[key] || null;
+    }
+
+    setItem(key: string, value: string) {
+      this.store[key] = String(value);
+    }
+
+    removeItem(key: string) {
+      delete this.store[key];
+    }
+  }
+
+  // ensure Date.now() returns the same value in each test
+  jest.spyOn(global.Date, 'now').mockImplementation(() => time);
+
+  const localStorage = new LocalStorageMock();
+  // @ts-ignore
+  Object.defineProperty(window, 'localStorage', {
+    value: localStorage,
+  });
 
   // @ts-ignore
   global.fetch = jest.fn((url, params: any) => {
@@ -62,6 +96,8 @@ describe('Race conditions between initializeAsync and updateUser', () => {
   beforeEach(() => {
     logs = [];
 
+    localStorage.clear();
+
     promiseForInitializeOnUserA = new Promise((r) => {
       resolveInitializeForUserA = r;
     });
@@ -80,35 +116,79 @@ describe('Race conditions between initializeAsync and updateUser', () => {
 
     // Call both without awaiting either
     client.initializeAsync();
-    let config = client.getConfig('a_config');
+
+    let config = client.getExperiment('a_config');
     expect(config.getValue('a_key', 'default_value')).toEqual('default_value');
+    const firstUserCacheKey = client.getCurrentUserCacheKey();
+    const emptyStore = {
+      feature_gates: {},
+      dynamic_configs: {},
+      sticky_experiments: {},
+      layer_configs: {},
+      time: 0,
+      evaluation_time: 0,
+    };
+    const storage = {};
+    storage[firstUserCacheKey] = emptyStore;
+    expect(JSON.parse(localStorage.store[INTERNAL_STORE_KEY])).toMatchObject(
+      storage,
+    );
 
     client.updateUser({
       userID: 'user-b',
       customIDs: { workID: 'employee-b' },
     });
-
-    config = client.getConfig('a_config');
+    const secondUserCacheKey = client.getCurrentUserCacheKey();
+    config = client.getExperiment('a_config');
     expect(config.getValue('a_key', 'default_value')).toEqual('default_value');
-
+    storage[secondUserCacheKey] = emptyStore;
+    expect(JSON.parse(localStorage.store[INTERNAL_STORE_KEY])).toMatchObject(
+      storage,
+    );
     await waitOneFrame();
 
     // Send response to /initialize for initializeAsync
-    resolveInitializeForUserA(makeResponse('test', 'original_init_value'));
+    const userAResponse = makeResponse('test', 'original_init_value');
+    resolveInitializeForUserA(userAResponse);
     await waitOneFrame();
+    const userAResponseJson = JSON.parse(userAResponse);
+    storage[firstUserCacheKey] = {
+      ...storage[firstUserCacheKey],
+      dynamic_configs: userAResponseJson.dynamic_configs,
+      time: Date.now(),
+      evaluation_time: Date.now(),
+    };
+    expect(JSON.parse(localStorage.store[INTERNAL_STORE_KEY])).toMatchObject(
+      storage,
+    );
 
     // Ensure we get default_value, not what was returned for initializeAsync
-    config = client.getConfig('a_config');
+    config = client.getExperiment('a_config');
     expect(config.getValue('a_key', 'default_value')).toEqual('default_value');
 
     // Send response to /initialize for updateUser
-    resolveUpdateUserForUserB(makeResponse('control', 'update_user_value'));
+    const userBResponse = makeResponse('control', 'update_user_value');
+    resolveUpdateUserForUserB(userBResponse);
     await waitOneFrame();
+    const userBResponseJson = JSON.parse(userBResponse);
+    storage[secondUserCacheKey] = {
+      ...storage[secondUserCacheKey],
+      dynamic_configs: userBResponseJson.dynamic_configs,
+      time: Date.now(),
+      evaluation_time: Date.now(),
+    };
+    expect(JSON.parse(localStorage.store[INTERNAL_STORE_KEY])).toMatchObject(
+      storage,
+    );
 
     // Ensure we get update_user_value that was returned for updateUser
-    config = client.getConfig('a_config');
+    config = client.getExperiment('a_config');
     expect(config.getValue('a_key', 'default_value')).toEqual(
       'update_user_value',
+    );
+
+    expect(JSON.parse(localStorage.store[INTERNAL_STORE_KEY])).toMatchObject(
+      storage,
     );
 
     client.shutdown();
