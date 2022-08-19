@@ -14,7 +14,7 @@ jobs:
     steps:
       - name: Get KONG
         run: |
-          git clone https://${{ secrets.REPO_PAT }}@github.com/statsig-io/kong.git
+          git clone https://${{ secrets.KONG_REPO_PAT }}@github.com/statsig-io/kong.git
 
       - uses: actions/setup-node@v1
         with:
@@ -24,9 +24,9 @@ jobs:
         run: |
           cd kong/bridges/js-server
           SKIP_PREINSTALL=1 npm install
-          npm install git+https://${{ secrets.REPO_PAT }}@github.com/$GITHUB_REPOSITORY.git#$GITHUB_SHA --no-save
+          npm install git+https://${{ secrets.KONG_REPO_PAT }}@github.com/$GITHUB_REPOSITORY.git#$GITHUB_SHA --no-save
         env:
-          repo_pat: ${{ secrets.REPO_PAT }}
+          repo_pat: ${{ secrets.KONG_REPO_PAT }}
 
       - name: Run Tests
         run: |
@@ -34,5 +34,5 @@ jobs:
           npm install
           FORCE_COLOR=true npm run kong -- test js
         env:
-          test_api_key: ${{ secrets.SDK_CONSISTENCY_TEST_COMPANY_API_KEY }}
-          test_client_key: ${{ secrets.SDK_CLIENT_KEY }}
+          test_api_key: ${{ secrets.KONG_SERVER_SDK_KEY }}
+          test_client_key: ${{ secrets.KONG_CLIENT_SDK_KEY }}
