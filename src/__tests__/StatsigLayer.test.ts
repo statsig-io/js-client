@@ -4,6 +4,7 @@
 import StatsigClient from '../StatsigClient';
 import { getHashValue } from '../utils/Hashing';
 import StatsigAsyncStorage from '../utils/StatsigAsyncStorage';
+import LocalStorageMock from './LocalStorageMock';
 
 const configKey = 'a_config';
 const hashedConfigKey = getHashValue(configKey);
@@ -64,29 +65,6 @@ const initialResponse = {
 
 describe('Statsig Layers', () => {
   var client: StatsigClient;
-
-  class LocalStorageMock {
-    private store: Record<string, string>;
-    constructor() {
-      this.store = {};
-    }
-
-    clear() {
-      this.store = {};
-    }
-
-    getItem(key: string) {
-      return this.store[key] || null;
-    }
-
-    setItem(key: string, value: string) {
-      this.store[key] = String(value);
-    }
-
-    removeItem(key: string) {
-      delete this.store[key];
-    }
-  }
 
   const localStorage = new LocalStorageMock();
   // @ts-ignore
