@@ -7,6 +7,7 @@ import StatsigClient from '../StatsigClient';
 import { EvaluationReason } from '../StatsigStore';
 import StatsigAsyncStorage from '../utils/StatsigAsyncStorage';
 import * as TestData from './initialize_response.json';
+import LocalStorageMock from './LocalStorageMock';
 
 describe('Verify behavior of StatsigClient', () => {
   const sdkKey = 'client-clienttestkey';
@@ -44,29 +45,6 @@ describe('Verify behavior of StatsigClient', () => {
         ),
     });
   });
-
-  class LocalStorageMock {
-    private store: Record<string, string>;
-    constructor() {
-      this.store = {};
-    }
-
-    clear() {
-      this.store = {};
-    }
-
-    getItem(key: string) {
-      return this.store[key] || null;
-    }
-
-    setItem(key: string, value: string) {
-      this.store[key] = String(value);
-    }
-
-    removeItem(key: string) {
-      delete this.store[key];
-    }
-  }
 
   const localStorage = new LocalStorageMock();
   // @ts-ignore
