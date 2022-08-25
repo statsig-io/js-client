@@ -110,7 +110,7 @@ describe('Race conditions between initializeAsync and updateUser', () => {
     const firstUserCacheKey = client.getCurrentUserCacheKey();
 
     expectedStorage[firstUserCacheKey] = emptyStore;
-    expect(JSON.parse(localStorage.store[INTERNAL_STORE_KEY])).toMatchObject(
+    expect(JSON.parse(localStorage.getItem(INTERNAL_STORE_KEY))).toMatchObject(
       expectedStorage,
     );
 
@@ -122,7 +122,7 @@ describe('Race conditions between initializeAsync and updateUser', () => {
     config = client.getExperiment('a_config');
     expect(config.getValue('a_key', 'default_value')).toEqual('default_value');
     expectedStorage[secondUserCacheKey] = emptyStore;
-    expect(JSON.parse(localStorage.store[INTERNAL_STORE_KEY])).toMatchObject(
+    expect(JSON.parse(localStorage.getItem(INTERNAL_STORE_KEY))).toMatchObject(
       expectedStorage,
     );
     await waitOneFrame();
@@ -137,7 +137,7 @@ describe('Race conditions between initializeAsync and updateUser', () => {
       userAResponse,
     );
 
-    expect(JSON.parse(localStorage.store[INTERNAL_STORE_KEY])).toMatchObject(
+    expect(JSON.parse(localStorage.getItem(INTERNAL_STORE_KEY))).toMatchObject(
       expectedStorage,
     );
 
@@ -155,7 +155,7 @@ describe('Race conditions between initializeAsync and updateUser', () => {
       userBResponse,
     );
 
-    expect(JSON.parse(localStorage.store[INTERNAL_STORE_KEY])).toMatchObject(
+    expect(JSON.parse(localStorage.getItem(INTERNAL_STORE_KEY))).toMatchObject(
       expectedStorage,
     );
 
@@ -165,7 +165,7 @@ describe('Race conditions between initializeAsync and updateUser', () => {
       'update_user_value',
     );
 
-    expect(JSON.parse(localStorage.store[INTERNAL_STORE_KEY])).toMatchObject(
+    expect(JSON.parse(localStorage.getItem(INTERNAL_STORE_KEY))).toMatchObject(
       expectedStorage,
     );
 

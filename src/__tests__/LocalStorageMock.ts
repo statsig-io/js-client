@@ -1,22 +1,24 @@
 export default class LocalStorageMock {
-  public store: Record<string, string>;
-  constructor() {
-    this.store = {};
+  constructor() {}
+
+  clear(): void {
+    for (var key in this) {
+      if (key in ['getItem', 'setItem', 'removeItem']) {
+        continue;
+      }
+      this.removeItem(key);
+    }
   }
 
-  clear() {
-    this.store = {};
+  getItem(key: string): string | null {
+    return this[key] || null;
   }
 
-  getItem(key: string) {
-    return this.store[key] || null;
+  setItem(key: string, value: string): void {
+    this[key] = String(value);
   }
 
-  setItem(key: string, value: string) {
-    this.store[key] = String(value);
-  }
-
-  removeItem(key: string) {
-    delete this.store[key];
+  removeItem(key: string): void {
+    delete this[key];
   }
 }
