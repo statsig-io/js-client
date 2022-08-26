@@ -110,9 +110,9 @@ describe('Race conditions between initializeAsync and updateUser', () => {
     const firstUserCacheKey = client.getCurrentUserCacheKey();
 
     expectedStorage[firstUserCacheKey] = emptyStore;
-    expect(JSON.parse(localStorage.store[INTERNAL_STORE_KEY])).toMatchObject(
-      expectedStorage,
-    );
+    expect(
+      JSON.parse(localStorage.getItem(INTERNAL_STORE_KEY) ?? ''),
+    ).toMatchObject(expectedStorage);
 
     client.updateUser({
       userID: 'user-b',
@@ -122,9 +122,9 @@ describe('Race conditions between initializeAsync and updateUser', () => {
     config = client.getExperiment('a_config');
     expect(config.getValue('a_key', 'default_value')).toEqual('default_value');
     expectedStorage[secondUserCacheKey] = emptyStore;
-    expect(JSON.parse(localStorage.store[INTERNAL_STORE_KEY])).toMatchObject(
-      expectedStorage,
-    );
+    expect(
+      JSON.parse(localStorage.getItem(INTERNAL_STORE_KEY) ?? ''),
+    ).toMatchObject(expectedStorage);
     await waitOneFrame();
 
     // Send response to /initialize for initializeAsync
@@ -137,9 +137,9 @@ describe('Race conditions between initializeAsync and updateUser', () => {
       userAResponse,
     );
 
-    expect(JSON.parse(localStorage.store[INTERNAL_STORE_KEY])).toMatchObject(
-      expectedStorage,
-    );
+    expect(
+      JSON.parse(localStorage.getItem(INTERNAL_STORE_KEY) ?? ''),
+    ).toMatchObject(expectedStorage);
 
     // Ensure we get default_value, not what was returned for initializeAsync
     config = client.getExperiment('a_config');
@@ -155,9 +155,9 @@ describe('Race conditions between initializeAsync and updateUser', () => {
       userBResponse,
     );
 
-    expect(JSON.parse(localStorage.store[INTERNAL_STORE_KEY])).toMatchObject(
-      expectedStorage,
-    );
+    expect(
+      JSON.parse(localStorage.getItem(INTERNAL_STORE_KEY) ?? ''),
+    ).toMatchObject(expectedStorage);
 
     // Ensure we get update_user_value that was returned for updateUser
     config = client.getExperiment('a_config');
@@ -165,9 +165,9 @@ describe('Race conditions between initializeAsync and updateUser', () => {
       'update_user_value',
     );
 
-    expect(JSON.parse(localStorage.store[INTERNAL_STORE_KEY])).toMatchObject(
-      expectedStorage,
-    );
+    expect(
+      JSON.parse(localStorage.getItem(INTERNAL_STORE_KEY) ?? ''),
+    ).toMatchObject(expectedStorage);
 
     client.shutdown();
     expect(logs).toEqual([

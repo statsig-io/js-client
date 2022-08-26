@@ -23,6 +23,7 @@ export type StatsigOptions = {
   initializeValues?: Record<string, any> | null;
   eventLoggingApi?: string;
   prefetchUsers?: StatsigUser[];
+  disableLocalStorage?: boolean;
 };
 
 type BoundedNumberInput = {
@@ -46,6 +47,7 @@ export default class StatsigSDKOptions {
   private initializeValues?: Record<string, any> | null;
   private eventLoggingApi: string;
   private prefetchUsers: StatsigUser[];
+  private disableLocalStorage: boolean;
 
   constructor(options?: StatsigOptions | null) {
     if (options == null) {
@@ -88,6 +90,7 @@ export default class StatsigSDKOptions {
       ? eventLoggingApi
       : eventLoggingApi + '/';
     this.prefetchUsers = options.prefetchUsers ?? [];
+    this.disableLocalStorage = options.disableLocalStorage ?? false;
   }
 
   getApi(): string {
@@ -140,6 +143,10 @@ export default class StatsigSDKOptions {
 
   getPrefetchUsers(): StatsigUser[] {
     return this.prefetchUsers;
+  }
+
+  getDisableLocalStorage(): boolean {
+    return this.disableLocalStorage;
   }
 
   private normalizeNumberInput(

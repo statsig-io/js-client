@@ -2,9 +2,8 @@
  * @jest-environment jsdom
  */
 
-import DynamicConfig from '../DynamicConfig';
 import StatsigClient from '../StatsigClient';
-import { INTERNAL_STORE_KEY } from '../utils/Constants';
+import { INTERNAL_STORE_KEY, LOCAL_STORAGE_KEYS } from '../utils/Constants';
 import { getUserCacheKey } from '../utils/Hashing';
 import LocalStorageMock from './LocalStorageMock';
 
@@ -66,8 +65,9 @@ describe('Verify local storage limits are enforced', () => {
     jest.resetModules();
     jest.restoreAllMocks();
     localStorage.clear();
-    localStorage.store = {
-      STATSIG_LOCAL_STORAGE_INTERNAL_STORE_V4: JSON.stringify({
+    localStorage.setItem(
+      INTERNAL_STORE_KEY,
+      JSON.stringify({
         first: {
           feature_gates: gates,
           dynamic_configs: configs,
@@ -139,13 +139,12 @@ describe('Verify local storage limits are enforced', () => {
           time: 1646026677409,
         },
       }),
-    };
+    );
   });
 
   test.only('Verify loading a large list gets truncated', async () => {
-    expect.assertions(14);
+    expect.assertions(17);
     const client = new StatsigClient(sdkKey, null);
-    expect(client.getStore()).not.toBeNull();
     await client.initializeAsync();
     const store = client.getStore();
     expect(store).not.toBeNull();
@@ -209,5 +208,29 @@ describe('Verify local storage limits are enforced', () => {
       client.getCurrentUserCacheKey() in
         JSON.parse(localStorage.getItem(INTERNAL_STORE_KEY) ?? ''),
     ).toBeTruthy();
+
+    client.shutdown();
+
+    const spyOnSet = jest.spyOn(localStorage, 'setItem');
+    const spyOnGet = jest.spyOn(localStorage, 'getItem');
+
+    const noStorageClient = new StatsigClient(sdkKey, null, {
+      disableLocalStorage: true,
+    });
+
+    await noStorageClient.initializeAsync();
+    expect(spyOnGet).toHaveBeenCalledTimes(0);
+    expect(spyOnSet).toHaveBeenCalledTimes(0);
+
+    // localStorage has 10 items, but because disableLocalStorage is true, we won't use them
+    expect(
+      Object.keys(JSON.parse(localStorage.getItem(INTERNAL_STORE_KEY) ?? ''))
+        .length,
+    ).toEqual(10);
+
+    noStorageClient.shutdown();
+
+    // we clear out the local storage after this session if shutdown is called with disableLocalStorage
+    expect(localStorage.getItem(INTERNAL_STORE_KEY)).toBeNull();
   });
 });
