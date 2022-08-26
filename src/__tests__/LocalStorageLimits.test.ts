@@ -36,7 +36,7 @@ describe('Verify local storage limits are enforced', () => {
     },
   };
 
-  let localStorage = new LocalStorageMock();
+  const localStorage = new LocalStorageMock();
   // @ts-ignore
   Object.defineProperty(window, 'localStorage', {
     value: localStorage,

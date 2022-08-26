@@ -1,57 +1,35 @@
-import { LOCAL_STORAGE_KEYS } from './Constants';
+import { LOCAL_STORAGE_KEYS, STORAGE_PREFIX } from './Constants';
 
 export default class StatsigLocalStorage {
   public static disabled: boolean = false;
   private static fallbackSessionCache: Record<string, string> = {};
   public static getItem(key: string): string | null {
-    if (!this.disabled) {
-      try {
-        if (
-          typeof Storage !== 'undefined' &&
-          typeof window !== 'undefined' &&
-          window != null &&
-          window.localStorage != null
-        ) {
-          return window.localStorage.getItem(key);
-        }
-      } catch (e) {}
-    }
+    try {
+      if (this.isStorageAccessible()) {
+        return window.localStorage.getItem(key);
+      }
+    } catch (e) {}
 
     return this.fallbackSessionCache[key] ?? null;
   }
 
   public static setItem(key: string, value: string): void {
-    if (!this.disabled) {
-      try {
-        if (
-          typeof Storage !== 'undefined' &&
-          typeof window !== 'undefined' &&
-          window != null &&
-          window.localStorage != null
-        ) {
-          window.localStorage.setItem(key, value);
-          return;
-        }
-      } catch (e) {}
-    }
-
+    try {
+      if (this.isStorageAccessible()) {
+        window.localStorage.setItem(key, value);
+        return;
+      }
+    } catch (e) {}
     this.fallbackSessionCache[key] = value;
   }
 
   public static removeItem(key: string): void {
-    if (!this.disabled) {
-      try {
-        if (
-          typeof Storage !== 'undefined' &&
-          typeof window !== 'undefined' &&
-          window != null &&
-          window.localStorage != null
-        ) {
-          window.localStorage.removeItem(key);
-          return;
-        }
-      } catch (e) {}
-    }
+    try {
+      if (this.isStorageAccessible()) {
+        window.localStorage.removeItem(key);
+        return;
+      }
+    } catch (e) {}
 
     delete this.fallbackSessionCache[key];
   }
@@ -59,10 +37,7 @@ export default class StatsigLocalStorage {
   public static cleanup(): void {
     try {
       if (
-        typeof Storage !== 'undefined' &&
-        typeof window !== 'undefined' &&
-        window != null &&
-        window.localStorage != null
+        this.isStorageAccessible(true) // clean up all storage keys if this session sets disabled
       ) {
         for (var key in window.localStorage) {
           if (typeof window.localStorage[key] !== 'string') {
@@ -78,7 +53,7 @@ export default class StatsigLocalStorage {
           }
           if (
             !this.disabled &&
-            key.substring(0, 21) !== 'STATSIG_LOCAL_STORAGE'
+            key.substring(0, STORAGE_PREFIX.length) !== STORAGE_PREFIX
           ) {
             continue;
           }
@@ -86,5 +61,19 @@ export default class StatsigLocalStorage {
         }
       }
     } catch (e) {}
+  }
+
+  private static isStorageAccessible(
+    ignoreDisabledOption: boolean = false,
+  ): boolean {
+    const canAccess =
+      typeof Storage !== 'undefined' &&
+      typeof window !== 'undefined' &&
+      window != null &&
+      window.localStorage != null;
+    if (ignoreDisabledOption) {
+      return canAccess;
+    }
+    return !this.disabled && canAccess;
   }
 }
