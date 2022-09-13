@@ -400,32 +400,31 @@ export default class StatsigLogger {
     let requestBodies = [];
     try {
       requestBodies = JSON.parse(failedRequests);
+      for (const requestBody of requestBodies) {
+        if (
+          requestBody != null &&
+          requestBody.events &&
+          Array.isArray(requestBody.events)
+        ) {
+          this.sdkInternal
+            .getNetwork()
+            .postToEndpoint(StatsigEndpoint.Rgstr, requestBody)
+            .then((response) => {
+              if (!response.ok) {
+                throw Error(response.status + '');
+              }
+            })
+            .catch((_e) => {
+              if (fireAndForget) {
+                return;
+              }
+              this.addFailedRequest(requestBody);
+            });
+        }
+      }
     } catch (_e) {
     } finally {
       this.clearLocalStorageRequests();
-    }
-
-    for (const requestBody of requestBodies) {
-      if (
-        requestBody != null &&
-        requestBody.events &&
-        Array.isArray(requestBody.events)
-      ) {
-        this.sdkInternal
-          .getNetwork()
-          .postToEndpoint(StatsigEndpoint.Rgstr, requestBody)
-          .then((response) => {
-            if (!response.ok) {
-              throw Error(response.status + '');
-            }
-          })
-          .catch((_e) => {
-            if (fireAndForget) {
-              return;
-            }
-            this.addFailedRequest(requestBody);
-          });
-      }
     }
   }
 
