@@ -1,4 +1,5 @@
 import DynamicConfig from './DynamicConfig';
+import { StatsigInvalidArgumentError } from './Errors';
 import Layer from './Layer';
 import { IHasStatsigInternal, StatsigOverrides } from './StatsigClient';
 import {
@@ -470,6 +471,10 @@ export default class StatsigStore {
     isLayer: boolean,
     details: EvaluationDetails,
   ): APIDynamicConfig | undefined {
+    if (keepDeviceValue && !this.hasStickyValuesEnabled()) {
+      keepDeviceValue = false;
+    }
+
     // We don't want sticky behavior. Clear any sticky values and return latest.
     if (!keepDeviceValue) {
       this.removeStickyValue(name);
@@ -533,11 +538,11 @@ export default class StatsigStore {
   }
 
   private attemptToSaveStickyValue(name: string, config?: APIDynamicConfig) {
-    if (!config) {
-      return;
-    }
-
-    if (!config.is_user_in_experiment || !config.is_experiment_active) {
+    if (
+      !config ||
+      !config.is_user_in_experiment ||
+      !config.is_experiment_active
+    ) {
       return;
     }
 
@@ -553,6 +558,10 @@ export default class StatsigStore {
   }
 
   private removeStickyValue(name: string) {
+    if (!this.hasStickyValuesEnabled()) {
+      return;
+    }
+
     const key = getHashValue(name);
 
     delete this.userValues?.sticky_experiments[key];
@@ -561,6 +570,10 @@ export default class StatsigStore {
   }
 
   private saveStickyValuesToStorage() {
+    if (!this.hasStickyValuesEnabled()) {
+      return;
+    }
+
     this.values[this.userCacheKey] = this.userValues;
     if (StatsigAsyncStorage.asyncStorage) {
       StatsigAsyncStorage.setItemAsync(
@@ -581,6 +594,10 @@ export default class StatsigStore {
         JSON.stringify(this.stickyDeviceExperiments),
       );
     }
+  }
+
+  private hasStickyValuesEnabled() {
+    return this.sdkInternal.getOptions().getAllowStickyExperimentValues();
   }
 
   public getGlobalEvaluationDetails(): EvaluationDetails {

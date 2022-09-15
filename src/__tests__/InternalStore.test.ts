@@ -343,7 +343,11 @@ describe('Verify behavior of InternalStore', () => {
 
   test('test experiment sticky bucketing behavior', async () => {
     expect.assertions(30);
-    const statsig = new StatsigClient(sdkKey, { userID: '123' });
+    const statsig = new StatsigClient(
+      sdkKey,
+      { userID: '123' },
+      { allowStickyExperimentValues: true },
+    );
     await statsig.initializeAsync();
     const store = statsig.getStore();
 
@@ -470,7 +474,11 @@ describe('Verify behavior of InternalStore', () => {
 
   test('test experiment sticky bucketing behavior when user changes', async () => {
     expect.assertions(12);
-    const statsig = new StatsigClient(sdkKey, { userID: '456' });
+    const statsig = new StatsigClient(
+      sdkKey,
+      { userID: '456' },
+      { allowStickyExperimentValues: true },
+    );
     await statsig.initializeAsync();
     const store = statsig.getStore();
 
@@ -527,7 +535,11 @@ describe('Verify behavior of InternalStore', () => {
 
   test('test experiment sticky bucketing behavior across sessions', async () => {
     expect.assertions(9);
-    const statsig = new StatsigClient(sdkKey, { userID: '789' });
+    const statsig = new StatsigClient(
+      sdkKey,
+      { userID: '789' },
+      { allowStickyExperimentValues: true },
+    );
     await statsig.initializeAsync();
     const store = statsig.getStore();
 
@@ -544,7 +556,11 @@ describe('Verify behavior of InternalStore', () => {
     );
 
     // re-create with a different user id. Only device experiments should stick
-    const statsig2 = new StatsigClient(sdkKey, { userID: 'tore' });
+    const statsig2 = new StatsigClient(
+      sdkKey,
+      { userID: 'tore' },
+      { allowStickyExperimentValues: true },
+    );
     const store2 = statsig2.getStore();
 
     store2.save(
@@ -572,9 +588,13 @@ describe('Verify behavior of InternalStore', () => {
 
   test('test user cache key when there are customIDs', async () => {
     expect.assertions(9);
-    const statsig = new StatsigClient(sdkKey, {
-      customIDs: { deviceId: '' },
-    });
+    const statsig = new StatsigClient(
+      sdkKey,
+      {
+        customIDs: { deviceId: '' },
+      },
+      { allowStickyExperimentValues: true },
+    );
     await statsig.initializeAsync();
     const store = statsig.getStore();
 

@@ -51,15 +51,10 @@ describe('Race conditions between initializeAsync and updateUser', () => {
     value: localStorage,
   });
 
-  const emptyStore = {
-    feature_gates: {},
-    dynamic_configs: {},
-    sticky_experiments: {},
-    layer_configs: {},
-    time: 0,
-    evaluation_time: 0,
+  const getCurrentInternalStore = () => {
+    const value = localStorage.getItem(INTERNAL_STORE_KEY);
+    return value ? JSON.parse(value) : value;
   };
-  let expectedStorage = {};
 
   // @ts-ignore
   global.fetch = jest.fn((url, params: any) => {
@@ -105,41 +100,36 @@ describe('Race conditions between initializeAsync and updateUser', () => {
     // Call both without awaiting either
     client.initializeAsync();
 
+    const firstUserCacheKey = client.getCurrentUserCacheKey();
     let config = client.getExperiment('a_config');
     expect(config.getValue('a_key', 'default_value')).toEqual('default_value');
-    const firstUserCacheKey = client.getCurrentUserCacheKey();
-
-    expectedStorage[firstUserCacheKey] = emptyStore;
-    expect(
-      JSON.parse(localStorage.getItem(INTERNAL_STORE_KEY) ?? ''),
-    ).toMatchObject(expectedStorage);
+    expect(getCurrentInternalStore()).toBeNull();
 
     client.updateUser({
       userID: 'user-b',
       customIDs: { workID: 'employee-b' },
     });
+
     const secondUserCacheKey = client.getCurrentUserCacheKey();
     config = client.getExperiment('a_config');
     expect(config.getValue('a_key', 'default_value')).toEqual('default_value');
-    expectedStorage[secondUserCacheKey] = emptyStore;
-    expect(
-      JSON.parse(localStorage.getItem(INTERNAL_STORE_KEY) ?? ''),
-    ).toMatchObject(expectedStorage);
+    expect(getCurrentInternalStore()).toBeNull();
+
     await waitOneFrame();
 
     // Send response to /initialize for initializeAsync
     const userAResponse = makeResponse('test', 'original_init_value');
     resolveInitializeForUserA(userAResponse);
     await waitOneFrame();
+
+    let expectedStorage = {};
     expectedStorage = updateStorage(
       expectedStorage,
       firstUserCacheKey,
       userAResponse,
     );
 
-    expect(
-      JSON.parse(localStorage.getItem(INTERNAL_STORE_KEY) ?? ''),
-    ).toMatchObject(expectedStorage);
+    expect(getCurrentInternalStore()).toMatchObject(expectedStorage);
 
     // Ensure we get default_value, not what was returned for initializeAsync
     config = client.getExperiment('a_config');
@@ -155,9 +145,7 @@ describe('Race conditions between initializeAsync and updateUser', () => {
       userBResponse,
     );
 
-    expect(
-      JSON.parse(localStorage.getItem(INTERNAL_STORE_KEY) ?? ''),
-    ).toMatchObject(expectedStorage);
+    expect(getCurrentInternalStore()).toMatchObject(expectedStorage);
 
     // Ensure we get update_user_value that was returned for updateUser
     config = client.getExperiment('a_config');
@@ -165,9 +153,7 @@ describe('Race conditions between initializeAsync and updateUser', () => {
       'update_user_value',
     );
 
-    expect(
-      JSON.parse(localStorage.getItem(INTERNAL_STORE_KEY) ?? ''),
-    ).toMatchObject(expectedStorage);
+    expect(getCurrentInternalStore()).toMatchObject(expectedStorage);
 
     client.shutdown();
     expect(logs).toEqual([
@@ -210,7 +196,7 @@ describe('Race conditions between initializeAsync and updateUser', () => {
   });
 });
 
-function updateStorage(currentStorage, key, value) {
+function updateStorage(currentStorage: object, key: string, value: string) {
   const expected = { ...currentStorage };
   const newConfigs = JSON.parse(value);
   expected[key] = {
