@@ -5,7 +5,6 @@ import StatsigClient, { StatsigOverrides } from './StatsigClient';
 import { StatsigOptions } from './StatsigSDKOptions';
 import { EvaluationDetails, EvaluationReason } from './StatsigStore';
 import { StatsigUser } from './StatsigUser';
-
 import { default as PolyfillObjectEntries } from './utils/Object.entries';
 import { default as PolyfillObjectFromEntries } from './utils/Object.fromEntries';
 import { default as PolyfillPromiseFinally } from './utils/Promise.finally';
@@ -53,13 +52,18 @@ export default class Statsig {
     user?: StatsigUser | null,
     options?: StatsigOptions | null,
   ): Promise<void> {
+    const startTime = Date.now();
     const inst = Statsig.instance ?? new StatsigClient(sdkKey, user, options);
 
     if (!Statsig.instance) {
       Statsig.instance = inst;
     }
 
-    return inst.initializeAsync();
+    return inst.initializeAsync().finally(() => {
+      if (options?.initCompletionCallback != null) {
+        options.initCompletionCallback(Date.now() - startTime);
+      }
+    });
   }
 
   public static async prefetchUsers(users: StatsigUser[]): Promise<void> {
