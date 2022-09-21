@@ -83,11 +83,7 @@ describe('Statsig Layers', () => {
   beforeEach(async () => {
     jest.resetModules();
     window.localStorage.clear();
-    client = new StatsigClient(
-      'client-key',
-      { userID: 'dloomb' },
-      { allowStickyExperimentValues: true },
-    );
+    client = new StatsigClient('client-key', { userID: 'dloomb' });
     await client.initializeAsync();
   });
 

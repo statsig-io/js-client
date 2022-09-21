@@ -471,10 +471,6 @@ export default class StatsigStore {
     isLayer: boolean,
     details: EvaluationDetails,
   ): APIDynamicConfig | undefined {
-    if (keepDeviceValue && !this.hasStickyValuesEnabled()) {
-      keepDeviceValue = false;
-    }
-
     // We don't want sticky behavior. Clear any sticky values and return latest.
     if (!keepDeviceValue) {
       this.removeStickyValue(name);
@@ -558,7 +554,10 @@ export default class StatsigStore {
   }
 
   private removeStickyValue(name: string) {
-    if (!this.hasStickyValuesEnabled()) {
+    if (
+      Object.keys(this.userValues?.sticky_experiments ?? {}).length === 0 &&
+      Object.keys(this.stickyDeviceExperiments ?? {}).length === 0
+    ) {
       return;
     }
 
@@ -570,34 +569,12 @@ export default class StatsigStore {
   }
 
   private saveStickyValuesToStorage() {
-    if (!this.hasStickyValuesEnabled()) {
-      return;
-    }
-
     this.values[this.userCacheKey] = this.userValues;
-    if (StatsigAsyncStorage.asyncStorage) {
-      StatsigAsyncStorage.setItemAsync(
-        INTERNAL_STORE_KEY,
-        JSON.stringify(this.values),
-      );
-      StatsigAsyncStorage.setItemAsync(
-        STICKY_DEVICE_EXPERIMENTS_KEY,
-        JSON.stringify(this.stickyDeviceExperiments),
-      );
-    } else {
-      StatsigLocalStorage.setItem(
-        INTERNAL_STORE_KEY,
-        JSON.stringify(this.values),
-      );
-      StatsigLocalStorage.setItem(
-        STICKY_DEVICE_EXPERIMENTS_KEY,
-        JSON.stringify(this.stickyDeviceExperiments),
-      );
-    }
-  }
-
-  private hasStickyValuesEnabled() {
-    return this.sdkInternal.getOptions().getAllowStickyExperimentValues();
+    this.setItemToStorage(INTERNAL_STORE_KEY, JSON.stringify(this.values));
+    this.setItemToStorage(
+      STICKY_DEVICE_EXPERIMENTS_KEY,
+      JSON.stringify(this.stickyDeviceExperiments),
+    );
   }
 
   public getGlobalEvaluationDetails(): EvaluationDetails {
@@ -652,5 +629,13 @@ export default class StatsigStore {
       time: Date.now(),
       evaluation_time: Date.now(),
     };
+  }
+
+  private setItemToStorage(key: string, value: string) {
+    if (StatsigAsyncStorage.asyncStorage) {
+      StatsigAsyncStorage.setItemAsync(key, value);
+    } else {
+      StatsigLocalStorage.setItem(key, value);
+    }
   }
 }
