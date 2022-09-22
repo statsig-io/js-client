@@ -8,6 +8,12 @@ export type StatsigEnvironment = {
   [key: string]: string | undefined;
 };
 
+export type InitCompletionCallback = (
+  initDurationMs: number,
+  success: boolean,
+  message: string | null,
+) => void;
+
 export type StatsigOptions = {
   api?: string;
   disableCurrentPageLogging?: boolean;
@@ -24,6 +30,7 @@ export type StatsigOptions = {
   eventLoggingApi?: string;
   prefetchUsers?: StatsigUser[];
   disableLocalStorage?: boolean;
+  initCompletionCallback?: InitCompletionCallback | null;
 };
 
 type BoundedNumberInput = {
@@ -48,6 +55,7 @@ export default class StatsigSDKOptions {
   private eventLoggingApi: string;
   private prefetchUsers: StatsigUser[];
   private disableLocalStorage: boolean;
+  private initCompletionCallback: InitCompletionCallback | null;
 
   constructor(options?: StatsigOptions | null) {
     if (options == null) {
@@ -91,6 +99,7 @@ export default class StatsigSDKOptions {
       : eventLoggingApi + '/';
     this.prefetchUsers = options.prefetchUsers ?? [];
     this.disableLocalStorage = options.disableLocalStorage ?? false;
+    this.initCompletionCallback = options.initCompletionCallback ?? null;
   }
 
   getApi(): string {
@@ -147,6 +156,10 @@ export default class StatsigSDKOptions {
 
   getDisableLocalStorage(): boolean {
     return this.disableLocalStorage;
+  }
+
+  getInitCompletionCallback(): InitCompletionCallback | null {
+    return this.initCompletionCallback;
   }
 
   private normalizeNumberInput(

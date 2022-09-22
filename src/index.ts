@@ -5,7 +5,6 @@ import StatsigClient, { StatsigOverrides } from './StatsigClient';
 import { StatsigOptions } from './StatsigSDKOptions';
 import { EvaluationDetails, EvaluationReason } from './StatsigStore';
 import { StatsigUser } from './StatsigUser';
-
 import { default as PolyfillObjectEntries } from './utils/Object.entries';
 import { default as PolyfillObjectFromEntries } from './utils/Object.fromEntries';
 import { default as PolyfillPromiseFinally } from './utils/Promise.finally';

@@ -1,6 +1,6 @@
-import Statsig from '.';
 import { IHasStatsigInternal } from './StatsigClient';
 import { StatsigUser } from './StatsigUser';
+import Statsig from '.';
 
 export enum StatsigEndpoint {
   Initialize = 'initialize',
@@ -117,7 +117,11 @@ export default class StatsigNetwork {
     if (timeout != 0) {
       const timer = new Promise<void>((resolve, reject) => {
         setTimeout(() => {
-          resolve();
+          reject(
+            new Error(
+              `The initialization timeout of ${timeout}ms has been hit before the network request has completed.`,
+            ),
+          );
         }, timeout);
       });
       return Promise.race([fetchPromise, timer]);

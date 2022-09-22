@@ -1,4 +1,9 @@
 import DynamicConfig from './DynamicConfig';
+import ErrorBoundary from './ErrorBoundary';
+import {
+  StatsigInvalidArgumentError,
+  StatsigUninitializedError,
+} from './Errors';
 import Layer from './Layer';
 import LogEvent from './LogEvent';
 import StatsigIdentity, { UUID } from './StatsigIdentity';
@@ -21,11 +26,6 @@ import { getUserCacheKey } from './utils/Hashing';
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import type { AsyncStorage } from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
-import {
-  StatsigInvalidArgumentError,
-  StatsigUninitializedError,
-} from './Errors';
-import ErrorBoundary from './ErrorBoundary';
 
 const MAX_VALUE_SIZE = 64;
 const MAX_OBJ_SIZE = 2048;
@@ -224,6 +224,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     return this.errorBoundary.capture(
       'initializeAsync',
       async () => {
+        const startTime = Date.now();
         if (this.pendingInitPromise != null) {
           return this.pendingInitPromise;
         }
@@ -252,9 +253,20 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
           return Promise.resolve();
         }
 
+        const completionCallback = (
+          success: boolean,
+          message: string | null,
+        ) => {
+          const cb = this.options.getInitCompletionCallback();
+          if (cb) {
+            cb(Date.now() - startTime, success, message);
+          }
+        };
+
         this.pendingInitPromise = this.fetchAndSaveValues(
           this.identity.getUser(),
           this.options.getPrefetchUsers(),
+          completionCallback,
         ).finally(async () => {
           this.pendingInitPromise = null;
           this.ready = true;
@@ -793,6 +805,9 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   private async fetchAndSaveValues(
     user: StatsigUser | null,
     prefetchUsers: StatsigUser[] = [],
+    completionCallback:
+      | ((success: boolean, message: string | null) => void)
+      | null = null,
   ): Promise<void> {
     if (prefetchUsers.length > 5) {
       console.warn('Cannot prefetch more than 5 users.');
@@ -822,6 +837,11 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         (e: Error) => {},
         prefetchUsers.length > 0 ? keyedPrefetchUsers : undefined,
       )
-      .catch((e) => {});
+      .then(() => {
+        completionCallback?.(true, null);
+      })
+      .catch((e) => {
+        completionCallback?.(false, e.message);
+      });
   }
 }

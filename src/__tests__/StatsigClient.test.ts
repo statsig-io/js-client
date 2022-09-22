@@ -2,12 +2,12 @@
  * @jest-environment jsdom
  */
 
-import Statsig from '..';
 import StatsigClient from '../StatsigClient';
 import { EvaluationReason } from '../StatsigStore';
 import StatsigAsyncStorage from '../utils/StatsigAsyncStorage';
 import * as TestData from './initialize_response.json';
 import LocalStorageMock from './LocalStorageMock';
+import Statsig from '..';
 
 describe('Verify behavior of StatsigClient', () => {
   const sdkKey = 'client-clienttestkey';
@@ -20,7 +20,7 @@ describe('Verify behavior of StatsigClient', () => {
       url.includes('initialize') &&
       url !== 'https://featuregates.org/v1/initialize'
     ) {
-      fail('invalid initialize endpoint');
+      return Promise.reject(new Error('invalid initialize endpoint'));
     }
     parsedRequestBody = JSON.parse(params?.body as string);
     return Promise.resolve({
