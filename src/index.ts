@@ -52,18 +52,13 @@ export default class Statsig {
     user?: StatsigUser | null,
     options?: StatsigOptions | null,
   ): Promise<void> {
-    const startTime = Date.now();
     const inst = Statsig.instance ?? new StatsigClient(sdkKey, user, options);
 
     if (!Statsig.instance) {
       Statsig.instance = inst;
     }
 
-    return inst.initializeAsync().finally(() => {
-      if (options?.initCompletionCallback != null) {
-        options.initCompletionCallback(Date.now() - startTime);
-      }
-    });
+    return inst.initializeAsync();
   }
 
   public static async prefetchUsers(users: StatsigUser[]): Promise<void> {

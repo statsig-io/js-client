@@ -8,7 +8,11 @@ export type StatsigEnvironment = {
   [key: string]: string | undefined;
 };
 
-export type InitCompletionCallback = (initTimeMs: number) => void;
+export type InitCompletionCallback = (
+  initDurationMs: number,
+  success: boolean,
+  message: string | null,
+) => void;
 
 export type StatsigOptions = {
   api?: string;

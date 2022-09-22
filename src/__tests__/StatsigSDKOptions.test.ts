@@ -1,10 +1,49 @@
 /**
  * @jest-environment jsdom
  */
-import Statsig from '../index';
+import Statsig, { StatsigClient } from '../index';
 
 describe('Test Statsig options', () => {
-  beforeAll(async () => {
+  test('init completion callback when there is an error', async () => {
+    expect.assertions(4);
+    let initTime, initSuccess, initMessage;
+
+    global.fetch = jest.fn((url, params) => {
+      return new Promise((resolve, reject) => {
+        setTimeout(
+          () =>
+            // @ts-ignore
+            resolve({
+              ok: false,
+              status: 401,
+              text: () => Promise.resolve('error!'),
+            }),
+          100,
+        );
+      });
+    });
+
+    await Statsig.initialize(
+      'client-key',
+      { userID: 'jkw' },
+      {
+        initCompletionCallback: (time, success, message) => {
+          initTime = time;
+          initSuccess = success;
+          initMessage = message;
+        },
+      },
+    );
+    expect(typeof initTime).toEqual('number');
+    expect(initTime).toBeGreaterThanOrEqual(100);
+    expect(initSuccess).toEqual(false);
+    expect(initMessage).toEqual('401: error!');
+  });
+
+  test('init completion callback when it succeeds', async () => {
+    expect.assertions(4);
+    let initTime, initSuccess, initMessage;
+
     global.fetch = jest.fn((url, params) => {
       return new Promise((resolve, reject) => {
         setTimeout(
@@ -12,28 +51,30 @@ describe('Test Statsig options', () => {
             // @ts-ignore
             resolve({
               ok: true,
+              status: 200,
               text: () => Promise.resolve(JSON.stringify({})),
             }),
-          1000,
+          100,
         );
       });
     });
-  });
 
-  test('init completion callback', async () => {
-    expect.assertions(2);
-    let initTime;
-    await Statsig.initialize(
+    const c = new StatsigClient(
       'client-key',
       { userID: 'jkw' },
       {
-        initCompletionCallback: (time) => {
+        initCompletionCallback: (time, success, message) => {
           initTime = time;
-          console.log(time);
+          initSuccess = success;
+          initMessage = message;
         },
       },
     );
+    await c.initializeAsync();
+
     expect(typeof initTime).toEqual('number');
-    expect(initTime).toBeGreaterThanOrEqual(1000);
+    expect(initTime).toBeGreaterThanOrEqual(100);
+    expect(initSuccess).toEqual(true);
+    expect(initMessage).toBeNull();
   });
 });
