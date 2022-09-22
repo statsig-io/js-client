@@ -12,6 +12,13 @@ type NetworkResponse = Response & {
   data?: Record<string, unknown>;
 };
 
+type InitializeInput = {
+    user: StatsigUser | null,
+    statsigMetadata: object,
+    lastSyncTimeForUser?: number | null | undefined,
+    prefetchUsers?: Record<string, StatsigUser> | undefined,
+};
+
 export default class StatsigNetwork {
   private sdkInternal: IHasStatsigInternal;
 
@@ -46,18 +53,24 @@ export default class StatsigNetwork {
 
   public fetchValues(
     user: StatsigUser | null,
+    lastSyncTime: number | null,
     timeout: number,
     resolveCallback: (json: Record<string, any>) => Promise<void>,
     rejectCallback: (e: Error) => void,
     prefetchUsers?: Record<string, StatsigUser>,
   ): Promise<void> {
-    return this.postWithTimeout(
-      StatsigEndpoint.Initialize,
-      {
+    const input: InitializeInput = {
         user,
         prefetchUsers,
         statsigMetadata: this.sdkInternal.getStatsigMetadata(),
-      },
+    };
+
+    if (lastSyncTime != null) {
+        input["lastSyncTimeForUser"] = Number(lastSyncTime);
+    }
+    return this.postWithTimeout(
+      StatsigEndpoint.Initialize,
+      input,
       resolveCallback,
       rejectCallback,
       timeout, // timeout for early returns

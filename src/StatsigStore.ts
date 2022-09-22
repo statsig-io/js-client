@@ -2,9 +2,12 @@ import DynamicConfig from './DynamicConfig';
 import { StatsigInvalidArgumentError } from './Errors';
 import Layer from './Layer';
 import { IHasStatsigInternal, StatsigOverrides } from './StatsigClient';
+import { StatsigUser } from './StatsigUser';
 import {
   INTERNAL_STORE_KEY,
   OVERRIDES_STORE_KEY,
+  STATSIG_LAST_SYNC_USER,
+  STATSIG_LAST_SYNC_TIME,
   STICKY_DEVICE_EXPERIMENTS_KEY,
 } from './utils/Constants';
 import { getHashValue } from './utils/Hashing';
@@ -629,6 +632,29 @@ export default class StatsigStore {
       time: Date.now(),
       evaluation_time: Date.now(),
     };
+  }
+
+  public async getLastSyncTimeForUser(user: StatsigUser | null): Promise<string | null> {
+    const userHash = getHashValue(JSON.stringify(user));
+    const prevUser = await this.getItemFromStorage(STATSIG_LAST_SYNC_USER);
+    if (prevUser === userHash) {
+        return await this.getItemFromStorage(STATSIG_LAST_SYNC_TIME);
+    }
+    return null;
+  }
+
+  public async setLastSyncTimeForUser(user: StatsigUser | null, time: string): Promise<void> {
+    const userHash = getHashValue(JSON.stringify(user));
+    await this.setItemToStorage(STATSIG_LAST_SYNC_USER, userHash);
+    await this.setItemToStorage(STATSIG_LAST_SYNC_TIME, time);
+  }
+
+  private async getItemFromStorage(key: string) {
+    if (StatsigAsyncStorage.asyncStorage) {
+        return StatsigAsyncStorage.getItemAsync(key);
+    } else {
+        return StatsigLocalStorage.getItem(key);
+    }
   }
 
   private setItemToStorage(key: string, value: string) {
