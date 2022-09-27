@@ -49,11 +49,15 @@ describe('Verify behavior of StatsigLogger', () => {
   });
 
   test('Test constructor', () => {
-    expect.assertions(7);
+    expect.assertions(8);
     const client = new StatsigClient(sdkKey, { userID: 'user_key' });
     const logger = client.getLogger();
     const spyOnFlush = jest.spyOn(logger, 'flush');
     const spyOnLog = jest.spyOn(logger, 'log');
+
+    // @ts-ignore access private attribute
+    expect(client.getLogger().flushInterval).not.toBeNull();
+
     // @ts-ignore trust me, the method exists
     const spyOnFailureLog = jest.spyOn(logger, 'appendFailureLog');
     return client.initializeAsync().then(async () => {
@@ -98,5 +102,13 @@ describe('Verify behavior of StatsigLogger', () => {
       client.getExperiment('test_config');
       expect(spyOnLog).toHaveBeenCalledTimes(105);
     });
+  });
+
+  test('Test local mode does not set up a flush interval', () => {
+    expect.assertions(1);
+    const client = new StatsigClient(sdkKey, { userID: 'user_key' }, {localMode: true});
+
+    // @ts-ignore access private attribute
+    expect(client.getLogger().flushInterval).toBeNull();
   });
 });

@@ -78,6 +78,10 @@ export default class StatsigLogger {
       // dont set the flush interval outside of client browser environments
       return;
     }
+    if (this.sdkInternal.getOptions().getLocalModeEnabled()) {
+        // unnecessary interval in local mode since logs dont flush anyway
+        return;
+    }
     const me = this;
     this.flushInterval = setInterval(() => {
       me.flush();
