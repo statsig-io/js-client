@@ -19,8 +19,14 @@ module.exports = {
   },
   output: {
     filename: 'statsig-prod-web-sdk.js',
-    library: 'statsig',
-    libraryTarget: 'var',
+    library: {
+        type: 'umd',
+        name: {
+            root: 'statsig',
+            amd: 'statsig',
+            commonjs: 'statsig',
+        }
+    },
     path: path.resolve(__dirname, 'build'),
     libraryExport: 'default',
     globalObject: 'this',
