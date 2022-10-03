@@ -651,7 +651,7 @@ export default class StatsigStore {
 
   private async getItemFromStorage(key: string) {
     if (StatsigAsyncStorage.asyncStorage) {
-        return StatsigAsyncStorage.getItemAsync(key);
+        return await StatsigAsyncStorage.getItemAsync(key);
     } else {
         return StatsigLocalStorage.getItem(key);
     }

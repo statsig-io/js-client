@@ -66,7 +66,7 @@ export default class StatsigNetwork {
     };
 
     if (lastSyncTime != null) {
-        input["lastSyncTimeForUser"] = Number(lastSyncTime);
+        input["lastSyncTimeForUser"] = lastSyncTime;
     }
     return this.postWithTimeout(
       StatsigEndpoint.Initialize,
