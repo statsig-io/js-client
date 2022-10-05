@@ -9,7 +9,7 @@
     "postbuild": "rm -rf build/**/*.map",
     "test": "jest",
     "test:watch": "jest --watch",
-    "build:dryrun": "npx tsc src/**/*.ts --noEmit --resolveJsonModule true",
+    "build:dryrun": "npx tsc src/**/*.ts --noEmit --resolveJsonModule true ",
     "types": "npx tsc"
   },
   "files": [
@@ -42,6 +42,7 @@
     "@babel/preset-typescript": "^7.14.5",
     "@types/jest": "^26.0.24",
     "@types/uuid": "^8.3.1",
+    "circular-dependency-plugin": "^5.2.2",
     "core-js": "^3.16.4",
     "jest": "^27.1.0",
     "terser-webpack-plugin": "^5.1.4",
