@@ -2,6 +2,7 @@ import DynamicConfig from './DynamicConfig';
 import { StatsigUninitializedError } from './Errors';
 import Layer from './Layer';
 import StatsigClient, { StatsigOverrides } from './StatsigClient';
+import StatsigRuntime from './StatsigRuntime';
 import { StatsigOptions } from './StatsigSDKOptions';
 import { EvaluationDetails, EvaluationReason } from './StatsigStore';
 import { StatsigUser } from './StatsigUser';
@@ -43,8 +44,15 @@ PolyfillObjectFromEntries();
 PolyfillPromiseFinally();
 
 export default class Statsig {
-  public static encodeIntializeCall = true;
   private static instance: StatsigClient | null = null;
+
+  static get encodeIntializeCall(): boolean {
+    return StatsigRuntime.encodeInitializeCall;
+  }
+
+  static set encodeIntializeCall(value: boolean) {
+    StatsigRuntime.encodeInitializeCall = value;
+  }
 
   private constructor() {}
 

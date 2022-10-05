@@ -1,6 +1,6 @@
 import { IHasStatsigInternal } from './StatsigClient';
+import StatsigRuntime from './StatsigRuntime';
 import { StatsigUser } from './StatsigUser';
-import Statsig from '.';
 
 export enum StatsigEndpoint {
   Initialize = 'initialize',
@@ -190,7 +190,7 @@ export default class StatsigNetwork {
 
     let shouldEncode =
       endpointName === StatsigEndpoint.Initialize &&
-      Statsig.encodeIntializeCall &&
+      StatsigRuntime.encodeInitializeCall &&
       typeof window?.btoa === 'function';
 
     let postBody = JSON.stringify(body);
