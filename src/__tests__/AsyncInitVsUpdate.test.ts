@@ -98,17 +98,20 @@ describe('Race conditions between initializeAsync and updateUser', () => {
     });
 
     // Call both without awaiting either
-    client.initializeAsync();
+    client.initializeAsync(false);
 
     const firstUserCacheKey = client.getCurrentUserCacheKey();
     let config = client.getExperiment('a_config');
     expect(config.getValue('a_key', 'default_value')).toEqual('default_value');
     expect(getCurrentInternalStore()).toBeNull();
 
-    client.updateUser({
-      userID: 'user-b',
-      customIDs: { workID: 'employee-b' },
-    });
+    client.updateUser(
+      {
+        userID: 'user-b',
+        customIDs: { workID: 'employee-b' },
+      },
+      false,
+    );
 
     const secondUserCacheKey = client.getCurrentUserCacheKey();
     config = client.getExperiment('a_config');

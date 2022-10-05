@@ -303,12 +303,12 @@ describe('Verify behavior of top level index functions', () => {
 
     // initializing and not awaiting should also use cached value
     let client = new StatsigClient('client-key', { userID: 'pass' });
-    client.initializeAsync();
+    client.initializeAsync(false);
     expect(client.checkGate('test_gate')).toBe(true);
 
     // but not for a new user
     let client2 = new StatsigClient('client-key', { userID: 'pass_2' });
-    client2.initializeAsync();
+    client2.initializeAsync(false);
     expect(client2.checkGate('test_gate')).toBe(false);
   });
 
@@ -561,20 +561,20 @@ describe('Verify behavior of top level index functions', () => {
       { userID: '123' },
       { overrideStableID: '666' },
     );
-    await client.initializeAsync();
+    await client.initializeAsync(false);
     expect(client.getStableID()).toEqual('666');
     expect(client.getStatsigMetadata().sessionID).toEqual('uuid_666');
   });
 
   test('customIDs is sent with user', async () => {
     let client = new StatsigClient('client-key', { userID: '123' });
-    await client.initializeAsync();
+    await client.initializeAsync(false);
     expect(hasCustomID).toBeFalsy();
     client = new StatsigClient('client-key', {
       userID: '123',
       customIDs: { customID: '666' },
     });
-    await client.initializeAsync();
+    await client.initializeAsync(false);
     expect(hasCustomID).toBeTruthy();
   });
 });

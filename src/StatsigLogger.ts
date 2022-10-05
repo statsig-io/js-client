@@ -79,8 +79,8 @@ export default class StatsigLogger {
       return;
     }
     if (this.sdkInternal.getOptions().getLocalModeEnabled()) {
-        // unnecessary interval in local mode since logs dont flush anyway
-        return;
+      // unnecessary interval in local mode since logs dont flush anyway
+      return;
     }
     const me = this;
     this.flushInterval = setInterval(() => {
@@ -412,7 +412,7 @@ export default class StatsigLogger {
         ) {
           this.sdkInternal
             .getNetwork()
-            .postToEndpoint(StatsigEndpoint.Rgstr, requestBody)
+            .postToEndpoint(StatsigEndpoint.Rgstr, requestBody, false)
             .then((response) => {
               if (!response.ok) {
                 throw Error(response.status + '');

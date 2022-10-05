@@ -56,7 +56,6 @@ describe('Verify behavior of StatsigClient', () => {
     jest.resetModules();
     parsedRequestBody = null;
 
-    Statsig.encodeIntializeCall = false;
     window.localStorage.clear();
   });
 
@@ -84,7 +83,7 @@ describe('Verify behavior of StatsigClient', () => {
   test('that override APIs work', async () => {
     expect.assertions(10);
     const statsig = new StatsigClient(sdkKey, { userID: '123' });
-    await statsig.initializeAsync();
+    await statsig.initializeAsync(false);
     expect(statsig.getOptions().getLoggingBufferMaxSize()).toEqual(100);
     expect(statsig.getOptions().getLoggingIntervalMillis()).toEqual(10000);
 
@@ -123,14 +122,14 @@ describe('Verify behavior of StatsigClient', () => {
         tier: 'development',
       },
     });
-    await statsig.initializeAsync();
+    await statsig.initializeAsync(false);
     expect(statsig.getOptions().getEnvironment()).toEqual({
       tier: 'development',
     });
     expect(user).toEqual({ userID: '123' });
 
     const newUser = { userID: 'abc' };
-    await statsig.updateUser(newUser);
+    await statsig.updateUser(newUser, false);
 
     expect(newUser).toEqual({ userID: 'abc' });
   });
@@ -138,7 +137,7 @@ describe('Verify behavior of StatsigClient', () => {
   test('that you can ignore an override to get the underlying value', async () => {
     expect.assertions(9);
     const statsig = new StatsigClient(sdkKey, { userID: '123' });
-    await statsig.initializeAsync();
+    await statsig.initializeAsync(false);
 
     expect(statsig.checkGate('test_gate')).toBe(true);
     statsig.overrideGate('test_gate', false);
@@ -188,7 +187,7 @@ describe('Verify behavior of StatsigClient', () => {
       },
     );
 
-    await statsig.initializeAsync();
+    await statsig.initializeAsync(false);
 
     expect(statsig.getOptions().getApi()).toEqual(
       'https://featuregates.org/v1/',
@@ -215,7 +214,7 @@ describe('Verify behavior of StatsigClient', () => {
       },
     );
 
-    await statsig.initializeAsync();
+    await statsig.initializeAsync(false);
 
     expect(statsig.getOptions().getApi()).toEqual(
       'https://statsig.jkw.com/v1/',
@@ -243,7 +242,7 @@ describe('Verify behavior of StatsigClient', () => {
       },
     );
 
-    await statsig.initializeAsync();
+    await statsig.initializeAsync(false);
 
     expect(statsig.getOptions().getApi()).toEqual(
       'https://featuregates.org/v1/',
@@ -258,7 +257,7 @@ describe('Verify behavior of StatsigClient', () => {
     StatsigAsyncStorage.asyncStorage = null;
 
     const statsig = new StatsigClient(sdkKey);
-    await statsig.initializeAsync();
+    await statsig.initializeAsync(false);
     let stableID = parsedRequestBody['statsigMetadata']['stableID'];
     expect(stableID).toBeTruthy();
     expect(statsig.getStableID()).toEqual(stableID);
@@ -266,7 +265,7 @@ describe('Verify behavior of StatsigClient', () => {
     const statsig2 = new StatsigClient(sdkKey, null, {
       overrideStableID: '123',
     });
-    await statsig2.initializeAsync();
+    await statsig2.initializeAsync(false);
     expect(parsedRequestBody['statsigMetadata']['stableID']).not.toEqual(
       stableID,
     );
@@ -276,11 +275,11 @@ describe('Verify behavior of StatsigClient', () => {
     const statsig3 = new StatsigClient(sdkKey, null, {
       overrideStableID: '456',
     });
-    await statsig3.initializeAsync();
+    await statsig3.initializeAsync(false);
     expect(parsedRequestBody['statsigMetadata']['stableID']).toEqual('456');
 
     const statsig4 = new StatsigClient(sdkKey, null);
-    await statsig4.initializeAsync();
+    await statsig4.initializeAsync(false);
     expect(parsedRequestBody['statsigMetadata']['stableID']).toEqual('456');
   });
 
@@ -289,7 +288,7 @@ describe('Verify behavior of StatsigClient', () => {
     setFakeAsyncStorage();
 
     const statsig = new StatsigClient(sdkKey);
-    await statsig.initializeAsync();
+    await statsig.initializeAsync(false);
     let stableID = parsedRequestBody['statsigMetadata']['stableID'];
     expect(stableID).toBeTruthy();
     expect(statsig.getStableID()).toEqual(stableID);
@@ -297,7 +296,7 @@ describe('Verify behavior of StatsigClient', () => {
     const statsig2 = new StatsigClient(sdkKey, null, {
       overrideStableID: '123',
     });
-    await statsig2.initializeAsync();
+    await statsig2.initializeAsync(false);
     expect(parsedRequestBody['statsigMetadata']['stableID']).not.toEqual(
       stableID,
     );
@@ -307,11 +306,11 @@ describe('Verify behavior of StatsigClient', () => {
     const statsig3 = new StatsigClient(sdkKey, null, {
       overrideStableID: '456',
     });
-    await statsig3.initializeAsync();
+    await statsig3.initializeAsync(false);
     expect(parsedRequestBody['statsigMetadata']['stableID']).toEqual('456');
 
     const statsig4 = new StatsigClient(sdkKey, null);
-    await statsig4.initializeAsync();
+    await statsig4.initializeAsync(false);
     expect(parsedRequestBody['statsigMetadata']['stableID']).toEqual('456');
   });
 
@@ -325,7 +324,7 @@ describe('Verify behavior of StatsigClient', () => {
         localMode: true,
       },
     );
-    await statsig.initializeAsync();
+    await statsig.initializeAsync(false);
     expect(parsedRequestBody).toBeNull(); // never issued the request
 
     expect(statsig.checkGate('test_gate')).toEqual(false);
@@ -343,7 +342,9 @@ describe('Verify behavior of StatsigClient', () => {
     expect(statsig.checkGate('test_gate')).toEqual(false);
     expect(statsig.getConfig('test_config').getValue()).toEqual({});
 
-    expect(statsig.updateUser({ userID: '123456' })).resolves.not.toThrow();
+    expect(
+      statsig.updateUser({ userID: '123456' }, false),
+    ).resolves.not.toThrow();
   });
 
   test('That bootstrapping values works', async () => {
@@ -370,7 +371,7 @@ describe('Verify behavior of StatsigClient', () => {
       time: expect.any(Number),
     });
 
-    await client.initializeAsync();
+    await client.initializeAsync(false);
     // nothing changed, network not hit
     expect(parsedRequestBody).toBeNull();
     expect(client.checkGate('test_gate')).toBe(false);

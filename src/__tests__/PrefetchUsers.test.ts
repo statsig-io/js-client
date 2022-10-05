@@ -90,7 +90,6 @@ describe('Prefetch Users', () => {
 
   beforeEach(() => {
     initializeCalls = 0;
-    Statsig.encodeIntializeCall = false;
   });
 
   it('can be initilialized with prefetchUsers only', async () => {
@@ -98,7 +97,7 @@ describe('Prefetch Users', () => {
       overrideStableID: 'a_stable_id',
       prefetchUsers,
     });
-    await client.initializeAsync();
+    await client.initializeAsync(false);
 
     expect(client.getConfig('a_config').value).toEqual({
       key: 'empty_user_value',
@@ -110,7 +109,7 @@ describe('Prefetch Users', () => {
       overrideStableID: 'a_stable_id',
       prefetchUsers,
     });
-    await client.initializeAsync();
+    await client.initializeAsync(false);
 
     expect(client.getConfig('a_config').value).toEqual({
       key: 'a_user_value',
@@ -122,7 +121,7 @@ describe('Prefetch Users', () => {
       overrideStableID: 'a_stable_id',
       prefetchUsers: [user, ...prefetchUsers],
     });
-    await client.initializeAsync();
+    await client.initializeAsync(false);
 
     expect(client.getConfig('a_config').value).toEqual({
       key: 'a_user_value',
@@ -134,13 +133,13 @@ describe('Prefetch Users', () => {
       overrideStableID: 'a_stable_id',
       prefetchUsers,
     });
-    await client.initializeAsync();
+    await client.initializeAsync(false);
 
     expect(initializeCalls).toBe(1);
-    await client.updateUser(prefetchUsers[0]);
+    await client.updateUser(prefetchUsers[0], false);
     expect(initializeCalls).toBe(1);
 
-    await client.updateUser(prefetchUsers[1]);
+    await client.updateUser(prefetchUsers[1], false);
     expect(initializeCalls).toBe(1);
   });
 
@@ -149,10 +148,10 @@ describe('Prefetch Users', () => {
       overrideStableID: 'a_stable_id',
       prefetchUsers,
     });
-    await client.initializeAsync();
+    await client.initializeAsync(false);
 
     expect(initializeCalls).toBe(1);
-    await client.updateUser({ userID: 'new-user' });
+    await client.updateUser({ userID: 'new-user' }, false);
     expect(initializeCalls).toBe(2);
   });
 
@@ -161,12 +160,12 @@ describe('Prefetch Users', () => {
       overrideStableID: 'a_stable_id',
       prefetchUsers,
     });
-    await client.initializeAsync();
+    await client.initializeAsync(false);
 
-    await client.updateUser(prefetchUsers[0]);
+    await client.updateUser(prefetchUsers[0], false);
     expect(client.getConfig('a_config').value['key']).toEqual('b_user_value');
 
-    await client.updateUser(prefetchUsers[1]);
+    await client.updateUser(prefetchUsers[1], false);
     expect(client.getConfig('a_config').value['key']).toEqual('c_user_value');
   });
 
@@ -175,10 +174,10 @@ describe('Prefetch Users', () => {
       overrideStableID: 'a_stable_id',
       prefetchUsers,
     });
-    await client.initializeAsync();
+    await client.initializeAsync(false);
     expect(initializeCalls).toBe(1);
 
-    await client.updateUser(prefetchUsers[0]);
+    await client.updateUser(prefetchUsers[0], false);
     expect(initializeCalls).toBe(1);
 
     initializeCalls = 0;
@@ -186,10 +185,10 @@ describe('Prefetch Users', () => {
     const client2 = new StatsigClient('client-key', user, {
       overrideStableID: 'a_stable_id',
     });
-    await client2.initializeAsync();
+    await client2.initializeAsync(false);
     expect(initializeCalls).toBe(1);
 
-    await client2.updateUser(prefetchUsers[0]);
+    await client2.updateUser(prefetchUsers[0], false);
     expect(initializeCalls).toBe(2);
   });
 
@@ -197,8 +196,8 @@ describe('Prefetch Users', () => {
     const client = new StatsigClient('client-key', user, {
       overrideStableID: 'a_stable_id',
     });
-    await client.initializeAsync();
-    await client.prefetchUsers([]);
+    await client.initializeAsync(false);
+    await client.prefetchUsers([], false);
     expect(initializeCalls).toBe(1);
   });
 
@@ -206,11 +205,11 @@ describe('Prefetch Users', () => {
     const client = new StatsigClient('client-key', user, {
       overrideStableID: 'a_stable_id',
     });
-    await client.initializeAsync();
-    await client.prefetchUsers(prefetchUsers);
+    await client.initializeAsync(false);
+    await client.prefetchUsers(prefetchUsers, false);
     expect(initializeCalls).toBe(2);
 
-    await client.updateUser(prefetchUsers[0]);
+    await client.updateUser(prefetchUsers[0], false);
     expect(initializeCalls).toBe(2);
   });
 
@@ -219,16 +218,16 @@ describe('Prefetch Users', () => {
       overrideStableID: 'a_stable_id',
       prefetchUsers,
     });
-    await client.initializeAsync();
+    await client.initializeAsync(false);
     expect(initializeCalls).toBe(1);
 
     const client2 = new StatsigClient('client-key', user, {
       overrideStableID: 'a_stable_id',
     });
-    await client2.initializeAsync();
+    await client2.initializeAsync(false);
     expect(initializeCalls).toBe(2);
 
-    await client2.updateUser(prefetchUsers[0]);
+    await client2.updateUser(prefetchUsers[0], false);
     expect(initializeCalls).toBe(3);
   });
 
@@ -236,8 +235,8 @@ describe('Prefetch Users', () => {
     const client = new StatsigClient('client-key', user, {
       overrideStableID: 'a_stable_id',
     });
-    await client.initializeAsync();
-    await client.prefetchUsers(prefetchUsers);
+    await client.initializeAsync(false);
+    await client.prefetchUsers(prefetchUsers, false);
 
     expect(client.getConfig('a_config').value).toEqual({
       key: 'a_user_value',
