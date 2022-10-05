@@ -59,11 +59,14 @@ export default class Statsig {
       Statsig.instance = inst;
     }
 
-    return inst.initializeAsync();
+    return inst.initializeAsync(Statsig.encodeIntializeCall);
   }
 
   public static async prefetchUsers(users: StatsigUser[]): Promise<void> {
-    return await Statsig.getClientX().prefetchUsers(users);
+    return await Statsig.getClientX().prefetchUsers(
+      users,
+      Statsig.encodeIntializeCall,
+    );
   }
 
   public static setInitializeValues(
@@ -114,7 +117,7 @@ export default class Statsig {
   }
 
   public static updateUser(user: StatsigUser | null): Promise<boolean> {
-    return Statsig.getClientX().updateUser(user);
+    return Statsig.getClientX().updateUser(user, Statsig.encodeIntializeCall);
   }
 
   public static shutdown() {

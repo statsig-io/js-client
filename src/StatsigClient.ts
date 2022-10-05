@@ -56,7 +56,7 @@ export type _SDKPackageInfo = {
 };
 
 export interface IStatsig {
-  initializeAsync(): Promise<void>;
+  initializeAsync(encodeIntializeCall: boolean): Promise<void>;
   checkGate(gateName: string, ignoreOverrides?: boolean): boolean;
   getConfig(configName: string, ignoreOverrides?: boolean): DynamicConfig;
   getExperiment(
@@ -69,7 +69,14 @@ export interface IStatsig {
     value?: string | number | null,
     metadata?: Record<string, string> | null,
   ): void;
-  updateUser(user: StatsigUser | null): Promise<boolean>;
+  updateUser(
+    user: StatsigUser | null,
+    encodeIntializeCall: boolean,
+  ): Promise<boolean>;
+  prefetchUsers(
+    users: StatsigUser[],
+    encodeInitializeValues: boolean,
+  ): Promise<void>;
   shutdown(): void;
   overrideGate(gateName: string, value: boolean): void;
   overrideConfig(gateName: string, value: Record<string, any>): void;
@@ -220,7 +227,9 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     );
   }
 
-  public async initializeAsync(): Promise<void> {
+  public async initializeAsync(
+    encodeIntializeCall: boolean = true,
+  ): Promise<void> {
     return this.errorBoundary.capture(
       'initializeAsync',
       async () => {
@@ -267,6 +276,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
           this.identity.getUser(),
           this.options.getPrefetchUsers(),
           completionCallback,
+          encodeIntializeCall,
         ).finally(async () => {
           this.pendingInitPromise = null;
           this.ready = true;
@@ -284,12 +294,15 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     );
   }
 
-  public async prefetchUsers(users: StatsigUser[]): Promise<void> {
+  public async prefetchUsers(
+    users: StatsigUser[],
+    encodeInitializeValues: boolean,
+  ): Promise<void> {
     if (!users || users.length == 0) {
       return;
     }
 
-    return this.fetchAndSaveValues(null, users);
+    return this.fetchAndSaveValues(null, users, null, encodeInitializeValues);
   }
 
   public getEvaluationDetails(): EvaluationDetails {
@@ -453,7 +466,10 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     });
   }
 
-  public async updateUser(user: StatsigUser | null): Promise<boolean> {
+  public async updateUser(
+    user: StatsigUser | null,
+    encodeIntializeCall: boolean = true,
+  ): Promise<boolean> {
     return this.errorBoundary.capture(
       'updateUser',
       async () => {
@@ -481,11 +497,14 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         }
 
         const currentUser = this.identity.getUser();
-        this.pendingInitPromise = this.fetchAndSaveValues(currentUser).finally(
-          () => {
-            this.pendingInitPromise = null;
-          },
-        );
+        this.pendingInitPromise = this.fetchAndSaveValues(
+          currentUser,
+          undefined,
+          null,
+          encodeIntializeCall,
+        ).finally(() => {
+          this.pendingInitPromise = null;
+        });
 
         return this.pendingInitPromise
           .then(() => {
@@ -808,6 +827,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     completionCallback:
       | ((success: boolean, message: string | null) => void)
       | null = null,
+    encodeInitializeValues: boolean,
   ): Promise<void> {
     if (prefetchUsers.length > 5) {
       console.warn('Cannot prefetch more than 5 users.');
@@ -835,6 +855,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
           });
         },
         (e: Error) => {},
+        encodeInitializeValues,
         prefetchUsers.length > 0 ? keyedPrefetchUsers : undefined,
       )
       .then(() => {

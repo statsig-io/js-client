@@ -1,6 +1,5 @@
 import { IHasStatsigInternal } from './StatsigClient';
 import { StatsigUser } from './StatsigUser';
-import Statsig from '.';
 
 export enum StatsigEndpoint {
   Initialize = 'initialize',
@@ -49,6 +48,7 @@ export default class StatsigNetwork {
     timeout: number,
     resolveCallback: (json: Record<string, any>) => Promise<void>,
     rejectCallback: (e: Error) => void,
+    encodeInitializeValues: boolean,
     prefetchUsers?: Record<string, StatsigUser>,
   ): Promise<void> {
     return this.postWithTimeout(
@@ -60,8 +60,10 @@ export default class StatsigNetwork {
       },
       resolveCallback,
       rejectCallback,
+      encodeInitializeValues,
       timeout, // timeout for early returns
       3, // retries
+      1000,
     );
   }
 
@@ -70,6 +72,7 @@ export default class StatsigNetwork {
     body: object,
     resolveCallback: (json: Record<string, any>) => Promise<void>,
     rejectCallback: (e: Error) => void,
+    encodeInitializeValues: boolean,
     timeout: number = 0,
     retries: number = 0,
     backoff: number = 1000,
@@ -77,8 +80,10 @@ export default class StatsigNetwork {
     const fetchPromise = this.postToEndpoint(
       endpointName,
       body,
+      encodeInitializeValues,
       retries,
       backoff,
+      false,
     )
       .then((res) => {
         if (res.ok && typeof res.data === 'object') {
@@ -151,6 +156,7 @@ export default class StatsigNetwork {
   public async postToEndpoint(
     endpointName: StatsigEndpoint,
     body: object,
+    encodeInitializeValues: boolean,
     retries: number = 0,
     backoff: number = 1000,
     useKeepalive: boolean = false,
@@ -190,7 +196,7 @@ export default class StatsigNetwork {
 
     let shouldEncode =
       endpointName === StatsigEndpoint.Initialize &&
-      Statsig.encodeIntializeCall &&
+      encodeInitializeValues &&
       typeof window?.btoa === 'function';
 
     let postBody = JSON.stringify(body);
