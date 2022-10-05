@@ -106,6 +106,7 @@ describe('Verify behavior of InternalStore', () => {
             },
             dynamic_configs: configs,
             configs: {},
+            has_updates: true,
           }),
         ),
     }),

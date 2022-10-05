@@ -831,7 +831,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         this.options.getInitTimeoutMs(),
         async (json: Record<string, any>): Promise<void> => {
           return this.errorBoundary.swallow('fetchAndSaveValues', async () => {
-            if (json.hasUpdates) {
+            if (json.has_updates) {
                 await this.store.save(
                     getUserCacheKey(this.getStableID(), user),
                     json,

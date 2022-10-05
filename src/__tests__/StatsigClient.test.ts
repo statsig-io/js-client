@@ -41,6 +41,7 @@ describe('Verify behavior of StatsigClient', () => {
                 },
               },
             },
+            has_updates: true,
           }),
         ),
     });

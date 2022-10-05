@@ -70,6 +70,7 @@ describe('Verify behavior of top level index functions', () => {
                 },
               },
               layer_configs: {},
+              has_updates: true,
             }),
           ),
       });

@@ -56,6 +56,7 @@ describe('Verify local storage limits are enforced', () => {
               },
             },
             dynamic_configs: configs,
+            has_updates: true
           }),
         ),
     }),
