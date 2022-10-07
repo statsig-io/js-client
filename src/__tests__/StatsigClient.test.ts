@@ -202,8 +202,8 @@ describe('Verify behavior of StatsigClient', () => {
 
     // Set the stable id, save the configs
     expect(spyOnSet).toHaveBeenCalledTimes(2);
-    // Get the stable id, 2 saved configs, and saved logs
-    expect(spyOnGet).toHaveBeenCalledTimes(4);
+    // Get the stable id, syncTime, 2 saved configs, and saved logs
+    expect(spyOnGet).toHaveBeenCalledTimes(5);
   });
 
   test('that overriding api overrides both api and logevent api', async () => {

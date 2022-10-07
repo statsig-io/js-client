@@ -634,16 +634,30 @@ export default class StatsigStore {
     };
   }
 
-  public async getLastSyncTimeForUser(user: StatsigUser | null): Promise<string | null> {
+  public async genLastSyncTimeForUser(
+    user: StatsigUser | null,
+  ): Promise<string | null> {
     const userHash = getHashValue(JSON.stringify(user));
-    const prevUser = await this.getItemFromStorage(STATSIG_LAST_SYNC_USER);
+    const prevUser = await StatsigAsyncStorage.getItemAsync(userHash);
     if (prevUser === userHash) {
-        return await this.getItemFromStorage(STATSIG_LAST_SYNC_TIME);
+      return await StatsigAsyncStorage.getItemAsync(STATSIG_LAST_SYNC_TIME);
     }
     return null;
   }
 
-  public async setLastSyncTimeForUser(user: StatsigUser | null, time: string): Promise<void> {
+  public getLastSyncTimeForUser(user: StatsigUser | null): string | null {
+    const userHash = getHashValue(JSON.stringify(user));
+    const prevUser = StatsigLocalStorage.getItem(userHash);
+    if (prevUser === userHash) {
+      return StatsigLocalStorage.getItem(STATSIG_LAST_SYNC_TIME);
+    }
+    return null;
+  }
+
+  public async setLastSyncTimeForUser(
+    user: StatsigUser | null,
+    time: string,
+  ): Promise<void> {
     const userHash = getHashValue(JSON.stringify(user));
     await this.setItemToStorage(STATSIG_LAST_SYNC_USER, userHash);
     await this.setItemToStorage(STATSIG_LAST_SYNC_TIME, time);
@@ -651,9 +665,9 @@ export default class StatsigStore {
 
   private async getItemFromStorage(key: string) {
     if (StatsigAsyncStorage.asyncStorage) {
-        return await StatsigAsyncStorage.getItemAsync(key);
+      return await StatsigAsyncStorage.getItemAsync(key);
     } else {
-        return StatsigLocalStorage.getItem(key);
+      return StatsigLocalStorage.getItem(key);
     }
   }
 

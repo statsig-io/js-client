@@ -13,11 +13,13 @@ type NetworkResponse = Response & {
 };
 
 type InitializeInput = {
-    user: StatsigUser | null,
-    statsigMetadata: object,
-    lastSyncTimeForUser?: number | null | undefined,
-    prefetchUsers?: Record<string, StatsigUser> | undefined,
+  user: StatsigUser | null;
+  statsigMetadata: object;
+  sinceTime?: number | null | undefined;
+  prefetchUsers?: Record<string, StatsigUser> | undefined;
 };
+
+const NO_CONTENT = 204;
 
 export default class StatsigNetwork {
   private sdkInternal: IHasStatsigInternal;
@@ -53,20 +55,20 @@ export default class StatsigNetwork {
 
   public fetchValues(
     user: StatsigUser | null,
-    lastSyncTime: number | null,
+    sinceTime: number | null,
     timeout: number,
     resolveCallback: (json: Record<string, any>) => Promise<void>,
     rejectCallback: (e: Error) => void,
     prefetchUsers?: Record<string, StatsigUser>,
   ): Promise<void> {
     const input: InitializeInput = {
-        user,
-        prefetchUsers,
-        statsigMetadata: this.sdkInternal.getStatsigMetadata(),
+      user,
+      prefetchUsers,
+      statsigMetadata: this.sdkInternal.getStatsigMetadata(),
     };
 
-    if (lastSyncTime != null) {
-        input["lastSyncTimeForUser"] = lastSyncTime;
+    if (sinceTime != null) {
+      input['sinceTime'] = sinceTime;
     }
     return this.postWithTimeout(
       StatsigEndpoint.Initialize,
@@ -236,10 +238,14 @@ export default class StatsigNetwork {
     return fetch(url, params)
       .then(async (res) => {
         if (res.ok) {
-          const text = await res.text();
           const networkResponse = res as NetworkResponse;
-          networkResponse.data = JSON.parse(text);
-          return networkResponse;
+          if (res.status === NO_CONTENT) {
+            networkResponse.data = { has_updates: false };
+          } else {
+            const text = await res.text();
+            networkResponse.data = JSON.parse(text);
+          }
+          return Promise.resolve(networkResponse);
         }
         if (!this.retryCodes[res.status]) {
           retries = 0;

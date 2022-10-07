@@ -69,10 +69,9 @@ describe('Verify behavior of StatsigClient', () => {
     expect(
       statsig.getConfig('test_config').get<string>('param', 'default'),
     ).toEqual('cache');
-
     jest.advanceTimersByTime(2000);
     await init;
-
+    jest.advanceTimersByTime(2000);
     expect(statsig.checkGate('test_gate')).toBe(false);
     expect(
       statsig.getConfig('test_config').get<string>('param', 'default'),

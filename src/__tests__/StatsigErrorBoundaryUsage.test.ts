@@ -33,7 +33,8 @@ describe('Statsig ErrorBoundary Usage', () => {
       requests.push({ url: url.toString(), params: params ?? {} });
       return Promise.resolve({
         ok: true,
-        text: () => Promise.resolve('{}'),
+        status: 200,
+        text: () => Promise.resolve('{"has_updates": true}'),
       });
     });
 
@@ -156,7 +157,7 @@ describe('Statsig ErrorBoundary Usage', () => {
   it('captures crashes in saving', async () => {
     const localClient = new StatsigClient('client-key');
     // @ts-ignore
-    localClient.store = 1;
+    localClient.store.save = null;
     await localClient.initializeAsync();
     requests.shift(); // remove the /initialize call
     expectSingleError('this.store.save is not a function');

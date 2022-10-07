@@ -61,6 +61,7 @@ const initialResponse = {
   feature_gates: {},
   dynamic_configs: dynamicConfigs,
   layer_configs: layerConfigs,
+  has_updates: true,
 };
 
 describe('Statsig Layers', () => {

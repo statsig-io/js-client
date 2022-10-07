@@ -48,6 +48,7 @@ describe('Prefetch Users', () => {
             [aConfigHash]: makeConfigDef({ key: 'empty_user_value' }),
           },
           layer_configs: {},
+          has_updates: true,
         };
         break;
       case 'a-user':
@@ -57,6 +58,7 @@ describe('Prefetch Users', () => {
             [aConfigHash]: makeConfigDef({ key: 'a_user_value' }),
           },
           layer_configs: {},
+          has_updates: true,
         };
         break;
     }
@@ -70,6 +72,7 @@ describe('Prefetch Users', () => {
             [aConfigHash]: makeConfigDef({ key: 'b_user_value' }),
           },
           layer_configs: {},
+          has_updates: true,
         },
         '-1940197626': {
           // c-user
@@ -78,6 +81,7 @@ describe('Prefetch Users', () => {
             [aConfigHash]: makeConfigDef({ key: 'c_user_value' }),
           },
           layer_configs: {},
+          has_updates: true,
         },
       };
     }
