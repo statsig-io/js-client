@@ -49,6 +49,7 @@ describe('Verify behavior of StatsigClient', () => {
                     rule_id: 'network',
                   },
                 },
+                has_updates: true,
               }),
             ),
         });
@@ -59,7 +60,7 @@ describe('Verify behavior of StatsigClient', () => {
   test('cache used before initialize resolves, then network result used', async () => {
     expect.assertions(4);
     const statsig = new StatsigClient(sdkKey, { userID: '123' });
-    statsig.getStore().save(statsig.getCurrentUserCacheKey(), values);
+    await statsig.getStore().save({ userID: '123' }, values);
 
     const init = statsig.initializeAsync();
 
@@ -68,10 +69,9 @@ describe('Verify behavior of StatsigClient', () => {
     expect(
       statsig.getConfig('test_config').get<string>('param', 'default'),
     ).toEqual('cache');
-
     jest.advanceTimersByTime(2000);
     await init;
-
+    jest.advanceTimersByTime(2000);
     expect(statsig.checkGate('test_gate')).toBe(false);
     expect(
       statsig.getConfig('test_config').get<string>('param', 'default'),

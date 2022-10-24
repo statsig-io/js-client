@@ -3,7 +3,7 @@
  */
 
 import StatsigClient from '../StatsigClient';
-import { INTERNAL_STORE_KEY, LOCAL_STORAGE_KEYS } from '../utils/Constants';
+import { INTERNAL_STORE_KEY } from '../utils/Constants';
 import { getUserCacheKey } from '../utils/Hashing';
 import LocalStorageMock from './LocalStorageMock';
 
@@ -56,6 +56,8 @@ describe('Verify local storage limits are enforced', () => {
               },
             },
             dynamic_configs: configs,
+            time: 1646026677427,
+            has_updates: true,
           }),
         ),
     }),
@@ -167,7 +169,7 @@ describe('Verify local storage limits are enforced', () => {
     let user = { userID: 'newUser' };
     let key = getUserCacheKey('a_stable_id', user);
     await client.updateUser(user);
-    store.save(key, {
+    store.save(user, {
       feature_gates: gates,
       dynamic_configs: configs,
     });
@@ -180,7 +182,7 @@ describe('Verify local storage limits are enforced', () => {
     user = { userID: 'newUser2' };
     key = getUserCacheKey('a_stable_id', user);
     await client.updateUser(user);
-    store.save(key, {
+    store.save(user, {
       feature_gates: gates,
       dynamic_configs: configs,
     });
@@ -194,7 +196,7 @@ describe('Verify local storage limits are enforced', () => {
     user = { userID: '' };
     key = getUserCacheKey('a_stable_id', user);
     await client.updateUser(user);
-    store.save(key, {
+    store.save(user, {
       feature_gates: gates,
       dynamic_configs: configs,
     });

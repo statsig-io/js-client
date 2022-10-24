@@ -12,6 +12,8 @@ type NetworkResponse = Response & {
   data?: Record<string, unknown>;
 };
 
+const NO_CONTENT = 204;
+
 export default class StatsigNetwork {
   private sdkInternal: IHasStatsigInternal;
 
@@ -46,18 +48,22 @@ export default class StatsigNetwork {
 
   public fetchValues(
     user: StatsigUser | null,
+    sinceTime: number | null,
     timeout: number,
     resolveCallback: (json: Record<string, any>) => Promise<void>,
     rejectCallback: (e: Error) => void,
     prefetchUsers?: Record<string, StatsigUser>,
   ): Promise<void> {
+    const input = {
+      user,
+      prefetchUsers,
+      statsigMetadata: this.sdkInternal.getStatsigMetadata(),
+      sinceTime: sinceTime ?? undefined,
+    };
+
     return this.postWithTimeout(
       StatsigEndpoint.Initialize,
-      {
-        user,
-        prefetchUsers,
-        statsigMetadata: this.sdkInternal.getStatsigMetadata(),
-      },
+      input,
       resolveCallback,
       rejectCallback,
       timeout, // timeout for early returns
@@ -223,10 +229,14 @@ export default class StatsigNetwork {
     return fetch(url, params)
       .then(async (res) => {
         if (res.ok) {
-          const text = await res.text();
           const networkResponse = res as NetworkResponse;
-          networkResponse.data = JSON.parse(text);
-          return networkResponse;
+          if (res.status === NO_CONTENT) {
+            networkResponse.data = { has_updates: false };
+          } else {
+            const text = await res.text();
+            networkResponse.data = JSON.parse(text);
+          }
+          return Promise.resolve(networkResponse);
         }
         if (!this.retryCodes[res.status]) {
           retries = 0;

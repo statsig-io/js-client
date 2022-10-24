@@ -818,16 +818,22 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       return acc;
     }, {} as Record<string, StatsigUser>);
 
+    let sinceTime: number | null = null;
+    if (prefetchUsers.length === 0) {
+      sinceTime = this.store.getLastUpdateTime(user);
+    }
+
     return this.network
       .fetchValues(
         user,
+        sinceTime,
         this.options.getInitTimeoutMs(),
         async (json: Record<string, any>): Promise<void> => {
           return this.errorBoundary.swallow('fetchAndSaveValues', async () => {
-            await this.store.save(
-              getUserCacheKey(this.getStableID(), user),
-              json,
-            );
+            if (json?.has_updates) {
+              await this.store.save(user, json);
+            }
+
             this.prefetchedUsersByCacheKey = {
               ...this.prefetchedUsersByCacheKey,
               ...keyedPrefetchUsers,

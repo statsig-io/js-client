@@ -2,12 +2,13 @@ import DynamicConfig from './DynamicConfig';
 import { StatsigInvalidArgumentError } from './Errors';
 import Layer from './Layer';
 import { IHasStatsigInternal, StatsigOverrides } from './StatsigClient';
+import { StatsigUser } from './StatsigUser';
 import {
   INTERNAL_STORE_KEY,
   OVERRIDES_STORE_KEY,
   STICKY_DEVICE_EXPERIMENTS_KEY,
 } from './utils/Constants';
-import { getHashValue } from './utils/Hashing';
+import { getHashValue, getUserCacheKey } from './utils/Hashing';
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
 
@@ -52,6 +53,9 @@ type APIInitializeData = {
   dynamic_configs: Record<string, APIDynamicConfig | undefined>;
   feature_gates: Record<string, APIFeatureGate | undefined>;
   layer_configs: Record<string, APIDynamicConfig | undefined>;
+  has_updates?: boolean;
+  time: number;
+  user_hash?: string;
 };
 
 type APIInitializeDataWithPrefetchedUsers = APIInitializeData & {
@@ -60,7 +64,6 @@ type APIInitializeDataWithPrefetchedUsers = APIInitializeData & {
 
 type UserCacheValues = APIInitializeDataWithPrefetchedUsers & {
   sticky_experiments: Record<string, APIDynamicConfig | undefined>;
-  time: number;
   evaluation_time?: number;
 };
 
@@ -90,6 +93,7 @@ export default class StatsigStore {
       dynamic_configs: {},
       sticky_experiments: {},
       layer_configs: {},
+      has_updates: false,
       time: 0,
       evaluation_time: 0,
     };
@@ -145,6 +149,14 @@ export default class StatsigStore {
 
   public isLoaded(): boolean {
     return this.loaded;
+  }
+
+  public getLastUpdateTime(user: StatsigUser | null): number | null {
+    const userHash = getHashValue(JSON.stringify(user));
+    if (this.userValues.user_hash == userHash) {
+      return this.userValues.time;
+    }
+    return null;
   }
 
   private parseCachedValues(
@@ -205,9 +217,13 @@ export default class StatsigStore {
   }
 
   public async save(
-    requestedUserCacheKey: string | null,
+    user: StatsigUser | null,
     jsonConfigs: Record<string, any>,
   ): Promise<void> {
+    const requestedUserCacheKey = getUserCacheKey(
+      this.sdkInternal.getStatsigMetadata().stableID as string,
+      user,
+    );
     const data = jsonConfigs as APIInitializeDataWithPrefetchedUsers;
     if (data.prefetched_user_values) {
       const cacheKeys = Object.keys(data.prefetched_user_values);
@@ -222,6 +238,10 @@ export default class StatsigStore {
         data,
         requestedUserCacheKey,
       );
+      if (data.has_updates && data.time) {
+        const userHash = getHashValue(JSON.stringify(user));
+        requestedUserValues.user_hash = userHash;
+      }
       this.values[requestedUserCacheKey] = requestedUserValues;
 
       if (requestedUserCacheKey == this.userCacheKey) {
@@ -626,7 +646,7 @@ export default class StatsigStore {
       layer_configs: data.layer_configs,
       dynamic_configs: data.dynamic_configs,
       sticky_experiments: this.values[cacheKey]?.sticky_experiments ?? {},
-      time: Date.now(),
+      time: data.time == null || isNaN(data.time) ? 0 : data.time,
       evaluation_time: Date.now(),
     };
   }

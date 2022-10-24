@@ -41,6 +41,7 @@ describe('Verify behavior of StatsigClient', () => {
                 },
               },
             },
+            has_updates: true,
           }),
         ),
     });
@@ -61,6 +62,7 @@ describe('Verify behavior of StatsigClient', () => {
   });
 
   afterEach(() => {
+    // @ts-ignore
     StatsigAsyncStorage.asyncStorage = null;
   });
 
@@ -255,7 +257,6 @@ describe('Verify behavior of StatsigClient', () => {
 
   test('that overrideStableID works for local storage and gets set correctly in request', async () => {
     expect.assertions(7);
-    StatsigAsyncStorage.asyncStorage = null;
 
     const statsig = new StatsigClient(sdkKey);
     await statsig.initializeAsync();
