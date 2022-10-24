@@ -92,10 +92,14 @@ describe('Race conditions between initializeAsync and updateUser', () => {
 
   it('does not overwrite user values when unawaited response return', async () => {
     Statsig.encodeIntializeCall = false;
-    const client = new StatsigClient('client-key', {
-      userID: 'user-a',
-      customIDs: { workID: 'employee-a' },
-    });
+    const client = new StatsigClient(
+      'client-key',
+      {
+        userID: 'user-a',
+        customIDs: { workID: 'employee-a' },
+      },
+      { disableDiagnosticsLogging: true },
+    );
 
     // Call both without awaiting either
     client.initializeAsync();

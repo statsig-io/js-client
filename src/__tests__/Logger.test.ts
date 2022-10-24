@@ -51,7 +51,11 @@ describe('Verify behavior of StatsigLogger', () => {
 
   test('Test constructor', () => {
     expect.assertions(8);
-    const client = new StatsigClient(sdkKey, { userID: 'user_key' });
+    const client = new StatsigClient(
+      sdkKey,
+      { userID: 'user_key' },
+      { disableDiagnosticsLogging: true },
+    );
     const logger = client.getLogger();
     const spyOnFlush = jest.spyOn(logger, 'flush');
     const spyOnLog = jest.spyOn(logger, 'log');
@@ -198,5 +202,28 @@ describe('Verify behavior of StatsigLogger', () => {
       document.dispatchEvent(new Event('visibilitychange'));
       expect(spy).toHaveBeenCalledWith(false);
     });
+  });
+
+  test('Test constructor', async () => {
+    expect.assertions(2);
+    const client = new StatsigClient(
+      sdkKey,
+      { userID: 'user_key' },
+      { disableCurrentPageLogging: true },
+    );
+    const logger = client.getLogger();
+    const spyOnLog = jest.spyOn(logger, 'log');
+    await client.initializeAsync();
+
+    expect(spyOnLog).toHaveBeenCalledTimes(1);
+    const event = new LogEvent('statsig::diagnostics');
+    event.setMetadata({
+      networkMs: expect.any(Number),
+      totalMs: expect.any(Number),
+      success: true,
+    });
+    event.setValue(expect.any(Number));
+    event.setUser({ userID: 'user_key' });
+    expect(spyOnLog).toHaveBeenCalledWith(event);
   });
 });

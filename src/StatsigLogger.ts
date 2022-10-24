@@ -1,5 +1,5 @@
 import LogEvent from './LogEvent';
-import { IHasStatsigInternal } from './StatsigClient';
+import { DiagnosticTimes, IHasStatsigInternal } from './StatsigClient';
 import { StatsigEndpoint } from './StatsigNetwork';
 import { EvaluationDetails } from './StatsigStore';
 import { StatsigUser } from './StatsigUser';
@@ -17,6 +17,7 @@ const APP_METRICS_PAGE_LOAD_EVENT =
   INTERNAL_EVENT_PREFIX + 'app_metrics::page_load_time';
 const APP_METRICS_DOM_INTERACTIVE_EVENT =
   INTERNAL_EVENT_PREFIX + 'app_metrics::dom_interactive_time';
+const DIAGNOSTICS_EVENT = INTERNAL_EVENT_PREFIX + 'diagnostics';
 
 type FailedLogEventBody = {
   events: object[];
@@ -243,6 +244,20 @@ export default class StatsigLogger {
     errorEvent.setMetadata(metadata);
     this.log(errorEvent);
     this.loggedErrors.add(trimmedMessage);
+  }
+
+  public logDiagnostics(user: StatsigUser | null, times: DiagnosticTimes) {
+    const metadata = {
+      networkMs: times.initResponseMs,
+      success: times.initSuccess,
+      totalMs: times.totalMs,
+    };
+
+    const latencyEvent = new LogEvent(DIAGNOSTICS_EVENT);
+    latencyEvent.setUser(user);
+    latencyEvent.setValue(times.totalMs ?? null);
+    latencyEvent.setMetadata(metadata);
+    this.log(latencyEvent);
   }
 
   public logAppMetrics(user: StatsigUser | null) {
