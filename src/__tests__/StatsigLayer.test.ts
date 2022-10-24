@@ -114,7 +114,7 @@ describe('Statsig Layers', () => {
       is_experiment_active: true,
       allocated_experiment_name: hashedAnotherConfigKey,
     };
-    await client.getStore().save(client.getCurrentUserCacheKey(), data);
+    await client.getStore().save(client.getCurrentUser(), data);
 
     config = client.getLayer(layerConfigWithExperimentKey, true);
     expect(config.get('a_key', 'ERR')).toBe('a_config_value');
@@ -133,7 +133,7 @@ describe('Statsig Layers', () => {
       is_experiment_active: true,
       allocated_experiment_name: hashedAnotherConfigKey,
     };
-    await client.getStore().save(client.getCurrentUserCacheKey(), data);
+    await client.getStore().save(client.getCurrentUser(), data);
 
     config = client.getLayer(layerConfigWithExperimentKey, false);
     expect(config.get('a_key', 'ERR')).toBe('another_value');

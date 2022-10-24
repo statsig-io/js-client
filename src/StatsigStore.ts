@@ -6,11 +6,9 @@ import { StatsigUser } from './StatsigUser';
 import {
   INTERNAL_STORE_KEY,
   OVERRIDES_STORE_KEY,
-  STATSIG_LAST_SYNC_USER,
-  STATSIG_LAST_SYNC_TIME,
   STICKY_DEVICE_EXPERIMENTS_KEY,
 } from './utils/Constants';
-import { getHashValue } from './utils/Hashing';
+import { getHashValue, getUserCacheKey } from './utils/Hashing';
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
 
@@ -55,6 +53,9 @@ type APIInitializeData = {
   dynamic_configs: Record<string, APIDynamicConfig | undefined>;
   feature_gates: Record<string, APIFeatureGate | undefined>;
   layer_configs: Record<string, APIDynamicConfig | undefined>;
+  has_updates?: boolean;
+  time: number;
+  [key: string]: any;
 };
 
 type APIInitializeDataWithPrefetchedUsers = APIInitializeData & {
@@ -63,7 +64,6 @@ type APIInitializeDataWithPrefetchedUsers = APIInitializeData & {
 
 type UserCacheValues = APIInitializeDataWithPrefetchedUsers & {
   sticky_experiments: Record<string, APIDynamicConfig | undefined>;
-  time: number;
   evaluation_time?: number;
 };
 
@@ -93,6 +93,7 @@ export default class StatsigStore {
       dynamic_configs: {},
       sticky_experiments: {},
       layer_configs: {},
+      has_updates: false,
       time: 0,
       evaluation_time: 0,
     };
@@ -148,6 +149,11 @@ export default class StatsigStore {
 
   public isLoaded(): boolean {
     return this.loaded;
+  }
+
+  public getLastUpdateTime(user: StatsigUser | null): string | null {
+    const userHash = getHashValue(JSON.stringify(user));
+    return this.userValues[userHash] ? String(this.userValues[userHash]) : null;
   }
 
   private parseCachedValues(
@@ -208,9 +214,13 @@ export default class StatsigStore {
   }
 
   public async save(
-    requestedUserCacheKey: string | null,
+    user: StatsigUser | null,
     jsonConfigs: Record<string, any>,
   ): Promise<void> {
+    const requestedUserCacheKey = getUserCacheKey(
+      this.sdkInternal.getStatsigMetadata().stableID as string,
+      user,
+    );
     const data = jsonConfigs as APIInitializeDataWithPrefetchedUsers;
     if (data.prefetched_user_values) {
       const cacheKeys = Object.keys(data.prefetched_user_values);
@@ -225,6 +235,10 @@ export default class StatsigStore {
         data,
         requestedUserCacheKey,
       );
+      if (data.has_updates && data.time) {
+        const userHash = getHashValue(JSON.stringify(user));
+        requestedUserValues[userHash] = String(data.time);
+      }
       this.values[requestedUserCacheKey] = requestedUserValues;
 
       if (requestedUserCacheKey == this.userCacheKey) {
@@ -629,46 +643,9 @@ export default class StatsigStore {
       layer_configs: data.layer_configs,
       dynamic_configs: data.dynamic_configs,
       sticky_experiments: this.values[cacheKey]?.sticky_experiments ?? {},
-      time: Date.now(),
+      time: data.time,
       evaluation_time: Date.now(),
     };
-  }
-
-  public async genLastSyncTimeForUser(
-    user: StatsigUser | null,
-  ): Promise<string | null> {
-    const userHash = getHashValue(JSON.stringify(user));
-    const prevUser = await StatsigAsyncStorage.getItemAsync(userHash);
-    if (prevUser === userHash) {
-      return await StatsigAsyncStorage.getItemAsync(STATSIG_LAST_SYNC_TIME);
-    }
-    return null;
-  }
-
-  public getLastSyncTimeForUser(user: StatsigUser | null): string | null {
-    const userHash = getHashValue(JSON.stringify(user));
-    const prevUser = StatsigLocalStorage.getItem(userHash);
-    if (prevUser === userHash) {
-      return StatsigLocalStorage.getItem(STATSIG_LAST_SYNC_TIME);
-    }
-    return null;
-  }
-
-  public async setLastSyncTimeForUser(
-    user: StatsigUser | null,
-    time: string,
-  ): Promise<void> {
-    const userHash = getHashValue(JSON.stringify(user));
-    await this.setItemToStorage(STATSIG_LAST_SYNC_USER, userHash);
-    await this.setItemToStorage(STATSIG_LAST_SYNC_TIME, time);
-  }
-
-  private async getItemFromStorage(key: string) {
-    if (StatsigAsyncStorage.asyncStorage) {
-      return await StatsigAsyncStorage.getItemAsync(key);
-    } else {
-      return StatsigLocalStorage.getItem(key);
-    }
   }
 
   private setItemToStorage(key: string, value: string) {

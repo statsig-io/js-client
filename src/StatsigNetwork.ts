@@ -12,13 +12,6 @@ type NetworkResponse = Response & {
   data?: Record<string, unknown>;
 };
 
-type InitializeInput = {
-  user: StatsigUser | null;
-  statsigMetadata: object;
-  sinceTime?: number | null | undefined;
-  prefetchUsers?: Record<string, StatsigUser> | undefined;
-};
-
 const NO_CONTENT = 204;
 
 export default class StatsigNetwork {
@@ -61,15 +54,13 @@ export default class StatsigNetwork {
     rejectCallback: (e: Error) => void,
     prefetchUsers?: Record<string, StatsigUser>,
   ): Promise<void> {
-    const input: InitializeInput = {
+    const input = {
       user,
       prefetchUsers,
       statsigMetadata: this.sdkInternal.getStatsigMetadata(),
+      sinceTime: sinceTime ?? undefined,
     };
 
-    if (sinceTime != null) {
-      input['sinceTime'] = sinceTime;
-    }
     return this.postWithTimeout(
       StatsigEndpoint.Initialize,
       input,

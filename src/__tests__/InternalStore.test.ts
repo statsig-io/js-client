@@ -143,7 +143,7 @@ describe('Verify behavior of InternalStore', () => {
       reason: EvaluationReason.Uninitialized,
       time: expect.any(Number),
     });
-    store.save(client.getCurrentUserCacheKey(), {
+    store.save(null, {
       feature_gates: feature_gates,
       dynamic_configs: configs,
     });
@@ -173,7 +173,7 @@ describe('Verify behavior of InternalStore', () => {
       store.getConfig('test_config', false).getEvaluationDetails().reason,
     ).toEqual(EvaluationReason.Uninitialized);
 
-    store.save(client.getCurrentUserCacheKey(), {
+    store.save(null, {
       feature_gates: feature_gates,
       dynamic_configs: configs,
     });
@@ -349,10 +349,7 @@ describe('Verify behavior of InternalStore', () => {
     const store = statsig.getStore();
 
     // getting values with flag set to false, should get latest values
-    store.save(
-      statsig.getCurrentUserCacheKey(),
-      generateTestConfigs('v0', true, true),
-    );
+    store.save({ userID: '123' }, generateTestConfigs('v0', true, true));
     let exp = store.getExperiment('exp', false);
     let deviceExp = store.getExperiment('device_exp', false);
     let expNonSticky = store.getExperiment('exp_non_stick', false);
@@ -373,10 +370,7 @@ describe('Verify behavior of InternalStore', () => {
     });
 
     // update values, and then get with flag set to true. All values should update
-    store.save(
-      statsig.getCurrentUserCacheKey(),
-      generateTestConfigs('v1', true, true),
-    );
+    store.save({ userID: '123' }, generateTestConfigs('v1', true, true));
     exp = store.getExperiment('exp', true);
     deviceExp = store.getExperiment('device_exp', true);
     expNonSticky = store.getExperiment('exp_non_stick', false);
@@ -397,10 +391,7 @@ describe('Verify behavior of InternalStore', () => {
     });
 
     // update values again. Now some values should be sticky except the non-sticky ones
-    store.save(
-      statsig.getCurrentUserCacheKey(),
-      generateTestConfigs('v2', true, true),
-    );
+    store.save({ userID: '123' }, generateTestConfigs('v2', true, true));
     exp = store.getExperiment('exp', true);
     deviceExp = store.getExperiment('device_exp', true);
     expNonSticky = store.getExperiment('exp_non_stick', false);
@@ -421,10 +412,7 @@ describe('Verify behavior of InternalStore', () => {
     });
 
     // update the experiments so that the user is no longer in experiments, should still be sticky for the right ones
-    store.save(
-      statsig.getCurrentUserCacheKey(),
-      generateTestConfigs('v3', false, true),
-    );
+    store.save({ userID: '123' }, generateTestConfigs('v3', false, true));
     exp = store.getExperiment('exp', true);
     deviceExp = store.getExperiment('device_exp', true);
     expNonSticky = store.getExperiment('exp_non_stick', false);
@@ -445,10 +433,7 @@ describe('Verify behavior of InternalStore', () => {
     });
 
     // update the experiments to no longer be active, values should update NOW
-    store.save(
-      statsig.getCurrentUserCacheKey(),
-      generateTestConfigs('v4', false, false),
-    );
+    store.save({ userID: '123' }, generateTestConfigs('v4', false, false));
     exp = store.getExperiment('exp', true);
     deviceExp = store.getExperiment('device_exp', true);
     expNonSticky = store.getExperiment('exp_non_stick', false);
@@ -476,10 +461,7 @@ describe('Verify behavior of InternalStore', () => {
     const store = statsig.getStore();
 
     // getting values with flag set to false, should get latest values
-    store.save(
-      statsig.getCurrentUserCacheKey(),
-      generateTestConfigs('v0', true, true),
-    );
+    store.save({ userID: '456' }, generateTestConfigs('v0', true, true));
     expect(store.getExperiment('exp', false).get('key', '')).toEqual('v0');
     expect(store.getExperiment('device_exp', false).get('key', '')).toEqual(
       'v0',
@@ -489,10 +471,7 @@ describe('Verify behavior of InternalStore', () => {
     );
 
     // update values, and then get with flag set to true. All values should update
-    store.save(
-      statsig.getCurrentUserCacheKey(),
-      generateTestConfigs('v1', true, true),
-    );
+    store.save({ userID: '456' }, generateTestConfigs('v1', true, true));
     expect(store.getExperiment('exp', true).get('key', '')).toEqual('v1');
     expect(store.getExperiment('device_exp', true).get('key', '')).toEqual(
       'v1',
@@ -503,10 +482,7 @@ describe('Verify behavior of InternalStore', () => {
 
     // update user. Only device value should stick
     await statsig.updateUser({ userID: 'tore' });
-    store.save(
-      statsig.getCurrentUserCacheKey(),
-      generateTestConfigs('v2', true, true),
-    );
+    store.save({ userID: 'tore' }, generateTestConfigs('v2', true, true));
     expect(store.getExperiment('exp', true).get('key', '')).toEqual('v2');
     expect(store.getExperiment('device_exp', true).get('key', '')).toEqual(
       'v1',
@@ -532,10 +508,7 @@ describe('Verify behavior of InternalStore', () => {
     await statsig.initializeAsync();
     const store = statsig.getStore();
 
-    store.save(
-      statsig.getCurrentUserCacheKey(),
-      generateTestConfigs('v0', true, true),
-    );
+    store.save({ userID: '789' }, generateTestConfigs('v0', true, true));
     expect(store.getExperiment('exp', true).get('key', '')).toEqual('v0');
     expect(store.getExperiment('device_exp', true).get('key', '')).toEqual(
       'v0',
@@ -548,10 +521,7 @@ describe('Verify behavior of InternalStore', () => {
     const statsig2 = new StatsigClient(sdkKey, { userID: 'tore' });
     const store2 = statsig2.getStore();
 
-    store2.save(
-      statsig2.getCurrentUserCacheKey(),
-      generateTestConfigs('v1', true, true),
-    );
+    store2.save({ userID: 'tore' }, generateTestConfigs('v1', true, true));
     expect(store2.getExperiment('exp', true).get('key', '')).toEqual('v1');
     expect(store2.getExperiment('device_exp', true).get('key', '')).toEqual(
       'v0',
@@ -580,7 +550,9 @@ describe('Verify behavior of InternalStore', () => {
     const store = statsig.getStore();
 
     store.save(
-      statsig.getCurrentUserCacheKey(),
+      {
+        customIDs: { deviceId: '' },
+      },
       generateTestConfigs('v0', true, true),
     );
     expect(store.getExperiment('exp', true).get('key', '')).toEqual('v0');
@@ -597,7 +569,9 @@ describe('Verify behavior of InternalStore', () => {
     });
 
     store.save(
-      statsig.getCurrentUserCacheKey(),
+      {
+        customIDs: { deviceId: 'device_id_abc' },
+      },
       generateTestConfigs('v1', true, true),
     );
     expect(store.getExperiment('exp', true).get('key', '')).toEqual('v1');
@@ -628,50 +602,23 @@ describe('Verify behavior of InternalStore', () => {
     const store = statsig.getStore();
 
     await statsig.updateUser({ userID: '2' });
-    store.save(
-      statsig.getCurrentUserCacheKey(),
-      generateTestConfigs('v0', true, true),
-    );
+    store.save({ userID: '2' }, generateTestConfigs('v0', true, true));
     await statsig.updateUser({ userID: '3' });
-    store.save(
-      statsig.getCurrentUserCacheKey(),
-      generateTestConfigs('v0', true, true),
-    );
+    store.save({ userID: '3' }, generateTestConfigs('v0', true, true));
     await statsig.updateUser({ userID: '4' });
-    store.save(
-      statsig.getCurrentUserCacheKey(),
-      generateTestConfigs('v0', true, true),
-    );
+    store.save({ userID: '4' }, generateTestConfigs('v0', true, true));
     await statsig.updateUser({ userID: '5' });
-    store.save(
-      statsig.getCurrentUserCacheKey(),
-      generateTestConfigs('v0', true, true),
-    );
+    store.save({ userID: '5' }, generateTestConfigs('v0', true, true));
     await statsig.updateUser({ userID: '6' });
-    store.save(
-      statsig.getCurrentUserCacheKey(),
-      generateTestConfigs('v0', true, true),
-    );
+    store.save({ userID: '6' }, generateTestConfigs('v0', true, true));
     await statsig.updateUser({ userID: '7' });
-    store.save(
-      statsig.getCurrentUserCacheKey(),
-      generateTestConfigs('v0', true, true),
-    );
+    store.save({ userID: '7' }, generateTestConfigs('v0', true, true));
     await statsig.updateUser({ userID: '8' });
-    store.save(
-      statsig.getCurrentUserCacheKey(),
-      generateTestConfigs('v0', true, true),
-    );
+    store.save({ userID: '8' }, generateTestConfigs('v0', true, true));
     await statsig.updateUser({ userID: '9' });
-    store.save(
-      statsig.getCurrentUserCacheKey(),
-      generateTestConfigs('v0', true, true),
-    );
+    store.save({ userID: '9' }, generateTestConfigs('v0', true, true));
     await statsig.updateUser({ userID: '10' });
-    store.save(
-      statsig.getCurrentUserCacheKey(),
-      generateTestConfigs('v0', true, true),
-    );
+    store.save({ userID: '10' }, generateTestConfigs('v0', true, true));
     let cache = JSON.parse(
       window.localStorage.getItem('STATSIG_LOCAL_STORAGE_INTERNAL_STORE_V4') ??
         '{}',
@@ -679,10 +626,7 @@ describe('Verify behavior of InternalStore', () => {
     expect(Object.keys(cache).length).toEqual(10);
 
     await statsig.updateUser({ userID: '11' });
-    store.save(
-      statsig.getCurrentUserCacheKey(),
-      generateTestConfigs('v0', true, true),
-    );
+    store.save({ userID: '11' }, generateTestConfigs('v0', true, true));
 
     expect(Object.keys(cache).length).toEqual(10);
   });

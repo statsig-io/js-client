@@ -821,11 +821,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     let sinceTime: number | null = null;
     if (prefetchUsers.length === 0) {
       let storedTime = null;
-      if (StatsigAsyncStorage.asyncStorage) {
-        storedTime = this.store.genLastSyncTimeForUser(user);
-      } else {
-        storedTime = this.store.getLastSyncTimeForUser(user);
-      }
+      storedTime = this.store.getLastUpdateTime(user);
       sinceTime =
         storedTime == null || isNaN(Number(storedTime))
           ? null
@@ -839,14 +835,8 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         this.options.getInitTimeoutMs(),
         async (json: Record<string, any>): Promise<void> => {
           return this.errorBoundary.swallow('fetchAndSaveValues', async () => {
-            if (json.has_updates) {
-              await this.store.save(
-                getUserCacheKey(this.getStableID(), user),
-                json,
-              );
-            }
-            if (json?.time != null) {
-              await this.store.setLastSyncTimeForUser(user, String(json.time));
+            if (json?.has_updates) {
+              await this.store.save(user, json);
             }
 
             this.prefetchedUsersByCacheKey = {

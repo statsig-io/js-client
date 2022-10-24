@@ -56,7 +56,7 @@ describe('Verify local storage limits are enforced', () => {
               },
             },
             dynamic_configs: configs,
-            has_updates: true
+            has_updates: true,
           }),
         ),
     }),
@@ -168,7 +168,7 @@ describe('Verify local storage limits are enforced', () => {
     let user = { userID: 'newUser' };
     let key = getUserCacheKey('a_stable_id', user);
     await client.updateUser(user);
-    store.save(key, {
+    store.save(user, {
       feature_gates: gates,
       dynamic_configs: configs,
     });
@@ -181,7 +181,7 @@ describe('Verify local storage limits are enforced', () => {
     user = { userID: 'newUser2' };
     key = getUserCacheKey('a_stable_id', user);
     await client.updateUser(user);
-    store.save(key, {
+    store.save(user, {
       feature_gates: gates,
       dynamic_configs: configs,
     });
@@ -195,7 +195,7 @@ describe('Verify local storage limits are enforced', () => {
     user = { userID: '' };
     key = getUserCacheKey('a_stable_id', user);
     await client.updateUser(user);
-    store.save(key, {
+    store.save(user, {
       feature_gates: gates,
       dynamic_configs: configs,
     });

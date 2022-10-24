@@ -62,6 +62,7 @@ describe('Verify behavior of StatsigClient', () => {
   });
 
   afterEach(() => {
+    // @ts-ignore
     StatsigAsyncStorage.asyncStorage = null;
   });
 
@@ -202,8 +203,8 @@ describe('Verify behavior of StatsigClient', () => {
 
     // Set the stable id, save the configs
     expect(spyOnSet).toHaveBeenCalledTimes(2);
-    // Get the stable id, syncTime, 2 saved configs, and saved logs
-    expect(spyOnGet).toHaveBeenCalledTimes(5);
+    // Get the stable id, 2 saved configs, and saved logs
+    expect(spyOnGet).toHaveBeenCalledTimes(4);
   });
 
   test('that overriding api overrides both api and logevent api', async () => {
@@ -256,7 +257,6 @@ describe('Verify behavior of StatsigClient', () => {
 
   test('that overrideStableID works for local storage and gets set correctly in request', async () => {
     expect.assertions(7);
-    StatsigAsyncStorage.asyncStorage = null;
 
     const statsig = new StatsigClient(sdkKey);
     await statsig.initializeAsync();

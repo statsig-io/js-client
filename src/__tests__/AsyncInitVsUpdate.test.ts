@@ -202,7 +202,7 @@ function updateStorage(currentStorage: object, key: string, value: string) {
   expected[key] = {
     ...currentStorage[key],
     dynamic_configs: newConfigs.dynamic_configs,
-    time: Date.now(),
+    time: 1647984444418,
     evaluation_time: Date.now(),
   };
   return expected;
