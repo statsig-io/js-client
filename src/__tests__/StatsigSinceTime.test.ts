@@ -71,7 +71,7 @@ describe('Verify behavior of StatsigClient with sinceTime', () => {
   });
 
   test('Test sincetime provided to network request', async () => {
-    expect.assertions(3);
+    expect.assertions(4);
     const user = { userID: 'zenyatta' };
     const stableID = 'Experience Tranquility';
 
@@ -91,12 +91,13 @@ describe('Verify behavior of StatsigClient with sinceTime', () => {
     );
 
     const key = getUserCacheKey(stableID, user);
-    const sinceTimeKey = getHashValue(JSON.stringify(user));
+    const userHash = getHashValue(JSON.stringify(user));
     const storeObject = JSON.parse(
       localStorage.getItem(INTERNAL_STORE_KEY) ?? '',
     );
 
-    expect(storeObject[key][sinceTimeKey]).toEqual('1646026677490');
+    expect(storeObject[key].user_hash).toEqual(userHash);
+    expect(storeObject[key].time).toEqual(1646026677490);
 
     await statsig.updateUser(user);
     expect(spy).toHaveBeenCalledWith(

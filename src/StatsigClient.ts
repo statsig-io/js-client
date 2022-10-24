@@ -820,12 +820,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
 
     let sinceTime: number | null = null;
     if (prefetchUsers.length === 0) {
-      let storedTime = null;
-      storedTime = this.store.getLastUpdateTime(user);
-      sinceTime =
-        storedTime == null || isNaN(Number(storedTime))
-          ? null
-          : Number(storedTime);
+      sinceTime = this.store.getLastUpdateTime(user);
     }
 
     return this.network

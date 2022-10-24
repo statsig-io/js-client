@@ -55,7 +55,7 @@ type APIInitializeData = {
   layer_configs: Record<string, APIDynamicConfig | undefined>;
   has_updates?: boolean;
   time: number;
-  [key: string]: any;
+  user_hash?: string;
 };
 
 type APIInitializeDataWithPrefetchedUsers = APIInitializeData & {
@@ -151,9 +151,12 @@ export default class StatsigStore {
     return this.loaded;
   }
 
-  public getLastUpdateTime(user: StatsigUser | null): string | null {
+  public getLastUpdateTime(user: StatsigUser | null): number | null {
     const userHash = getHashValue(JSON.stringify(user));
-    return this.userValues[userHash] ? String(this.userValues[userHash]) : null;
+    if (this.userValues.user_hash == userHash) {
+      return this.userValues.time;
+    }
+    return null;
   }
 
   private parseCachedValues(
@@ -237,7 +240,7 @@ export default class StatsigStore {
       );
       if (data.has_updates && data.time) {
         const userHash = getHashValue(JSON.stringify(user));
-        requestedUserValues[userHash] = String(data.time);
+        requestedUserValues.user_hash = userHash;
       }
       this.values[requestedUserCacheKey] = requestedUserValues;
 
@@ -643,7 +646,7 @@ export default class StatsigStore {
       layer_configs: data.layer_configs,
       dynamic_configs: data.dynamic_configs,
       sticky_experiments: this.values[cacheKey]?.sticky_experiments ?? {},
-      time: data.time,
+      time: data.time == null || isNaN(data.time) ? 0 : data.time,
       evaluation_time: Date.now(),
     };
   }
