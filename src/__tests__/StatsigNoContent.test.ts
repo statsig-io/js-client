@@ -3,13 +3,9 @@
  */
 
 import StatsigClient from '../StatsigClient';
-import { EvaluationReason } from '../StatsigStore';
-import StatsigAsyncStorage from '../utils/StatsigAsyncStorage';
-import * as TestData from './initialize_response.json';
-import LocalStorageMock from './LocalStorageMock';
 import Statsig from '..';
 
-describe('Verify behavior of StatsigClient', () => {
+describe('Verify behavior of StatsigClient when 204 returned from initialize', () => {
   const sdkKey = 'client-clienttestkey';
   var parsedRequestBody;
   // @ts-ignore

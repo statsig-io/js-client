@@ -3,7 +3,7 @@
  */
 
 import StatsigClient from '../StatsigClient';
-import { INTERNAL_STORE_KEY, LOCAL_STORAGE_KEYS } from '../utils/Constants';
+import { INTERNAL_STORE_KEY } from '../utils/Constants';
 import { getUserCacheKey } from '../utils/Hashing';
 import LocalStorageMock from './LocalStorageMock';
 
@@ -56,6 +56,7 @@ describe('Verify local storage limits are enforced', () => {
               },
             },
             dynamic_configs: configs,
+            time: 1646026677427,
             has_updates: true,
           }),
         ),
