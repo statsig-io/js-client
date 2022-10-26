@@ -132,16 +132,30 @@ describe('Verify behavior of StatsigLogger', () => {
       jest.useRealTimers();
     });
 
-    it('flushes on page load', () => {
-      expect(spy).not.toHaveBeenCalled();
-      window.dispatchEvent(new Event('load'));
+    it('flushes quickly on init', () => {
       expect(spy).not.toHaveBeenCalled();
       jest.advanceTimersByTime(101);
       expect(spy).toHaveBeenCalledWith();
 
       jest.clearAllMocks();
       expect(spy).not.toHaveBeenCalled();
-      jest.advanceTimersByTime(3001);
+      jest.advanceTimersByTime(1001);
+      expect(spy).toHaveBeenCalledWith();
+    });
+
+    it('flushes on page load', () => {
+      jest.advanceTimersByTime(2000);
+      jest.clearAllMocks();
+
+      window.dispatchEvent(new Event('load'));
+
+      expect(spy).not.toHaveBeenCalled();
+      jest.advanceTimersByTime(101);
+      expect(spy).toHaveBeenCalledWith();
+
+      jest.clearAllMocks();
+      expect(spy).not.toHaveBeenCalled();
+      jest.advanceTimersByTime(1001);
       expect(spy).toHaveBeenCalledWith();
     });
 

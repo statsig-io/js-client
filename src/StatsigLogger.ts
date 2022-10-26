@@ -63,7 +63,7 @@ export default class StatsigLogger {
       window.addEventListener('beforeunload', () => this.flush(true));
       window.addEventListener('load', () => {
         setTimeout(() => this.flush(), 100);
-        setTimeout(() => this.flush(), 3000);
+        setTimeout(() => this.flush(), 1000);
       });
     }
     if (
@@ -86,6 +86,10 @@ export default class StatsigLogger {
     this.flushInterval = setInterval(() => {
       me.flush();
     }, this.sdkInternal.getOptions().getLoggingIntervalMillis());
+
+    // Quick flush
+    setTimeout(() => this.flush(), 100);
+    setTimeout(() => this.flush(), 1000);
   }
 
   public log(event: LogEvent): void {
