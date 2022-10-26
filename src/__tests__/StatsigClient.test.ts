@@ -346,63 +346,6 @@ describe('Verify behavior of StatsigClient', () => {
 
     expect(statsig.updateUser({ userID: '123456' })).resolves.not.toThrow();
   });
-
-  test('That bootstrapping values works', async () => {
-    expect.assertions(14);
-
-    const client = new StatsigClient(
-      'client-xyz',
-      { email: 'tore@statsig.com' },
-      { initializeValues: TestData },
-    );
-    // usable immediately, without an async initialize
-    expect(client.checkGate('test_gate')).toBe(false);
-    expect(client.checkGate('i_dont_exist')).toBe(false);
-    expect(client.checkGate('always_on_gate')).toBe(true);
-    expect(client.checkGate('on_for_statsig_email')).toBe(true);
-    expect(client.getConfig('test_config').get('number', 10)).toEqual(7);
-    expect(client.getConfig('test_config').getEvaluationDetails()).toEqual({
-      reason: EvaluationReason.Bootstrap,
-      time: expect.any(Number),
-    });
-
-    expect(client.getEvaluationDetails()).toEqual({
-      reason: EvaluationReason.Bootstrap,
-      time: expect.any(Number),
-    });
-
-    await client.initializeAsync();
-    // nothing changed, network not hit
-    expect(parsedRequestBody).toBeNull();
-    expect(client.checkGate('test_gate')).toBe(false);
-    expect(client.checkGate('i_dont_exist')).toBe(false);
-    expect(client.checkGate('always_on_gate')).toBe(true);
-    expect(client.checkGate('on_for_statsig_email')).toBe(true);
-    expect(client.getConfig('test_config').get('number', 10)).toEqual(7);
-    expect(
-      client.getLayer('c_layer_with_holdout').get('holdout_layer_param', 'x'),
-    ).toEqual('layer_default');
-  });
-
-  test('That bootstrapping values with empty will just use defaults instead', async () => {
-    expect.assertions(5);
-
-    const client = new StatsigClient(
-      'client-xyz',
-      { email: 'tore@statsig.com' },
-      { initializeValues: {} },
-    );
-
-    // we get defaults everywhere else
-    expect(client.checkGate('test_gate')).toBe(false);
-    expect(client.checkGate('always_on_gate')).toBe(false);
-    expect(client.checkGate('on_for_statsig_email')).toBe(false);
-    expect(client.getConfig('test_config').get('number', 10)).toEqual(10);
-    expect(client.getConfig('test_config').getEvaluationDetails()).toEqual({
-      reason: EvaluationReason.Unrecognized,
-      time: expect.any(Number),
-    });
-  });
 });
 
 function setFakeAsyncStorage() {

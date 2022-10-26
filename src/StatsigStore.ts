@@ -1,7 +1,7 @@
 import DynamicConfig from './DynamicConfig';
-import { StatsigInvalidArgumentError } from './Errors';
 import Layer from './Layer';
 import { IHasStatsigInternal, StatsigOverrides } from './StatsigClient';
+import BootstrapValidator from './utils/BootstrapValidator';
 import { StatsigUser } from './StatsigUser';
 import {
   INTERNAL_STORE_KEY,
@@ -15,6 +15,7 @@ import StatsigLocalStorage from './utils/StatsigLocalStorage';
 export enum EvaluationReason {
   Network = 'Network',
   Bootstrap = 'Bootstrap',
+  InvalidBootstrap = 'InvalidBootstrap',
   Cache = 'Cache',
   Prefetch = 'Prefetch',
   Sticky = 'Sticky',
@@ -116,8 +117,17 @@ export default class StatsigStore {
     this.loaded = true;
   }
 
-  public bootstrap(initializeValues: Record<string, any>): void {
+  public bootstrap(
+    stableID: string,
+    initializeValues: Record<string, any>,
+  ): void {
     const key = this.sdkInternal.getCurrentUserCacheKey();
+    const user = this.sdkInternal.getCurrentUser();
+
+    const reason = BootstrapValidator.isValid(user, initializeValues)
+      ? EvaluationReason.Bootstrap
+      : EvaluationReason.InvalidBootstrap;
+
     // clients are going to assume that the SDK is bootstraped after this method runs
     // if we fail to parse, we will fall back to defaults, but we dont want to throw
     // when clients try to check gates/configs/etc after this point
@@ -129,7 +139,7 @@ export default class StatsigStore {
       this.userValues.evaluation_time = Date.now();
       this.userValues.time = Date.now();
       this.values[key] = this.userValues;
-      this.reason = EvaluationReason.Bootstrap;
+      this.reason = reason;
       this.loadOverrides();
     } catch (_e) {
       return;

@@ -201,7 +201,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     this.errorBoundary.capture(
       'setInitializeValues',
       () => {
-        this.store.bootstrap(initializeValues);
+        this.store.bootstrap(this.getStableID(), initializeValues);
         if (!this.ready) {
           // the sdk is usable and considered initialized when configured
           // with initializeValues
