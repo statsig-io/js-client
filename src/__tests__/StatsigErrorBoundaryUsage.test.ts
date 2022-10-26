@@ -82,7 +82,7 @@ describe('Statsig ErrorBoundary Usage', () => {
 
   it('recovers from errors with shutdown', () => {
     client.shutdown();
-    expectSingleError('logger.flush');
+    expectSingleError('logger.shutdown');
   });
 
   it('recovers from errors with overrideGate', () => {

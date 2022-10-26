@@ -6,6 +6,7 @@ import 'core-js';
 
 import LogEvent from '../LogEvent';
 import StatsigClient from '../StatsigClient';
+import StatsigLogger from '../StatsigLogger';
 
 describe('Verify behavior of StatsigLogger', () => {
   const sdkKey = 'client-loggertestkey';
@@ -106,9 +107,82 @@ describe('Verify behavior of StatsigLogger', () => {
 
   test('Test local mode does not set up a flush interval', () => {
     expect.assertions(1);
-    const client = new StatsigClient(sdkKey, { userID: 'user_key' }, {localMode: true});
+    const client = new StatsigClient(
+      sdkKey,
+      { userID: 'user_key' },
+      { localMode: true },
+    );
 
     // @ts-ignore access private attribute
     expect(client.getLogger().flushInterval).toBeNull();
+  });
+
+  describe('window/document event handling', () => {
+    let logger: StatsigLogger;
+    let spy: jest.SpyInstance;
+
+    beforeEach(() => {
+      jest.useFakeTimers();
+      const client = new StatsigClient(sdkKey, { userID: 'user_key' });
+      logger = client.getLogger();
+      spy = jest.spyOn(logger, 'flush');
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it('flushes on page load', () => {
+      expect(spy).not.toHaveBeenCalled();
+      window.dispatchEvent(new Event('load'));
+      expect(spy).not.toHaveBeenCalled();
+      jest.advanceTimersByTime(101);
+      expect(spy).toHaveBeenCalledWith();
+
+      jest.clearAllMocks();
+      expect(spy).not.toHaveBeenCalled();
+      jest.advanceTimersByTime(3001);
+      expect(spy).toHaveBeenCalledWith();
+    });
+
+    it('flushes on page beforeunload', () => {
+      expect(spy).not.toHaveBeenCalled();
+      window.dispatchEvent(new Event('beforeunload'));
+      expect(spy).toHaveBeenCalledWith(true);
+    });
+
+    it('flushes on page blur', () => {
+      expect(spy).not.toHaveBeenCalled();
+      window.dispatchEvent(new Event('blur'));
+      expect(spy).toHaveBeenCalledWith(true);
+    });
+
+    it('flushes on visibilitychange hidden', () => {
+      expect(spy).not.toHaveBeenCalled();
+      Object.defineProperty(document, 'visibilityState', {
+        value: 'hidden',
+        writable: true,
+      });
+      Object.defineProperty(document, 'hidden', {
+        value: true,
+        writable: true,
+      });
+      document.dispatchEvent(new Event('visibilitychange'));
+      expect(spy).toHaveBeenCalledWith(true);
+    });
+
+    it('flushes on visibilitychange visible', () => {
+      expect(spy).not.toHaveBeenCalled();
+      Object.defineProperty(document, 'visibilityState', {
+        value: 'visible',
+        writable: true,
+      });
+      Object.defineProperty(document, 'hidden', {
+        value: false,
+        writable: true,
+      });
+      document.dispatchEvent(new Event('visibilitychange'));
+      expect(spy).toHaveBeenCalledWith(false);
+    });
   });
 });

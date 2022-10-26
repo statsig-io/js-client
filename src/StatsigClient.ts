@@ -505,7 +505,8 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
    */
   public shutdown(): void {
     this.errorBoundary.swallow('shutdown', () => {
-      this.logger.flush(true);
+      this.logger.shutdown();
+
       if (
         this.appState &&
         this.appState.removeEventListener &&

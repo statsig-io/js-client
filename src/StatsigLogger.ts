@@ -30,8 +30,6 @@ const MAX_FAILED_EVENTS = 1000;
 const MAX_LOCAL_STORAGE_SIZE = 1024 * MAX_FAILED_EVENTS;
 const MAX_ERRORS_TO_LOG = 10;
 
-const errorsLogged = new Set();
-
 export default class StatsigLogger {
   private sdkInternal: IHasStatsigInternal;
 
@@ -63,15 +61,17 @@ export default class StatsigLogger {
     ) {
       window.addEventListener('blur', () => this.flush(true));
       window.addEventListener('beforeunload', () => this.flush(true));
+      window.addEventListener('load', () => {
+        setTimeout(() => this.flush(), 100);
+        setTimeout(() => this.flush(), 3000);
+      });
     }
     if (
       typeof document !== 'undefined' &&
       typeof document.addEventListener === 'function'
     ) {
       document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState !== 'visible') {
-          this.flush(true);
-        }
+        this.flush(document.visibilityState !== 'visible');
       });
     }
     if (typeof window === 'undefined' || window == null) {
@@ -79,8 +79,8 @@ export default class StatsigLogger {
       return;
     }
     if (this.sdkInternal.getOptions().getLocalModeEnabled()) {
-        // unnecessary interval in local mode since logs dont flush anyway
-        return;
+      // unnecessary interval in local mode since logs dont flush anyway
+      return;
     }
     const me = this;
     this.flushInterval = setInterval(() => {
@@ -270,12 +270,18 @@ export default class StatsigLogger {
     this.log(domInteractiveEvent);
   }
 
+  public shutdown(): void {
+    if (this.flushInterval) {
+      clearInterval(this.flushInterval);
+      this.flushInterval = null;
+    }
+
+    this.flush(true);
+  }
+
   public flush(isClosing: boolean = false): void {
     if (this.queue.length === 0) {
       return;
-    }
-    if (isClosing && this.flushInterval != null) {
-      clearInterval(this.flushInterval);
     }
 
     const oldQueue = this.queue;
