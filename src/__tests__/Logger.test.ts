@@ -204,7 +204,7 @@ describe('Verify behavior of StatsigLogger', () => {
     });
   });
 
-  test('Test constructor', async () => {
+  test('Test diagnostics', async () => {
     expect.assertions(2);
     const client = new StatsigClient(
       sdkKey,
