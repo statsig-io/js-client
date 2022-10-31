@@ -7,7 +7,7 @@
   "scripts": {
     "prepare": "rm -rf build/ && rm -rf dist/ && tsc && webpack",
     "postbuild": "rm -rf build/**/*.map",
-    "test": "ts-jest",
+    "test": "jest",
     "test:watch": "jest --watch",
     "build:dryrun": "npx tsc --noEmit",
     "types": "npx tsc"
