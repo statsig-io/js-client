@@ -5,9 +5,14 @@
 import Statsig from '../index';
 import { EvaluationReason } from '../StatsigStore';
 import { getHashValue } from '../utils/Hashing';
+import { StatsigInitializeResponse } from './index.test';
+
+type Indexable = {
+  [key: string]: (_arg0: string, _arg1: any) => any;
+};
 
 describe('Layer Exposure Logging', () => {
-  const response = {
+  const response: StatsigInitializeResponse = {
     feature_gates: {},
     dynamic_configs: {},
     layer_configs: {},
@@ -15,7 +20,9 @@ describe('Layer Exposure Logging', () => {
     has_updates: true,
     time: 1647984444418,
   };
-  var logs;
+  var logs: {
+    events: Record<string, any>[];
+  };
 
   beforeAll(async () => {
     // @ts-ignore
@@ -33,33 +40,40 @@ describe('Layer Exposure Logging', () => {
   });
 
   beforeEach(() => {
-    logs = {};
+    logs = {
+      events: [],
+    };
     response.layer_configs = {};
   });
 
   it('does not log on invalid types', async () => {
+    // @ts-ignore
     response.layer_configs[getHashValue('layer')] = {
       value: { an_int: 99 },
     };
 
     await Statsig.initialize('client-key');
 
-    let layer = Statsig.getLayer('layer');
+    let layer = Statsig.getLayer('layer') as unknown as Indexable;
     layer.get('an_int', '');
     Statsig.shutdown();
 
-    expect(logs).toEqual({});
+    expect(logs).toEqual({
+      events: [],
+    });
   });
 
   describe.each([['getValue'], ['get']])('with method "%s"', (method) => {
     it('does not log a non-existent key', async () => {
       await Statsig.initialize('client-key');
 
-      let layer = Statsig.getLayer('layer');
+      let layer = Statsig.getLayer('layer') as unknown as Indexable;
       layer[method]('an_int', 0);
       Statsig.shutdown();
 
-      expect(logs).toEqual({});
+      expect(logs).toEqual({
+        events: [],
+      });
     });
 
     it('logs layers without an allocated experiment correctly', async () => {
@@ -76,7 +90,7 @@ describe('Layer Exposure Logging', () => {
 
       await Statsig.initialize('client-key');
 
-      let layer = Statsig.getLayer('layer');
+      let layer = Statsig.getLayer('layer') as unknown as Indexable;
       layer[method]('an_int', 0);
       Statsig.shutdown();
 
@@ -112,7 +126,7 @@ describe('Layer Exposure Logging', () => {
 
       await Statsig.initialize('client-key');
 
-      let layer = Statsig.getLayer('layer');
+      let layer = Statsig.getLayer('layer') as unknown as Indexable;
       layer[method]('an_int', 0);
       layer[method]('a_string', '');
       Statsig.shutdown();
@@ -165,7 +179,7 @@ describe('Layer Exposure Logging', () => {
 
       await Statsig.initialize('client-key');
 
-      let layer = Statsig.getLayer('layer');
+      let layer = Statsig.getLayer('layer') as unknown as Indexable;
       layer[method]('a_bool', false);
       layer[method]('an_int', 0);
       layer[method]('a_double', 0.0);
@@ -203,12 +217,14 @@ describe('Layer Exposure Logging', () => {
 
       await Statsig.initialize('client-key');
 
-      let layer = Statsig.getLayer('layer');
+      let layer = Statsig.getLayer('layer') as unknown as Indexable;
       Statsig.shutdown();
 
       layer[method]('a_bool', false);
 
-      expect(logs).toEqual({});
+      expect(logs).toEqual({
+        events: [],
+      });
     });
 
     it('logs the correct name and user values', async () => {
@@ -221,7 +237,7 @@ describe('Layer Exposure Logging', () => {
         email: 'dan@loomb.io',
       });
 
-      let layer = Statsig.getLayer('layer');
+      let layer = Statsig.getLayer('layer') as unknown as Indexable;
       layer[method]('an_int', 0);
       Statsig.shutdown();
 

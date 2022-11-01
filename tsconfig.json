@@ -8,7 +8,8 @@
     "esModuleInterop": true,
     "declaration": true,
     "skipLibCheck": true,
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "resolveJsonModule": true
   },
   "include": ["src/**/*", "src/utils/*"],
   "exclude": [

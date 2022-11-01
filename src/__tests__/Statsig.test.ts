@@ -3,10 +3,11 @@
  */
 import Statsig from '../index';
 import { getHashValue } from '../utils/Hashing';
+import { StatsigInitializeResponse } from './index.test';
 
 describe('Statsig', () => {
   let initCalledTimes = 0;
-  const response = {
+  const response: StatsigInitializeResponse = {
     feature_gates: {},
     dynamic_configs: {},
     layer_configs: {},

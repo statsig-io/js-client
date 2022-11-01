@@ -38,7 +38,7 @@ describe('Prefetch Users', () => {
 
     const body = JSON.parse(params?.body as string);
 
-    let response = {};
+    let response: Record<string, any> = {};
 
     switch (body.user?.userID) {
       case undefined:

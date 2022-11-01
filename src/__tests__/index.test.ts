@@ -8,6 +8,15 @@ import StatsigClient from '../StatsigClient';
 import { EvaluationReason } from '../StatsigStore';
 let statsig: typeof Statsig;
 
+export type StatsigInitializeResponse = {
+  feature_gates: Record<string, any>;
+  dynamic_configs: Record<string, any>;
+  layer_configs: Record<string, any>;
+  sdkParams: Record<string, any>;
+  has_updates: boolean;
+  time: number;
+};
+
 describe('Verify behavior of top level index functions', () => {
   let postedLogs = {
     events: [],
