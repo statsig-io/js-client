@@ -1,9 +1,10 @@
 import LogEvent from './LogEvent';
-import { DiagnosticTimes, IHasStatsigInternal } from './StatsigClient';
+import { IHasStatsigInternal } from './StatsigClient';
 import { StatsigEndpoint } from './StatsigNetwork';
 import { EvaluationDetails } from './StatsigStore';
 import { StatsigUser } from './StatsigUser';
 import { STATSIG_LOCAL_STORAGE_LOGGING_REQUEST_KEY } from './utils/Constants';
+import Diagnostics from './utils/Diagnostics';
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
 
@@ -246,17 +247,10 @@ export default class StatsigLogger {
     this.loggedErrors.add(trimmedMessage);
   }
 
-  public logDiagnostics(user: StatsigUser | null, times: DiagnosticTimes) {
-    const metadata = {
-      networkMs: times.initResponseMs,
-      success: times.initSuccess,
-      totalMs: times.totalMs,
-    };
-
+  public logDiagnostics(user: StatsigUser | null, diagnostics: Diagnostics) {
     const latencyEvent = new LogEvent(DIAGNOSTICS_EVENT);
     latencyEvent.setUser(user);
-    latencyEvent.setValue(times.totalMs ?? null);
-    latencyEvent.setMetadata(metadata);
+    latencyEvent.setMetadata(diagnostics.getMarkers());
     this.log(latencyEvent);
   }
 

@@ -87,6 +87,7 @@ describe('Verify behavior of StatsigClient with sinceTime', () => {
       expect.anything(),
       expect.anything(),
       expect.anything(),
+      expect.anything(),
       undefined,
     );
 
@@ -106,6 +107,7 @@ describe('Verify behavior of StatsigClient with sinceTime', () => {
       expect.anything(),
       expect.anything(),
       expect.anything(),
+      undefined,
       undefined,
     );
   });

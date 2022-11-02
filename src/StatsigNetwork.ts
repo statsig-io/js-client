@@ -1,6 +1,7 @@
 import { IHasStatsigInternal } from './StatsigClient';
 import StatsigRuntime from './StatsigRuntime';
 import { StatsigUser } from './StatsigUser';
+import Diagnostics, { DiagnosticsEvent } from './utils/Diagnostics';
 
 export enum StatsigEndpoint {
   Initialize = 'initialize',
@@ -52,6 +53,7 @@ export default class StatsigNetwork {
     timeout: number,
     resolveCallback: (json: Record<string, any>) => Promise<void>,
     rejectCallback: (e: Error) => void,
+    diagnostics?: Diagnostics,
     prefetchUsers?: Record<string, StatsigUser>,
   ): Promise<void> {
     const input = {
@@ -66,6 +68,7 @@ export default class StatsigNetwork {
       input,
       resolveCallback,
       rejectCallback,
+      diagnostics,
       timeout, // timeout for early returns
       3, // retries
     );
@@ -76,6 +79,7 @@ export default class StatsigNetwork {
     body: object,
     resolveCallback: (json: Record<string, any>) => Promise<void>,
     rejectCallback: (e: Error) => void,
+    diagnostics?: Diagnostics,
     timeout: number = 0,
     retries: number = 0,
     backoff: number = 1000,
@@ -87,6 +91,7 @@ export default class StatsigNetwork {
       backoff,
     )
       .then((res) => {
+        diagnostics?.mark(DiagnosticsEvent.END, res.status);
         if (!res.ok) {
           return Promise.reject(
             new Error(

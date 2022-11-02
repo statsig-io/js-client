@@ -27,6 +27,7 @@ import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import type { AsyncStorage } from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
 import { difference, now } from './utils/Timing';
+import Diagnostics, { DiagnosticsEvent } from './utils/Diagnostics';
 
 const MAX_VALUE_SIZE = 64;
 const MAX_OBJ_SIZE = 2048;
@@ -103,13 +104,6 @@ export type StatsigOverrides = {
   configs: Record<string, Record<string, any>>;
 };
 
-export type DiagnosticTimes = {
-  start: number;
-  initResponseMs?: number;
-  initSuccess?: boolean;
-  totalMs?: number;
-};
-
 export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   // RN dependencies
   private static reactNativeUUID?: UUID;
@@ -122,7 +116,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   private optionalLoggingSetup: boolean = false;
   private prefetchedUsersByCacheKey: Record<string, StatsigUser> = {};
 
-  private diagnosticTimes: DiagnosticTimes;
+  private initializeDiagnostics: Diagnostics;
 
   private errorBoundary: ErrorBoundary;
   public getErrorBoundary(): ErrorBoundary {
@@ -192,6 +186,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     this.sdkKey = sdkKey;
     this.options = new StatsigSDKOptions(options);
     StatsigLocalStorage.disabled = this.options.getDisableLocalStorage();
+    this.initializeDiagnostics = new Diagnostics('initialize');
     this.identity = new StatsigIdentity(
       this.normalizeUser(user ?? null),
       this.options.getOverrideStableID(),
@@ -208,9 +203,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
 
     // For non initializeAsync cases, start time is when this object is
     // constructed.  Will be overwritten in initializeAsync
-    this.diagnosticTimes = {
-      start: now(),
-    };
+    this.initializeDiagnostics.mark(DiagnosticsEvent.START);
   }
 
   public setInitializeValues(initializeValues: Record<string, unknown>): void {
@@ -246,9 +239,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         if (this.ready) {
           return Promise.resolve();
         }
-        this.diagnosticTimes = {
-          start: now(),
-        };
+        this.initializeDiagnostics.mark(DiagnosticsEvent.START);
         this.initCalled = true;
         if (StatsigAsyncStorage.asyncStorage) {
           await this.identity.initAsync();
@@ -276,8 +267,28 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
           message: string | null,
         ) => {
           const cb = this.options.getInitCompletionCallback();
+          this.initializeDiagnostics.mark(
+            DiagnosticsEvent.SUCCESS,
+            String(success),
+          );
+          this.initializeDiagnostics.mark(DiagnosticsEvent.COMPLETE);
           if (cb) {
-            cb(difference(this.diagnosticTimes.start) ?? -1, success, message);
+            cb(
+              difference(
+                this.initializeDiagnostics.difference(
+                  DiagnosticsEvent.START,
+                  DiagnosticsEvent.END,
+                ),
+              ) ?? -1,
+              success,
+              message,
+            );
+          }
+          if (!this.options.getDisableDiagnosticsLogging()) {
+            this.logger.logDiagnostics(
+              this.identity.getUser(),
+              this.initializeDiagnostics,
+            );
           }
         };
 
@@ -285,16 +296,11 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
           this.identity.getUser(),
           this.options.getPrefetchUsers(),
           completionCallback,
+          this.initializeDiagnostics,
         ).finally(async () => {
           this.pendingInitPromise = null;
           this.ready = true;
           this.logger.sendSavedRequests();
-          if (!this.options.getDisableDiagnosticsLogging()) {
-            this.logger.logDiagnostics(
-              this.identity.getUser(),
-              this.diagnosticTimes,
-            );
-          }
         });
 
         this.handleOptionalLogging();
@@ -846,6 +852,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     completionCallback:
       | ((success: boolean, message: string | null) => void)
       | null = null,
+    diagnostics?: Diagnostics,
   ): Promise<void> {
     if (prefetchUsers.length > 5) {
       console.warn('Cannot prefetch more than 5 users.');
@@ -868,9 +875,6 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         this.options.getInitTimeoutMs(),
         async (json: Record<string, any>): Promise<void> => {
           return this.errorBoundary.swallow('fetchAndSaveValues', async () => {
-            this.diagnosticTimes.initResponseMs = difference(
-              this.diagnosticTimes.start ?? 0,
-            );
             if (json?.has_updates) {
               await this.store.save(user, json);
             }
@@ -882,17 +886,14 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
           });
         },
         (e: Error) => {},
+        prefetchUsers.length === 0 ? diagnostics : undefined,
         prefetchUsers.length > 0 ? keyedPrefetchUsers : undefined,
       )
       .then(() => {
         completionCallback?.(true, null);
-        this.diagnosticTimes.initSuccess = true;
-        this.diagnosticTimes.totalMs = difference(this.diagnosticTimes.start);
       })
       .catch((e) => {
         completionCallback?.(false, e.message);
-        this.diagnosticTimes.initSuccess = false;
-        this.diagnosticTimes.totalMs = difference(this.diagnosticTimes.start);
       });
   }
 }

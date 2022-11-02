@@ -24,6 +24,7 @@ describe('Verify behavior of StatsigLogger', () => {
     }
     return Promise.resolve({
       ok: true,
+      status: 200,
       text: () =>
         Promise.resolve(
           JSON.stringify({
@@ -218,11 +219,12 @@ describe('Verify behavior of StatsigLogger', () => {
     expect(spyOnLog).toHaveBeenCalledTimes(1);
     const event = new LogEvent('statsig::diagnostics');
     event.setMetadata({
-      networkMs: expect.any(Number),
-      totalMs: expect.any(Number),
-      success: true,
+      'initialize-start': expect.any(Number),
+      'initialize-end': expect.any(Number),
+      'initialize-complete': expect.any(Number),
+      'initialize-status-code': 200,
+      'initialize-success': 'true',
     });
-    event.setValue(expect.any(Number));
     event.setUser({ userID: 'user_key' });
     expect(spyOnLog).toHaveBeenCalledWith(event);
   });
