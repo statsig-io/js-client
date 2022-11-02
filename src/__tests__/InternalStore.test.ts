@@ -7,7 +7,16 @@ import StatsigClient from '../StatsigClient';
 import { EvaluationReason } from '../StatsigStore';
 import LocalStorageMock from './LocalStorageMock';
 
-function generateTestConfigs(value, inExperiment, active) {
+type InitializeResponse = {
+  feature_gates: Record<string, Record<string, any>>;
+  dynamic_configs: Record<string, Record<string, any>>;
+};
+
+function generateTestConfigs(
+  value: any,
+  inExperiment: boolean,
+  active: boolean,
+): InitializeResponse {
   return {
     feature_gates: {},
     dynamic_configs: {

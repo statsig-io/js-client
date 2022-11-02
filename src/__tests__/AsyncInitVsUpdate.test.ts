@@ -196,7 +196,11 @@ describe('Race conditions between initializeAsync and updateUser', () => {
   });
 });
 
-function updateStorage(currentStorage: object, key: string, value: string) {
+type Indexable = {
+  [key: string]: object;
+};
+
+function updateStorage(currentStorage: Indexable, key: string, value: string) {
   const expected = { ...currentStorage };
   const newConfigs = JSON.parse(value);
   expected[key] = {

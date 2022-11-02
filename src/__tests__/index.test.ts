@@ -6,10 +6,22 @@ import Statsig from '..';
 import LogEvent from '../LogEvent';
 import StatsigClient from '../StatsigClient';
 import { EvaluationReason } from '../StatsigStore';
-let statsig;
+let statsig: typeof Statsig;
+
+export type StatsigInitializeResponse = {
+  feature_gates: Record<string, any>;
+  dynamic_configs: Record<string, any>;
+  layer_configs: Record<string, any>;
+  sdkParams: Record<string, any>;
+  has_updates: boolean;
+  time: number;
+};
 
 describe('Verify behavior of top level index functions', () => {
-  let postedLogs = {};
+  let postedLogs = {
+    events: [],
+    statsigMetadata: { sdkType: '', sdkVersion: '' },
+  };
   let requestCount = 0;
   let hasCustomID = false;
   // @ts-ignore
@@ -98,6 +110,7 @@ describe('Verify behavior of top level index functions', () => {
     expect(() => {
       statsig.checkGate('gate_that_doesnt_exist');
     }).toThrowError('Call and wait for initialize() to finish first.');
+    // @ts-ignore
     expect(statsig.instance).toBeNull();
   });
 
@@ -155,6 +168,7 @@ describe('Verify behavior of top level index functions', () => {
     expect(() => {
       statsig.getExperiment('config_that_doesnt_exist');
     }).toThrowError('Call and wait for initialize() to finish first.');
+    // @ts-ignore
     expect(statsig.instance).toBeNull();
   });
 
@@ -162,6 +176,7 @@ describe('Verify behavior of top level index functions', () => {
     expect(() => {
       statsig.logEvent('test_event');
     }).toThrowError('Call and wait for initialize() to finish first.');
+    // @ts-ignore
     expect(statsig.instance).toBeNull();
   });
 
@@ -170,6 +185,7 @@ describe('Verify behavior of top level index functions', () => {
     return statsig
       .initialize('client-key', null, { disableCurrentPageLogging: true })
       .then(() => {
+        // @ts-ignore
         const ready = statsig.instance.ready;
         expect(ready).toBe(true);
 
@@ -213,6 +229,7 @@ describe('Verify behavior of top level index functions', () => {
   test('Initialize, switch, sdk ready', () => {
     return statsig.initialize('client-key', null).then(() => {
       return statsig.updateUser({ userID: 123 }).then(() => {
+        // @ts-ignore
         const ready = statsig.instance.ready;
         expect(ready).toBe(true);
       });
@@ -242,6 +259,7 @@ describe('Verify behavior of top level index functions', () => {
     return statsig
       .initialize('client-key', null, { disableCurrentPageLogging: true })
       .then(() => {
+        // @ts-ignore
         const ready = statsig.instance.ready;
         expect(ready).toBe(true);
 
@@ -336,6 +354,7 @@ describe('Verify behavior of top level index functions', () => {
     return statsig
       .initialize('client-key', null, { disableCurrentPageLogging: true })
       .then(() => {
+        // @ts-ignore
         const ready = statsig.instance.ready;
         expect(ready).toBe(true);
 
@@ -371,7 +390,7 @@ describe('Verify behavior of top level index functions', () => {
   });
 
   test('Verify big user object and log event are getting trimmed', () => {
-    expect.assertions(7);
+    expect.assertions(8);
     let str_2k = str_64;
     // create a 32k long string
     for (let i = 0; i < 5; i++) {
@@ -391,7 +410,9 @@ describe('Verify behavior of top level index functions', () => {
         },
       )
       .then(() => {
-        let user = statsig.instance.identity.getUser();
+        // @ts-ignore
+        let user: StatsigUser = statsig.instance.identity.getUser();
+        expect(user).not.toBeNull();
         expect(user.userID.length).toBe(64);
         expect(user.userID).toEqual(str_64);
         expect(user.email).toEqual('jest@statsig.com');
@@ -544,6 +565,7 @@ describe('Verify behavior of top level index functions', () => {
       { localMode: true },
     );
 
+    // @ts-ignore
     const spy = jest.spyOn(statsig.instance.network, 'fetchValues');
     await expect(statsig.updateUser({ userID: '456' })).resolves.not.toThrow();
     expect(spy).toHaveBeenCalledTimes(0);

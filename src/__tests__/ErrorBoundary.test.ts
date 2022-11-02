@@ -4,9 +4,24 @@ import {
   StatsigUninitializedError,
 } from '../Errors';
 
+type ErrorBoundaryRequest = {
+  url: string;
+  params: {
+    body: string;
+    headers?: object;
+  };
+};
+
 describe('ErrorBoundary', () => {
   let boundary: ErrorBoundary;
-  let request = [{ url: '', params: {} }];
+  let request: ErrorBoundaryRequest[] = [
+    {
+      url: '',
+      params: {
+        body: '',
+      },
+    },
+  ];
 
   beforeEach(() => {
     boundary = new ErrorBoundary('client-key');
@@ -14,7 +29,16 @@ describe('ErrorBoundary', () => {
 
     // @ts-ignore
     global.fetch = jest.fn((url, params) => {
-      request.push({ url: url.toString(), params: params ?? {} });
+      request.push({
+        url: url.toString(),
+        params:
+          params && params.body
+            ? {
+                body: params.body as string,
+                headers: (params.headers as object) ?? undefined,
+              }
+            : { body: '' },
+      });
       return Promise.resolve();
     });
   });

@@ -10,7 +10,7 @@ import LocalStorageMock from './LocalStorageMock';
 
 describe('Statsig Client Bootstrapping', () => {
   const sdkKey = 'client-clienttestkey';
-  var parsedRequestBody;
+  var parsedRequestBody: Record<string, any> | null;
   // @ts-ignore
   global.fetch = jest.fn((url, params) => {
     if (

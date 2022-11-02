@@ -11,14 +11,17 @@ export default class LocalStorageMock {
   }
 
   getItem(key: string): string | null {
-    return this[key] || null;
+    // @ts-ignore
+    return this[key] ? String(this[key]) : null;
   }
 
   setItem(key: string, value: string): void {
+    // @ts-ignore
     this[key] = String(value);
   }
 
   removeItem(key: string): void {
+    // @ts-ignore
     delete this[key];
   }
 }

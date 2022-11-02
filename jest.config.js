@@ -7,4 +7,7 @@ module.exports = {
     '<rootDir>/dist/',
     '<rootDir>/src/__tests__/jest.setup.js',
   ],
+  transform: {
+    '^.+\\.ts$': 'ts-jest',
+  },
 };
