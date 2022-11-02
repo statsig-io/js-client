@@ -44,27 +44,7 @@ export default class ErrorBoundary {
     }
   }
 
-  private onCaught<T>(
-    tag: string,
-    error: unknown,
-    recover: () => T,
-    getExtraData?: ExtraDataExtractor,
-  ): T {
-    if (
-      error instanceof StatsigUninitializedError ||
-      error instanceof StatsigInvalidArgumentError
-    ) {
-      throw error; // Don't catch these
-    }
-
-    console.error('[Statsig] An unexpected exception occurred.', error);
-
-    this.logError(tag, error, getExtraData);
-
-    return recover();
-  }
-
-  private async logError(
+  public async logError(
     tag: string,
     error: unknown,
     getExtraData?: ExtraDataExtractor,
@@ -102,6 +82,26 @@ export default class ErrorBoundary {
     } catch (_error) {
       /* noop */
     }
+  }
+
+  private onCaught<T>(
+    tag: string,
+    error: unknown,
+    recover: () => T,
+    getExtraData?: ExtraDataExtractor,
+  ): T {
+    if (
+      error instanceof StatsigUninitializedError ||
+      error instanceof StatsigInvalidArgumentError
+    ) {
+      throw error; // Don't catch these
+    }
+
+    console.error('[Statsig] An unexpected exception occurred.', error);
+
+    this.logError(tag, error, getExtraData);
+
+    return recover();
   }
 
   private getDescription(obj: any): string {

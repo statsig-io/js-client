@@ -757,7 +757,15 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   }
 
   private normalizeUser(user: StatsigUser | null): StatsigUser {
-    let userCopy = JSON.parse(JSON.stringify(user));
+    let userCopy: StatsigUser = {};
+    try {
+      userCopy = JSON.parse(JSON.stringify(user));
+    } catch (error) {
+      throw new StatsigInvalidArgumentError(
+        'User object must be convertable to JSON string.',
+      );
+    }
+
     userCopy = this.trimUserObjIfNeeded(userCopy);
     if (this.options.getEnvironment() != null) {
       // @ts-ignore

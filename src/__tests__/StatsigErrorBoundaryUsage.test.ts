@@ -4,16 +4,18 @@
 
 import DynamicConfig from '../DynamicConfig';
 import { ExceptionEndpoint } from '../ErrorBoundary';
+import { StatsigInvalidArgumentError } from '../Errors';
 import Layer from '../Layer';
 import StatsigClient from '../StatsigClient';
 
 describe('Statsig ErrorBoundary Usage', () => {
   let requests: { url: RequestInfo; params: RequestInit }[] = [];
   let client: StatsigClient;
+  let responseString: unknown = '{"has_updates": true}';
 
   function expectSingleError(
     info: string,
-    exception: 'TypeError' | 'SyntaxError' = 'TypeError',
+    exception: 'TypeError' | 'SyntaxError' | 'Error' = 'TypeError',
     extra: Record<string, unknown> = {},
   ) {
     expect(requests.length).toBe(1);
@@ -28,13 +30,14 @@ describe('Statsig ErrorBoundary Usage', () => {
   }
 
   beforeEach(async () => {
+    responseString = '{"has_updates": true}';
     // @ts-ignore
     global.fetch = jest.fn((url, params) => {
       requests.push({ url: url.toString(), params: params ?? {} });
       return Promise.resolve({
         ok: true,
         status: 200,
-        text: () => Promise.resolve('{"has_updates": true}'),
+        text: () => Promise.resolve(responseString),
       });
     });
 
@@ -161,5 +164,27 @@ describe('Statsig ErrorBoundary Usage', () => {
     await localClient.initializeAsync();
     requests.shift(); // remove the /initialize call
     expectSingleError('this.store.save is not a function');
+  });
+
+  it('captures the case when a non JSON 200 is returned', async () => {
+    const localClient = new StatsigClient('client-key');
+    responseString = 1;
+    await localClient.initializeAsync();
+    requests.shift(); // rm /initialize call
+    expectSingleError(
+      "Error: Request to initialize received invalid response type. Expected 'object' but got 'number'",
+      'Error',
+      expect.objectContaining({
+        requestInfo: expect.any(Object),
+        responseInfo: expect.any(Object),
+      }),
+    );
+  });
+
+  it('does not capture invalid user object errors', async () => {
+    expect(async () => {
+      // @ts-ignore
+      await client.updateUser(undefined);
+    }).rejects.toThrow(StatsigInvalidArgumentError);
   });
 });

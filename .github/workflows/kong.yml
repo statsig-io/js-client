@@ -26,7 +26,7 @@ jobs:
         run: |
           cd kong/bridges/js-server
           SKIP_PREINSTALL=1 npm install
-          npm install git+https://${{ secrets.KONG_REPO_PAT }}@github.com/$GITHUB_REPOSITORY.git#$GITHUB_SHA --no-save
+          BRANCH="${GITHUB_HEAD_REF:-main}"; npm install git+https://${{ secrets.KONG_REPO_PAT }}@github.com/$GITHUB_REPOSITORY.git#$BRANCH --no-save
         env:
           repo_pat: ${{ secrets.KONG_REPO_PAT }}
 

@@ -87,27 +87,45 @@ export default class StatsigNetwork {
       backoff,
     )
       .then((res) => {
-        if (res.ok && typeof res.data === 'object') {
-          const json = res.data;
-          return this.sdkInternal.getErrorBoundary().capture(
-            'postWithTimeout',
-            async () => {
-              resolveCallback(json);
-              return Promise.resolve(json);
-            },
-            () => {
-              return Promise.resolve({});
-            },
-            async () => {
-              return this.getErrorData(res);
-            },
+        if (!res.ok) {
+          return Promise.reject(
+            new Error(
+              `Request to ${endpointName} failed with status ${res.status}`,
+            ),
           );
         }
 
-        return Promise.reject(
-          new Error(
-            'Request to ' + endpointName + ' failed with status ' + res.status,
-          ),
+        if (typeof res.data !== 'object') {
+          const error = new Error(
+            `Request to ${endpointName} received invalid response type. Expected 'object' but got '${typeof res.data}'`,
+          );
+          this.sdkInternal
+            .getErrorBoundary()
+            .logError('postWithTimeoutInvalidRes', error, async () => {
+              return this.getErrorData(
+                endpointName,
+                body,
+                retries,
+                backoff,
+                res,
+              );
+            });
+          return Promise.reject(error);
+        }
+
+        const json = res.data;
+        return this.sdkInternal.getErrorBoundary().capture(
+          'postWithTimeout',
+          async () => {
+            resolveCallback(json);
+            return Promise.resolve(json);
+          },
+          () => {
+            return Promise.resolve({});
+          },
+          async () => {
+            return this.getErrorData(endpointName, body, retries, backoff, res);
+          },
         );
       })
       .then(() => {
@@ -273,6 +291,10 @@ export default class StatsigNetwork {
   }
 
   private async getErrorData(
+    endpointName: StatsigEndpoint,
+    body: object,
+    retries: number,
+    backoff: number,
     res: NetworkResponse,
   ): Promise<Record<string, unknown>> {
     try {
@@ -281,13 +303,21 @@ export default class StatsigNetwork {
         headers[key] = value;
       });
       return {
-        headers,
-        status: res.status,
-        statusText: res.statusText,
-        type: res.type,
-        url: res.url,
-        redirected: res.redirected,
-        text: res.data ? JSON.stringify(res.data).slice(-100) : null,
+        responseInfo: {
+          headers,
+          status: res.status,
+          statusText: res.statusText,
+          type: res.type,
+          url: res.url,
+          redirected: res.redirected,
+          bodySnippet: res.data ? JSON.stringify(res.data).slice(0, 500) : null,
+        },
+        requestInfo: {
+          endpointName: endpointName,
+          bodySnippet: JSON.stringify(body).slice(0, 500),
+          retries: retries,
+          backoff: backoff,
+        },
       };
     } catch (_e) {
       return {
