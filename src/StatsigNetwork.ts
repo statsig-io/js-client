@@ -1,7 +1,10 @@
 import { IHasStatsigInternal } from './StatsigClient';
 import StatsigRuntime from './StatsigRuntime';
 import { StatsigUser } from './StatsigUser';
-import Diagnostics, { DiagnosticsEvent } from './utils/Diagnostics';
+import Diagnostics, {
+  DiagnosticsEvent,
+  DiagnosticsKey,
+} from './utils/Diagnostics';
 
 export enum StatsigEndpoint {
   Initialize = 'initialize',
@@ -84,6 +87,13 @@ export default class StatsigNetwork {
     retries: number = 0,
     backoff: number = 1000,
   ): Promise<void> {
+    if (endpointName === StatsigEndpoint.Initialize) {
+      diagnostics?.mark(
+        DiagnosticsKey.INITIALIZE,
+        DiagnosticsEvent.START,
+        'network_request',
+      );
+    }
     const fetchPromise = this.postToEndpoint(
       endpointName,
       body,
@@ -91,7 +101,14 @@ export default class StatsigNetwork {
       backoff,
     )
       .then((res) => {
-        diagnostics?.mark(DiagnosticsEvent.END, res.status);
+        if (endpointName === StatsigEndpoint.Initialize) {
+          diagnostics?.mark(
+            DiagnosticsKey.INITIALIZE,
+            DiagnosticsEvent.END,
+            'network_request',
+            res.status,
+          );
+        }
         if (!res.ok) {
           return Promise.reject(
             new Error(
@@ -137,6 +154,15 @@ export default class StatsigNetwork {
         /* return Promise<void> */
       })
       .catch((e) => {
+        if (endpointName === StatsigEndpoint.Initialize) {
+          diagnostics?.mark(
+            DiagnosticsKey.INITIALIZE,
+            DiagnosticsEvent.END,
+            'network_request',
+            'failure',
+          );
+        }
+
         if (typeof rejectCallback === 'function') {
           rejectCallback(e);
         }

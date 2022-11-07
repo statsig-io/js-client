@@ -3,49 +3,52 @@ import { now } from './Timing';
 export enum DiagnosticsEvent {
   START = 'start',
   END = 'end',
-  STATUS = 'status-code',
-  SUCCESS = 'success',
-  COMPLETE = 'complete',
 }
 
+export enum DiagnosticsKey {
+  OVERALL = 'overall',
+  INITIALIZE = 'initialize',
+  PROCESS = 'process',
+}
+
+export type DiagnosticsMarker = Record<
+  string,
+  string | number | null | undefined
+>;
+
+export type DiagnosticsMarkers = {
+  context: string;
+  markers: DiagnosticsMarker[];
+};
+
 export default class Diagnostics {
-  private markers: Record<string, string | number>;
+  private markers: DiagnosticsMarker[];
   private context: string;
 
   public constructor(context: string) {
     this.context = context;
-    this.markers = {};
+    this.markers = [];
   }
 
-  public getMarkers(): Record<string, string | number> {
-    return this.markers;
+  public getMarkers(): DiagnosticsMarkers {
+    return {
+      context: this.context,
+      markers: this.markers,
+    };
   }
 
   public mark(
-    markerName: DiagnosticsEvent,
-    value: string | number = now(),
+    key: DiagnosticsKey,
+    action: DiagnosticsEvent,
+    step: string | null = null,
+    value: string | number | null = null,
   ): void {
-    this.markers[this.getKey(markerName)] = value;
-  }
-
-  public difference(
-    markerName1: DiagnosticsEvent,
-    markerName2: DiagnosticsEvent,
-  ): number {
-    const first = this.markers[this.getKey(markerName1)];
-    const second = this.markers[this.getKey(markerName2)];
-    if (
-      first == null ||
-      second == null ||
-      typeof first !== 'number' ||
-      typeof second !== 'number'
-    ) {
-      return 0;
-    }
-    return second - first;
-  }
-
-  private getKey(evt: DiagnosticsEvent) {
-    return this.context + '-' + evt;
+    this.markers.push({
+      key,
+      step,
+      action,
+      value,
+      timestamp: now(),
+    });
   }
 }

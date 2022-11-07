@@ -27,7 +27,10 @@ import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import type { AsyncStorage } from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
 import { difference, now } from './utils/Timing';
-import Diagnostics, { DiagnosticsEvent } from './utils/Diagnostics';
+import Diagnostics, {
+  DiagnosticsEvent,
+  DiagnosticsKey,
+} from './utils/Diagnostics';
 
 const MAX_VALUE_SIZE = 64;
 const MAX_OBJ_SIZE = 2048;
@@ -200,10 +203,6 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     }
 
     this.errorBoundary.setStatsigMetadata(this.getStatsigMetadata());
-
-    // For non initializeAsync cases, start time is when this object is
-    // constructed.  Will be overwritten in initializeAsync
-    this.initializeDiagnostics.mark(DiagnosticsEvent.START);
   }
 
   public setInitializeValues(initializeValues: Record<string, unknown>): void {
@@ -233,13 +232,17 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     return this.errorBoundary.capture(
       'initializeAsync',
       async () => {
+        const startTime = Date.now();
         if (this.pendingInitPromise != null) {
           return this.pendingInitPromise;
         }
         if (this.ready) {
           return Promise.resolve();
         }
-        this.initializeDiagnostics.mark(DiagnosticsEvent.START);
+        this.initializeDiagnostics.mark(
+          DiagnosticsKey.OVERALL,
+          DiagnosticsEvent.START,
+        );
         this.initCalled = true;
         if (StatsigAsyncStorage.asyncStorage) {
           await this.identity.initAsync();
@@ -267,33 +270,14 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
           message: string | null,
         ) => {
           const cb = this.options.getInitCompletionCallback();
-          this.initializeDiagnostics.mark(
-            DiagnosticsEvent.SUCCESS,
-            String(success),
-          );
-          this.initializeDiagnostics.mark(DiagnosticsEvent.COMPLETE);
           if (cb) {
-            cb(
-              difference(
-                this.initializeDiagnostics.difference(
-                  DiagnosticsEvent.START,
-                  DiagnosticsEvent.END,
-                ),
-              ) ?? -1,
-              success,
-              message,
-            );
-          }
-          if (!this.options.getDisableDiagnosticsLogging()) {
-            this.logger.logDiagnostics(
-              this.identity.getUser(),
-              this.initializeDiagnostics,
-            );
+            cb(Date.now() - startTime, success, message);
           }
         };
 
+        const user = this.identity.getUser();
         this.pendingInitPromise = this.fetchAndSaveValues(
-          this.identity.getUser(),
+          user,
           this.options.getPrefetchUsers(),
           completionCallback,
           this.initializeDiagnostics,
@@ -301,6 +285,13 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
           this.pendingInitPromise = null;
           this.ready = true;
           this.logger.sendSavedRequests();
+          this.initializeDiagnostics.mark(
+            DiagnosticsKey.OVERALL,
+            DiagnosticsEvent.END,
+          );
+          if (!this.options.getDisableDiagnosticsLogging()) {
+            this.logger.logDiagnostics(user, this.initializeDiagnostics);
+          }
         });
 
         this.handleOptionalLogging();
@@ -875,6 +866,11 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         this.options.getInitTimeoutMs(),
         async (json: Record<string, any>): Promise<void> => {
           return this.errorBoundary.swallow('fetchAndSaveValues', async () => {
+            diagnostics?.mark(
+              DiagnosticsKey.INITIALIZE,
+              DiagnosticsEvent.START,
+              'process',
+            );
             if (json?.has_updates) {
               await this.store.save(user, json);
             }
@@ -883,6 +879,11 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
               ...this.prefetchedUsersByCacheKey,
               ...keyedPrefetchUsers,
             };
+            diagnostics?.mark(
+              DiagnosticsKey.INITIALIZE,
+              DiagnosticsEvent.END,
+              'process',
+            );
           });
         },
         (e: Error) => {},

@@ -219,11 +219,51 @@ describe('Verify behavior of StatsigLogger', () => {
     expect(spyOnLog).toHaveBeenCalledTimes(1);
     const event = new LogEvent('statsig::diagnostics');
     event.setMetadata({
-      'initialize-start': expect.any(Number),
-      'initialize-end': expect.any(Number),
-      'initialize-complete': expect.any(Number),
-      'initialize-status-code': 200,
-      'initialize-success': 'true',
+      context: 'initialize',
+      markers: [
+        {
+          action: 'start',
+          key: 'overall',
+          step: null,
+          timestamp: expect.any(Number),
+          value: null,
+        },
+        {
+          action: 'start',
+          key: 'initialize',
+          step: 'network_request',
+          timestamp: expect.any(Number),
+          value: null,
+        },
+        {
+          action: 'end',
+          key: 'initialize',
+          step: 'network_request',
+          timestamp: expect.any(Number),
+          value: 200,
+        },
+        {
+          action: 'start',
+          key: 'initialize',
+          step: 'process',
+          timestamp: expect.any(Number),
+          value: null,
+        },
+        {
+          action: 'end',
+          key: 'initialize',
+          step: 'process',
+          timestamp: expect.any(Number),
+          value: null,
+        },
+        {
+          action: 'end',
+          key: 'overall',
+          step: null,
+          timestamp: expect.any(Number),
+          value: null,
+        },
+      ],
     });
     event.setUser({ userID: 'user_key' });
     expect(spyOnLog).toHaveBeenCalledWith(event);
