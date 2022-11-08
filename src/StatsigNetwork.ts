@@ -159,7 +159,7 @@ export default class StatsigNetwork {
             DiagnosticsKey.INITIALIZE,
             DiagnosticsEvent.END,
             'network_request',
-            'failure',
+            false,
           );
         }
 

@@ -8,12 +8,11 @@ export enum DiagnosticsEvent {
 export enum DiagnosticsKey {
   OVERALL = 'overall',
   INITIALIZE = 'initialize',
-  PROCESS = 'process',
 }
 
 export type DiagnosticsMarker = Record<
   string,
-  string | number | null | undefined
+  string | number | boolean | null | undefined
 >;
 
 export type DiagnosticsMarkers = {
@@ -41,7 +40,7 @@ export default class Diagnostics {
     key: DiagnosticsKey,
     action: DiagnosticsEvent,
     step: string | null = null,
-    value: string | number | null = null,
+    value: string | number | boolean | null = null,
   ): void {
     this.markers.push({
       key,
