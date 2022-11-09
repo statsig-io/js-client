@@ -24,6 +24,7 @@ describe('Verify behavior of StatsigLogger', () => {
     }
     return Promise.resolve({
       ok: true,
+      status: 200,
       text: () =>
         Promise.resolve(
           JSON.stringify({
@@ -51,7 +52,11 @@ describe('Verify behavior of StatsigLogger', () => {
 
   test('Test constructor', () => {
     expect.assertions(8);
-    const client = new StatsigClient(sdkKey, { userID: 'user_key' });
+    const client = new StatsigClient(
+      sdkKey,
+      { userID: 'user_key' },
+      { disableDiagnosticsLogging: true },
+    );
     const logger = client.getLogger();
     const spyOnFlush = jest.spyOn(logger, 'flush');
     const spyOnLog = jest.spyOn(logger, 'log');
@@ -198,5 +203,69 @@ describe('Verify behavior of StatsigLogger', () => {
       document.dispatchEvent(new Event('visibilitychange'));
       expect(spy).toHaveBeenCalledWith(false);
     });
+  });
+
+  test('Test diagnostics', async () => {
+    expect.assertions(2);
+    const client = new StatsigClient(
+      sdkKey,
+      { userID: 'user_key' },
+      { disableCurrentPageLogging: true },
+    );
+    const logger = client.getLogger();
+    const spyOnLog = jest.spyOn(logger, 'log');
+    await client.initializeAsync();
+
+    expect(spyOnLog).toHaveBeenCalledTimes(1);
+    const event = new LogEvent('statsig::diagnostics');
+    event.setMetadata({
+      context: 'initialize',
+      markers: [
+        {
+          action: 'start',
+          key: 'overall',
+          step: null,
+          timestamp: expect.any(Number),
+          value: null,
+        },
+        {
+          action: 'start',
+          key: 'initialize',
+          step: 'network_request',
+          timestamp: expect.any(Number),
+          value: null,
+        },
+        {
+          action: 'end',
+          key: 'initialize',
+          step: 'network_request',
+          timestamp: expect.any(Number),
+          value: 200,
+        },
+        {
+          action: 'start',
+          key: 'initialize',
+          step: 'process',
+          timestamp: expect.any(Number),
+          value: null,
+        },
+        {
+          action: 'end',
+          key: 'initialize',
+          step: 'process',
+          timestamp: expect.any(Number),
+          value: null,
+        },
+        {
+          action: 'end',
+          key: 'overall',
+          step: null,
+          timestamp: expect.any(Number),
+          value: null,
+        },
+      ],
+    });
+    event.setUser({ userID: 'user_key' });
+    expect(spyOnLog).toHaveBeenCalledWith(event);
   });
 });

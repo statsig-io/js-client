@@ -31,6 +31,7 @@ export type StatsigOptions = {
   prefetchUsers?: StatsigUser[];
   disableLocalStorage?: boolean;
   initCompletionCallback?: InitCompletionCallback | null;
+  disableDiagnosticsLogging?: boolean;
 };
 
 type BoundedNumberInput = {
@@ -56,6 +57,7 @@ export default class StatsigSDKOptions {
   private prefetchUsers: StatsigUser[];
   private disableLocalStorage: boolean;
   private initCompletionCallback: InitCompletionCallback | null;
+  private disableDiagnosticsLogging: boolean;
 
   constructor(options?: StatsigOptions | null) {
     if (options == null) {
@@ -100,6 +102,7 @@ export default class StatsigSDKOptions {
     this.prefetchUsers = options.prefetchUsers ?? [];
     this.disableLocalStorage = options.disableLocalStorage ?? false;
     this.initCompletionCallback = options.initCompletionCallback ?? null;
+    this.disableDiagnosticsLogging = options.disableDiagnosticsLogging ?? false;
   }
 
   getApi(): string {
@@ -160,6 +163,10 @@ export default class StatsigSDKOptions {
 
   getInitCompletionCallback(): InitCompletionCallback | null {
     return this.initCompletionCallback;
+  }
+
+  getDisableDiagnosticsLogging(): boolean {
+    return this.disableDiagnosticsLogging;
   }
 
   private normalizeNumberInput(

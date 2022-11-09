@@ -113,7 +113,7 @@ describe('Test Statsig options', () => {
 
     expect(typeof initTime).toEqual('number');
     expect(initTime).toBeGreaterThanOrEqual(10);
-    expect(initTime).toBeLessThanOrEqual(100);
+    expect(initTime).toBeLessThanOrEqual(1000);
     expect(initSuccess).toEqual(false);
     expect(initMessage).toEqual(
       'The initialization timeout of 10ms has been hit before the network request has completed.',

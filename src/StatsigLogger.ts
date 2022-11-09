@@ -4,6 +4,7 @@ import { StatsigEndpoint } from './StatsigNetwork';
 import { EvaluationDetails } from './StatsigStore';
 import { StatsigUser } from './StatsigUser';
 import { STATSIG_LOCAL_STORAGE_LOGGING_REQUEST_KEY } from './utils/Constants';
+import Diagnostics from './utils/Diagnostics';
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
 
@@ -17,6 +18,7 @@ const APP_METRICS_PAGE_LOAD_EVENT =
   INTERNAL_EVENT_PREFIX + 'app_metrics::page_load_time';
 const APP_METRICS_DOM_INTERACTIVE_EVENT =
   INTERNAL_EVENT_PREFIX + 'app_metrics::dom_interactive_time';
+const DIAGNOSTICS_EVENT = INTERNAL_EVENT_PREFIX + 'diagnostics';
 
 type FailedLogEventBody = {
   events: object[];
@@ -243,6 +245,13 @@ export default class StatsigLogger {
     errorEvent.setMetadata(metadata);
     this.log(errorEvent);
     this.loggedErrors.add(trimmedMessage);
+  }
+
+  public logDiagnostics(user: StatsigUser | null, diagnostics: Diagnostics) {
+    const latencyEvent = new LogEvent(DIAGNOSTICS_EVENT);
+    latencyEvent.setUser(user);
+    latencyEvent.setMetadata(diagnostics.getMarkers());
+    this.log(latencyEvent);
   }
 
   public logAppMetrics(user: StatsigUser | null) {

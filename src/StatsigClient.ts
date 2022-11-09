@@ -26,6 +26,11 @@ import { getUserCacheKey } from './utils/Hashing';
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import type { AsyncStorage } from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
+import { difference, now } from './utils/Timing';
+import Diagnostics, {
+  DiagnosticsEvent,
+  DiagnosticsKey,
+} from './utils/Diagnostics';
 
 const MAX_VALUE_SIZE = 64;
 const MAX_OBJ_SIZE = 2048;
@@ -114,6 +119,8 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   private optionalLoggingSetup: boolean = false;
   private prefetchedUsersByCacheKey: Record<string, StatsigUser> = {};
 
+  private initializeDiagnostics: Diagnostics;
+
   private errorBoundary: ErrorBoundary;
   public getErrorBoundary(): ErrorBoundary {
     return this.errorBoundary;
@@ -182,6 +189,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     this.sdkKey = sdkKey;
     this.options = new StatsigSDKOptions(options);
     StatsigLocalStorage.disabled = this.options.getDisableLocalStorage();
+    this.initializeDiagnostics = new Diagnostics('initialize');
     this.identity = new StatsigIdentity(
       this.normalizeUser(user ?? null),
       this.options.getOverrideStableID(),
@@ -231,6 +239,10 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         if (this.ready) {
           return Promise.resolve();
         }
+        this.initializeDiagnostics.mark(
+          DiagnosticsKey.OVERALL,
+          DiagnosticsEvent.START,
+        );
         this.initCalled = true;
         if (StatsigAsyncStorage.asyncStorage) {
           await this.identity.initAsync();
@@ -263,14 +275,23 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
           }
         };
 
+        const user = this.identity.getUser();
         this.pendingInitPromise = this.fetchAndSaveValues(
-          this.identity.getUser(),
+          user,
           this.options.getPrefetchUsers(),
           completionCallback,
+          this.initializeDiagnostics,
         ).finally(async () => {
           this.pendingInitPromise = null;
           this.ready = true;
           this.logger.sendSavedRequests();
+          this.initializeDiagnostics.mark(
+            DiagnosticsKey.OVERALL,
+            DiagnosticsEvent.END,
+          );
+          if (!this.options.getDisableDiagnosticsLogging()) {
+            this.logger.logDiagnostics(user, this.initializeDiagnostics);
+          }
         });
 
         this.handleOptionalLogging();
@@ -680,12 +701,17 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   }
 
   private handleOptionalLogging(): void {
-    if (typeof window === 'undefined' || !window || !window.addEventListener) {
+    if (typeof window === 'undefined' || !window) {
       return;
     }
     if (this.optionalLoggingSetup) {
       return;
     }
+
+    if (!window.addEventListener) {
+      return;
+    }
+
     const user = this.identity.getUser();
     if (!this.options.getDisableErrorLogging()) {
       window.addEventListener('error', (e) => {
@@ -817,6 +843,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     completionCallback:
       | ((success: boolean, message: string | null) => void)
       | null = null,
+    diagnostics?: Diagnostics,
   ): Promise<void> {
     if (prefetchUsers.length > 5) {
       console.warn('Cannot prefetch more than 5 users.');
@@ -839,6 +866,11 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         this.options.getInitTimeoutMs(),
         async (json: Record<string, any>): Promise<void> => {
           return this.errorBoundary.swallow('fetchAndSaveValues', async () => {
+            diagnostics?.mark(
+              DiagnosticsKey.INITIALIZE,
+              DiagnosticsEvent.START,
+              'process',
+            );
             if (json?.has_updates) {
               await this.store.save(user, json);
             }
@@ -847,9 +879,15 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
               ...this.prefetchedUsersByCacheKey,
               ...keyedPrefetchUsers,
             };
+            diagnostics?.mark(
+              DiagnosticsKey.INITIALIZE,
+              DiagnosticsEvent.END,
+              'process',
+            );
           });
         },
         (e: Error) => {},
+        prefetchUsers.length === 0 ? diagnostics : undefined,
         prefetchUsers.length > 0 ? keyedPrefetchUsers : undefined,
       )
       .then(() => {

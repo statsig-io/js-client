@@ -449,12 +449,18 @@ describe('Verify behavior of top level index functions', () => {
 
   test('shutdown does flush logs and they are correct', async () => {
     expect.assertions(8);
-    await statsig.initialize('client-key', {
-      userID: '12345',
-      country: 'US',
-      custom: { key: 'value' },
-      privateAttributes: { private: 'value' },
-    });
+    await statsig.initialize(
+      'client-key',
+      {
+        userID: '12345',
+        country: 'US',
+        custom: { key: 'value' },
+        privateAttributes: { private: 'value' },
+      },
+      {
+        disableDiagnosticsLogging: true,
+      },
+    );
     expect(statsig.checkGate('test_gate')).toEqual(true);
     const config = statsig.getConfig('test_config');
     expect(config?.value).toStrictEqual({
