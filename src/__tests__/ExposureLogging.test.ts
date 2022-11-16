@@ -59,7 +59,7 @@ describe('ExposureLogging', () => {
     await Statsig.initialize(
       'client-key',
       { userID: 'dloomb' },
-      { initTimeoutMs: 1 },
+      { initTimeoutMs: 1, disableDiagnosticsLogging: true },
     );
 
     // @ts-ignore
