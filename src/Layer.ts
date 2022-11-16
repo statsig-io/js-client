@@ -1,8 +1,12 @@
-import { IHasStatsigInternal } from './StatsigClient';
 import { EvaluationDetails } from './StatsigStore';
 
+export type LogParameterFunction = (
+  layer: Layer,
+  parameterName: string,
+) => void;
+
 export default class Layer {
-  private sdkInternal: IHasStatsigInternal | null;
+  private logParameterFunction: LogParameterFunction | null;
   private name: string;
   private value: Record<string, any>;
   private ruleID: string;
@@ -17,13 +21,13 @@ export default class Layer {
     layerValue: Record<string, any>,
     ruleID: string,
     evaluationDetails: EvaluationDetails,
-    sdkInternal: IHasStatsigInternal | null = null,
+    logParameterFunction: LogParameterFunction | null = null,
     secondaryExposures: Record<string, string>[] = [],
     undelegatedSecondaryExposures: Record<string, string>[] = [],
     allocatedExperimentName: string = '',
     explicitParameters: string[] = [],
   ) {
-    this.sdkInternal = sdkInternal;
+    this.logParameterFunction = logParameterFunction;
     this.name = name;
     this.value = JSON.parse(JSON.stringify(layerValue ?? {}));
     this.ruleID = ruleID ?? '';
@@ -39,7 +43,7 @@ export default class Layer {
     value: Record<string, any>,
     ruleID: string,
     evaluationDetails: EvaluationDetails,
-    sdkInternal: IHasStatsigInternal | null = null,
+    logParameterFunction: LogParameterFunction | null = null,
     secondaryExposures: Record<string, string>[] = [],
     undelegatedSecondaryExposures: Record<string, string>[] = [],
     allocatedExperimentName: string = '',
@@ -50,7 +54,7 @@ export default class Layer {
       value,
       ruleID,
       evaluationDetails,
-      sdkInternal,
+      logParameterFunction,
       secondaryExposures,
       undelegatedSecondaryExposures,
       allocatedExperimentName,
@@ -124,30 +128,23 @@ export default class Layer {
     return this.secondaryExposures;
   }
 
+  public _getUndelegatedSecondaryExposures(): Record<string, string>[] {
+    return this.undelegatedSecondaryExposures;
+  }
+
   public _getAllocatedExperimentName(): string {
     return this.allocatedExperimentName;
   }
 
-  private logLayerParameterExposure(parameterName: string) {
-    let allocatedExperiment = '';
-    let exposures = this.undelegatedSecondaryExposures;
-    const isExplicit = this.explicitParameters.includes(parameterName);
-    if (isExplicit) {
-      allocatedExperiment = this.allocatedExperimentName;
-      exposures = this.secondaryExposures;
-    }
+  public _getExplicitParameters(): string[] {
+    return this.explicitParameters;
+  }
 
-    this.sdkInternal
-      ?.getLogger()
-      .logLayerExposure(
-        this.sdkInternal.getCurrentUser(),
-        this.name,
-        this.ruleID,
-        exposures,
-        allocatedExperiment,
-        parameterName,
-        isExplicit,
-        this.evaluationDetails,
-      );
+  public _getEvaluationDetails(): EvaluationDetails {
+    return this.evaluationDetails;
+  }
+
+  private logLayerParameterExposure(parameterName: string) {
+    this.logParameterFunction?.(this, parameterName);
   }
 }

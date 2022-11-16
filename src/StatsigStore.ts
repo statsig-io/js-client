@@ -1,5 +1,5 @@
 import DynamicConfig from './DynamicConfig';
-import Layer from './Layer';
+import Layer, { LogParameterFunction } from './Layer';
 import { IHasStatsigInternal, StatsigOverrides } from './StatsigClient';
 import BootstrapValidator from './utils/BootstrapValidator';
 import { StatsigUser } from './StatsigUser';
@@ -35,6 +35,11 @@ type APIFeatureGate = {
   value: boolean;
   rule_id: string;
   secondary_exposures: [];
+};
+
+export type StoreGateFetchResult = {
+  gate: APIFeatureGate;
+  evaluationDetails: EvaluationDetails;
 };
 
 type APIDynamicConfig = {
@@ -289,12 +294,18 @@ export default class StatsigStore {
   public checkGate(
     gateName: string,
     ignoreOverrides: boolean = false,
-  ): boolean {
+  ): StoreGateFetchResult {
     const gateNameHash = getHashValue(gateName);
-    let gateValue = { value: false, rule_id: '', secondary_exposures: [] };
+    let gateValue: APIFeatureGate = {
+      name: gateName,
+      value: false,
+      rule_id: '',
+      secondary_exposures: [],
+    };
     let details: EvaluationDetails;
     if (!ignoreOverrides && this.overrides.gates[gateName] != null) {
       gateValue = {
+        name: gateName,
         value: this.overrides.gates[gateName],
         rule_id: 'override',
         secondary_exposures: [],
@@ -310,17 +321,8 @@ export default class StatsigStore {
       }
       details = this.getEvaluationDetails(value != null);
     }
-    this.sdkInternal
-      .getLogger()
-      .logGateExposure(
-        this.sdkInternal.getCurrentUser(),
-        gateName,
-        gateValue.value,
-        gateValue.rule_id,
-        gateValue.secondary_exposures,
-        details,
-      );
-    return gateValue.value === true;
+
+    return { evaluationDetails: details, gate: gateValue };
   }
 
   public getConfig(
@@ -353,15 +355,7 @@ export default class StatsigStore {
       details = this.getEvaluationDetails(false);
       configValue = new DynamicConfig(configName, {}, '', details);
     }
-    this.sdkInternal
-      .getLogger()
-      .logConfigExposure(
-        this.sdkInternal.getCurrentUser(),
-        configName,
-        configValue.getRuleID(),
-        configValue._getSecondaryExposures(),
-        details,
-      );
+
     return configValue;
   }
 
@@ -397,19 +391,14 @@ export default class StatsigStore {
       exp = this.createDynamicConfig(expName, finalValue, details);
     }
 
-    this.sdkInternal
-      .getLogger()
-      .logConfigExposure(
-        this.sdkInternal.getCurrentUser(),
-        expName,
-        exp.getRuleID(),
-        exp._getSecondaryExposures(),
-        details,
-      );
     return exp;
   }
 
-  public getLayer(layerName: string, keepDeviceValue: boolean): Layer {
+  public getLayer(
+    logParameterFunction: LogParameterFunction | null,
+    layerName: string,
+    keepDeviceValue: boolean,
+  ): Layer {
     const latestValue = this.getLatestValue(layerName, 'layer_configs');
     const details = this.getEvaluationDetails(latestValue != null);
     const finalValue = this.getPossiblyStickyValue(
@@ -425,7 +414,7 @@ export default class StatsigStore {
       finalValue?.value ?? {},
       finalValue?.rule_id ?? '',
       details,
-      this.sdkInternal,
+      logParameterFunction,
       finalValue?.secondary_exposures,
       finalValue?.undelegated_secondary_exposures,
       finalValue?.allocated_experiment_name ?? '',

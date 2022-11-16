@@ -168,7 +168,7 @@ describe('Verify behavior of InternalStore', () => {
       reason: EvaluationReason.Network,
       time: now,
     });
-    expect(store.checkGate('test_gate', false)).toEqual(true);
+    expect(store.checkGate('test_gate', false).gate.value).toEqual(true);
   });
 
   test('Verify cache before init and save correctly saves into cache.', () => {
@@ -194,41 +194,40 @@ describe('Verify behavior of InternalStore', () => {
       reason: EvaluationReason.Network,
       time: now,
     });
-    expect(store.checkGate('test_gate', false)).toEqual(true);
+    expect(store.checkGate('test_gate', false).gate.value).toEqual(true);
   });
 
   test('Verify checkGate returns false when gateName does not exist.', () => {
-    expect.assertions(2);
+    expect.assertions(1);
     const client = new StatsigClient(sdkKey, { userID: 'user_key' });
     return client.initializeAsync().then(() => {
       const store = client.getStore();
-      const spy = jest.spyOn(client.getLogger(), 'log');
-      expect(store.checkGate('fake_gate', false)).toBe(false);
-      expect(spy).toHaveBeenCalledTimes(1);
+      const result = store.checkGate('fake_gate', false).gate.value;
+      expect(result).toBe(false);
     });
   });
 
   test('Verify checkGate returns the correct value.', () => {
-    expect.assertions(3);
+    expect.assertions(2);
     const client = new StatsigClient(sdkKey, { userID: 'user_key' });
     return client.initializeAsync().then(() => {
-      const spy = jest.spyOn(client.getLogger(), 'log');
-      expect(client.getStore().checkGate('test_gate', false)).toBe(true);
+      expect(client.getStore().checkGate('test_gate', false).gate.value).toBe(
+        true,
+      );
       expect(
         client
           .getStore()
-          .checkGate('AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=', false),
+          .checkGate('AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=', false).gate
+          .value,
       ).toBe(false);
-      expect(spy).toHaveBeenCalledTimes(2);
     });
   });
 
   test('Verify getConfig returns a dummy config and logs exposure when configName does not exist.', () => {
-    expect.assertions(5);
+    expect.assertions(4);
     const client = new StatsigClient(sdkKey, { userID: 'user_key' });
     return client.initializeAsync().then(() => {
       const store = client.getStore();
-      const spy = jest.spyOn(client.getLogger(), 'log');
       const config = store.getConfig('fake_config', false);
       expect(config.getName()).toEqual('fake_config');
       expect(config.getValue()).toEqual({});
@@ -237,20 +236,17 @@ describe('Verify behavior of InternalStore', () => {
         reason: EvaluationReason.Unrecognized,
         time: now,
       });
-      expect(spy).toHaveBeenCalledTimes(1);
     });
   });
 
   test('Verify getConfig returns the correct value.', () => {
-    expect.assertions(2);
+    expect.assertions(1);
     const client = new StatsigClient(sdkKey, { userID: 'user_key' });
     return client.initializeAsync().then(() => {
       const store = client.getStore();
-      const spy = jest.spyOn(client.getLogger(), 'log');
       expect(store.getConfig('test_config', false).getValue()).toMatchObject({
         bool: true,
       });
-      expect(spy).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -259,11 +255,15 @@ describe('Verify behavior of InternalStore', () => {
     const statsig = new StatsigClient(sdkKey, { userID: '123' });
     await statsig.initializeAsync();
     // test_gate is true without override
-    expect(statsig.getStore().checkGate('test_gate', false)).toBe(true);
+    expect(statsig.getStore().checkGate('test_gate', false).gate.value).toBe(
+      true,
+    );
 
     // becomes false with override
     statsig.getStore().overrideGate('test_gate', false);
-    expect(statsig.getStore().checkGate('test_gate', false)).toBe(false);
+    expect(statsig.getStore().checkGate('test_gate', false).gate.value).toBe(
+      false,
+    );
     expect(statsig.getOverrides()).toEqual({ test_gate: false });
 
     // overriding non-existent gate
@@ -279,7 +279,9 @@ describe('Verify behavior of InternalStore', () => {
 
     // remove a named override
     statsig.getStore().overrideGate('test_gate', false);
-    expect(statsig.getStore().checkGate('test_gate', false)).toBe(false);
+    expect(statsig.getStore().checkGate('test_gate', false).gate.value).toBe(
+      false,
+    );
     expect(statsig.getOverrides()).toEqual({ test_gate: false });
     statsig.removeOverride('test_gate');
     expect(statsig.getOverrides()).toEqual({});
@@ -320,9 +322,13 @@ describe('Verify behavior of InternalStore', () => {
 
     // remove config override, add gate override
     statsig.removeConfigOverride();
-    expect(statsig.getStore().checkGate('test_gate', false)).toBe(true);
+    expect(statsig.getStore().checkGate('test_gate', false).gate.value).toBe(
+      true,
+    );
     statsig.getStore().overrideGate('test_gate', false);
-    expect(statsig.getStore().checkGate('test_gate', false)).toBe(false);
+    expect(statsig.getStore().checkGate('test_gate', false).gate.value).toBe(
+      false,
+    );
     expect(statsig.getAllOverrides()).toEqual({
       gates: { test_gate: false },
       configs: {},

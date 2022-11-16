@@ -146,20 +146,28 @@ export default class StatsigLogger {
     ruleID: string,
     secondaryExposures: Record<string, string>[],
     details: EvaluationDetails,
+    isManualExposure: boolean,
   ) {
     const dedupeKey = gateName + String(gateValue) + ruleID + details.reason;
     if (!this.shouldLogExposure(dedupeKey)) {
       return;
     }
-    const gateExposure = new LogEvent(GATE_EXPOSURE_EVENT);
-    gateExposure.setUser(user);
-    gateExposure.setMetadata({
+
+    const metadata: Record<string, unknown> = {
       gate: gateName,
       gateValue: String(gateValue),
       ruleID: ruleID,
       reason: details.reason,
       time: details.time,
-    });
+    };
+
+    if (isManualExposure) {
+      metadata['isManualExposure'] = 'true';
+    }
+
+    const gateExposure = new LogEvent(GATE_EXPOSURE_EVENT);
+    gateExposure.setUser(user);
+    gateExposure.setMetadata(metadata);
     gateExposure.setSecondaryExposures(secondaryExposures);
     this.log(gateExposure);
   }
@@ -170,20 +178,27 @@ export default class StatsigLogger {
     ruleID: string,
     secondaryExposures: Record<string, string>[],
     details: EvaluationDetails,
+    isManualExposure: boolean,
   ) {
     const dedupeKey = configName + ruleID + details.reason;
     if (!this.shouldLogExposure(dedupeKey)) {
       return;
     }
 
-    const configExposure = new LogEvent(CONFIG_EXPOSURE_EVENT);
-    configExposure.setUser(user);
-    configExposure.setMetadata({
+    const metadata: Record<string, unknown> = {
       config: configName,
       ruleID: ruleID,
       reason: details.reason,
       time: details.time,
-    });
+    };
+
+    if (isManualExposure) {
+      metadata['isManualExposure'] = 'true';
+    }
+
+    const configExposure = new LogEvent(CONFIG_EXPOSURE_EVENT);
+    configExposure.setUser(user);
+    configExposure.setMetadata(metadata);
     configExposure.setSecondaryExposures(secondaryExposures);
     this.log(configExposure);
   }
@@ -197,6 +212,7 @@ export default class StatsigLogger {
     parameterName: string,
     isExplicitParameter: boolean,
     details: EvaluationDetails,
+    isManualExposure: boolean,
   ) {
     const dedupeKey = [
       configName,
@@ -211,9 +227,7 @@ export default class StatsigLogger {
       return;
     }
 
-    const configExposure = new LogEvent(LAYER_EXPOSURE_EVENT);
-    configExposure.setUser(user);
-    configExposure.setMetadata({
+    const metadata: Record<string, unknown> = {
       config: configName,
       ruleID: ruleID,
       allocatedExperiment,
@@ -221,7 +235,15 @@ export default class StatsigLogger {
       isExplicitParameter: String(isExplicitParameter),
       reason: details.reason,
       time: details.time,
-    });
+    };
+
+    if (isManualExposure) {
+      metadata['isManualExposure'] = 'true';
+    }
+
+    const configExposure = new LogEvent(LAYER_EXPOSURE_EVENT);
+    configExposure.setUser(user);
+    configExposure.setMetadata(metadata);
     configExposure.setSecondaryExposures(secondaryExposures);
     this.log(configExposure);
   }

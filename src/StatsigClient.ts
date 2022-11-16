@@ -4,9 +4,8 @@ import {
   StatsigInvalidArgumentError,
   StatsigUninitializedError,
 } from './Errors';
-import Layer from './Layer';
+import Layer, { LogParameterFunction } from './Layer';
 import LogEvent from './LogEvent';
-import StatsigIdentity, { UUID } from './StatsigIdentity';
 import type {
   DeviceInfo,
   ExpoConstants,
@@ -14,17 +13,19 @@ import type {
   NativeModules,
   Platform,
 } from './StatsigIdentity';
+import StatsigIdentity, { UUID } from './StatsigIdentity';
 import StatsigLogger from './StatsigLogger';
 import StatsigNetwork from './StatsigNetwork';
 import StatsigSDKOptions, { StatsigOptions } from './StatsigSDKOptions';
 import StatsigStore, {
   EvaluationDetails,
   EvaluationReason,
+  StoreGateFetchResult,
 } from './StatsigStore';
 import { StatsigUser } from './StatsigUser';
 import { getUserCacheKey } from './utils/Hashing';
-import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import type { AsyncStorage } from './utils/StatsigAsyncStorage';
+import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
 import { difference, now } from './utils/Timing';
 import Diagnostics, {
@@ -331,16 +332,30 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     return this.errorBoundary.capture(
       'checkGate',
       () => {
-        this.ensureStoreLoaded();
-        if (typeof gateName !== 'string' || gateName.length === 0) {
-          throw new StatsigInvalidArgumentError(
-            'Must pass a valid string as the gateName.',
-          );
-        }
-        return this.store.checkGate(gateName, ignoreOverrides);
+        const result = this.checkGateImpl(gateName, ignoreOverrides);
+        this.logGateExposureImpl(gateName, result);
+        return result.gate.value === true;
       },
       () => false,
     );
+  }
+
+  public checkGateWithExposureLoggingDisabled(
+    gateName: string,
+    ignoreOverrides: boolean = false,
+  ): boolean {
+    return this.errorBoundary.capture(
+      'checkGateWithExposureLoggingDisabled',
+      () => {
+        const result = this.checkGateImpl(gateName, ignoreOverrides);
+        return result.gate.value === true;
+      },
+      () => false,
+    );
+  }
+
+  public logGateExposure(gateName: string) {
+    this.logGateExposureImpl(gateName);
   }
 
   /**
@@ -357,23 +372,29 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     return this.errorBoundary.capture(
       'getConfig',
       () => {
-        this.ensureStoreLoaded();
-        if (typeof configName !== 'string' || configName.length === 0) {
-          throw new StatsigInvalidArgumentError(
-            'Must pass a valid string as the configName.',
-          );
-        }
-
-        return this.store.getConfig(configName, ignoreOverrides);
+        const result = this.getConfigImpl(configName, ignoreOverrides);
+        this.logConfigExposureImpl(configName, result);
+        return result;
       },
-      () =>
-        new DynamicConfig(
-          configName,
-          {},
-          '',
-          this.getEvalutionDetailsForError(),
-        ),
+      () => this.getEmptyConfig(configName),
     );
+  }
+
+  public getConfigWithExposureLoggingDisabled(
+    configName: string,
+    ignoreOverrides: boolean = false,
+  ): DynamicConfig {
+    return this.errorBoundary.capture(
+      'getConfig',
+      () => {
+        return this.getConfigImpl(configName, ignoreOverrides);
+      },
+      () => this.getEmptyConfig(configName),
+    );
+  }
+
+  public logConfigExposure(configName: string) {
+    this.logConfigExposureImpl(configName);
   }
 
   /**
@@ -392,44 +413,79 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     return this.errorBoundary.capture(
       'getExperiment',
       () => {
-        this.ensureStoreLoaded();
-        if (typeof experimentName !== 'string' || experimentName.length === 0) {
-          throw new StatsigInvalidArgumentError(
-            'Must pass a valid string as the experimentName.',
-          );
-        }
-        return this.store.getExperiment(
+        const result = this.getExperimentImpl(
+          experimentName,
+          keepDeviceValue,
+          ignoreOverrides,
+        );
+        this.logExperimentExposureImpl(experimentName, keepDeviceValue, result);
+        return result;
+      },
+      () => this.getEmptyConfig(experimentName),
+    );
+  }
+
+  public getExperimentWithExposureLoggingDisabled(
+    experimentName: string,
+    keepDeviceValue: boolean = false,
+    ignoreOverrides: boolean = false,
+  ): DynamicConfig {
+    return this.errorBoundary.capture(
+      'getExperimentWithExposureLoggingDisabled',
+      () => {
+        return this.getExperimentImpl(
           experimentName,
           keepDeviceValue,
           ignoreOverrides,
         );
       },
-      () =>
-        new DynamicConfig(
-          experimentName,
-          {},
-          '',
-          this.getEvalutionDetailsForError(),
-        ),
+      () => this.getEmptyConfig(experimentName),
     );
+  }
+
+  public logExperimentExposure(
+    experimentName: string,
+    keepDeviceValue: boolean,
+  ) {
+    this.logExperimentExposureImpl(experimentName, keepDeviceValue);
   }
 
   public getLayer(layerName: string, keepDeviceValue: boolean = false): Layer {
     return this.errorBoundary.capture(
       'getLayer',
       () => {
-        this.ensureStoreLoaded();
-        if (typeof layerName !== 'string' || layerName.length === 0) {
-          throw new StatsigInvalidArgumentError(
-            'Must pass a valid string as the layerName.',
-          );
-        }
-
-        return this.store.getLayer(layerName, keepDeviceValue);
+        return this.getLayerImpl(
+          this.logLayerParameterExposureForLayer,
+          layerName,
+          keepDeviceValue,
+        );
       },
       () =>
         Layer._create(layerName, {}, '', this.getEvalutionDetailsForError()),
     );
+  }
+
+  public getLayerWithExposureLoggingDisabled(
+    layerName: string,
+    keepDeviceValue: boolean = false,
+  ): Layer {
+    return this.errorBoundary.capture(
+      'getLayerWithExposureLoggingDisabled',
+      () => {
+        return this.getLayerImpl(null, layerName, keepDeviceValue);
+      },
+      () =>
+        Layer._create(layerName, {}, '', this.getEvalutionDetailsForError()),
+    );
+  }
+
+  public logLayerParameterExposure(
+    layerName: string,
+    parameterName: string,
+    keepDeviceValue: boolean = false,
+  ) {
+    const layer = this.getLayerImpl(null, layerName, keepDeviceValue);
+    this.logLayerParameterExposureForLayer(layer, parameterName, true);
   }
 
   public logEvent(
@@ -896,5 +952,156 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       .catch((e) => {
         completionCallback?.(false, e.message);
       });
+  }
+
+  private checkGateImpl(
+    gateName: string,
+    ignoreOverrides: boolean,
+  ): StoreGateFetchResult {
+    this.ensureStoreLoaded();
+    if (typeof gateName !== 'string' || gateName.length === 0) {
+      throw new StatsigInvalidArgumentError(
+        'Must pass a valid string as the gateName.',
+      );
+    }
+    return this.store.checkGate(gateName, ignoreOverrides);
+  }
+
+  private logGateExposureImpl(
+    gateName: string,
+    fetchResult?: StoreGateFetchResult,
+  ) {
+    const isManualExposure = !fetchResult;
+    const result = fetchResult ?? this.checkGateImpl(gateName, false);
+    const gate = result.gate;
+
+    this.logger.logGateExposure(
+      this.getCurrentUser(),
+      gateName,
+      gate.value,
+      gate.rule_id,
+      gate.secondary_exposures,
+      result.evaluationDetails,
+      isManualExposure,
+    );
+  }
+
+  private getConfigImpl(
+    configName: string,
+    ignoreOverrides: boolean,
+  ): DynamicConfig {
+    this.ensureStoreLoaded();
+    if (typeof configName !== 'string' || configName.length === 0) {
+      throw new StatsigInvalidArgumentError(
+        'Must pass a valid string as the configName.',
+      );
+    }
+
+    return this.store.getConfig(configName, ignoreOverrides);
+  }
+
+  private logConfigExposureImpl(configName: string, config?: DynamicConfig) {
+    const isManualExposure = !config;
+    const localConfig = config ?? this.getConfigImpl(configName, false);
+
+    this.logger.logConfigExposure(
+      this.getCurrentUser(),
+      configName,
+      localConfig.getRuleID(),
+      localConfig._getSecondaryExposures(),
+      localConfig.getEvaluationDetails(),
+      isManualExposure,
+    );
+  }
+
+  private getExperimentImpl(
+    experimentName: string,
+    keepDeviceValue: boolean,
+    ignoreOverrides: boolean,
+  ) {
+    this.ensureStoreLoaded();
+    if (typeof experimentName !== 'string' || experimentName.length === 0) {
+      throw new StatsigInvalidArgumentError(
+        'Must pass a valid string as the experimentName.',
+      );
+    }
+    return this.store.getExperiment(
+      experimentName,
+      keepDeviceValue,
+      ignoreOverrides,
+    );
+  }
+
+  private logExperimentExposureImpl(
+    experimentName: string,
+    keepDeviceValue: boolean,
+    config?: DynamicConfig,
+  ) {
+    const isManualExposure = !config;
+    const localConfig =
+      config ?? this.getExperimentImpl(experimentName, keepDeviceValue, false);
+
+    this.logger.logConfigExposure(
+      this.getCurrentUser(),
+      experimentName,
+      localConfig.getRuleID(),
+      localConfig._getSecondaryExposures(),
+      localConfig.getEvaluationDetails(),
+      isManualExposure,
+    );
+  }
+
+  private getLayerImpl(
+    logParameterFunction: LogParameterFunction | null,
+    layerName: string,
+    keepDeviceValue: boolean,
+  ): Layer {
+    this.ensureStoreLoaded();
+    if (typeof layerName !== 'string' || layerName.length === 0) {
+      throw new StatsigInvalidArgumentError(
+        'Must pass a valid string as the layerName.',
+      );
+    }
+
+    return this.store.getLayer(
+      logParameterFunction,
+      layerName,
+      keepDeviceValue,
+    );
+  }
+
+  private logLayerParameterExposureForLayer = (
+    layer: Layer,
+    parameterName: string,
+    isManualExposure: boolean = false,
+  ) => {
+    let allocatedExperiment = '';
+    let exposures = layer._getUndelegatedSecondaryExposures();
+    const isExplicit = layer._getExplicitParameters().includes(parameterName);
+    if (isExplicit) {
+      allocatedExperiment = layer._getAllocatedExperimentName();
+      exposures = layer._getSecondaryExposures();
+    }
+
+    this.logger.logLayerExposure(
+      this.getCurrentUser(),
+      layer.getName(),
+      layer.getRuleID(),
+      exposures,
+      allocatedExperiment,
+      parameterName,
+      isExplicit,
+      layer._getEvaluationDetails(),
+      isManualExposure,
+    );
+  };
+
+  private getEmptyConfig(configName: string): DynamicConfig {
+    return new DynamicConfig(
+      configName,
+      {},
+      '',
+      this.getEvalutionDetailsForError(),
+    );
   }
 }
