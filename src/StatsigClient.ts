@@ -106,6 +106,7 @@ export interface IHasStatsigInternal {
 export type StatsigOverrides = {
   gates: Record<string, boolean>;
   configs: Record<string, Record<string, any>>;
+  layers: Record<string, Record<string, any>>;
 };
 
 export default class StatsigClient implements IHasStatsigInternal, IStatsig {
@@ -612,13 +613,25 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
 
   /**
    * Stores a local config override
-   * @param gateName the config to override
+   * @param configName the config to override
    * @param value the json value to override the config to
    */
   public overrideConfig(configName: string, value: Record<string, any>): void {
     this.errorBoundary.swallow('overrideConfig', () => {
       this.ensureStoreLoaded();
       this.store.overrideConfig(configName, value);
+    });
+  }
+
+  /**
+   * Stores a local layer override
+   * @param layerName the layer to override
+   * @param value the json value to override the config to
+   */
+  public overrideLayer(layerName: string, value: Record<string, any>): void {
+    this.errorBoundary.swallow('overrideLayer', () => {
+      this.ensureStoreLoaded();
+      this.store.overrideLayer(layerName, value);
     });
   }
 
@@ -641,6 +654,17 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     this.errorBoundary.swallow('removeConfigOverride', () => {
       this.ensureStoreLoaded();
       this.store.removeConfigOverride(configName);
+    });
+  }
+
+  /**
+   * Removes the given layer override
+   * @param layerName
+   */
+  public removeLayerOverride(layerName?: string): void {
+    this.errorBoundary.swallow('removeLayerOverride', () => {
+      this.ensureStoreLoaded();
+      this.store.removeLayerOverride(layerName);
     });
   }
 
@@ -681,7 +705,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         this.ensureStoreLoaded();
         return this.store.getAllOverrides();
       },
-      () => ({ gates: {}, configs: {} }),
+      () => ({ gates: {}, configs: {}, layers: {} }),
     );
   }
 

@@ -7,8 +7,8 @@
   "scripts": {
     "prepare": "rm -rf build/ && rm -rf dist/ && tsc && webpack",
     "postbuild": "rm -rf build/**/*.map",
-    "test": "jest",
-    "test:debug": "jest --config=jest-debug.config.js",
+    "test": "jest --config=jest-debug.config.js",
+    "testForGithubOrRedisEnthusiasts": "jest",
     "test:watch": "jest --watch",
     "build:dryrun": "npx tsc --noEmit",
     "types": "npx tsc"

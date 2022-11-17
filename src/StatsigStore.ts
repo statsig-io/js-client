@@ -81,6 +81,7 @@ export default class StatsigStore {
   private overrides: StatsigOverrides = {
     gates: {},
     configs: {},
+    layers: {},
   };
 
   private loaded: boolean;
@@ -399,6 +400,20 @@ export default class StatsigStore {
     layerName: string,
     keepDeviceValue: boolean,
   ): Layer {
+    if (this.overrides.layers[layerName] != null) {
+      const details = this.getEvaluationDetails(
+        false,
+        EvaluationReason.LocalOverride,
+      );
+      return Layer._create(
+        layerName,
+        this.overrides.layers[layerName] ?? {},
+        'override',
+        details,
+        logParameterFunction,
+      );
+    }
+
     const latestValue = this.getLatestValue(layerName, 'layer_configs');
     const details = this.getEvaluationDetails(latestValue != null);
     const finalValue = this.getPossiblyStickyValue(
@@ -433,6 +448,17 @@ export default class StatsigStore {
     this.saveOverrides();
   }
 
+  public overrideLayer(layerName: string, value: Record<string, any>): void {
+    try {
+      JSON.stringify(value);
+    } catch (e) {
+      console.warn('Failed to stringify given layer override.  Dropping', e);
+      return;
+    }
+    this.overrides.layers[layerName] = value;
+    this.saveOverrides();
+  }
+
   public overrideGate(gateName: string, value: boolean): void {
     this.overrides.gates[gateName] = value;
     this.saveOverrides();
@@ -452,6 +478,15 @@ export default class StatsigStore {
       this.overrides.configs = {};
     } else {
       delete this.overrides.configs[configName];
+    }
+    this.saveOverrides();
+  }
+
+  public removeLayerOverride(layerName?: string): void {
+    if (layerName == null) {
+      this.overrides.layers = {};
+    } else {
+      delete this.overrides.layers[layerName];
     }
     this.saveOverrides();
   }

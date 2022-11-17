@@ -332,6 +332,7 @@ describe('Verify behavior of InternalStore', () => {
     expect(statsig.getAllOverrides()).toEqual({
       gates: { test_gate: false },
       configs: {},
+      layers: {},
     });
 
     // overriding non-existent gate

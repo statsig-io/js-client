@@ -218,33 +218,33 @@ export default class Statsig {
   }
 
   /**
-   * @deprecated use removeGateOverride or removeConfigOverride
-   * @param name the gate override to remove
+   * Overrides the given layer locally with the given value
+   * @param layerName - name of the layer to override
+   * @param value - value to assign to the layer
    */
-  public static removeOverride(name?: string): void {
-    Statsig.getClientX().removeOverride(name);
+  public static overrideLayer(layerName: string, value: object): void {
+    Statsig.getClientX().overrideLayer(layerName, value);
   }
 
   /**
-   * @param name the gate override to remove
+   * @param name the gate override to remove. Leave this parameter empty to remove all gate overrides.
    */
   public static removeGateOverride(name?: string): void {
     Statsig.getClientX().removeGateOverride(name);
   }
 
   /**
-   * @param name the config override to remove
+   * @param name the config override to remove. Leave this parameter empty to remove all config overrides.
    */
   public static removeConfigOverride(name?: string): void {
     Statsig.getClientX().removeConfigOverride(name);
   }
 
   /**
-   * @deprecated use getAllOverrides
-   * @returns the gate overrides
+   * @param name the layer override to remove. Leave this parameter empty to remove all layer overrides.
    */
-  public static getOverrides(): Record<string, any> {
-    return Statsig.getClientX().getOverrides();
+  public static removeLayerOverride(name?: string): void {
+    Statsig.getClientX().removeLayerOverride(name);
   }
 
   /**
@@ -273,6 +273,22 @@ export default class Statsig {
         time: 0,
       }
     );
+  }
+
+  /**
+   * @deprecated use removeGateOverride or removeConfigOverride
+   * @param name the gate override to remove
+   */
+  public static removeOverride(name?: string): void {
+    Statsig.getClientX().removeOverride(name);
+  }
+
+  /**
+   * @deprecated use getAllOverrides
+   * @returns the gate overrides
+   */
+  public static getOverrides(): Record<string, any> {
+    return Statsig.getClientX().getOverrides();
   }
 
   private static getClientX(): StatsigClient {
