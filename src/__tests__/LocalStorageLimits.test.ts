@@ -167,7 +167,7 @@ describe('Verify local storage limits are enforced', () => {
     expect('overflow3' in storeObject).toBeTruthy();
 
     let user = { userID: 'newUser' };
-    let key = getUserCacheKey('a_stable_id', user);
+    let key = getUserCacheKey(user);
     await client.updateUser(user);
     store.save(user, {
       feature_gates: gates,
@@ -180,7 +180,7 @@ describe('Verify local storage limits are enforced', () => {
     ).toEqual(10);
 
     user = { userID: 'newUser2' };
-    key = getUserCacheKey('a_stable_id', user);
+    key = getUserCacheKey(user);
     await client.updateUser(user);
     store.save(user, {
       feature_gates: gates,
@@ -194,7 +194,7 @@ describe('Verify local storage limits are enforced', () => {
 
     // Try adding back an empty string, verify something else is evicted
     user = { userID: '' };
-    key = getUserCacheKey('a_stable_id', user);
+    key = getUserCacheKey(user);
     await client.updateUser(user);
     store.save(user, {
       feature_gates: gates,

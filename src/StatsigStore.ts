@@ -123,10 +123,7 @@ export default class StatsigStore {
     this.loaded = true;
   }
 
-  public bootstrap(
-    stableID: string,
-    initializeValues: Record<string, any>,
-  ): void {
+  public bootstrap(initializeValues: Record<string, any>): void {
     const key = this.sdkInternal.getCurrentUserCacheKey();
     const user = this.sdkInternal.getCurrentUser();
 

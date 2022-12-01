@@ -91,7 +91,7 @@ describe('Verify behavior of StatsigClient with sinceTime', () => {
       undefined,
     );
 
-    const key = getUserCacheKey(stableID, user);
+    const key = getUserCacheKey(user);
     const userHash = getHashValue(JSON.stringify(user));
     const storeObject = JSON.parse(
       localStorage.getItem(INTERNAL_STORE_KEY) ?? '',
