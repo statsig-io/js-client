@@ -120,6 +120,8 @@ export default class StatsigStore {
       await StatsigAsyncStorage.getItemAsync(INTERNAL_STORE_KEY),
       await StatsigAsyncStorage.getItemAsync(STICKY_DEVICE_EXPERIMENTS_KEY),
     );
+    // triggered for react native, when async storage is setup.  Need to update the cache key
+    // as the stableID is not available when this is set in the constructor (RN/async storage clients only)
     this.userCacheKey = this.sdkInternal.getCurrentUserCacheKey();
     this.loaded = true;
   }
