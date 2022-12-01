@@ -27,7 +27,6 @@ import { getUserCacheKey } from './utils/Hashing';
 import type { AsyncStorage } from './utils/StatsigAsyncStorage';
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
-import { difference, now } from './utils/Timing';
 import Diagnostics, {
   DiagnosticsEvent,
   DiagnosticsKey,
@@ -161,7 +160,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     return this.identity.getUser();
   }
   public getCurrentUserCacheKey(): string {
-    return getUserCacheKey(this.getStableID(), this.getCurrentUser());
+    return getUserCacheKey(this.getCurrentUser());
   }
 
   public getStatsigMetadata(): Record<string, string | number> {
@@ -930,7 +929,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     }
 
     const keyedPrefetchUsers = prefetchUsers.slice(0, 5).reduce((acc, curr) => {
-      acc[getUserCacheKey(this.getStableID(), curr)] = curr;
+      acc[getUserCacheKey(curr)] = curr;
       return acc;
     }, {} as Record<string, StatsigUser>);
 
