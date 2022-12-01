@@ -120,6 +120,7 @@ export default class StatsigStore {
       await StatsigAsyncStorage.getItemAsync(INTERNAL_STORE_KEY),
       await StatsigAsyncStorage.getItemAsync(STICKY_DEVICE_EXPERIMENTS_KEY),
     );
+    this.userCacheKey = this.sdkInternal.getCurrentUserCacheKey();
     this.loaded = true;
   }
 
