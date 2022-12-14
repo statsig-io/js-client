@@ -126,10 +126,7 @@ export default class StatsigStore {
     this.loaded = true;
   }
 
-  public bootstrap(
-    stableID: string,
-    initializeValues: Record<string, any>,
-  ): void {
+  public bootstrap(initializeValues: Record<string, any>): void {
     const key = this.sdkInternal.getCurrentUserCacheKey();
     const user = this.sdkInternal.getCurrentUser();
 
@@ -239,10 +236,7 @@ export default class StatsigStore {
     user: StatsigUser | null,
     jsonConfigs: Record<string, any>,
   ): Promise<void> {
-    const requestedUserCacheKey = getUserCacheKey(
-      this.sdkInternal.getStatsigMetadata().stableID as string,
-      user,
-    );
+    const requestedUserCacheKey = getUserCacheKey(user);
     const data = jsonConfigs as APIInitializeDataWithPrefetchedUsers;
     if (data.prefetched_user_values) {
       const cacheKeys = Object.keys(data.prefetched_user_values);

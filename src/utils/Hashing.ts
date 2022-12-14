@@ -17,11 +17,8 @@ export function getHashValue(value: string): string {
   return Base64.encodeArrayBuffer(buffer);
 }
 
-export function getUserCacheKey(
-  stableId: string,
-  user: StatsigUser | null,
-): string {
-  let key = `userID:${String(user?.userID ?? '')};stableID:${stableId}`;
+export function getUserCacheKey(user: StatsigUser | null): string {
+  let key = `userID:${String(user?.userID ?? '')}`;
 
   const customIDs = user?.customIDs;
   if (customIDs != null) {
