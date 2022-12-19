@@ -32,6 +32,7 @@ import Diagnostics, {
   DiagnosticsEvent,
   DiagnosticsKey,
 } from './utils/Diagnostics';
+import ConsoleLogger from './utils/ConsoleLogger';
 
 const MAX_VALUE_SIZE = 64;
 const MAX_OBJ_SIZE = 2048;
@@ -101,6 +102,7 @@ export interface IHasStatsigInternal {
   getErrorBoundary(): ErrorBoundary;
   getSDKType(): string;
   getSDKVersion(): string;
+  getConsoleLogger(): ConsoleLogger;
 }
 
 export type StatsigOverrides = {
@@ -176,6 +178,11 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     return this.identity.getSDKVersion();
   }
 
+  private consoleLogger: ConsoleLogger;
+  public getConsoleLogger(): ConsoleLogger {
+    return this.consoleLogger;
+  }
+
   public constructor(
     sdkKey: string,
     user?: StatsigUser | null,
@@ -190,6 +197,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     this.ready = false;
     this.sdkKey = sdkKey;
     this.options = new StatsigSDKOptions(options);
+    this.consoleLogger = new ConsoleLogger(this.options.getLogLevel());
     StatsigLocalStorage.disabled = this.options.getDisableLocalStorage();
     this.initializeDiagnostics = new Diagnostics('initialize');
     this.identity = new StatsigIdentity(
@@ -501,11 +509,13 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         );
       }
       if (typeof eventName !== 'string' || eventName.length === 0) {
-        console.error('Event not logged. No valid eventName passed.');
+        this.consoleLogger.error(
+          'Event not logged. No valid eventName passed.',
+        );
         return;
       }
       if (this.shouldTrimParam(eventName, MAX_VALUE_SIZE)) {
-        console.warn(
+        this.consoleLogger.info(
           'eventName is too long, trimming to ' +
             MAX_VALUE_SIZE +
             ' characters.',
@@ -516,11 +526,13 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         typeof value === 'string' &&
         this.shouldTrimParam(value, MAX_VALUE_SIZE)
       ) {
-        console.warn('value is too long, trimming to ' + MAX_VALUE_SIZE + '.');
+        this.consoleLogger.info(
+          'value is too long, trimming to ' + MAX_VALUE_SIZE + '.',
+        );
         value = value.substring(0, MAX_VALUE_SIZE);
       }
       if (this.shouldTrimParam(metadata, MAX_OBJ_SIZE)) {
-        console.warn('metadata is too big. Dropping the metadata.');
+        this.consoleLogger.info('metadata is too big. Dropping the metadata.');
         metadata = { error: 'not logged due to size too large' };
       }
       const event = new LogEvent(eventName);
@@ -885,7 +897,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       return {};
     }
     if (this.shouldTrimParam(user.userID ?? null, MAX_VALUE_SIZE)) {
-      console.warn(
+      this.consoleLogger.info(
         'User ID is too large, trimming to ' + MAX_VALUE_SIZE + 'characters',
       );
       user.userID = user.userID?.toString().substring(0, MAX_VALUE_SIZE);
@@ -893,10 +905,14 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     if (this.shouldTrimParam(user, MAX_OBJ_SIZE)) {
       user.custom = {};
       if (this.shouldTrimParam(user, MAX_OBJ_SIZE)) {
-        console.warn('User object is too large, only keeping the user ID.');
+        this.consoleLogger.info(
+          'User object is too large, only keeping the user ID.',
+        );
         user = { userID: user.userID };
       } else {
-        console.warn('User object is too large, dropping the custom property.');
+        this.consoleLogger.info(
+          'User object is too large, dropping the custom property.',
+        );
       }
     }
     return user;
@@ -926,7 +942,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     diagnostics?: Diagnostics,
   ): Promise<void> {
     if (prefetchUsers.length > 5) {
-      console.warn('Cannot prefetch more than 5 users.');
+      this.consoleLogger.info('Cannot prefetch more than 5 users.');
     }
 
     const keyedPrefetchUsers = prefetchUsers.slice(0, 5).reduce((acc, curr) => {

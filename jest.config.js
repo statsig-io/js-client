@@ -1,11 +1,11 @@
 module.exports = {
   roots: ['./'],
-  setupFilesAfterEnv: ['<rootDir>/src/__tests__/jest.setup.js'],
+  setupFilesAfterEnv: ['<rootDir>/src/__tests__/jest.setup.ts'],
   testMatch: ['**/__tests__/**/*.test.(j|t)s', '**/?(*.)+test.(j|t)s'],
   testPathIgnorePatterns: [
     '<rootDir>/node_modules/',
     '<rootDir>/dist/',
-    '<rootDir>/src/__tests__/jest.setup.js',
+    '<rootDir>/src/__tests__/jest.setup.ts',
   ],
   transform: {
     '^.+\\.ts$': 'ts-jest',

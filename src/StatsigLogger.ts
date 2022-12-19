@@ -19,6 +19,7 @@ const APP_METRICS_PAGE_LOAD_EVENT =
 const APP_METRICS_DOM_INTERACTIVE_EVENT =
   INTERNAL_EVENT_PREFIX + 'app_metrics::dom_interactive_time';
 const DIAGNOSTICS_EVENT = INTERNAL_EVENT_PREFIX + 'diagnostics';
+const DEFAULT_VALUE_WARNING = INTERNAL_EVENT_PREFIX + 'default_value';
 
 type FailedLogEventBody = {
   events: object[];
@@ -246,6 +247,20 @@ export default class StatsigLogger {
     configExposure.setMetadata(metadata);
     configExposure.setSecondaryExposures(secondaryExposures);
     this.log(configExposure);
+  }
+
+  public logConfigDefaultValueFallback(
+    user: StatsigUser | null,
+    message: string,
+    metadata: object,
+  ): void {
+    const defaultValueEvent = new LogEvent(DEFAULT_VALUE_WARNING);
+    defaultValueEvent.setUser(user);
+    defaultValueEvent.setValue(message);
+    defaultValueEvent.setMetadata(metadata);
+    this.log(defaultValueEvent);
+    this.loggedErrors.add(message);
+    this.sdkInternal.getConsoleLogger().error(message);
   }
 
   public logAppError(
