@@ -340,6 +340,9 @@ export default class StatsigStore {
         this.overrides.configs[configName],
         'override',
         details,
+        [],
+        '',
+        this.onConfigDefaultValueFallback,
       );
     } else if (this.userValues?.dynamic_configs[configNameHash] != null) {
       const rawConfigValue = this.userValues?.dynamic_configs[configNameHash];
@@ -572,6 +575,7 @@ export default class StatsigStore {
       details,
       apiConfig?.secondary_exposures,
       apiConfig?.allocated_experiment_name ?? '',
+      this.onConfigDefaultValueFallback,
     );
   }
 
@@ -688,5 +692,28 @@ export default class StatsigStore {
     } else {
       StatsigLocalStorage.setItem(key, value);
     }
+  }
+
+  private onConfigDefaultValueFallback(
+    config: DynamicConfig,
+    parameter: string,
+    defaultValueType: string,
+    valueType: string,
+  ): void {
+    if (!this.isLoaded()) {
+      return;
+    }
+    this.sdkInternal.getLogger().logConfigDefaultValueFallback(
+      this.sdkInternal.getCurrentUser(),
+      `Parameter ${parameter} is a value of type ${valueType}.
+        Returning requested defaultValue type ${defaultValueType}`,
+      {
+        name: config.getName(),
+        ruleID: config.getRuleID(),
+        parameter,
+        defaultValueType,
+        valueType,
+      },
+    );
   }
 }

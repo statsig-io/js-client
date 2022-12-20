@@ -12,6 +12,8 @@ type InitializeResponse = {
   dynamic_configs: Record<string, Record<string, any>>;
 };
 
+function onConfigDefaultValueFallback() {}
+
 function generateTestConfigs(
   value: any,
   inExperiment: boolean,
@@ -91,6 +93,8 @@ describe('Verify behavior of InternalStore', () => {
         ruleID: 'rule_1',
       },
     ],
+    '',
+    onConfigDefaultValueFallback,
   );
 
   const localStorage = new LocalStorageMock();
@@ -163,7 +167,7 @@ describe('Verify behavior of InternalStore', () => {
     expect(spyOnSet).toHaveBeenCalledTimes(2);
     expect(spyOnGet).toHaveBeenCalledTimes(4); // load 2 cache values, overrides, and stableid
     const config = store.getConfig('test_config', false);
-    expect(config).toEqual(config_obj);
+    expect(config).toMatchConfig(config_obj);
     expect(config.getEvaluationDetails()).toEqual({
       reason: EvaluationReason.Network,
       time: now,
@@ -189,7 +193,7 @@ describe('Verify behavior of InternalStore', () => {
     expect(spyOnSet).toHaveBeenCalledTimes(2);
     expect(spyOnGet).toHaveBeenCalledTimes(4); // load 2 cache values and 1 overrides and 1 stableid
     const config = store.getConfig('test_config', false);
-    expect(config).toEqual(config_obj);
+    expect(config).toMatchConfig(config_obj);
     expect(config.getEvaluationDetails()).toEqual({
       reason: EvaluationReason.Network,
       time: now,
@@ -292,7 +296,7 @@ describe('Verify behavior of InternalStore', () => {
     const statsig = new StatsigClient(sdkKey, { userID: '123' });
     await statsig.initializeAsync();
     // test_config matches without override
-    expect(statsig.getStore().getConfig('test_config', false)).toEqual(
+    expect(statsig.getStore().getConfig('test_config', false)).toMatchConfig(
       config_obj,
     );
 

@@ -2,6 +2,45 @@ import DynamicConfig from '../DynamicConfig';
 import { EvaluationReason } from '../StatsigStore';
 
 describe('Verify behavior of DynamicConfig', () => {
+  let fallback: {
+    config: DynamicConfig;
+    parameter: string;
+    defaultValueType: string;
+    valueType: string;
+  } | null = null;
+
+  const onFallback = (
+    config: DynamicConfig,
+    parameter: string,
+    defaultValueType: string,
+    valueType: string,
+  ) => {
+    fallback = {
+      config,
+      parameter,
+      defaultValueType,
+      valueType,
+    };
+  };
+
+  const expectFallback = function (
+    config: DynamicConfig,
+    parameter: string,
+    defaultValue: any,
+    valueType: string,
+  ) {
+    expect(config.get(parameter, defaultValue)).toStrictEqual(defaultValue);
+    const defaultValueType = Array.isArray(defaultValue)
+      ? 'array'
+      : typeof defaultValue;
+    expect(fallback).toStrictEqual({
+      config,
+      parameter,
+      defaultValueType: defaultValueType,
+      valueType: valueType,
+    });
+    fallback = null;
+  };
   const testConfig = new DynamicConfig(
     'test_config',
     {
@@ -23,6 +62,9 @@ describe('Verify behavior of DynamicConfig', () => {
       reason: EvaluationReason.Network,
       time: Date.now(),
     },
+    [],
+    '',
+    onFallback,
   );
 
   type TestObject = {
@@ -46,21 +88,29 @@ describe('Verify behavior of DynamicConfig', () => {
   };
 
   beforeEach(() => {
+    fallback = null;
     expect.hasAssertions();
   });
 
   test('Test typed get', () => {
     expect(testConfig.get('bool', 3)).toStrictEqual(3);
+    expectFallback(testConfig, 'bool', 3, 'boolean');
     expect(testConfig.getValue('111', 222)).toStrictEqual(222);
+    // not called when default value is applied because the field is missing
+    expect(fallback).toBeNull();
     expect(testConfig.get('numberStr2', 'test')).toStrictEqual('3.3');
+    expect(fallback).toBeNull();
     expect(testConfig.get('boolStr1', 'test')).toStrictEqual('true');
-    expect(testConfig.get('numberStr2', 17)).toStrictEqual(17);
+    expect(fallback).toBeNull();
+    expectFallback(testConfig, 'numberStr2', 17, 'string');
     expect(testConfig.get('arr', ['test'])).toStrictEqual([1, 2, 'three']);
-    expect(testConfig.get('object', ['test'])).toStrictEqual(['test']);
+    expect(fallback).toBeNull();
+    expectFallback(testConfig, 'object', ['test'], 'object');
     expect(testConfig.get('object', {})).toStrictEqual({
       key: 'value',
       key2: 123,
     });
+    expect(fallback).toBeNull();
   });
 
   test('Test optional type guard when runtime check succeeds', () => {

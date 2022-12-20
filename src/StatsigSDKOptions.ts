@@ -1,3 +1,4 @@
+import LogEvent from './LogEvent';
 import { StatsigUser } from './StatsigUser';
 
 const DEFAULT_FEATURE_GATE_API = 'https://featuregates.org/v1/';
@@ -32,7 +33,14 @@ export type StatsigOptions = {
   disableLocalStorage?: boolean;
   initCompletionCallback?: InitCompletionCallback | null;
   disableDiagnosticsLogging?: boolean;
+  logLevel?: LogLevel | null;
 };
+
+export enum LogLevel {
+  'NONE',
+  'INFO',
+  'DEBUG',
+}
 
 type BoundedNumberInput = {
   default: number;
@@ -58,6 +66,7 @@ export default class StatsigSDKOptions {
   private disableLocalStorage: boolean;
   private initCompletionCallback: InitCompletionCallback | null;
   private disableDiagnosticsLogging: boolean;
+  private logLevel: LogLevel;
 
   constructor(options?: StatsigOptions | null) {
     if (options == null) {
@@ -103,6 +112,7 @@ export default class StatsigSDKOptions {
     this.disableLocalStorage = options.disableLocalStorage ?? false;
     this.initCompletionCallback = options.initCompletionCallback ?? null;
     this.disableDiagnosticsLogging = options.disableDiagnosticsLogging ?? false;
+    this.logLevel = options?.logLevel ?? LogLevel.NONE;
   }
 
   getApi(): string {
@@ -167,6 +177,10 @@ export default class StatsigSDKOptions {
 
   getDisableDiagnosticsLogging(): boolean {
     return this.disableDiagnosticsLogging;
+  }
+
+  getLogLevel(): LogLevel {
+    return this.logLevel;
   }
 
   private normalizeNumberInput(
