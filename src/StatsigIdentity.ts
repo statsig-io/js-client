@@ -49,7 +49,7 @@ export type UUID = {
 };
 
 type StatsigMetadata = {
-  sessionID: string;
+  sessionIDX: string;
   sdkType: string;
   sdkVersion: string;
   stableID?: string;
@@ -79,7 +79,7 @@ export default class Identity {
     this.user = user;
     this.sdkVersion = require('../package.json')?.version ?? '';
     this.statsigMetadata = {
-      sessionID: this.getUUID(),
+      sessionIDX: this.getUUID(),
       sdkType: this.sdkType,
       sdkVersion: this.sdkVersion,
     };
@@ -128,7 +128,6 @@ export default class Identity {
 
   public updateUser(user: StatsigUser | null): void {
     this.user = user;
-    this.statsigMetadata.sessionID = this.getUUID();
   }
 
   public setSDKPackageInfo(SDKPackageInfo: _SDKPackageInfo): void {
