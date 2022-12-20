@@ -9,12 +9,12 @@ describe('Verify behavior of DynamicConfig', () => {
     valueType: string;
   } | null = null;
 
-  const onFallback = function (
+  const onFallback = (
     config: DynamicConfig,
     parameter: string,
     defaultValueType: string,
     valueType: string,
-  ) {
+  ) => {
     fallback = {
       config,
       parameter,
@@ -23,7 +23,12 @@ describe('Verify behavior of DynamicConfig', () => {
     };
   };
 
-  const expectFallback = function (config, parameter, defaultValue, valueType) {
+  const expectFallback = function (
+    config: DynamicConfig,
+    parameter: string,
+    defaultValue: any,
+    valueType: string,
+  ) {
     expect(config.get(parameter, defaultValue)).toStrictEqual(defaultValue);
     const defaultValueType = Array.isArray(defaultValue)
       ? 'array'
