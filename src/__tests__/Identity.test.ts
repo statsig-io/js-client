@@ -18,9 +18,11 @@ describe('Verify behavior of Identity module', () => {
   test('Test setUser', () => {
     const id = new StatsigIdentity({ userID: 'test_user' });
     expect(id.getUser()).toStrictEqual({ userID: 'test_user' });
-    const previousSessionID = id.getStatsigMetadata().sessionIDX;
+    const previousSessionID = id.getStatsigMetadata().sessionToken;
     id.updateUser(null);
-    expect(id.getStatsigMetadata().sessionIDX).toStrictEqual(previousSessionID);
+    expect(id.getStatsigMetadata().sessionToken).toStrictEqual(
+      previousSessionID,
+    );
     expect(id.getUser()).toStrictEqual(null);
     id.updateUser({ userID: 'test_user2' });
     expect(id.getUser()).toStrictEqual({ userID: 'test_user2' });
@@ -94,6 +96,6 @@ describe('Verify behavior of Identity module', () => {
       },
     };
     const id = new StatsigIdentity({ userID: 'test_user' }, null, RNUUID);
-    expect(id.getStatsigMetadata().sessionIDX).toEqual('uuid_123');
+    expect(id.getStatsigMetadata().sessionToken).toEqual('uuid_123');
   });
 });

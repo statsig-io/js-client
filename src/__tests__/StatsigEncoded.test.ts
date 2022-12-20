@@ -6,7 +6,7 @@ import Statsig from '..';
 import StatsigClient from '../StatsigClient';
 
 const MOCK_METADATA = {
-  sessionID: 'a-session-id',
+  sessionToken: 'a-session-id',
   sdkType: 'js-client',
   sdkVersion: '4.2.0',
 };

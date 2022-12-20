@@ -548,7 +548,7 @@ describe('Verify behavior of top level index functions', () => {
     );
     await client.initializeAsync();
     expect(client.getStableID()).toEqual('666');
-    expect(client.getStatsigMetadata().sessionIDX).toEqual('uuid_666');
+    expect(client.getStatsigMetadata().sessionToken).toEqual('uuid_666');
   });
 
   test('customIDs is sent with user', async () => {
