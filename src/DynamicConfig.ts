@@ -45,29 +45,25 @@ export default class DynamicConfig {
       return defaultValue;
     }
 
+    const expectedType = Array.isArray(defaultValue)
+      ? 'array'
+      : typeof defaultValue;
+    const actualType = Array.isArray(val) ? 'array' : typeof val;
+
     if (typeGuard) {
-      return typeGuard(val) ? val : defaultValue;
+      if (typeGuard(val)) {
+        return val;
+      }
+
+      this.onDefaultValueFallback?.(this, key, expectedType, actualType);
+      return defaultValue;
     }
 
-    if (defaultValue == null) {
+    if (defaultValue == null || expectedType === actualType) {
       return val as unknown as T;
     }
 
-    if (
-      typeof val === typeof defaultValue &&
-      Array.isArray(defaultValue) === Array.isArray(val)
-    ) {
-      return val as unknown as T;
-    }
-
-    if (this.onDefaultValueFallback != null) {
-      this.onDefaultValueFallback(
-        this,
-        key,
-        Array.isArray(defaultValue) ? 'array' : typeof defaultValue,
-        Array.isArray(val) ? 'array' : typeof val,
-      );
-    }
+    this.onDefaultValueFallback?.(this, key, expectedType, actualType);
     return defaultValue;
   }
 

@@ -60,7 +60,7 @@ describe('On Default Value Fallback', () => {
         defaultValueType: 'string',
         name: 'test_config',
         parameter: 'number',
-        ruleID: 'default',
+        ruleID: '1kNmlB23wylPFZi1M0Divl',
         valueType: 'number',
       },
     });
@@ -77,7 +77,7 @@ describe('On Default Value Fallback', () => {
         defaultValueType: 'string',
         name: 'test_config',
         parameter: 'boolean',
-        ruleID: 'default',
+        ruleID: '1kNmlB23wylPFZi1M0Divl',
         valueType: 'boolean',
       },
     });
@@ -91,5 +91,15 @@ describe('On Default Value Fallback', () => {
   it('does not log when type guard succeeds', async () => {
     config.get('number', 0, (_v): _v is number => true);
     expect(events.length).toBe(0);
+  });
+
+  it('logs the correct user object after update', async () => {
+    await Statsig.updateUser({ userID: 'a-different-user' });
+    config.get('number', 'a_string');
+
+    const event = events[0];
+    expect(event).toMatchObject({
+      user: { userID: 'a-user' },
+    });
   });
 });
