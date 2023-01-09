@@ -19,7 +19,8 @@ const APP_METRICS_PAGE_LOAD_EVENT =
 const APP_METRICS_DOM_INTERACTIVE_EVENT =
   INTERNAL_EVENT_PREFIX + 'app_metrics::dom_interactive_time';
 const DIAGNOSTICS_EVENT = INTERNAL_EVENT_PREFIX + 'diagnostics';
-const DEFAULT_VALUE_WARNING = INTERNAL_EVENT_PREFIX + 'default_value';
+const DEFAULT_VALUE_WARNING =
+  INTERNAL_EVENT_PREFIX + 'default_value_type_mismatch';
 
 type FailedLogEventBody = {
   events: object[];
