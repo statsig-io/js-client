@@ -11,6 +11,7 @@ import {
 import { getHashValue, getUserCacheKey } from './utils/Hashing';
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
+import ParamStore from './ParamStore';
 
 export enum EvaluationReason {
   Network = 'Network',
@@ -59,6 +60,7 @@ type APIInitializeData = {
   dynamic_configs: Record<string, APIDynamicConfig | undefined>;
   feature_gates: Record<string, APIFeatureGate | undefined>;
   layer_configs: Record<string, APIDynamicConfig | undefined>;
+  param_stores?: Record<string, ParameterStore> | undefined;
   has_updates?: boolean;
   time: number;
   user_hash?: string;
@@ -72,6 +74,16 @@ type UserCacheValues = APIInitializeDataWithPrefetchedUsers & {
   sticky_experiments: Record<string, APIDynamicConfig | undefined>;
   evaluation_time?: number;
 };
+
+export type Parameter = {
+    type: string,
+    value: string | number | boolean,
+    reference?: string,
+}
+
+export type ParameterStore = {
+    [key: string]: Parameter
+}
 
 const MAX_USER_VALUE_CACHED = 10;
 
@@ -100,6 +112,7 @@ export default class StatsigStore {
       dynamic_configs: {},
       sticky_experiments: {},
       layer_configs: {},
+      param_stores: {},
       has_updates: false,
       time: 0,
       evaluation_time: 0,
@@ -437,6 +450,28 @@ export default class StatsigStore {
       finalValue?.allocated_experiment_name ?? '',
       finalValue?.explicit_parameters,
     );
+  }
+
+  public getParamStore(storeName: string): ParamStore {
+    const latestValue = this.userValues?.param_stores?.[storeName] ?? null;
+    const details = this.getEvaluationDetails(latestValue != null);
+    const store = this;
+
+    const getLayerParam = (name: string, param: string) => {
+        const layer = store.getLayer(store.sdkInternal.logLayerParamExposure, name, false)
+        return layer.get(param, null);
+    }
+    const checkGate = (name: string) => {
+        return store.checkGate(name).gate.value;
+    }
+
+    return ParamStore._create(
+        storeName,
+        latestValue ?? {},
+        details,
+        checkGate,
+        getLayerParam
+    )
   }
 
   public overrideConfig(configName: string, value: Record<string, any>): void {

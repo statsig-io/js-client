@@ -1,6 +1,7 @@
 import DynamicConfig from './DynamicConfig';
 import { StatsigUninitializedError } from './Errors';
 import Layer from './Layer';
+import ParamStore from './ParamStore';
 import StatsigClient, { StatsigOverrides } from './StatsigClient';
 import StatsigRuntime from './StatsigRuntime';
 import { StatsigOptions } from './StatsigSDKOptions';
@@ -10,6 +11,7 @@ import { default as PolyfillObjectEntries } from './utils/Object.entries';
 import { default as PolyfillObjectFromEntries } from './utils/Object.fromEntries';
 import { default as PolyfillPromiseFinally } from './utils/Promise.finally';
 
+export { default as ParamStore } from './ParamStore';
 export { default as DynamicConfig } from './DynamicConfig';
 export { default as Layer } from './Layer';
 export {
@@ -168,6 +170,10 @@ export default class Statsig {
       layerName,
       keepDeviceValue,
     );
+  }
+
+  public static getParamStore(storeName: string): ParamStore {
+    return Statsig.getClientX().getParamStore(storeName);
   }
 
   public static manuallyLogLayerParameterExposure(

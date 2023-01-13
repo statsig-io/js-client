@@ -102,6 +102,10 @@ export interface IHasStatsigInternal {
   getSDKType(): string;
   getSDKVersion(): string;
   getConsoleLogger(): ConsoleLogger;
+  logLayerParamExposure(
+    layer: Layer,
+    parameterName: string,
+  ): void;
 }
 
 export type StatsigOverrides = {
@@ -487,6 +491,13 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     );
   }
 
+  public logLayerParamExposure(
+    layer: Layer,
+    parameterName: string,
+  ) {
+    this.logLayerParameterExposureForLayer(layer, parameterName, false);
+  }
+
   public logLayerParameterExposure(
     layerName: string,
     parameterName: string,
@@ -494,6 +505,12 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   ) {
     const layer = this.getLayerImpl(null, layerName, keepDeviceValue);
     this.logLayerParameterExposureForLayer(layer, parameterName, true);
+  }
+
+  public getParamStore(
+    storeName: string,
+  ) {
+    return this.store.getParamStore(storeName);
   }
 
   public logEvent(
