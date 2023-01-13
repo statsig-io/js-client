@@ -1,4 +1,4 @@
-import DynamicConfig from './DynamicConfig';
+import DynamicConfig, { OnDefaultValueFallback } from './DynamicConfig';
 import Layer, { LogParameterFunction } from './Layer';
 import { IHasStatsigInternal, StatsigOverrides } from './StatsigClient';
 import BootstrapValidator from './utils/BootstrapValidator';
@@ -342,7 +342,9 @@ export default class StatsigStore {
         details,
         [],
         '',
-        this.onConfigDefaultValueFallback,
+        this.makeOnConfigDefaultValueFallback(
+          this.sdkInternal.getCurrentUser(),
+        ),
       );
     } else if (this.userValues?.dynamic_configs[configNameHash] != null) {
       const rawConfigValue = this.userValues?.dynamic_configs[configNameHash];
@@ -575,7 +577,7 @@ export default class StatsigStore {
       details,
       apiConfig?.secondary_exposures,
       apiConfig?.allocated_experiment_name ?? '',
-      this.onConfigDefaultValueFallback,
+      this.makeOnConfigDefaultValueFallback(this.sdkInternal.getCurrentUser()),
     );
   }
 
@@ -694,26 +696,26 @@ export default class StatsigStore {
     }
   }
 
-  private onConfigDefaultValueFallback(
-    config: DynamicConfig,
-    parameter: string,
-    defaultValueType: string,
-    valueType: string,
-  ): void {
-    if (!this.isLoaded()) {
-      return;
-    }
-    this.sdkInternal.getLogger().logConfigDefaultValueFallback(
-      this.sdkInternal.getCurrentUser(),
-      `Parameter ${parameter} is a value of type ${valueType}.
-        Returning requested defaultValue type ${defaultValueType}`,
-      {
-        name: config.getName(),
-        ruleID: config.getRuleID(),
-        parameter,
-        defaultValueType,
-        valueType,
-      },
-    );
+  private makeOnConfigDefaultValueFallback(
+    user: StatsigUser | null,
+  ): OnDefaultValueFallback {
+    return (config, parameter, defaultValueType, valueType) => {
+      if (!this.isLoaded()) {
+        return;
+      }
+
+      this.sdkInternal.getLogger().logConfigDefaultValueFallback(
+        user,
+        `Parameter ${parameter} is a value of type ${valueType}.
+          Returning requested defaultValue type ${defaultValueType}`,
+        {
+          name: config.getName(),
+          ruleID: config.getRuleID(),
+          parameter,
+          defaultValueType,
+          valueType,
+        },
+      );
+    };
   }
 }
