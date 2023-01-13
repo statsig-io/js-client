@@ -468,6 +468,7 @@ export default class StatsigStore {
     return ParamStore._create(
         storeName,
         latestValue ?? {},
+        this.sdkInternal.getOptions().getParamStoreDefaults()[storeName] ?? {},
         details,
         checkGate,
         getLayerParam

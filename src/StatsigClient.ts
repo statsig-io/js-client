@@ -32,6 +32,7 @@ import Diagnostics, {
   DiagnosticsKey,
 } from './utils/Diagnostics';
 import ConsoleLogger from './utils/ConsoleLogger';
+import ParamStore from './ParamStore';
 
 const MAX_VALUE_SIZE = 64;
 const MAX_OBJ_SIZE = 2048;
@@ -509,8 +510,9 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
 
   public getParamStore(
     storeName: string,
-  ) {
-    return this.store.getParamStore(storeName);
+  ): ParamStore {
+    const store = this.store.getParamStore(storeName);
+    return store;
   }
 
   public logEvent(

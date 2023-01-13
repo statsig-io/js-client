@@ -15,6 +15,12 @@ export type InitCompletionCallback = (
   message: string | null,
 ) => void;
 
+export type ParamStoreDefaultValues = {
+    [key: string]: {
+        [key: string]: string | number | boolean
+    }
+}
+
 export type StatsigOptions = {
   api?: string;
   disableCurrentPageLogging?: boolean;
@@ -34,6 +40,7 @@ export type StatsigOptions = {
   initCompletionCallback?: InitCompletionCallback | null;
   disableDiagnosticsLogging?: boolean;
   logLevel?: LogLevel | null;
+  paramStoreDefaultValues?: ParamStoreDefaultValues | null;
 };
 
 export enum LogLevel {
@@ -67,6 +74,7 @@ export default class StatsigSDKOptions {
   private initCompletionCallback: InitCompletionCallback | null;
   private disableDiagnosticsLogging: boolean;
   private logLevel: LogLevel;
+  private paramDefaults: ParamStoreDefaultValues;
 
   constructor(options?: StatsigOptions | null) {
     if (options == null) {
@@ -113,6 +121,7 @@ export default class StatsigSDKOptions {
     this.initCompletionCallback = options.initCompletionCallback ?? null;
     this.disableDiagnosticsLogging = options.disableDiagnosticsLogging ?? false;
     this.logLevel = options?.logLevel ?? LogLevel.NONE;
+    this.paramDefaults = options.paramStoreDefaultValues ?? {};
   }
 
   getApi(): string {
@@ -181,6 +190,10 @@ export default class StatsigSDKOptions {
 
   getLogLevel(): LogLevel {
     return this.logLevel;
+  }
+
+  getParamStoreDefaults(): ParamStoreDefaultValues {
+    return this.paramDefaults;
   }
 
   private normalizeNumberInput(

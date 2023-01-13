@@ -18,6 +18,7 @@ export type GetLayerParam = (
 export default class ParamStore {
   private name: string;
   private value: Record<string, any>;
+  private defaultValues: Record<string, any>;
   private evaluationDetails: EvaluationDetails;
   private checkGate: CheckGate;
   private getLayerParam: GetLayerParam;
@@ -25,12 +26,14 @@ export default class ParamStore {
   private constructor(
     name: string,
     store: ParameterStore,
+    defaultValues: Record<string, any>,
     evaluationDetails: EvaluationDetails,
     checkGate: CheckGate,
     getLayerParam: GetLayerParam,
   ) {
     this.name = name;
     this.value = JSON.parse(JSON.stringify(store));
+    this.defaultValues = defaultValues;
     this.evaluationDetails = evaluationDetails;
     this.checkGate = checkGate;
     this.getLayerParam = getLayerParam;
@@ -38,7 +41,8 @@ export default class ParamStore {
 
   public static _create(
     name: string,
-    value: Record<string, any>,
+    value: ParameterStore,
+    defaultValues: Record<string, any>,
     evaluationDetails: EvaluationDetails,
     checkGate: CheckGate,
     getLayerParam: GetLayerParam,
@@ -46,6 +50,7 @@ export default class ParamStore {
     return new ParamStore(
       name,
       value,
+      defaultValues,
       evaluationDetails,
       checkGate,
       getLayerParam,
@@ -55,7 +60,7 @@ export default class ParamStore {
   public getBool(name: string): boolean {
     const param: Parameter = this.value[name];
     if (param == null) {
-        return false;
+        return this.defaultValues[name] === true;
     }
     if (param.type === ParamType.STATIC) {
         return (param.value === true);
@@ -64,33 +69,33 @@ export default class ParamStore {
     } else if (param.type === ParamType.LAYER_PARAM) {
         return this.getLayerParam(param.value as string, param.reference as string) === true;
     }
-    return false;
+    return this.defaultValues[name] === true;
   }
 
   public getString(name: string): string {
     const param: Parameter = this.value[name];
     if (param == null) {
-        return "";
+        return this.defaultValues[name] as string;
     }
     if (param.type === ParamType.STATIC) {
         return param.value as string;
     } else if (param.type === ParamType.LAYER_PARAM) {
         return this.getLayerParam(param.value as string, param.reference as string) as string;
     }
-    return "";
+    return this.defaultValues[name] as string;
   }
 
   public getNumber(name: string): number {
     const param: Parameter = this.value[name];
     if (param == null) {
-        return 0;
+        return this.defaultValues[name] as number;
     }
     if (param.type === ParamType.STATIC) {
         return param.value as number;
     } else if (param.type === ParamType.LAYER_PARAM) {
         return this.getLayerParam(param.value as string, param.reference as string) as number;
     }
-    return 0;
+    return this.defaultValues[name] as number;
   }
 
 

@@ -61,6 +61,18 @@ describe('Verify behavior of DynamicConfig', () => {
         },
     },
     {
+        my_parameters: {
+            static_bool: true,
+            static_str: 'fallback_string',
+            static_num: 42,
+            dynamic_bool_on: true,
+            dynamic_bool_off: false,
+            dynamic_string: "fallback_dynamic_string",
+            dynamic_num: 999,
+        },
+        my_other_param_store: {}
+    },
+    {
         reason: EvaluationReason.Network,
         time: Date.now()
     },
@@ -80,5 +92,35 @@ describe('Verify behavior of DynamicConfig', () => {
     expect(store.getString("dynamic_string")).toBe("layer_str");
     expect(store.getNumber("dynamic_num")).toBe(4);
     expect(store.getNumber("dynamic_num_fallback")).toBe(777);
+  });
+
+  test('Test fallbacks', () => {
+    const fallbackStore = ParamStore._create(
+        "my_parameters",
+        {},
+        {
+            static_bool: true,
+            static_str: 'fallback_string',
+            static_num: 42,
+            dynamic_bool_on: true,
+            dynamic_bool_off: false,
+            dynamic_string: "fallback_dynamic_string",
+            dynamic_num: 999,
+        },
+        {
+            reason: EvaluationReason.Uninitialized,
+            time: Date.now()
+        },
+        checkGate,
+        getLayerParam,
+    );
+
+    expect(fallbackStore.getBool("static_bool")).toBe(true);
+    expect(fallbackStore.getString("static_str")).toBe('fallback_string');
+    expect(fallbackStore.getNumber("static_num")).toBe(42);
+    expect(fallbackStore.getBool("dynamic_bool_on")).toBe(true);
+    expect(fallbackStore.getBool("dynamic_bool_off")).toBe(false);
+    expect(fallbackStore.getString("dynamic_string")).toBe("fallback_dynamic_string");
+    expect(fallbackStore.getNumber("dynamic_num")).toBe(999);
   });
 });
