@@ -1,7 +1,7 @@
 import LogEvent from './LogEvent';
 import { IHasStatsigInternal } from './StatsigClient';
 import { StatsigEndpoint } from './StatsigNetwork';
-import { EvaluationDetails } from './StatsigStore';
+import { EvaluationDetails } from './utils/StatsigTypes';
 import { StatsigUser } from './StatsigUser';
 import { STATSIG_LOCAL_STORAGE_LOGGING_REQUEST_KEY } from './utils/Constants';
 import Diagnostics from './utils/Diagnostics';

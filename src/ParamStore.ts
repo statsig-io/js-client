@@ -1,10 +1,4 @@
-import { EvaluationDetails, Parameter, ParameterStore } from './StatsigStore';
-
-export enum ParamType {
-    STATIC = 'static',
-    FEATURE_GATE = 'feature_gate',
-    LAYER_PARAM = 'layer_param',
-};
+import { EvaluationDetails, Parameter, ParameterStore, ParamType } from './utils/StatsigTypes';
 
 export type CheckGate = (
     gateName: string,
@@ -62,11 +56,12 @@ export default class ParamStore {
     if (param == null) {
         return this.defaultValues[name] === true;
     }
-    if (param.type === ParamType.STATIC) {
-        return (param.value === true);
-    } else if (param.type === ParamType.FEATURE_GATE) {
+    if (param.referenceType === ParamType.STATIC) {
+        console.log(param);
+        return (param.value === 'true');
+    } else if (param.referenceType === ParamType.FEATURE_GATE) {
         return this.checkGate(param.value as string) === true;
-    } else if (param.type === ParamType.LAYER_PARAM) {
+    } else if (param.referenceType === ParamType.LAYER_PARAM) {
         return this.getLayerParam(param.value as string, param.reference as string) === true;
     }
     return this.defaultValues[name] === true;
@@ -77,9 +72,9 @@ export default class ParamStore {
     if (param == null) {
         return this.defaultValues[name] as string;
     }
-    if (param.type === ParamType.STATIC) {
+    if (param.referenceType === ParamType.STATIC) {
         return param.value as string;
-    } else if (param.type === ParamType.LAYER_PARAM) {
+    } else if (param.referenceType === ParamType.LAYER_PARAM) {
         return this.getLayerParam(param.value as string, param.reference as string) as string;
     }
     return this.defaultValues[name] as string;
@@ -90,10 +85,10 @@ export default class ParamStore {
     if (param == null) {
         return this.defaultValues[name] as number;
     }
-    if (param.type === ParamType.STATIC) {
-        return param.value as number;
-    } else if (param.type === ParamType.LAYER_PARAM) {
-        return this.getLayerParam(param.value as string, param.reference as string) as number;
+    if (param.referenceType === ParamType.STATIC) {
+        return Number(param.value);
+    } else if (param.referenceType === ParamType.LAYER_PARAM) {
+        return Number(this.getLayerParam(param.value as string, param.reference as string));
     }
     return this.defaultValues[name] as number;
   }

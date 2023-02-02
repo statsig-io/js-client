@@ -13,77 +13,8 @@ import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
 import ParamStore from './ParamStore';
 
-export enum EvaluationReason {
-  Network = 'Network',
-  Bootstrap = 'Bootstrap',
-  InvalidBootstrap = 'InvalidBootstrap',
-  Cache = 'Cache',
-  Prefetch = 'Prefetch',
-  Sticky = 'Sticky',
-  LocalOverride = 'LocalOverride',
-  Unrecognized = 'Unrecognized',
-  Uninitialized = 'Uninitialized',
-  Error = 'Error',
-}
+import { UserCacheValues, APIDynamicConfig, EvaluationReason, EvaluationDetails, ParameterStore, StoreGateFetchResult, APIFeatureGate, APIInitializeDataWithPrefetchedUsers, APIInitializeData } from './utils/StatsigTypes';
 
-export type EvaluationDetails = {
-  time: number;
-  reason: EvaluationReason;
-};
-
-type APIFeatureGate = {
-  name: string;
-  value: boolean;
-  rule_id: string;
-  secondary_exposures: [];
-};
-
-export type StoreGateFetchResult = {
-  gate: APIFeatureGate;
-  evaluationDetails: EvaluationDetails;
-};
-
-type APIDynamicConfig = {
-  name: string;
-  value: { [key: string]: unknown };
-  rule_id: string;
-  secondary_exposures: [];
-  is_device_based?: boolean;
-  is_user_in_experiment?: boolean;
-  is_experiment_active?: boolean;
-  allocated_experiment_name: string | null;
-  undelegated_secondary_exposures?: [];
-  explicit_parameters?: string[];
-};
-
-type APIInitializeData = {
-  dynamic_configs: Record<string, APIDynamicConfig | undefined>;
-  feature_gates: Record<string, APIFeatureGate | undefined>;
-  layer_configs: Record<string, APIDynamicConfig | undefined>;
-  param_stores?: Record<string, ParameterStore> | undefined;
-  has_updates?: boolean;
-  time: number;
-  user_hash?: string;
-};
-
-type APIInitializeDataWithPrefetchedUsers = APIInitializeData & {
-  prefetched_user_values?: Record<string, APIInitializeData>;
-};
-
-type UserCacheValues = APIInitializeDataWithPrefetchedUsers & {
-  sticky_experiments: Record<string, APIDynamicConfig | undefined>;
-  evaluation_time?: number;
-};
-
-export type Parameter = {
-    type: string,
-    value: string | number | boolean,
-    reference?: string,
-}
-
-export type ParameterStore = {
-    [key: string]: Parameter
-}
 
 const MAX_USER_VALUE_CACHED = 10;
 
@@ -452,19 +383,9 @@ export default class StatsigStore {
     );
   }
 
-  public getParamStore(storeName: string): ParamStore {
+  public getParamStore(storeName: string, checkGate: (name: string) => boolean, getLayerParam: (name: string, param: string) => unknown): ParamStore {
     const latestValue = this.userValues?.param_stores?.[storeName] ?? null;
     const details = this.getEvaluationDetails(latestValue != null);
-    const store = this;
-
-    const getLayerParam = (name: string, param: string) => {
-        const layer = store.getLayer(store.sdkInternal.logLayerParamExposure, name, false)
-        return layer.get(param, null);
-    }
-    const checkGate = (name: string) => {
-        return store.checkGate(name).gate.value;
-    }
-
     return ParamStore._create(
         storeName,
         latestValue ?? {},
@@ -718,6 +639,7 @@ export default class StatsigStore {
       feature_gates: data.feature_gates,
       layer_configs: data.layer_configs,
       dynamic_configs: data.dynamic_configs,
+      param_stores: data.param_stores,
       sticky_experiments: this.values[cacheKey]?.sticky_experiments ?? {},
       time: data.time == null || isNaN(data.time) ? 0 : data.time,
       evaluation_time: Date.now(),

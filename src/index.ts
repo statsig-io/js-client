@@ -5,7 +5,7 @@ import ParamStore from './ParamStore';
 import StatsigClient, { StatsigOverrides } from './StatsigClient';
 import StatsigRuntime from './StatsigRuntime';
 import { StatsigOptions } from './StatsigSDKOptions';
-import { EvaluationDetails, EvaluationReason } from './StatsigStore';
+import { EvaluationDetails, EvaluationReason } from './utils/StatsigTypes';
 import { StatsigUser } from './StatsigUser';
 import { default as PolyfillObjectEntries } from './utils/Object.entries';
 import { default as PolyfillObjectFromEntries } from './utils/Object.fromEntries';
@@ -34,8 +34,8 @@ export type {
   UUID,
 } from './StatsigIdentity';
 export { StatsigEnvironment, StatsigOptions } from './StatsigSDKOptions';
-export { EvaluationReason } from './StatsigStore';
-export type { EvaluationDetails } from './StatsigStore';
+export { EvaluationReason } from './utils/StatsigTypes';
+export type { EvaluationDetails } from './utils/StatsigTypes';
 export { StatsigUser } from './StatsigUser';
 export { default as StatsigAsyncStorage } from './utils/StatsigAsyncStorage';
 export type { AsyncStorage } from './utils/StatsigAsyncStorage';

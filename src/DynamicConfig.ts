@@ -1,4 +1,4 @@
-import { EvaluationDetails } from './StatsigStore';
+import { EvaluationDetails } from './utils/StatsigTypes';
 
 export type OnDefaultValueFallback = (
   config: DynamicConfig,

@@ -121,7 +121,10 @@ export default class StatsigSDKOptions {
     this.initCompletionCallback = options.initCompletionCallback ?? null;
     this.disableDiagnosticsLogging = options.disableDiagnosticsLogging ?? false;
     this.logLevel = options?.logLevel ?? LogLevel.NONE;
-    this.paramDefaults = options.paramStoreDefaultValues ?? {};
+    console.log(options.paramStoreDefaultValues);
+    this.paramDefaults = {
+        ...options.paramStoreDefaultValues
+    };
   }
 
   getApi(): string {

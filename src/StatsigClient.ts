@@ -17,11 +17,12 @@ import StatsigIdentity, { UUID } from './StatsigIdentity';
 import StatsigLogger from './StatsigLogger';
 import StatsigNetwork from './StatsigNetwork';
 import StatsigSDKOptions, { StatsigOptions } from './StatsigSDKOptions';
-import StatsigStore, {
+import {
   EvaluationDetails,
   EvaluationReason,
   StoreGateFetchResult,
-} from './StatsigStore';
+} from './utils/StatsigTypes';
+import StatsigStore from './StatsigStore';
 import { StatsigUser } from './StatsigUser';
 import { getUserCacheKey } from './utils/Hashing';
 import type { AsyncStorage } from './utils/StatsigAsyncStorage';
@@ -511,7 +512,18 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   public getParamStore(
     storeName: string,
   ): ParamStore {
-    const store = this.store.getParamStore(storeName);
+    
+    const client = this;
+    const getLayerParam = (name: string, param: string) => {
+        const layer = client.getLayer(name, false)
+        return layer.get(param, null);
+    }
+    const checkGate = (name: string) => {
+        return this.checkGate(name);
+    }
+
+    const store = this.store.getParamStore(storeName, checkGate, getLayerParam);
+
     return store;
   }
 
