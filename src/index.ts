@@ -54,7 +54,7 @@ export default class Statsig {
     StatsigRuntime.encodeInitializeCall = value;
   }
 
-  private constructor() {}
+  private constructor() { }
 
   public static async initialize(
     sdkKey: string,
@@ -78,6 +78,10 @@ export default class Statsig {
     initializeValues: Record<string, unknown>,
   ): void {
     Statsig.getClientX().setInitializeValues(initializeValues);
+  }
+
+  public static async genWebExperiment(experimentName: string): Promise<DynamicConfig> {
+    return await Statsig.getClientX().genWebExperiment(experimentName);
   }
 
   public static checkGate(
