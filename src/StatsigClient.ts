@@ -32,6 +32,7 @@ import Diagnostics, {
   DiagnosticsKey,
 } from './utils/Diagnostics';
 import ConsoleLogger from './utils/ConsoleLogger';
+import Evaluator from './Evaluator';
 
 const MAX_VALUE_SIZE = 64;
 const MAX_OBJ_SIZE = 2048;
@@ -182,6 +183,8 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     return this.consoleLogger;
   }
 
+  private evaluator: Evaluator;
+
   public constructor(
     sdkKey: string,
     user?: StatsigUser | null,
@@ -210,6 +213,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     if (options?.initializeValues != null) {
       this.setInitializeValues(options?.initializeValues);
     }
+    this.evaluator = new Evaluator(options?.localEvaluationConfigs ?? {})
 
     this.errorBoundary.setStatsigMetadata(this.getStatsigMetadata());
   }
@@ -324,6 +328,28 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
 
   public getEvaluationDetails(): EvaluationDetails {
     return this.store.getGlobalEvaluationDetails();
+  }
+
+  public async genWebExperiment(experimentName: string): Promise<DynamicConfig> {
+    return this.errorBoundary.capture(
+      'genWebExperiment',
+      async () => {
+        const evaluation = await this.evaluator.getConfig(this.identity.getUser() || {}, experimentName);
+        const result = new DynamicConfig(
+          experimentName,
+          evaluation.json_value as Record<string, unknown>,
+          evaluation.rule_id,
+          {
+            reason: EvaluationReason.WebExperiment,
+            time: evaluation.evaluation_details.configSyncTime
+          },
+          evaluation.secondary_exposures,
+        );
+        this.logConfigExposureImpl(experimentName, result);
+        return result;
+      },
+      () => Promise.resolve(this.getEmptyConfig(experimentName)),
+    );
   }
 
   /**
@@ -516,8 +542,8 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       if (this.shouldTrimParam(eventName, MAX_VALUE_SIZE)) {
         this.consoleLogger.info(
           'eventName is too long, trimming to ' +
-            MAX_VALUE_SIZE +
-            ' characters.',
+          MAX_VALUE_SIZE +
+          ' characters.',
         );
         eventName = eventName.substring(0, MAX_VALUE_SIZE);
       }
@@ -810,7 +836,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         if (errorObj != null && typeof errorObj === 'object') {
           try {
             errorObj = JSON.stringify(errorObj);
-          } catch (e) {}
+          } catch (e) { }
         }
         this.logger.logAppError(user, e.message ?? '', {
           filename: e.filename,
@@ -981,7 +1007,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
             );
           });
         },
-        (e: Error) => {},
+        (e: Error) => { },
         prefetchUsers.length === 0 ? diagnostics : undefined,
         prefetchUsers.length > 0 ? keyedPrefetchUsers : undefined,
       )

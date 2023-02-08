@@ -23,6 +23,7 @@ export enum EvaluationReason {
   Unrecognized = 'Unrecognized',
   Uninitialized = 'Uninitialized',
   Error = 'Error',
+  WebExperiment = 'WebExperiment',
 }
 
 export type EvaluationDetails = {

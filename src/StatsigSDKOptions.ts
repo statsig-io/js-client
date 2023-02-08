@@ -34,6 +34,7 @@ export type StatsigOptions = {
   initCompletionCallback?: InitCompletionCallback | null;
   disableDiagnosticsLogging?: boolean;
   logLevel?: LogLevel | null;
+  localEvaluationConfigs?: Record<string, undefined> | null;
 };
 
 export enum LogLevel {
@@ -67,6 +68,7 @@ export default class StatsigSDKOptions {
   private initCompletionCallback: InitCompletionCallback | null;
   private disableDiagnosticsLogging: boolean;
   private logLevel: LogLevel;
+  private localEvaluationConfigs: Record<string, undefined>;
 
   constructor(options?: StatsigOptions | null) {
     if (options == null) {
@@ -113,6 +115,7 @@ export default class StatsigSDKOptions {
     this.initCompletionCallback = options.initCompletionCallback ?? null;
     this.disableDiagnosticsLogging = options.disableDiagnosticsLogging ?? false;
     this.logLevel = options?.logLevel ?? LogLevel.NONE;
+    this.localEvaluationConfigs = options?.localEvaluationConfigs ?? {};
   }
 
   getApi(): string {
@@ -181,6 +184,10 @@ export default class StatsigSDKOptions {
 
   getLogLevel(): LogLevel {
     return this.logLevel;
+  }
+
+  getLocalEvaluationConfigs(): Record<string, unknown> {
+    return this.localEvaluationConfigs;
   }
 
   private normalizeNumberInput(
