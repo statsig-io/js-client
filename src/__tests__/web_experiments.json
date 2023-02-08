@@ -1,0 +1,186 @@
+{
+  "test_web_experiment_web_targeting": {
+    "name": "test_web_experiment_web_targeting",
+    "type": "feature_gate",
+    "salt": "49e38cf2-d15d-4a19-a7b5-18bca3800cfc",
+    "enabled": true,
+    "defaultValue": {},
+    "rules": [
+      {
+        "name": "3qlRzS7gDFk0ktRkS8h6lg",
+        "groupName": "Hothogs",
+        "passPercentage": 100,
+        "conditions": [
+          {
+            "type": "user_field",
+            "targetValue": [
+              "sync.html"
+            ],
+            "operator": "str_contains_any",
+            "field": "url",
+            "additionalValues": {},
+            "isDeviceBased": false,
+            "idType": "userID"
+          },
+          {
+            "type": "javascript",
+            "targetValue": [
+              "test"
+            ],
+            "operator": "any",
+            "field": null,
+            "additionalValues": {
+              "javascript": "(function test() { return \"test\"; })()"
+            },
+            "isDeviceBased": false,
+            "idType": "userID"
+          }
+        ],
+        "returnValue": true,
+        "id": "3qlRzS7gDFk0ktRkS8h6lg",
+        "salt": "7e386480-a187-4290-a3d9-aebc39599b74",
+        "isDeviceBased": false,
+        "idType": "userID"
+      }
+    ],
+    "isDeviceBased": false,
+    "idType": "userID",
+    "entity": "feature_gate"
+  },
+  "test_web_experiment": {
+    "name": "test_web_experiment",
+    "type": "dynamic_config",
+    "salt": "49e38cf2-d15d-4a19-a7b5-18bca3800cfc",
+    "enabled": true,
+    "defaultValue": {},
+    "rules": [
+      {
+        "name": "5DdmwiNyHjeVTHGV9cqfdb:id_override",
+        "groupName": "Control:id_overrides",
+        "passPercentage": 100,
+        "conditions": [
+          {
+            "type": "unit_id",
+            "targetValue": [
+              "joezeng"
+            ],
+            "operator": "any",
+            "additionalValues": {},
+            "isDeviceBased": false,
+            "idType": "userID"
+          }
+        ],
+        "returnValue": {
+          "javascript": "alert('You are in control!')"
+        },
+        "id": "5DdmwiNyHjeVTHGV9cqfdb:id_override",
+        "salt": "",
+        "isDeviceBased": false,
+        "idType": "userID"
+      },
+      {
+        "name": "layerAssignment",
+        "groupName": "Layer Assignment",
+        "passPercentage": 100,
+        "conditions": [
+          {
+            "type": "user_bucket",
+            "targetValue": [
+              -1
+            ],
+            "operator": "any",
+            "field": null,
+            "additionalValues": {
+              "salt": "e2e363d2-9bd8-4452-88de-479b8585c598"
+            },
+            "isDeviceBased": false,
+            "idType": "userID"
+          }
+        ],
+        "returnValue": {},
+        "id": "layerAssignment",
+        "salt": "",
+        "isDeviceBased": false,
+        "idType": "userID"
+      },
+      {
+        "name": "webTargetingRules",
+        "groupName": "Web Targeting Rules for test_web_experiment",
+        "passPercentage": 100,
+        "conditions": [
+          {
+            "type": "fail_gate",
+            "targetValue": "test_web_experiment_web_targeting",
+            "operator": null,
+            "field": null,
+            "additionalValues": {},
+            "isDeviceBased": false,
+            "idType": "userID"
+          }
+        ],
+        "returnValue": {},
+        "id": "webTargetingRules",
+        "salt": "",
+        "isDeviceBased": false,
+        "idType": "userID"
+      },
+      {
+        "name": "5DdmwiNyHjeVTHGV9cqfdb",
+        "groupName": "Control",
+        "passPercentage": 100,
+        "conditions": [
+          {
+            "type": "user_bucket",
+            "targetValue": 500,
+            "operator": "lt",
+            "field": null,
+            "additionalValues": {
+              "salt": "49e38cf2-d15d-4a19-a7b5-18bca3800cfc"
+            },
+            "isDeviceBased": false,
+            "idType": "userID"
+          }
+        ],
+        "returnValue": {
+          "javascript": "alert('You are in control!')"
+        },
+        "id": "5DdmwiNyHjeVTHGV9cqfdb",
+        "salt": "5DdmwiNyHjeVTHGV9cqfdb",
+        "isDeviceBased": false,
+        "idType": "userID",
+        "isExperimentGroup": true
+      },
+      {
+        "name": "5DdmwksB9Boqd7eQKklSwd",
+        "groupName": "Test",
+        "passPercentage": 100,
+        "conditions": [
+          {
+            "type": "user_bucket",
+            "targetValue": 1000,
+            "operator": "lt",
+            "field": null,
+            "additionalValues": {
+              "salt": "49e38cf2-d15d-4a19-a7b5-18bca3800cfc"
+            },
+            "isDeviceBased": false,
+            "idType": "userID"
+          }
+        ],
+        "returnValue": {
+          "javascript": "alert('You are in test!')"
+        },
+        "id": "5DdmwksB9Boqd7eQKklSwd",
+        "salt": "5DdmwksB9Boqd7eQKklSwd",
+        "isDeviceBased": false,
+        "idType": "userID",
+        "isExperimentGroup": true
+      }
+    ],
+    "isDeviceBased": false,
+    "idType": "userID",
+    "entity": "experiment",
+    "isActive": true,
+    "hasSharedParams": false
+  }
+}

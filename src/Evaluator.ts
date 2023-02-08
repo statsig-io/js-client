@@ -197,6 +197,12 @@ export default class Evaluator {
       case 'unit_id':
         value = this._getUnitID(user, idType);
         break;
+      case 'javascript':
+        const js = condition.additionalValues?.javascript;
+        if (js !== null) {
+          value = eval(js as string);
+        }
+        break;
       default:
         return { passes: false, fetchFromServer: true };
     }
