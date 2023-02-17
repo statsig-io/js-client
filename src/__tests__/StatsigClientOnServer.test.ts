@@ -34,7 +34,7 @@ describe('Verify behavior of StatsigClient outside of browser environment', () =
   });
 
   test('Client ignores window undefined if specified in options', async () => {
-    expect.assertions(7);
+    expect.assertions(8);
 
     // @ts-ignore
     global.fetch = jest.fn((url, params) => {
@@ -62,7 +62,11 @@ describe('Verify behavior of StatsigClient outside of browser environment', () =
     );
 
     await client.initializeAsync();
-    // usable immediately, without an async initialize
+    // flush interval is setup
+    // @ts-ignore
+    expect(client.getLogger().flushInterval).not.toBeNull();
+
+    // initialized from network (fetch mock)
     expect(client.checkGate('test_gate')).toBe(false);
     expect(client.checkGate('i_dont_exist')).toBe(false);
     expect(client.checkGate('always_on_gate')).toBe(true);
