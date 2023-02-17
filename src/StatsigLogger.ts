@@ -78,7 +78,7 @@ export default class StatsigLogger {
         this.flush(document.visibilityState !== 'visible');
       });
     }
-    if (!this.sdkInternal.getOptions().getIgnoreWindowUndefined() && typeof window === 'undefined' || window == null) {
+    if (!this.sdkInternal.getOptions().getIgnoreWindowUndefined() && (typeof window === 'undefined' || window == null)) {
       // dont set the flush interval outside of client browser environments
       return;
     }
