@@ -46,7 +46,7 @@ export default class StatsigNetwork {
     if (!this.sdkInternal.getOptions().getDisableNetworkKeepalive()) {
       try {
         this.canUseKeepalive = 'keepalive' in new Request('');
-      } catch (_e) {}
+      } catch (_e) { }
     }
   }
 
@@ -190,7 +190,7 @@ export default class StatsigNetwork {
     }
     const url = new URL(
       this.sdkInternal.getOptions().getEventLoggingApi() +
-        StatsigEndpoint.LogEventBeacon,
+      StatsigEndpoint.LogEventBeacon,
     );
     url.searchParams.append('k', this.sdkInternal.getSDKKey());
     payload.clientTime = Date.now() + '';
@@ -218,8 +218,8 @@ export default class StatsigNetwork {
       return Promise.reject('fetch is not defined');
     }
 
-    if (typeof window === 'undefined') {
-      // dont issue requests from the server
+    if (typeof window === 'undefined' && !this.sdkInternal.getOptions().getIgnoreWindowUndefined()) {
+      // by default, dont issue requests from the server
       return Promise.reject('window is not defined');
     }
 
@@ -246,6 +246,7 @@ export default class StatsigNetwork {
     let shouldEncode =
       endpointName === StatsigEndpoint.Initialize &&
       StatsigRuntime.encodeInitializeCall &&
+      typeof window !== 'undefined' &&
       typeof window?.btoa === 'function';
 
     let postBody = JSON.stringify(body);
