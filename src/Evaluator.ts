@@ -1,7 +1,7 @@
 
 import ConfigEvaluation from './ConfigEvaluation';
 import { ConfigCondition, ConfigRule, ConfigSpec } from './ConfigSpec';
-import { LocalEvaluationDetails } from './LocalEvaluationDetails';
+import { EvaluationDetails, EvaluationReason } from './StatsigStore';
 import { StatsigUser } from './StatsigUser';
 
 const CONDITION_SEGMENT_COUNT = 10 * 1000;
@@ -28,14 +28,14 @@ export default class Evaluator {
 
   async _evalConfig(user: StatsigUser, config: ConfigSpec | null): Promise<ConfigEvaluation> {
     if (!config) {
-      return new ConfigEvaluation(false).withEvaluationDetails(
-        LocalEvaluationDetails.make('Unrecognized'),
+      return new ConfigEvaluation(false).withEvaluationReason(
+        EvaluationReason.Unrecognized,
       );
     }
 
     const evaulation = await this._eval(user, config);
-    return evaulation.withEvaluationDetails(
-      LocalEvaluationDetails.make('Network'),
+    return evaulation.withEvaluationReason(
+      EvaluationReason.Network,
     );
   }
 

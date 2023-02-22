@@ -1,4 +1,4 @@
-import { LocalEvaluationDetails } from './LocalEvaluationDetails';
+import { EvaluationDetails, EvaluationReason } from './StatsigStore';
 
 export default class ConfigEvaluation {
   public value: boolean;
@@ -10,7 +10,7 @@ export default class ConfigEvaluation {
   public fetch_from_server: boolean;
   public undelegated_secondary_exposures: Record<string, string>[] | undefined;
   public is_experiment_group: boolean;
-  public evaluation_details: LocalEvaluationDetails;
+  public evaluation_details: EvaluationDetails;
 
   constructor(
     value: boolean,
@@ -35,13 +35,16 @@ export default class ConfigEvaluation {
     this.fetch_from_server = fetch_from_server;
     this.explicit_parameters = explicit_parameters;
     this.is_experiment_group = false;
-    this.evaluation_details = LocalEvaluationDetails.make('Unrecognized');
+    this.evaluation_details = {
+      time: Date.now(),
+      reason: EvaluationReason.Uninitialized,
+    };
   }
 
-  public withEvaluationDetails(
-    evaulationDetails: LocalEvaluationDetails,
+  public withEvaluationReason(
+    reason: EvaluationReason,
   ): ConfigEvaluation {
-    this.evaluation_details = evaulationDetails;
+    this.evaluation_details.reason = reason;
     return this;
   }
 

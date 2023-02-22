@@ -339,10 +339,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
           experimentName,
           evaluation.json_value as Record<string, unknown>,
           evaluation.rule_id,
-          {
-            reason: EvaluationReason.WebExperiment,
-            time: evaluation.evaluation_details.configSyncTime
-          },
+          evaluation.evaluation_details,
           evaluation.secondary_exposures,
         );
         this.logConfigExposureImpl(experimentName, result);
