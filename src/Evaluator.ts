@@ -1,7 +1,7 @@
 
 import ConfigEvaluation from './ConfigEvaluation';
 import { ConfigCondition, ConfigRule, ConfigSpec } from './ConfigSpec';
-import { EvaluationDetails, EvaluationReason } from './StatsigStore';
+import { EvaluationReason } from './StatsigStore';
 import { StatsigUser } from './StatsigUser';
 
 const CONDITION_SEGMENT_COUNT = 10 * 1000;

@@ -4,7 +4,6 @@ import {
   StatsigInvalidArgumentError,
   StatsigUninitializedError,
 } from './Errors';
-import Layer, { LogParameterFunction } from './Layer';
 import LogEvent from './LogEvent';
 import type {
   DeviceInfo,
@@ -17,10 +16,9 @@ import StatsigIdentity, { UUID } from './StatsigIdentity';
 import StatsigLogger from './StatsigLogger';
 import StatsigNetwork from './StatsigNetwork';
 import StatsigSDKOptions, { StatsigOptions } from './StatsigSDKOptions';
-import StatsigStore, {
+import {
   EvaluationDetails,
   EvaluationReason,
-  StoreGateFetchResult,
 } from './StatsigStore';
 import { StatsigUser } from './StatsigUser';
 import { getUserCacheKey } from './utils/Hashing';
@@ -63,36 +61,17 @@ export type _SDKPackageInfo = {
 };
 
 export interface IStatsig {
-  initializeAsync(): Promise<void>;
-  checkGate(gateName: string, ignoreOverrides?: boolean): boolean;
-  getConfig(configName: string, ignoreOverrides?: boolean): DynamicConfig;
-  getExperiment(
-    experimentName: string,
-    keepDeviceValue?: boolean,
-    ignoreOverrides?: boolean,
-  ): DynamicConfig;
   logEvent(
     eventName: string,
     value?: string | number | null,
     metadata?: Record<string, string> | null,
   ): void;
-  updateUser(user: StatsigUser | null): Promise<boolean>;
   shutdown(): void;
-  overrideGate(gateName: string, value: boolean): void;
-  overrideConfig(gateName: string, value: Record<string, any>): void;
-  removeGateOverride(gateName?: string): void;
-  removeConfigOverride(configName?: string): void;
-  getAllOverrides(): StatsigOverrides;
   getStableID(): string;
-
-  // DEPRECATED
-  removeOverride(overrideName?: string | null): void;
-  getOverrides(): Record<string, any>;
 }
 
 export interface IHasStatsigInternal {
   getNetwork(): StatsigNetwork;
-  getStore(): StatsigStore;
   getLogger(): StatsigLogger;
   getOptions(): StatsigSDKOptions;
   getCurrentUser(): StatsigUser | null;
@@ -133,11 +112,6 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   private network: StatsigNetwork;
   public getNetwork(): StatsigNetwork {
     return this.network;
-  }
-
-  private store: StatsigStore;
-  public getStore(): StatsigStore {
-    return this.store;
   }
 
   private logger: StatsigLogger;
@@ -208,126 +182,10 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       StatsigClient.reactNativeUUID,
     );
     this.network = new StatsigNetwork(this);
-    this.store = new StatsigStore(this);
     this.logger = new StatsigLogger(this);
-    if (options?.initializeValues != null) {
-      this.setInitializeValues(options?.initializeValues);
-    }
     this.evaluator = new Evaluator(options?.localEvaluationConfigs ?? {})
 
     this.errorBoundary.setStatsigMetadata(this.getStatsigMetadata());
-  }
-
-  public setInitializeValues(initializeValues: Record<string, unknown>): void {
-    this.errorBoundary.capture(
-      'setInitializeValues',
-      () => {
-        this.store.bootstrap(initializeValues);
-        if (!this.ready) {
-          // the sdk is usable and considered initialized when configured
-          // with initializeValues
-          this.ready = true;
-          this.initCalled = true;
-        }
-        // we wont have access to window/document/localStorage if these run on the server
-        // so try to run whenever this is called
-        this.handleOptionalLogging();
-        this.logger.sendSavedRequests();
-      },
-      () => {
-        this.ready = true;
-        this.initCalled = true;
-      },
-    );
-  }
-
-  public async initializeAsync(): Promise<void> {
-    return this.errorBoundary.capture(
-      'initializeAsync',
-      async () => {
-        const startTime = Date.now();
-        if (this.pendingInitPromise != null) {
-          return this.pendingInitPromise;
-        }
-        if (this.ready) {
-          return Promise.resolve();
-        }
-        this.initializeDiagnostics.mark(
-          DiagnosticsKey.OVERALL,
-          DiagnosticsEvent.START,
-        );
-        this.initCalled = true;
-        if (StatsigAsyncStorage.asyncStorage) {
-          await this.identity.initAsync();
-          await this.store.loadFromAsyncStorage();
-        }
-
-        if (
-          this.appState &&
-          this.appState.addEventListener &&
-          typeof this.appState.addEventListener === 'function'
-        ) {
-          this.currentAppState = this.appState.currentState;
-          this.appState.addEventListener(
-            'change',
-            this.handleAppStateChange.bind(this),
-          );
-        }
-
-        if (this.options.getLocalModeEnabled()) {
-          return Promise.resolve();
-        }
-
-        const completionCallback = (
-          success: boolean,
-          message: string | null,
-        ) => {
-          const cb = this.options.getInitCompletionCallback();
-          if (cb) {
-            cb(Date.now() - startTime, success, message);
-          }
-        };
-
-        const user = this.identity.getUser();
-        this.pendingInitPromise = this.fetchAndSaveValues(
-          user,
-          this.options.getPrefetchUsers(),
-          completionCallback,
-          this.initializeDiagnostics,
-        ).finally(async () => {
-          this.pendingInitPromise = null;
-          this.ready = true;
-          this.logger.sendSavedRequests();
-          this.initializeDiagnostics.mark(
-            DiagnosticsKey.OVERALL,
-            DiagnosticsEvent.END,
-          );
-          if (!this.options.getDisableDiagnosticsLogging()) {
-            this.logger.logDiagnostics(user, this.initializeDiagnostics);
-          }
-        });
-
-        this.handleOptionalLogging();
-        return this.pendingInitPromise;
-      },
-      () => {
-        this.ready = true;
-        this.initCalled = true;
-        return Promise.resolve();
-      },
-    );
-  }
-
-  public async prefetchUsers(users: StatsigUser[]): Promise<void> {
-    if (!users || users.length == 0) {
-      return;
-    }
-
-    return this.fetchAndSaveValues(null, users);
-  }
-
-  public getEvaluationDetails(): EvaluationDetails {
-    return this.store.getGlobalEvaluationDetails();
   }
 
   public async genWebExperiment(experimentName: string): Promise<DynamicConfig> {
@@ -347,176 +205,6 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       },
       () => Promise.resolve(this.getEmptyConfig(experimentName)),
     );
-  }
-
-  /**
-   * Checks the value of a gate for the current user
-   * @param {string} gateName - the name of the gate to check
-   * @param {boolean} ignoreOverrides = false if this check should ignore local overrides
-   * @returns {boolean} - value of a gate for the user. Gates are "off" (return false) by default
-   * @throws Error if initialize() is not called first, or gateName is not a string
-   */
-  public checkGate(
-    gateName: string,
-    ignoreOverrides: boolean = false,
-  ): boolean {
-    return this.errorBoundary.capture(
-      'checkGate',
-      () => {
-        const result = this.checkGateImpl(gateName, ignoreOverrides);
-        this.logGateExposureImpl(gateName, result);
-        return result.gate.value === true;
-      },
-      () => false,
-    );
-  }
-
-  public checkGateWithExposureLoggingDisabled(
-    gateName: string,
-    ignoreOverrides: boolean = false,
-  ): boolean {
-    return this.errorBoundary.capture(
-      'checkGateWithExposureLoggingDisabled',
-      () => {
-        const result = this.checkGateImpl(gateName, ignoreOverrides);
-        return result.gate.value === true;
-      },
-      () => false,
-    );
-  }
-
-  public logGateExposure(gateName: string) {
-    this.logGateExposureImpl(gateName);
-  }
-
-  /**
-   * Checks the value of a config for the current user
-   * @param {string} configName - the name of the config to get
-   * @param {boolean} ignoreOverrides = false if this check should ignore local overrides
-   * @returns {DynamicConfig} - value of a config for the user
-   * @throws Error if initialize() is not called first, or configName is not a string
-   */
-  public getConfig(
-    configName: string,
-    ignoreOverrides: boolean = false,
-  ): DynamicConfig {
-    return this.errorBoundary.capture(
-      'getConfig',
-      () => {
-        const result = this.getConfigImpl(configName, ignoreOverrides);
-        this.logConfigExposureImpl(configName, result);
-        return result;
-      },
-      () => this.getEmptyConfig(configName),
-    );
-  }
-
-  public getConfigWithExposureLoggingDisabled(
-    configName: string,
-    ignoreOverrides: boolean = false,
-  ): DynamicConfig {
-    return this.errorBoundary.capture(
-      'getConfig',
-      () => {
-        return this.getConfigImpl(configName, ignoreOverrides);
-      },
-      () => this.getEmptyConfig(configName),
-    );
-  }
-
-  public logConfigExposure(configName: string) {
-    this.logConfigExposureImpl(configName);
-  }
-
-  /**
-   * Gets the experiment for a given user
-   * @param {string} experimentName - the name of the experiment to get
-   * @param {boolean} keepDeviceValue = false if this should use "sticky" values persisted in local storage
-   * @param {boolean} ignoreOverrides = false if this check should ignore local overrides
-   * @returns {DynamicConfig} - value of the experiment for the user, represented by a Dynamic Config object
-   * @throws Error if initialize() is not called first, or experimentName is not a string
-   */
-  public getExperiment(
-    experimentName: string,
-    keepDeviceValue: boolean = false,
-    ignoreOverrides: boolean = false,
-  ): DynamicConfig {
-    return this.errorBoundary.capture(
-      'getExperiment',
-      () => {
-        const result = this.getExperimentImpl(
-          experimentName,
-          keepDeviceValue,
-          ignoreOverrides,
-        );
-        this.logExperimentExposureImpl(experimentName, keepDeviceValue, result);
-        return result;
-      },
-      () => this.getEmptyConfig(experimentName),
-    );
-  }
-
-  public getExperimentWithExposureLoggingDisabled(
-    experimentName: string,
-    keepDeviceValue: boolean = false,
-    ignoreOverrides: boolean = false,
-  ): DynamicConfig {
-    return this.errorBoundary.capture(
-      'getExperimentWithExposureLoggingDisabled',
-      () => {
-        return this.getExperimentImpl(
-          experimentName,
-          keepDeviceValue,
-          ignoreOverrides,
-        );
-      },
-      () => this.getEmptyConfig(experimentName),
-    );
-  }
-
-  public logExperimentExposure(
-    experimentName: string,
-    keepDeviceValue: boolean,
-  ) {
-    this.logExperimentExposureImpl(experimentName, keepDeviceValue);
-  }
-
-  public getLayer(layerName: string, keepDeviceValue: boolean = false): Layer {
-    return this.errorBoundary.capture(
-      'getLayer',
-      () => {
-        return this.getLayerImpl(
-          this.logLayerParameterExposureForLayer,
-          layerName,
-          keepDeviceValue,
-        );
-      },
-      () =>
-        Layer._create(layerName, {}, '', this.getEvalutionDetailsForError()),
-    );
-  }
-
-  public getLayerWithExposureLoggingDisabled(
-    layerName: string,
-    keepDeviceValue: boolean = false,
-  ): Layer {
-    return this.errorBoundary.capture(
-      'getLayerWithExposureLoggingDisabled',
-      () => {
-        return this.getLayerImpl(null, layerName, keepDeviceValue);
-      },
-      () =>
-        Layer._create(layerName, {}, '', this.getEvalutionDetailsForError()),
-    );
-  }
-
-  public logLayerParameterExposure(
-    layerName: string,
-    parameterName: string,
-    keepDeviceValue: boolean = false,
-  ) {
-    const layer = this.getLayerImpl(null, layerName, keepDeviceValue);
-    this.logLayerParameterExposureForLayer(layer, parameterName, true);
   }
 
   public logEvent(
@@ -565,52 +253,6 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     });
   }
 
-  public async updateUser(user: StatsigUser | null): Promise<boolean> {
-    return this.errorBoundary.capture(
-      'updateUser',
-      async () => {
-        if (!this.initializeCalled()) {
-          throw new StatsigUninitializedError('Call initialize() first.');
-        }
-
-        this.identity.updateUser(this.normalizeUser(user));
-        const isUserPrefetched = Boolean(
-          this.prefetchedUsersByCacheKey[this.getCurrentUserCacheKey()],
-        );
-        const foundCacheValue = this.store.updateUser(isUserPrefetched);
-        this.logger.resetDedupeKeys();
-
-        if (foundCacheValue && isUserPrefetched) {
-          return Promise.resolve(true);
-        }
-
-        if (this.pendingInitPromise != null) {
-          await this.pendingInitPromise;
-        }
-
-        if (this.options.getLocalModeEnabled()) {
-          return Promise.resolve(true);
-        }
-
-        const currentUser = this.identity.getUser();
-        this.pendingInitPromise = this.fetchAndSaveValues(currentUser).finally(
-          () => {
-            this.pendingInitPromise = null;
-          },
-        );
-
-        return this.pendingInitPromise
-          .then(() => {
-            return Promise.resolve(true);
-          })
-          .catch(() => {
-            return Promise.resolve(false);
-          });
-      },
-      () => Promise.resolve(false),
-    );
-  }
-
   /**
    * Informs the statsig SDK that the client is closing or shutting down
    * so the SDK can clean up internal state
@@ -631,116 +273,6 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       }
       StatsigLocalStorage.cleanup();
     });
-  }
-
-  /**
-   * Stores a local gate override
-   * @param gateName the gate to override
-   * @param value the value to override the gate to
-   */
-  public overrideGate(gateName: string, value: boolean): void {
-    this.errorBoundary.swallow('overrideGate', () => {
-      this.ensureStoreLoaded();
-      this.store.overrideGate(gateName, value);
-    });
-  }
-
-  /**
-   * Stores a local config override
-   * @param configName the config to override
-   * @param value the json value to override the config to
-   */
-  public overrideConfig(configName: string, value: Record<string, any>): void {
-    this.errorBoundary.swallow('overrideConfig', () => {
-      this.ensureStoreLoaded();
-      this.store.overrideConfig(configName, value);
-    });
-  }
-
-  /**
-   * Stores a local layer override
-   * @param layerName the layer to override
-   * @param value the json value to override the config to
-   */
-  public overrideLayer(layerName: string, value: Record<string, any>): void {
-    this.errorBoundary.swallow('overrideLayer', () => {
-      this.ensureStoreLoaded();
-      this.store.overrideLayer(layerName, value);
-    });
-  }
-
-  /**
-   * Removes the given gate override
-   * @param gateName
-   */
-  public removeGateOverride(gateName?: string): void {
-    this.errorBoundary.swallow('removeGateOverride', () => {
-      this.ensureStoreLoaded();
-      this.store.removeGateOverride(gateName);
-    });
-  }
-
-  /**
-   * Removes the given config override
-   * @param configName
-   */
-  public removeConfigOverride(configName?: string): void {
-    this.errorBoundary.swallow('removeConfigOverride', () => {
-      this.ensureStoreLoaded();
-      this.store.removeConfigOverride(configName);
-    });
-  }
-
-  /**
-   * Removes the given layer override
-   * @param layerName
-   */
-  public removeLayerOverride(layerName?: string): void {
-    this.errorBoundary.swallow('removeLayerOverride', () => {
-      this.ensureStoreLoaded();
-      this.store.removeLayerOverride(layerName);
-    });
-  }
-
-  /**
-   * @deprecated - use removeGateOverride or removeConfig override
-   * Removes the given gate override
-   * @param gateName
-   */
-  public removeOverride(gateName?: string): void {
-    this.errorBoundary.swallow('removeOverride', () => {
-      this.ensureStoreLoaded();
-      this.store.removeGateOverride(gateName);
-    });
-  }
-
-  /**
-   * @deprecated - use getAllOverrides to get gate and config overrides
-   * @returns Gate overrides
-   */
-  public getOverrides(): Record<string, any> {
-    return this.errorBoundary.capture(
-      'getOverrides',
-      () => {
-        this.ensureStoreLoaded();
-        return this.store.getAllOverrides().gates;
-      },
-      () => ({}),
-    );
-  }
-
-  /**
-   * @returns The local gate and config overrides
-   */
-  public getAllOverrides(): StatsigOverrides {
-    return this.errorBoundary.capture(
-      'getAllOverrides',
-      () => {
-        this.ensureStoreLoaded();
-        return this.store.getAllOverrides();
-      },
-      () => ({ gates: {}, configs: {}, layers: {} }),
-    );
   }
 
   /**
@@ -940,14 +472,6 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     return user;
   }
 
-  private ensureStoreLoaded(): void {
-    if (!this.store.isLoaded()) {
-      throw new StatsigUninitializedError(
-        'Call and wait for initialize() to finish first.',
-      );
-    }
-  }
-
   private getEvalutionDetailsForError(): EvaluationDetails {
     return {
       time: Date.now(),
@@ -955,116 +479,9 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     };
   }
 
-  private async fetchAndSaveValues(
-    user: StatsigUser | null,
-    prefetchUsers: StatsigUser[] = [],
-    completionCallback:
-      | ((success: boolean, message: string | null) => void)
-      | null = null,
-    diagnostics?: Diagnostics,
-  ): Promise<void> {
-    if (prefetchUsers.length > 5) {
-      this.consoleLogger.info('Cannot prefetch more than 5 users.');
-    }
-
-    const keyedPrefetchUsers = prefetchUsers.slice(0, 5).reduce((acc, curr) => {
-      acc[getUserCacheKey(curr)] = curr;
-      return acc;
-    }, {} as Record<string, StatsigUser>);
-
-    let sinceTime: number | null = null;
-    if (prefetchUsers.length === 0) {
-      sinceTime = this.store.getLastUpdateTime(user);
-    }
-
-    return this.network
-      .fetchValues(
-        user,
-        sinceTime,
-        this.options.getInitTimeoutMs(),
-        async (json: Record<string, any>): Promise<void> => {
-          return this.errorBoundary.swallow('fetchAndSaveValues', async () => {
-            diagnostics?.mark(
-              DiagnosticsKey.INITIALIZE,
-              DiagnosticsEvent.START,
-              'process',
-            );
-            if (json?.has_updates) {
-              await this.store.save(user, json);
-            }
-
-            this.prefetchedUsersByCacheKey = {
-              ...this.prefetchedUsersByCacheKey,
-              ...keyedPrefetchUsers,
-            };
-            diagnostics?.mark(
-              DiagnosticsKey.INITIALIZE,
-              DiagnosticsEvent.END,
-              'process',
-            );
-          });
-        },
-        (e: Error) => { },
-        prefetchUsers.length === 0 ? diagnostics : undefined,
-        prefetchUsers.length > 0 ? keyedPrefetchUsers : undefined,
-      )
-      .then(() => {
-        completionCallback?.(true, null);
-      })
-      .catch((e) => {
-        completionCallback?.(false, e.message);
-      });
-  }
-
-  private checkGateImpl(
-    gateName: string,
-    ignoreOverrides: boolean,
-  ): StoreGateFetchResult {
-    this.ensureStoreLoaded();
-    if (typeof gateName !== 'string' || gateName.length === 0) {
-      throw new StatsigInvalidArgumentError(
-        'Must pass a valid string as the gateName.',
-      );
-    }
-    return this.store.checkGate(gateName, ignoreOverrides);
-  }
-
-  private logGateExposureImpl(
-    gateName: string,
-    fetchResult?: StoreGateFetchResult,
-  ) {
-    const isManualExposure = !fetchResult;
-    const result = fetchResult ?? this.checkGateImpl(gateName, false);
-    const gate = result.gate;
-
-    this.logger.logGateExposure(
-      this.getCurrentUser(),
-      gateName,
-      gate.value,
-      gate.rule_id,
-      gate.secondary_exposures,
-      result.evaluationDetails,
-      isManualExposure,
-    );
-  }
-
-  private getConfigImpl(
-    configName: string,
-    ignoreOverrides: boolean,
-  ): DynamicConfig {
-    this.ensureStoreLoaded();
-    if (typeof configName !== 'string' || configName.length === 0) {
-      throw new StatsigInvalidArgumentError(
-        'Must pass a valid string as the configName.',
-      );
-    }
-
-    return this.store.getConfig(configName, ignoreOverrides);
-  }
-
-  private logConfigExposureImpl(configName: string, config?: DynamicConfig) {
+  private logConfigExposureImpl(configName: string, config: DynamicConfig) {
     const isManualExposure = !config;
-    const localConfig = config ?? this.getConfigImpl(configName, false);
+    const localConfig = config;
 
     this.logger.logConfigExposure(
       this.getCurrentUser(),
@@ -1075,88 +492,6 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       isManualExposure,
     );
   }
-
-  private getExperimentImpl(
-    experimentName: string,
-    keepDeviceValue: boolean,
-    ignoreOverrides: boolean,
-  ) {
-    this.ensureStoreLoaded();
-    if (typeof experimentName !== 'string' || experimentName.length === 0) {
-      throw new StatsigInvalidArgumentError(
-        'Must pass a valid string as the experimentName.',
-      );
-    }
-    return this.store.getExperiment(
-      experimentName,
-      keepDeviceValue,
-      ignoreOverrides,
-    );
-  }
-
-  private logExperimentExposureImpl(
-    experimentName: string,
-    keepDeviceValue: boolean,
-    config?: DynamicConfig,
-  ) {
-    const isManualExposure = !config;
-    const localConfig =
-      config ?? this.getExperimentImpl(experimentName, keepDeviceValue, false);
-
-    this.logger.logConfigExposure(
-      this.getCurrentUser(),
-      experimentName,
-      localConfig.getRuleID(),
-      localConfig._getSecondaryExposures(),
-      localConfig.getEvaluationDetails(),
-      isManualExposure,
-    );
-  }
-
-  private getLayerImpl(
-    logParameterFunction: LogParameterFunction | null,
-    layerName: string,
-    keepDeviceValue: boolean,
-  ): Layer {
-    this.ensureStoreLoaded();
-    if (typeof layerName !== 'string' || layerName.length === 0) {
-      throw new StatsigInvalidArgumentError(
-        'Must pass a valid string as the layerName.',
-      );
-    }
-
-    return this.store.getLayer(
-      logParameterFunction,
-      layerName,
-      keepDeviceValue,
-    );
-  }
-
-  private logLayerParameterExposureForLayer = (
-    layer: Layer,
-    parameterName: string,
-    isManualExposure: boolean = false,
-  ) => {
-    let allocatedExperiment = '';
-    let exposures = layer._getUndelegatedSecondaryExposures();
-    const isExplicit = layer._getExplicitParameters().includes(parameterName);
-    if (isExplicit) {
-      allocatedExperiment = layer._getAllocatedExperimentName();
-      exposures = layer._getSecondaryExposures();
-    }
-
-    this.logger.logLayerExposure(
-      this.getCurrentUser(),
-      layer.getName(),
-      layer.getRuleID(),
-      exposures,
-      allocatedExperiment,
-      parameterName,
-      isExplicit,
-      layer._getEvaluationDetails(),
-      isManualExposure,
-    );
-  };
 
   private getEmptyConfig(configName: string): DynamicConfig {
     return new DynamicConfig(

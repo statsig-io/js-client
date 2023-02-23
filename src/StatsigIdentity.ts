@@ -1,5 +1,3 @@
-import { v4 as uuidv4 } from 'uuid';
-
 import { _SDKPackageInfo } from './StatsigClient';
 import { StatsigUser } from './StatsigUser';
 import { STATSIG_STABLE_ID_KEY } from './utils/Constants';
@@ -49,7 +47,7 @@ export type UUID = {
 };
 
 type StatsigMetadata = {
-  sessionID: string;
+  sessionID?: string;
   sdkType: string;
   sdkVersion: string;
   stableID?: string;
@@ -67,7 +65,7 @@ export default class Identity {
   private platform: Platform | null = null;
   private nativeModules: NativeModules | null = null;
   private reactNativeUUID?: UUID;
-  private sdkType: string = 'js-client';
+  private sdkType: string = 'web-experiment-sdk';
   private sdkVersion: string;
 
   public constructor(
@@ -77,9 +75,8 @@ export default class Identity {
   ) {
     this.reactNativeUUID = reactNativeUUID;
     this.user = user;
-    this.sdkVersion = require('../package.json')?.version ?? '';
+    this.sdkVersion = '1.0.0';
     this.statsigMetadata = {
-      sessionID: this.getUUID(),
       sdkType: this.sdkType,
       sdkVersion: this.sdkVersion,
     };
@@ -88,8 +85,7 @@ export default class Identity {
     if (!StatsigAsyncStorage.asyncStorage) {
       stableID =
         stableID ??
-        StatsigLocalStorage.getItem(STATSIG_STABLE_ID_KEY) ??
-        this.getUUID();
+        StatsigLocalStorage.getItem(STATSIG_STABLE_ID_KEY) ?? '';
       StatsigLocalStorage.setItem(STATSIG_STABLE_ID_KEY, stableID);
     }
     if (stableID) {
@@ -101,7 +97,7 @@ export default class Identity {
     let stableID: string | null | undefined = this.statsigMetadata.stableID;
     if (!stableID) {
       stableID = await StatsigAsyncStorage.getItemAsync(STATSIG_STABLE_ID_KEY);
-      stableID = stableID ?? this.getUUID();
+      stableID = stableID ?? '';
     }
     StatsigAsyncStorage.setItemAsync(STATSIG_STABLE_ID_KEY, stableID);
     this.statsigMetadata.stableID = stableID;
@@ -128,7 +124,6 @@ export default class Identity {
 
   public updateUser(user: StatsigUser | null): void {
     this.user = user;
-    this.statsigMetadata.sessionID = this.getUUID();
   }
 
   public setSDKPackageInfo(SDKPackageInfo: _SDKPackageInfo): void {
@@ -159,10 +154,6 @@ export default class Identity {
         this.nativeModules.SettingsManager?.settings?.AppleLocale ||
         this.nativeModules.SettingsManager?.settings?.AppleLanguages[0];
     }
-  }
-
-  private getUUID(): string {
-    return (this.reactNativeUUID?.v4() as string) ?? uuidv4();
   }
 
   public setRNDeviceInfo(deviceInfo: DeviceInfo): void {

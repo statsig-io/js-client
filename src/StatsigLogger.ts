@@ -111,7 +111,7 @@ export default class StatsigLogger {
           event.addStatsigMetadata('currentPage', parts[0]);
         }
       }
-    } catch (_e) {}
+    } catch (_e) { }
 
     this.queue.push(event.toJsonObject());
 
