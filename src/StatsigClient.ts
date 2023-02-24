@@ -32,6 +32,7 @@ import Diagnostics, {
   DiagnosticsKey,
 } from './utils/Diagnostics';
 import ConsoleLogger from './utils/ConsoleLogger';
+import { now } from './utils/Timing';
 
 const MAX_VALUE_SIZE = 64;
 const MAX_OBJ_SIZE = 2048;
@@ -62,7 +63,7 @@ export type _SDKPackageInfo = {
 };
 
 export interface IStatsig {
-  initializeAsync(): Promise<void>;
+  initializeAsync(): Promise<InitializeMetadata>;
   checkGate(gateName: string, ignoreOverrides?: boolean): boolean;
   getConfig(configName: string, ignoreOverrides?: boolean): DynamicConfig;
   getExperiment(
@@ -110,15 +111,23 @@ export type StatsigOverrides = {
   layers: Record<string, Record<string, any>>;
 };
 
+export type InitializeMetadata = {
+  initDurationMs: number,
+  success: boolean,
+  message: string | null,
+}
+
 export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   // RN dependencies
   private static reactNativeUUID?: UUID;
   private appState: AppState | null = null;
   private currentAppState: AppStateStatus | null = null;
 
+  private startTime: number = 0;
+
   private ready: boolean;
   private initCalled: boolean = false;
-  private pendingInitPromise: Promise<void> | null = null;
+  private pendingInitPromise: Promise<InitializeMetadata> | null = null;
   private optionalLoggingSetup: boolean = false;
   private prefetchedUsersByCacheKey: Record<string, StatsigUser> = {};
 
@@ -214,10 +223,10 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     this.errorBoundary.setStatsigMetadata(this.getStatsigMetadata());
   }
 
-  public setInitializeValues(initializeValues: Record<string, unknown>): void {
-    this.errorBoundary.capture(
+  public setInitializeValues(initializeValues: Record<string, unknown>): InitializeMetadata {
+    return this.errorBoundary.capture(
       'setInitializeValues',
-      () => {
+      (): InitializeMetadata => {
         this.store.bootstrap(initializeValues);
         if (!this.ready) {
           // the sdk is usable and considered initialized when configured
@@ -229,24 +238,38 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         // so try to run whenever this is called
         this.handleOptionalLogging();
         this.logger.sendSavedRequests();
+        return {
+          initDurationMs: now() - this.startTime,
+          success: true,
+          message: null,
+        };
       },
       () => {
         this.ready = true;
         this.initCalled = true;
+        return {
+          initDurationMs: now() - this.startTime,
+          success: false,
+          message: "Caught exception while initializing from initializeValues",
+        }
       },
     );
   }
 
-  public async initializeAsync(): Promise<void> {
+  public async initializeAsync(): Promise<InitializeMetadata> {
+    this.startTime = now();
     return this.errorBoundary.capture(
       'initializeAsync',
-      async () => {
-        const startTime = Date.now();
+      async (): Promise<InitializeMetadata> => {
         if (this.pendingInitPromise != null) {
           return this.pendingInitPromise;
         }
         if (this.ready) {
-          return Promise.resolve();
+          return Promise.resolve({
+            initDurationMs: now() - this.startTime,
+            success: true,
+            message: "Client has already been initialized",
+          });
         }
         this.initializeDiagnostics.mark(
           DiagnosticsKey.OVERALL,
@@ -271,7 +294,11 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         }
 
         if (this.options.getLocalModeEnabled()) {
-          return Promise.resolve();
+          return Promise.resolve({
+            initDurationMs: now() - this.startTime,
+            success: true,
+            message: "local mode enabled - not issuing a network call to /initialize",
+          });
         }
 
         const completionCallback = (
@@ -280,12 +307,12 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         ) => {
           const cb = this.options.getInitCompletionCallback();
           if (cb) {
-            cb(Date.now() - startTime, success, message);
+            cb(now() - this.startTime, success, message);
           }
         };
 
         const user = this.identity.getUser();
-        this.pendingInitPromise = this.fetchAndSaveValues(
+        const pendingInit: Promise<InitializeMetadata> = this.fetchAndSaveValues(
           user,
           this.options.getPrefetchUsers(),
           completionCallback,
@@ -302,14 +329,18 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
             this.logger.logDiagnostics(user, this.initializeDiagnostics);
           }
         });
-
+        this.pendingInitPromise = pendingInit;
         this.handleOptionalLogging();
-        return this.pendingInitPromise;
+        return pendingInit;
       },
-      () => {
+      async (): Promise<InitializeMetadata> => {
         this.ready = true;
         this.initCalled = true;
-        return Promise.resolve();
+        return Promise.resolve({
+          initDurationMs: now() - this.startTime,
+          success: false,
+          message: "Caught exception while initializing",
+        });
       },
     );
   }
@@ -319,7 +350,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       return;
     }
 
-    return this.fetchAndSaveValues(null, users);
+    this.fetchAndSaveValues(null, users);
   }
 
   public getEvaluationDetails(): EvaluationDetails {
@@ -516,8 +547,8 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       if (this.shouldTrimParam(eventName, MAX_VALUE_SIZE)) {
         this.consoleLogger.info(
           'eventName is too long, trimming to ' +
-            MAX_VALUE_SIZE +
-            ' characters.',
+          MAX_VALUE_SIZE +
+          ' characters.',
         );
         eventName = eventName.substring(0, MAX_VALUE_SIZE);
       }
@@ -810,7 +841,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         if (errorObj != null && typeof errorObj === 'object') {
           try {
             errorObj = JSON.stringify(errorObj);
-          } catch (e) {}
+          } catch (e) { }
         }
         this.logger.logAppError(user, e.message ?? '', {
           filename: e.filename,
@@ -939,7 +970,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       | ((success: boolean, message: string | null) => void)
       | null = null,
     diagnostics?: Diagnostics,
-  ): Promise<void> {
+  ): Promise<InitializeMetadata> {
     if (prefetchUsers.length > 5) {
       this.consoleLogger.info('Cannot prefetch more than 5 users.');
     }
@@ -954,43 +985,60 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       sinceTime = this.store.getLastUpdateTime(user);
     }
 
-    return this.network
-      .fetchValues(
-        user,
-        sinceTime,
-        this.options.getInitTimeoutMs(),
-        async (json: Record<string, any>): Promise<void> => {
-          return this.errorBoundary.swallow('fetchAndSaveValues', async () => {
-            diagnostics?.mark(
-              DiagnosticsKey.INITIALIZE,
-              DiagnosticsEvent.START,
-              'process',
-            );
-            if (json?.has_updates) {
-              await this.store.save(user, json);
-            }
+    const networkPromise = new Promise<InitializeMetadata>(async (resolve, reject) => {
+      await this.network
+        .fetchValues(
+          user,
+          sinceTime,
+          this.options.getInitTimeoutMs(),
+          async (json: Record<string, any>) => {
+            return this.errorBoundary.capture('fetchAndSaveValues', async () => {
+              diagnostics?.mark(
+                DiagnosticsKey.INITIALIZE,
+                DiagnosticsEvent.START,
+                'process',
+              );
+              if (json?.has_updates) {
+                await this.store.save(user, json);
+              }
 
-            this.prefetchedUsersByCacheKey = {
-              ...this.prefetchedUsersByCacheKey,
-              ...keyedPrefetchUsers,
-            };
-            diagnostics?.mark(
-              DiagnosticsKey.INITIALIZE,
-              DiagnosticsEvent.END,
-              'process',
-            );
-          });
-        },
-        (e: Error) => {},
-        prefetchUsers.length === 0 ? diagnostics : undefined,
-        prefetchUsers.length > 0 ? keyedPrefetchUsers : undefined,
-      )
-      .then(() => {
-        completionCallback?.(true, null);
-      })
-      .catch((e) => {
-        completionCallback?.(false, e.message);
-      });
+              this.prefetchedUsersByCacheKey = {
+                ...this.prefetchedUsersByCacheKey,
+                ...keyedPrefetchUsers,
+              };
+              diagnostics?.mark(
+                DiagnosticsKey.INITIALIZE,
+                DiagnosticsEvent.END,
+                'process',
+              );
+              resolve({
+                initDurationMs: now() - this.startTime,
+                success: true,
+                message: null,
+              });
+              completionCallback?.(true, null);
+            }, async () => {
+              resolve({
+                initDurationMs: now() - this.startTime,
+                success: false,
+                message: "Encountered an exception while parsing the response",
+              });
+              completionCallback?.(false, "Encountered an exception while parsing the response");
+            });
+          },
+          (e: Error) => {
+            resolve({
+              initDurationMs: now() - this.startTime,
+              success: false,
+              message: "Network request failed " + e.message,
+            });
+            completionCallback?.(false, "Encountered an exception while parsing the response");
+          },
+          prefetchUsers.length === 0 ? diagnostics : undefined,
+          prefetchUsers.length > 0 ? keyedPrefetchUsers : undefined,
+        );
+    });
+    return networkPromise;
   }
 
   private checkGateImpl(

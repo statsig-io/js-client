@@ -1,7 +1,7 @@
 import DynamicConfig from './DynamicConfig';
 import { StatsigUninitializedError } from './Errors';
 import Layer from './Layer';
-import StatsigClient, { StatsigOverrides } from './StatsigClient';
+import StatsigClient, { InitializeMetadata, StatsigOverrides } from './StatsigClient';
 import StatsigRuntime from './StatsigRuntime';
 import { StatsigOptions } from './StatsigSDKOptions';
 import { EvaluationDetails, EvaluationReason } from './StatsigStore';
@@ -22,6 +22,7 @@ export type {
   AppStateEvent,
   AppStateStatus,
   _SDKPackageInfo as _SDKPackageInfo,
+  InitializeMetadata,
 } from './StatsigClient';
 export type {
   DeviceInfo,
@@ -54,13 +55,13 @@ export default class Statsig {
     StatsigRuntime.encodeInitializeCall = value;
   }
 
-  private constructor() {}
+  private constructor() { }
 
   public static async initialize(
     sdkKey: string,
     user?: StatsigUser | null,
     options?: StatsigOptions | null,
-  ): Promise<void> {
+  ): Promise<InitializeMetadata> {
     const inst = Statsig.instance ?? new StatsigClient(sdkKey, user, options);
 
     if (!Statsig.instance) {
@@ -76,8 +77,8 @@ export default class Statsig {
 
   public static setInitializeValues(
     initializeValues: Record<string, unknown>,
-  ): void {
-    Statsig.getClientX().setInitializeValues(initializeValues);
+  ): InitializeMetadata {
+    return Statsig.getClientX().setInitializeValues(initializeValues);
   }
 
   public static checkGate(
