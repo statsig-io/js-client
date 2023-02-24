@@ -350,7 +350,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       return;
     }
 
-    this.fetchAndSaveValues(null, users);
+    await this.fetchAndSaveValues(null, users);
   }
 
   public getEvaluationDetails(): EvaluationDetails {
@@ -587,7 +587,6 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         );
         const foundCacheValue = this.store.updateUser(isUserPrefetched);
         this.logger.resetDedupeKeys();
-
         if (foundCacheValue && isUserPrefetched) {
           return Promise.resolve(true);
         }
@@ -986,57 +985,66 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     }
 
     const networkPromise = new Promise<InitializeMetadata>(async (resolve, reject) => {
-      await this.network
-        .fetchValues(
-          user,
-          sinceTime,
-          this.options.getInitTimeoutMs(),
-          async (json: Record<string, any>) => {
-            return this.errorBoundary.capture('fetchAndSaveValues', async () => {
-              diagnostics?.mark(
-                DiagnosticsKey.INITIALIZE,
-                DiagnosticsEvent.START,
-                'process',
-              );
-              if (json?.has_updates) {
-                await this.store.save(user, json);
-              }
+      this.errorBoundary.capture(
+        "networkPromiseAndSaveValues",
+        async () => {
+          await this.network
+            .fetchValues(
+              user,
+              sinceTime,
+              this.options.getInitTimeoutMs(),
+              async (json: Record<string, any>) => {
+                return this.errorBoundary.swallow('fetchAndSaveValues', async () => {
+                  diagnostics?.mark(
+                    DiagnosticsKey.INITIALIZE,
+                    DiagnosticsEvent.START,
+                    'process',
+                  );
+                  if (json?.has_updates) {
+                    await this.store.save(user, json);
+                  }
 
-              this.prefetchedUsersByCacheKey = {
-                ...this.prefetchedUsersByCacheKey,
-                ...keyedPrefetchUsers,
-              };
-              diagnostics?.mark(
-                DiagnosticsKey.INITIALIZE,
-                DiagnosticsEvent.END,
-                'process',
-              );
+                  this.prefetchedUsersByCacheKey = {
+                    ...this.prefetchedUsersByCacheKey,
+                    ...keyedPrefetchUsers,
+                  };
+                  diagnostics?.mark(
+                    DiagnosticsKey.INITIALIZE,
+                    DiagnosticsEvent.END,
+                    'process',
+                  );
+                });
+              },
+              (e: Error) => { },
+              prefetchUsers.length === 0 ? diagnostics : undefined,
+              prefetchUsers.length > 0 ? keyedPrefetchUsers : undefined,
+            ).then(() => {
+              completionCallback?.(true, null);
               resolve({
                 initDurationMs: now() - this.startTime,
                 success: true,
                 message: null,
               });
-              completionCallback?.(true, null);
-            }, async () => {
+            })
+            .catch((e) => {
+              completionCallback?.(false, e.message);
               resolve({
                 initDurationMs: now() - this.startTime,
                 success: false,
-                message: "Encountered an exception while parsing the response",
+                message: e.message,
               });
-              completionCallback?.(false, "Encountered an exception while parsing the response");
             });
-          },
-          (e: Error) => {
-            resolve({
-              initDurationMs: now() - this.startTime,
-              success: false,
-              message: "Network request failed " + e.message,
-            });
-            completionCallback?.(false, "Encountered an exception while parsing the response");
-          },
-          prefetchUsers.length === 0 ? diagnostics : undefined,
-          prefetchUsers.length > 0 ? keyedPrefetchUsers : undefined,
-        );
+        },
+        async () => {
+          completionCallback?.(false, "Caught exception while initializing");
+          resolve({
+            initDurationMs: now() - this.startTime,
+            success: false,
+            message: "Caught exception while initializing",
+          });
+        }
+      );
+
     });
     return networkPromise;
   }
