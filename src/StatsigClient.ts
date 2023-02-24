@@ -224,6 +224,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   }
 
   public setInitializeValues(initializeValues: Record<string, unknown>): InitializeMetadata {
+    this.startTime = now();
     return this.errorBoundary.capture(
       'setInitializeValues',
       (): InitializeMetadata => {

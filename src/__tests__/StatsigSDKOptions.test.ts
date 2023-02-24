@@ -5,7 +5,7 @@ import Statsig, { StatsigClient } from '../index';
 
 describe('Test Statsig options', () => {
   test('init completion callback when there is an error', async () => {
-    expect.assertions(4);
+    expect.assertions(7);
     let initTime, initSuccess, initMessage;
 
     global.fetch = jest.fn((url, params) => {
@@ -23,7 +23,7 @@ describe('Test Statsig options', () => {
       });
     });
 
-    await Statsig.initialize(
+    const result = await Statsig.initialize(
       'client-key',
       { userID: 'jkw' },
       {
@@ -34,6 +34,11 @@ describe('Test Statsig options', () => {
         },
       },
     );
+
+    expect(result.initDurationMs).toBeGreaterThanOrEqual(100);
+    expect(result.success).toEqual(false);
+    expect(result.message).toEqual('401: error!');
+
     expect(typeof initTime).toEqual('number');
     expect(initTime).toBeGreaterThanOrEqual(100);
     expect(initSuccess).toEqual(false);
@@ -41,7 +46,7 @@ describe('Test Statsig options', () => {
   });
 
   test('init completion callback when it succeeds', async () => {
-    expect.assertions(4);
+    expect.assertions(7);
     let initTime, initSuccess, initMessage;
 
     global.fetch = jest.fn((url, params) => {
@@ -70,16 +75,20 @@ describe('Test Statsig options', () => {
         },
       },
     );
-    await c.initializeAsync();
+    const result = await c.initializeAsync();
 
     expect(typeof initTime).toEqual('number');
     expect(initTime).toBeGreaterThanOrEqual(100);
     expect(initSuccess).toEqual(true);
     expect(initMessage).toBeNull();
+
+    expect(result.initDurationMs).toBeGreaterThanOrEqual(100);
+    expect(result.success).toEqual(true);
+    expect(result.message).toBeNull();
   });
 
   test('init completion callback when it times out', async () => {
-    expect.assertions(5);
+    expect.assertions(9);
     let initTime, initSuccess, initMessage;
 
     global.fetch = jest.fn((url, params) => {
@@ -109,7 +118,12 @@ describe('Test Statsig options', () => {
         },
       },
     );
-    await c.initializeAsync();
+    const result = await c.initializeAsync();
+
+    expect(result.initDurationMs).toBeGreaterThanOrEqual(10);
+    expect(result.initDurationMs).toBeLessThanOrEqual(1000);
+    expect(result.success).toEqual(false);
+    expect(result.message).toEqual('The initialization timeout of 10ms has been hit before the network request has completed.');
 
     expect(typeof initTime).toEqual('number');
     expect(initTime).toBeGreaterThanOrEqual(10);
