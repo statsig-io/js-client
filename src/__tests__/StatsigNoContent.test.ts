@@ -3,7 +3,7 @@
  */
 
 import StatsigClient from '../StatsigClient';
-import Statsig from '..';
+import Statsig, { EvaluationReason } from '..';
 
 describe('Verify behavior of StatsigClient when 204 returned from initialize', () => {
   const sdkKey = 'client-clienttestkey';
@@ -52,10 +52,12 @@ describe('Verify behavior of StatsigClient when 204 returned from initialize', (
   });
 
   test('Test status 204 response is a noop', async () => {
-    expect.assertions(1);
+    expect.assertions(2);
     const statsig = new StatsigClient(sdkKey, { userID: '123' });
     await statsig.initializeAsync();
 
     expect(statsig.checkGate('test_gate')).toBe(false);
+    // @ts-ignore
+    expect(statsig.getStore().reason).toBe(EvaluationReason.CacheSynced);
   });
 });

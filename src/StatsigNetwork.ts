@@ -281,7 +281,7 @@ export default class StatsigNetwork {
         if (res.ok) {
           const networkResponse = res as NetworkResponse;
           if (res.status === NO_CONTENT) {
-            networkResponse.data = { has_updates: false };
+            networkResponse.data = { has_updates: false, is_no_content: true };
           } else {
             const text = await res.text();
             networkResponse.data = JSON.parse(text);

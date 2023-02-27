@@ -23,6 +23,7 @@ export enum EvaluationReason {
   Unrecognized = 'Unrecognized',
   Uninitialized = 'Uninitialized',
   Error = 'Error',
+  CacheSynced = 'CacheSynced',
 }
 
 export type EvaluationDetails = {
@@ -230,6 +231,10 @@ export default class StatsigStore {
         StatsigLocalStorage.removeItem(OVERRIDES_STORE_KEY);
       }
     }
+  }
+
+  public setEvaluationReason(evalReason: EvaluationReason) {
+    this.reason = evalReason;
   }
 
   public async save(
