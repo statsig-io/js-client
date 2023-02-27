@@ -58,6 +58,6 @@ describe('Verify behavior of StatsigClient when 204 returned from initialize', (
 
     expect(statsig.checkGate('test_gate')).toBe(false);
     // @ts-ignore
-    expect(statsig.getStore().reason).toBe(EvaluationReason.CacheSynced);
+    expect(statsig.getStore().reason).toBe(EvaluationReason.NetworkNotModified);
   });
 });
