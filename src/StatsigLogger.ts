@@ -385,20 +385,24 @@ export default class StatsigLogger {
       .catch((error) => {
         if (typeof error.text === 'function') {
           error.text().then((errorText: string) => {
-            const logFailureEvent = new LogEvent(LOG_FAILURE_EVENT);
-            logFailureEvent.setMetadata({
-              error: `${error.status}: ${errorText}`,
-            });
-            logFailureEvent.setUser(processor.sdkInternal.getCurrentUser());
-            processor.appendFailureLog(logFailureEvent, oldQueue);
+            this.sdkInternal
+              .getErrorBoundary()
+              .logError(LOG_FAILURE_EVENT, error, async () => {
+                return {
+                  eventCount: oldQueue.length,
+                  error: errorText,
+                };
+              });
           });
         } else {
-          const logFailureEvent = new LogEvent(LOG_FAILURE_EVENT);
-          logFailureEvent.setMetadata({
-            error: error.message,
-          });
-          logFailureEvent.setUser(processor.sdkInternal.getCurrentUser());
-          processor.appendFailureLog(logFailureEvent, oldQueue);
+          this.sdkInternal
+            .getErrorBoundary()
+            .logError(LOG_FAILURE_EVENT, error, async () => {
+              return {
+                eventCount: oldQueue.length,
+                error: error.message,
+              };
+            });
         }
       })
       .finally(async () => {
