@@ -121,6 +121,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   private pendingInitPromise: Promise<void> | null = null;
   private optionalLoggingSetup: boolean = false;
   private prefetchedUsersByCacheKey: Record<string, StatsigUser> = {};
+  private startTime;
 
   private initializeDiagnostics: Diagnostics;
 
@@ -192,6 +193,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         'Invalid key provided.  You must use a Client SDK Key from the Statsig console to initialize the sdk',
       );
     }
+    this.startTime = Date.now();
     this.errorBoundary = new ErrorBoundary(sdkKey);
     this.ready = false;
     this.sdkKey = sdkKey;
@@ -229,19 +231,27 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         // so try to run whenever this is called
         this.handleOptionalLogging();
         this.logger.sendSavedRequests();
+        const cb = this.options.getInitCompletionCallback();
+        if (cb) {
+          cb(Date.now() - this.startTime, true, null);
+        }
       },
       () => {
         this.ready = true;
         this.initCalled = true;
+        const cb = this.options.getInitCompletionCallback();
+        if (cb) {
+          cb(Date.now() - this.startTime, false, "Caught an exception during setInitializeValues");
+        }
       },
     );
+
   }
 
   public async initializeAsync(): Promise<void> {
     return this.errorBoundary.capture(
       'initializeAsync',
       async () => {
-        const startTime = Date.now();
         if (this.pendingInitPromise != null) {
           return this.pendingInitPromise;
         }
@@ -280,7 +290,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         ) => {
           const cb = this.options.getInitCompletionCallback();
           if (cb) {
-            cb(Date.now() - startTime, success, message);
+            cb(Date.now() - this.startTime, success, message);
           }
         };
 
