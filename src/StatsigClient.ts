@@ -32,6 +32,7 @@ import Diagnostics, {
   DiagnosticsKey,
 } from './utils/Diagnostics';
 import ConsoleLogger from './utils/ConsoleLogger';
+import { now } from './utils/Timing';
 
 const MAX_VALUE_SIZE = 64;
 const MAX_OBJ_SIZE = 2048;
@@ -193,7 +194,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         'Invalid key provided.  You must use a Client SDK Key from the Statsig console to initialize the sdk',
       );
     }
-    this.startTime = Date.now();
+    this.startTime = now();
     this.errorBoundary = new ErrorBoundary(sdkKey);
     this.ready = false;
     this.sdkKey = sdkKey;
@@ -233,7 +234,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         this.logger.sendSavedRequests();
         const cb = this.options.getInitCompletionCallback();
         if (cb) {
-          cb(Date.now() - this.startTime, true, null);
+          cb(now() - this.startTime, true, null);
         }
       },
       () => {
@@ -241,7 +242,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         this.initCalled = true;
         const cb = this.options.getInitCompletionCallback();
         if (cb) {
-          cb(Date.now() - this.startTime, false, "Caught an exception during setInitializeValues");
+          cb(now() - this.startTime, false, "Caught an exception during setInitializeValues");
         }
       },
     );
@@ -290,7 +291,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         ) => {
           const cb = this.options.getInitCompletionCallback();
           if (cb) {
-            cb(Date.now() - this.startTime, success, message);
+            cb(now() - this.startTime, success, message);
           }
         };
 
