@@ -119,4 +119,43 @@ describe('Test Statsig options', () => {
       'The initialization timeout of 10ms has been hit before the network request has completed.',
     );
   });
+
+  test('init completion callback when bootstrapping', async () => {
+    expect.assertions(4);
+    let initTime, initSuccess, initMessage;
+
+    global.fetch = jest.fn((url, params) => {
+      return new Promise((resolve, reject) => {
+        setTimeout(
+          () =>
+            // @ts-ignore
+            resolve({
+              ok: true,
+              status: 200,
+              text: () => Promise.resolve(JSON.stringify({})),
+            }),
+          100,
+        );
+      });
+    });
+
+    const c = new StatsigClient(
+      'client-key',
+      { userID: 'jkw' },
+      {
+        initTimeoutMs: 10,
+        initCompletionCallback: (time, success, message) => {
+          initTime = time;
+          initSuccess = success;
+          initMessage = message;
+        },
+      },
+    );
+    c.setInitializeValues({});
+
+    expect(typeof initTime).toEqual('number');
+    expect(initTime).toBeLessThanOrEqual(10);
+    expect(initSuccess).toEqual(true);
+    expect(initMessage).toBeNull();
+  });
 });

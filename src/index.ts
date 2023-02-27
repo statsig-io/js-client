@@ -54,7 +54,7 @@ export default class Statsig {
     StatsigRuntime.encodeInitializeCall = value;
   }
 
-  private constructor() {}
+  private constructor() { }
 
   public static async initialize(
     sdkKey: string,
