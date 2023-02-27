@@ -54,7 +54,7 @@ export default class Statsig {
     StatsigRuntime.encodeInitializeCall = value;
   }
 
-  private constructor() {}
+  private constructor() { }
 
   public static async initialize(
     sdkKey: string,
@@ -289,6 +289,14 @@ export default class Statsig {
    */
   public static getOverrides(): Record<string, any> {
     return Statsig.getClientX().getOverrides();
+  }
+
+  /**
+   * 
+   * @returns true if initialize has already been called, false otherwise
+   */
+  public static initializeCalled(): boolean {
+    return Statsig.instance != null && Statsig.instance.initializeCalled();
   }
 
   private static getClientX(): StatsigClient {

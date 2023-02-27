@@ -51,7 +51,11 @@ describe('Statsig', () => {
       allocated_experiment_name: expHash,
     };
 
+    expect(Statsig.initializeCalled()).toBe(false);
+
     await Statsig.initialize('client-key', { userID: 'dloomb' });
+
+    expect(Statsig.initializeCalled()).toBe(true);
 
     expect(Statsig.getExperiment('exp', true).get('key', '')).toEqual('exp_v1');
     expect(Statsig.getLayer('layer', true).get('key', '')).toEqual('layer_v1');
