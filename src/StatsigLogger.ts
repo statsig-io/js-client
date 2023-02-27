@@ -404,7 +404,7 @@ export default class StatsigLogger {
               };
             });
         }
-        processor.appendFailureLog(LOG_FAILURE_EVENT, oldQueue);
+        processor.newFailedRequest(LOG_FAILURE_EVENT, oldQueue);
       })
       .finally(async () => {
 
@@ -520,7 +520,7 @@ export default class StatsigLogger {
     }
   }
 
-  private appendFailureLog(name: string, queue: object[]): void {
+  private newFailedRequest(name: string, queue: object[]): void {
     if (this.loggedErrors.has(name)) {
       return;
     }

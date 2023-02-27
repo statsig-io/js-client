@@ -65,7 +65,7 @@ describe('Verify behavior of StatsigLogger', () => {
     expect(client.getLogger().flushInterval).not.toBeNull();
 
     // @ts-ignore trust me, the method exists
-    const spyOnFailureLog = jest.spyOn(logger, 'appendFailureLog');
+    const spyOnFailureLog = jest.spyOn(logger, 'newFailedRequest');
     const spyOnErrorBoundary = jest.spyOn(client.getErrorBoundary(), 'logError');
     return client.initializeAsync().then(async () => {
       logger.log(new LogEvent('event'));
