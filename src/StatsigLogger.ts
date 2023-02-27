@@ -404,8 +404,10 @@ export default class StatsigLogger {
               };
             });
         }
+        processor.appendFailureLog(LOG_FAILURE_EVENT, oldQueue);
       })
       .finally(async () => {
+
         if (isClosing) {
           if (this.queue.length > 0) {
             this.addFailedRequest({
@@ -518,12 +520,11 @@ export default class StatsigLogger {
     }
   }
 
-  private appendFailureLog(event: LogEvent, queue: object[]): void {
-    if (this.loggedErrors.has(event.getName())) {
+  private appendFailureLog(name: string, queue: object[]): void {
+    if (this.loggedErrors.has(name)) {
       return;
     }
-    this.loggedErrors.add(event.getName());
-    queue.push(event);
+    this.loggedErrors.add(name);
 
     this.failedLogEvents.push({
       events: queue,

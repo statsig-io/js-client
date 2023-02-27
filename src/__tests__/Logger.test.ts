@@ -51,7 +51,7 @@ describe('Verify behavior of StatsigLogger', () => {
   });
 
   test('Test constructor', () => {
-    expect.assertions(8);
+    expect.assertions(11);
     const client = new StatsigClient(
       sdkKey,
       { userID: 'user_key' },
@@ -66,6 +66,7 @@ describe('Verify behavior of StatsigLogger', () => {
 
     // @ts-ignore trust me, the method exists
     const spyOnFailureLog = jest.spyOn(logger, 'appendFailureLog');
+    const spyOnErrorBoundary = jest.spyOn(client.getErrorBoundary(), 'logError');
     return client.initializeAsync().then(async () => {
       logger.log(new LogEvent('event'));
       logger.log(new LogEvent('event'));
@@ -83,14 +84,18 @@ describe('Verify behavior of StatsigLogger', () => {
         logger.log(new LogEvent('event'));
       }
       expect(spyOnFlush).toHaveBeenCalledTimes(1);
+      expect(spyOnLog).toHaveBeenCalledTimes(101);
       await waitAllPromises();
       // posting logs network request fails, causing a log event failure
+      expect(spyOnErrorBoundary).toHaveBeenCalledTimes(1);
       expect(spyOnLog).toHaveBeenCalledTimes(101);
       expect(spyOnFailureLog).toHaveBeenCalledTimes(1);
-      // manually flush again, failing again, but we dont log a second time
+      // manually flush again, failing again
       logger.flush();
       await waitAllPromises();
+      // we dont log to the logger, but we do log to error boundary
       expect(spyOnLog).toHaveBeenCalledTimes(101);
+      expect(spyOnErrorBoundary).toHaveBeenCalledTimes(2);
 
       const elevenminslater = Date.now() + 11 * 60 * 1000;
       jest.spyOn(global.Date, 'now').mockImplementation(() => elevenminslater);
