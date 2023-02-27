@@ -969,7 +969,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
             if (json?.has_updates) {
               await this.store.save(user, json);
             } else if (json?.is_no_content) {
-              this.store.setEvaluationReason(EvaluationReason.CacheSynced);
+              this.store.setEvaluationReason(EvaluationReason.NetworkNotModified);
             }
 
             this.prefetchedUsersByCacheKey = {

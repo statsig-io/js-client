@@ -23,7 +23,7 @@ export enum EvaluationReason {
   Unrecognized = 'Unrecognized',
   Uninitialized = 'Uninitialized',
   Error = 'Error',
-  CacheSynced = 'CacheSynced',
+  NetworkNotModified = 'NetworkNotModified',
 }
 
 export type EvaluationDetails = {
