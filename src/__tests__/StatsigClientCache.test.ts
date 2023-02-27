@@ -58,11 +58,13 @@ describe('Verify behavior of StatsigClient', () => {
   });
 
   test('cache used before initialize resolves, then network result used', async () => {
-    expect.assertions(4);
+    expect.assertions(7);
     const statsig = new StatsigClient(sdkKey, { userID: '123' });
     await statsig.getStore().save({ userID: '123' }, values);
-
+    expect(statsig.initializeCalled()).toBe(false)
     const init = statsig.initializeAsync();
+
+    expect(statsig.initializeCalled()).toBe(true);
 
     // test_gate is true from the cache
     expect(statsig.checkGate('test_gate')).toBe(true);
@@ -71,6 +73,7 @@ describe('Verify behavior of StatsigClient', () => {
     ).toEqual('cache');
     jest.advanceTimersByTime(2000);
     await init;
+    expect(statsig.initializeCalled()).toBe(true)
     jest.advanceTimersByTime(2000);
     expect(statsig.checkGate('test_gate')).toBe(false);
     expect(
