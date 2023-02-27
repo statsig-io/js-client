@@ -385,23 +385,29 @@ export default class StatsigLogger {
       .catch((error) => {
         if (typeof error.text === 'function') {
           error.text().then((errorText: string) => {
-            const logFailureEvent = new LogEvent(LOG_FAILURE_EVENT);
-            logFailureEvent.setMetadata({
-              error: `${error.status}: ${errorText}`,
-            });
-            logFailureEvent.setUser(processor.sdkInternal.getCurrentUser());
-            processor.appendFailureLog(logFailureEvent, oldQueue);
+            this.sdkInternal
+              .getErrorBoundary()
+              .logError(LOG_FAILURE_EVENT, error, async () => {
+                return {
+                  eventCount: oldQueue.length,
+                  error: errorText,
+                };
+              });
           });
         } else {
-          const logFailureEvent = new LogEvent(LOG_FAILURE_EVENT);
-          logFailureEvent.setMetadata({
-            error: error.message,
-          });
-          logFailureEvent.setUser(processor.sdkInternal.getCurrentUser());
-          processor.appendFailureLog(logFailureEvent, oldQueue);
+          this.sdkInternal
+            .getErrorBoundary()
+            .logError(LOG_FAILURE_EVENT, error, async () => {
+              return {
+                eventCount: oldQueue.length,
+                error: error.message,
+              };
+            });
         }
+        processor.newFailedRequest(LOG_FAILURE_EVENT, oldQueue);
       })
       .finally(async () => {
+
         if (isClosing) {
           if (this.queue.length > 0) {
             this.addFailedRequest({
@@ -514,12 +520,11 @@ export default class StatsigLogger {
     }
   }
 
-  private appendFailureLog(event: LogEvent, queue: object[]): void {
-    if (this.loggedErrors.has(event.getName())) {
+  private newFailedRequest(name: string, queue: object[]): void {
+    if (this.loggedErrors.has(name)) {
       return;
     }
-    this.loggedErrors.add(event.getName());
-    queue.push(event);
+    this.loggedErrors.add(name);
 
     this.failedLogEvents.push({
       events: queue,
