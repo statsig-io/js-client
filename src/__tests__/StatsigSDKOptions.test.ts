@@ -121,8 +121,9 @@ describe('Test Statsig options', () => {
   });
 
   test('init completion callback when bootstrapping', async () => {
-    expect.assertions(4);
+    expect.assertions(6);
     let initTime, initSuccess, initMessage;
+    let timesCalled = 0;
 
     global.fetch = jest.fn((url, params) => {
       return new Promise((resolve, reject) => {
@@ -148,6 +149,7 @@ describe('Test Statsig options', () => {
           initTime = time;
           initSuccess = success;
           initMessage = message;
+          timesCalled++;
         },
       },
     );
@@ -157,5 +159,9 @@ describe('Test Statsig options', () => {
     expect(initTime).toBeLessThanOrEqual(10);
     expect(initSuccess).toEqual(true);
     expect(initMessage).toBeNull();
+    expect(timesCalled).toEqual(1);
+
+    c.setInitializeValues({});
+    expect(timesCalled).toEqual(1);
   });
 });
