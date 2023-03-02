@@ -222,17 +222,21 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       'setInitializeValues',
       () => {
         this.store.bootstrap(initializeValues);
+        let cb = null;
         if (!this.ready) {
           // the sdk is usable and considered initialized when configured
           // with initializeValues
           this.ready = true;
           this.initCalled = true;
+
+          // only callback on the first time initialize values are set and the
+          // sdk is usable
+          cb = this.options.getInitCompletionCallback();
         }
         // we wont have access to window/document/localStorage if these run on the server
         // so try to run whenever this is called
         this.handleOptionalLogging();
         this.logger.sendSavedRequests();
-        const cb = this.options.getInitCompletionCallback();
         if (cb) {
           cb(now() - this.startTime, true, null);
         }
