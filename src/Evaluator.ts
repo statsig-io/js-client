@@ -9,9 +9,14 @@ const USER_BUCKET_COUNT = 1000;
 
 export default class Evaluator {
   private specs: Record<string, ConfigSpec>;
+  private overrides: Record<string, {
+    groupName: string,
+    params: Record<string, unknown>
+  }>;
 
   public constructor(specs: Record<string, unknown>) {
     this.specs = {};
+    this.overrides = {};
     for (const spec in specs) {
       try {
         const rawSpec: Record<string, unknown> = specs[spec] as Record<string, unknown>;
@@ -21,7 +26,19 @@ export default class Evaluator {
     }
   }
 
+  public overrideConfig(configName: string, groupName: string, params: Record<string, unknown>, ) {
+    this.overrides[configName] = {
+      groupName: groupName,
+      params: params
+    };
+  }
+
   public async getConfig(user: StatsigUser, configName: string): Promise<ConfigEvaluation> {
+    if (this.overrides[configName]) {
+      const evaluation = new ConfigEvaluation(true, `Override:${this.overrides[configName].groupName}`, [], this.overrides[configName].params);
+      evaluation.withEvaluationReason(EvaluationReason.LocalOverride);
+      return evaluation;
+    }
     return await this._evalConfig(user, this.specs[configName]);
   }
 

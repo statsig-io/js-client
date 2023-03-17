@@ -80,6 +80,10 @@ export default class Statsig {
     Statsig.getClientX().setInitializeValues(initializeValues);
   }
 
+  public static overrideWebExperiment(experimentName: string, groupName: string, params: Record<string, unknown>): void {
+    Statsig.getClientX().overrideWebExperiment(experimentName, groupName, params);
+  }
+
   public static async genWebExperiment(experimentName: string): Promise<DynamicConfig> {
     return await Statsig.getClientX().genWebExperiment(experimentName);
   }

@@ -330,6 +330,10 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     return this.store.getGlobalEvaluationDetails();
   }
 
+  public overrideWebExperiment(experimentName: string, groupName: string, params: Record<string, unknown>): void {
+    this.evaluator.overrideConfig(experimentName, groupName, params);
+  }
+
   public async genWebExperiment(experimentName: string): Promise<DynamicConfig> {
     return this.errorBoundary.capture(
       'genWebExperiment',
