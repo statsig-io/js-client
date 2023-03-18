@@ -10,6 +10,7 @@ export default class ConfigEvaluation {
   public fetch_from_server: boolean;
   public undelegated_secondary_exposures: Record<string, string>[] | undefined;
   public is_experiment_group: boolean;
+  public group_name: string | null = null;
   public evaluation_details: EvaluationDetails;
 
   constructor(
@@ -39,6 +40,11 @@ export default class ConfigEvaluation {
       time: Date.now(),
       reason: EvaluationReason.Uninitialized,
     };
+  }
+
+  public withGroupName(name: string | null) {
+    this.group_name = name;
+    return this;
   }
 
   public withEvaluationReason(

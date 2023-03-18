@@ -181,6 +181,7 @@ export default class StatsigLogger {
     secondaryExposures: Record<string, string>[],
     details: EvaluationDetails,
     isManualExposure: boolean,
+    groupName: string | null,
   ) {
     const dedupeKey = configName + ruleID + details.reason;
     if (!this.shouldLogExposure(dedupeKey)) {
@@ -192,6 +193,7 @@ export default class StatsigLogger {
       ruleID: ruleID,
       reason: details.reason,
       time: details.time,
+      group: groupName,
     };
 
     if (isManualExposure) {
@@ -203,6 +205,17 @@ export default class StatsigLogger {
     configExposure.setMetadata(metadata);
     configExposure.setSecondaryExposures(secondaryExposures);
     this.log(configExposure);
+
+    // @ts-ignore
+    if (typeof window !== 'undefined' && window && window.dataLayer) {
+      // @ts-ignore
+      if (!window.dataLayer.statsigExposures) {
+        // @ts-ignore
+        window.dataLayer.statsigExposures = [];
+      }
+      // @ts-ignore
+      window.dataLayer.statsigExposures.push(configExposure.toJsonObject())
+    }
   }
 
   public logLayerExposure(

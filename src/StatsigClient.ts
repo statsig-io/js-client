@@ -33,6 +33,7 @@ import Diagnostics, {
 } from './utils/Diagnostics';
 import ConsoleLogger from './utils/ConsoleLogger';
 import Evaluator from './Evaluator';
+import ConfigEvaluation from './ConfigEvaluation';
 
 const MAX_VALUE_SIZE = 64;
 const MAX_OBJ_SIZE = 2048;
@@ -346,7 +347,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
           evaluation.evaluation_details,
           evaluation.secondary_exposures,
         );
-        this.logConfigExposureImpl(experimentName, result);
+        this.logConfigExposureImpl(experimentName, result, evaluation);
         return result;
       },
       () => Promise.resolve(this.getEmptyConfig(experimentName)),
@@ -1066,7 +1067,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     return this.store.getConfig(configName, ignoreOverrides);
   }
 
-  private logConfigExposureImpl(configName: string, config?: DynamicConfig) {
+  private logConfigExposureImpl(configName: string, config?: DynamicConfig, evaluation: ConfigEvaluation | null = null) {
     const isManualExposure = !config;
     const localConfig = config ?? this.getConfigImpl(configName, false);
 
@@ -1077,6 +1078,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       localConfig._getSecondaryExposures(),
       localConfig.getEvaluationDetails(),
       isManualExposure,
+      evaluation?.group_name ?? null,
     );
   }
 
@@ -1114,6 +1116,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       localConfig._getSecondaryExposures(),
       localConfig.getEvaluationDetails(),
       isManualExposure,
+      null
     );
   }
 

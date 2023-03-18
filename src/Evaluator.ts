@@ -26,7 +26,7 @@ export default class Evaluator {
     }
   }
 
-  public overrideConfig(configName: string, groupName: string, params: Record<string, unknown>, ) {
+  public overrideConfig(configName: string, groupName: string, params: Record<string, unknown>) {
     this.overrides[configName] = {
       groupName: groupName,
       params: params
@@ -37,6 +37,7 @@ export default class Evaluator {
     if (this.overrides[configName]) {
       const evaluation = new ConfigEvaluation(true, `Override:${this.overrides[configName].groupName}`, [], this.overrides[configName].params);
       evaluation.withEvaluationReason(EvaluationReason.LocalOverride);
+      evaluation.withGroupName(this.overrides[configName].groupName);
       return evaluation;
     }
     return await this._evalConfig(user, this.specs[configName]);
@@ -90,6 +91,7 @@ export default class Evaluator {
           config.explicitParameters,
           ruleResult.config_delegate,
         );
+        evaluation.withGroupName(ruleResult.group_name);
         evaluation.setIsExperimentGroup(ruleResult.is_experiment_group);
         return evaluation;
       }
@@ -151,6 +153,7 @@ export default class Evaluator {
       secondaryExposures,
       rule.returnValue as Record<string, unknown>,
     );
+    evaluation.withGroupName(rule.groupName);
     evaluation.setIsExperimentGroup(rule.isExperimentGroup ?? false);
     return evaluation;
   }

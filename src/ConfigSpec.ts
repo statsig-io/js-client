@@ -51,6 +51,7 @@ export class ConfigRule {
   public idType: string;
   public configDelegate: string | null;
   public isExperimentGroup?: boolean;
+  public groupName: string | null;
 
   constructor(ruleJSON: Record<string, unknown>) {
     this.name = ruleJSON.name as string;
@@ -65,6 +66,7 @@ export class ConfigRule {
     if (ruleJSON.isExperimentGroup !== null) {
       this.isExperimentGroup = ruleJSON.isExperimentGroup as boolean;
     }
+    this.groupName = ruleJSON.groupName as string ?? null;
   }
 
   parseConditions(conditionsJSON: unknown) {
