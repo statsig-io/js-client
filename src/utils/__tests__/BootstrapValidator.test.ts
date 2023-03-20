@@ -75,7 +75,9 @@ describe('BootstrapValidator', () => {
     const result = BootstrapValidator.isValid(
       {},
       {
-        evaluated_keys: {workID: 'a-work-id'},
+        evaluated_keys: {
+          customIDs: {workID: 'a-work-id'},
+        }
       },
     );
 
@@ -115,8 +117,8 @@ describe('BootstrapValidator', () => {
       {
         evaluated_keys: {
           userID: 'a-user-id',
+          stableID: 'an-invalid-stable-id',
           customIDs: {
-            stableID: 'an-invalid-stable-id',
             workID: 'a-work-id',
           },
         },

@@ -10,16 +10,20 @@ export default abstract class BootstrapValidator {
       if (!evaluatedKeys || typeof evaluatedKeys !== 'object') {
         return true;
       }
+      const evaluatedKeysRecord = evaluatedKeys as Record<string, unknown>;
+      const keys = BootstrapValidator.copyObject({
+          userID: evaluatedKeysRecord?.userID,
+          customIDs: evaluatedKeysRecord?.customIDs,
+      });
 
-      const keys = BootstrapValidator.copyObject(evaluatedKeys);
-      const userCopy = BootstrapValidator.copyObject(
+      const userToCompare = user == null ? null : BootstrapValidator.copyObject(
         {
           userID: user?.userID,
           customIDs: user?.customIDs,
         }
       );
 
-      return BootstrapValidator.validate(keys, user == null ? null : userCopy);
+      return BootstrapValidator.validate(keys, userToCompare) && BootstrapValidator.validate(userToCompare, keys);
     } catch (error) {
       // This is best-effort. If we fail, return true.
     }
@@ -27,7 +31,10 @@ export default abstract class BootstrapValidator {
     return true;
   }
 
-  private static validate(one: object | null, two: object | null): boolean {
+  private static validate(
+    one: Record<string, unknown> | null,
+    two: Record<string, unknown> | null
+  ): boolean {
     if (one == null) {
       return two == null;
     } else if (two == null) {
@@ -37,19 +44,18 @@ export default abstract class BootstrapValidator {
       if (key === 'stableID') {
         continue;
       }
-      // @ts-ignore
       if (typeof value !== typeof two[key]) {
-        // @ts-ignore
         return false;
       }
       if (typeof value === 'string') {
-        // @ts-ignore
         if (value !== two[key]) {
           return false;
         }
       } else if (typeof value === 'object') {
-        // @ts-ignore
-        return this.validate(value, two[key]);
+          return this.validate(
+            value as Record<string, unknown>,
+            two[key] as Record<string, unknown>
+          );
       } else {
         // unexpected
         return false;
