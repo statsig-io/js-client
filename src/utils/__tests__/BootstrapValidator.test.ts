@@ -46,7 +46,7 @@ describe('BootstrapValidator', () => {
       },
     );
 
-    expect(false).toBe(result);
+    expect(result).toBe(false);
   });
 
   it('returns false when customid doesnt match empty evaluted_keys', () => {
@@ -57,7 +57,7 @@ describe('BootstrapValidator', () => {
       },
     );
 
-    expect(false).toBe(result);
+    expect(result).toBe(false);
   });
 
   it('returns false when userid doesnt match empty evaluted_keys', () => {
@@ -106,7 +106,7 @@ describe('BootstrapValidator', () => {
         },
       },
     );
-    expect(false).toBe(result);
+    expect(result).toBe(false);
   });
 
   it('returns true by ignoring stableID', () => {

@@ -19,7 +19,7 @@ export default abstract class BootstrapValidator {
         }
       );
 
-      return BootstrapValidator.validate(keys, user == null ? null : userCopy) && BootstrapValidator.validate(user == null ? null : userCopy, keys);
+      return BootstrapValidator.validate(keys, user == null ? null : userCopy);
     } catch (error) {
       // This is best-effort. If we fail, return true.
     }
