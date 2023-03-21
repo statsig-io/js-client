@@ -94,6 +94,14 @@ export default class Identity {
     }
     if (stableID) {
       this.statsigMetadata.stableID = stableID;
+      if (user == null) {
+        user = {
+          customIDs: {}
+        };
+      } else if (user.customIDs == null) {
+        user.customIDs = {};
+      }
+      user.customIDs!!.stableID = stableID;
     }
   }
 
