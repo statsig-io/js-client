@@ -78,7 +78,8 @@ export default class ErrorBoundary {
           'Content-Length': `${body.length}`,
         },
         body,
-      });
+      }).catch(() => {})
+      .then(() => {});
     } catch (_error) {
       /* noop */
     }
