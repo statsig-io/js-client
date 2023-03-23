@@ -92,7 +92,7 @@ export default class StatsigStore {
   private userCacheKey: string;
   private reason: EvaluationReason;
 
-  public constructor(sdkInternal: IHasStatsigInternal) {
+  public constructor(sdkInternal: IHasStatsigInternal, initializeValues: Record<string, any> | null) {
     this.sdkInternal = sdkInternal;
     this.userCacheKey = this.sdkInternal.getCurrentUserCacheKey();
     this.values = {};
@@ -108,7 +108,11 @@ export default class StatsigStore {
     this.stickyDeviceExperiments = {};
     this.loaded = false;
     this.reason = EvaluationReason.Uninitialized;
-    this.loadFromLocalStorage();
+    if (initializeValues) {
+      this.bootstrap(initializeValues);
+    } else {
+      this.loadFromLocalStorage();
+    }
   }
 
   public updateUser(isUserPrefetched: boolean): boolean {

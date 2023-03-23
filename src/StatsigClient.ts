@@ -208,13 +208,22 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       StatsigClient.reactNativeUUID,
     );
     this.network = new StatsigNetwork(this);
-    this.store = new StatsigStore(this);
+    this.store = new StatsigStore(this, options?.initializeValues ?? null);
     this.logger = new StatsigLogger(this);
-    if (options?.initializeValues != null) {
-      this.setInitializeValues(options?.initializeValues);
-    }
 
     this.errorBoundary.setStatsigMetadata(this.getStatsigMetadata());
+
+    if (options?.initializeValues != null) {
+      let cb = this.options.getInitCompletionCallback();
+      this.ready = true;
+      this.initCalled = true;
+
+      this.handleOptionalLogging();
+      this.logger.sendSavedRequests();
+      if (cb) {
+        cb(now() - this.startTime, true, null);
+      }
+    }
   }
 
   public setInitializeValues(initializeValues: Record<string, unknown>): void {
