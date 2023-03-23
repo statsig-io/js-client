@@ -97,13 +97,18 @@ describe('Statsig Client Bootstrapping', () => {
   });
 
   it('uses defaults with bootstrap values is empty', async () => {
-    expect.assertions(5);
+    expect.assertions(7);
+    const spyOnSet = jest.spyOn(window.localStorage.__proto__, 'setItem');
+    const spyOnGet = jest.spyOn(window.localStorage.__proto__, 'getItem');
 
     const client = new StatsigClient(
       'client-xyz',
       { email: 'tore@statsig.com' },
-      { initializeValues: {} },
+      // optimal parameters to skip local storage entirely
+      { initializeValues: {}, disableOverrides: true, overrideStableID: "999" },
     );
+    expect(spyOnSet).not.toHaveBeenCalled();
+    expect(spyOnGet).not.toBeCalled();
 
     // we get defaults everywhere else
     expect(client.checkGate('test_gate')).toBe(false);
@@ -114,6 +119,22 @@ describe('Statsig Client Bootstrapping', () => {
       reason: EvaluationReason.Unrecognized,
       time: expect.any(Number),
     });
+  });
+
+  it('bootstrapping calls local storage for overrides and stableID', async () => {
+    expect.assertions(2);
+    const spyOnSet = jest.spyOn(window.localStorage.__proto__, 'setItem');
+    const spyOnGet = jest.spyOn(window.localStorage.__proto__, 'getItem');
+
+    const client = new StatsigClient(
+      'client-xyz',
+      { email: 'tore@statsig.com' },
+      // default parameters dont skip local storage get calls
+      { initializeValues: {} },
+    );
+    expect(spyOnSet).not.toHaveBeenCalled();
+    // overrides and stableid
+    expect(spyOnGet).toHaveBeenCalledTimes(2);
   });
 
   it('reports InvalidBootstrap', () => {

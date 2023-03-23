@@ -227,6 +227,9 @@ export default class StatsigStore {
   }
 
   private loadOverrides(): void {
+    if (this.sdkInternal.getOptions().getDisableOverrides()) {
+      return;
+    }
     const overrides = StatsigLocalStorage.getItem(OVERRIDES_STORE_KEY);
     if (overrides != null) {
       try {
