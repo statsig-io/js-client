@@ -129,7 +129,7 @@ describe('Statsig Client Bootstrapping', () => {
     const client = new StatsigClient(
       'client-xyz',
       { email: 'tore@statsig.com' },
-      // optimal parameters to skip local storage entirely
+      // default parameters dont skip local storage get calls
       { initializeValues: {} },
     );
     expect(spyOnSet).not.toHaveBeenCalled();
