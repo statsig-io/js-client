@@ -227,6 +227,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   }
 
   private delayedSetup(): void {
+    console.log("delayedSetup");
     this.identity.saveStableID();
     this.logger.sendSavedRequests();
   }
