@@ -105,7 +105,11 @@ describe('Statsig Client Bootstrapping', () => {
       'client-xyz',
       { email: 'tore@statsig.com' },
       // optimal parameters to skip local storage entirely
-      { initializeValues: {}, disableOverrides: true, overrideStableID: "999" },
+      {
+        initializeValues: {},
+        disableLocalOverrides: true,
+        overrideStableID: '999',
+      },
     );
     expect(spyOnSet).not.toHaveBeenCalled();
     expect(spyOnGet).not.toBeCalled();

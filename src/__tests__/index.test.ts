@@ -37,10 +37,7 @@ describe('Verify behavior of top level index functions', () => {
       hasCustomID = body.user.customIDs?.['customID'] != null;
       return Promise.resolve({
         ok: true,
-        text: () =>
-          Promise.resolve(
-            JSON.stringify(TestData),
-          ),
+        text: () => Promise.resolve(JSON.stringify(TestData)),
       });
     }
   });
@@ -548,7 +545,6 @@ describe('Verify behavior of top level index functions', () => {
     );
     await client.initializeAsync();
     expect(client.getStableID()).toEqual('666');
-    expect(client.getStatsigMetadata().sessionToken).toEqual('uuid_666');
   });
 
   test('customIDs is sent with user', async () => {

@@ -260,11 +260,14 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         this.initCalled = true;
         const cb = this.options.getInitCompletionCallback();
         if (cb) {
-          cb(now() - this.startTime, false, "Caught an exception during setInitializeValues");
+          cb(
+            now() - this.startTime,
+            false,
+            'Caught an exception during setInitializeValues',
+          );
         }
       },
     );
-
   }
 
   public async initializeAsync(): Promise<void> {
@@ -545,8 +548,8 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       if (this.shouldTrimParam(eventName, MAX_VALUE_SIZE)) {
         this.consoleLogger.info(
           'eventName is too long, trimming to ' +
-          MAX_VALUE_SIZE +
-          ' characters.',
+            MAX_VALUE_SIZE +
+            ' characters.',
         );
         eventName = eventName.substring(0, MAX_VALUE_SIZE);
       }
@@ -839,7 +842,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         if (errorObj != null && typeof errorObj === 'object') {
           try {
             errorObj = JSON.stringify(errorObj);
-          } catch (e) { }
+          } catch (e) {}
         }
         this.logger.logAppError(user, e.message ?? '', {
           filename: e.filename,
@@ -998,7 +1001,9 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
             if (json?.has_updates) {
               await this.store.save(user, json);
             } else if (json?.is_no_content) {
-              this.store.setEvaluationReason(EvaluationReason.NetworkNotModified);
+              this.store.setEvaluationReason(
+                EvaluationReason.NetworkNotModified,
+              );
             }
 
             this.prefetchedUsersByCacheKey = {
@@ -1012,7 +1017,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
             );
           });
         },
-        (e: Error) => { },
+        (e: Error) => {},
         prefetchUsers.length === 0 ? diagnostics : undefined,
         prefetchUsers.length > 0 ? keyedPrefetchUsers : undefined,
       )

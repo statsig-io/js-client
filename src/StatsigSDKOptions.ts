@@ -35,7 +35,7 @@ export type StatsigOptions = {
   disableDiagnosticsLogging?: boolean;
   logLevel?: LogLevel | null;
   ignoreWindowUndefined?: boolean;
-  disableOverrides?: boolean;
+  disableLocalOverrides?: boolean;
 };
 
 export enum LogLevel {
@@ -70,7 +70,7 @@ export default class StatsigSDKOptions {
   private disableDiagnosticsLogging: boolean;
   private logLevel: LogLevel;
   private ignoreWindowUndefined: boolean;
-  private disableOverrides: boolean;
+  private disableLocalOverrides: boolean;
 
   constructor(options?: StatsigOptions | null) {
     if (options == null) {
@@ -118,7 +118,7 @@ export default class StatsigSDKOptions {
     this.disableDiagnosticsLogging = options.disableDiagnosticsLogging ?? false;
     this.logLevel = options?.logLevel ?? LogLevel.NONE;
     this.ignoreWindowUndefined = options?.ignoreWindowUndefined ?? false;
-    this.disableOverrides = options?.disableOverrides ?? false;
+    this.disableLocalOverrides = options?.disableLocalOverrides ?? false;
   }
 
   getApi(): string {
@@ -192,9 +192,9 @@ export default class StatsigSDKOptions {
   getIgnoreWindowUndefined(): boolean {
     return this.ignoreWindowUndefined;
   }
-  
-  getDisableOverrides(): boolean {
-    return this.disableOverrides;
+
+  getDisableLocalOverrides(): boolean {
+    return this.disableLocalOverrides;
   }
 
   private normalizeNumberInput(

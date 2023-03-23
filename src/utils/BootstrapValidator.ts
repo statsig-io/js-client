@@ -10,20 +10,16 @@ export default abstract class BootstrapValidator {
       if (!evaluatedKeys || typeof evaluatedKeys !== 'object') {
         return true;
       }
-      const evaluatedKeysRecord = evaluatedKeys as Record<string, unknown>;
-      const keys = BootstrapValidator.copyObject({
-          userID: evaluatedKeysRecord?.userID,
-          customIDs: evaluatedKeysRecord?.customIDs,
-      });
-
-      const userToCompare = user == null ? null : BootstrapValidator.copyObject(
-        {
-          userID: user?.userID,
-          customIDs: user?.customIDs,
-        }
+      const evaluatedKeysRecord = this.copyObject(
+        evaluatedKeys as Record<string, unknown>,
       );
 
-      return BootstrapValidator.validate(keys, userToCompare) && BootstrapValidator.validate(userToCompare, keys);
+      const userToCompare = user == null ? null : this.copyObject(user);
+
+      return (
+        BootstrapValidator.validate(evaluatedKeysRecord, userToCompare) &&
+        BootstrapValidator.validate(userToCompare, evaluatedKeysRecord)
+      );
     } catch (error) {
       // This is best-effort. If we fail, return true.
     }
@@ -33,29 +29,32 @@ export default abstract class BootstrapValidator {
 
   private static validate(
     one: Record<string, unknown> | null,
-    two: Record<string, unknown> | null
+    two: Record<string, unknown> | null,
   ): boolean {
     if (one == null) {
       return two == null;
     } else if (two == null) {
       return false;
     }
+
     for (let [key, value] of Object.entries(one)) {
       if (key === 'stableID') {
         continue;
       }
+
       if (typeof value !== typeof two[key]) {
         return false;
       }
+
       if (typeof value === 'string') {
         if (value !== two[key]) {
           return false;
         }
       } else if (typeof value === 'object') {
-          return this.validate(
-            value as Record<string, unknown>,
-            two[key] as Record<string, unknown>
-          );
+        return this.validate(
+          value as Record<string, unknown>,
+          two[key] as Record<string, unknown>,
+        );
       } else {
         // unexpected
         return false;
@@ -64,22 +63,28 @@ export default abstract class BootstrapValidator {
     return true;
   }
 
-  private static copyObject<T>(obj: T | null): T | null {
+  private static copyObject(
+    obj?: Record<string, unknown>,
+  ): Record<string, unknown> | null {
     if (obj == null) {
       return null;
     }
-    const copy = JSON.parse(JSON.stringify(obj));
-    delete copy.stableID;
-    if (copy.customIDs) {
-      delete copy.customIDs['stableID'];
-      if (Object.keys(copy.customIDs).length === 0) {
-        delete copy.customIDs;
+
+    let copy: Record<string, unknown> = {};
+    if (obj?.userID) {
+      copy['userID'] = obj?.userID;
+    }
+
+    if (obj?.customIDs) {
+      const customIDs: Record<string, unknown> = {
+        ...(obj.customIDs as Record<string, unknown>),
+      };
+      delete customIDs['stableID'];
+      if (Object.keys(customIDs).length !== 0) {
+        copy['customIDs'] = customIDs;
       }
     }
-    
-    if (Object.keys(copy).length === 0) {
-      return null;
-    }
+
     return copy;
   }
 }

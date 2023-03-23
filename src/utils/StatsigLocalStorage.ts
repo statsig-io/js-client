@@ -63,14 +63,20 @@ export default class StatsigLocalStorage {
     } catch (e) {}
   }
 
+  private static canAccessStorageAccessible: boolean | null = null;
   private static isStorageAccessible(
     ignoreDisabledOption: boolean = false,
   ): boolean {
-    const canAccess =
-      typeof Storage !== 'undefined' &&
-      typeof window !== 'undefined' &&
-      window != null &&
-      window.localStorage != null;
+    if (this.canAccessStorageAccessible == null) {
+      this.canAccessStorageAccessible =
+        typeof Storage !== 'undefined' &&
+        typeof window !== 'undefined' &&
+        window != null &&
+        window.localStorage != null;
+    }
+
+    const canAccess = this.canAccessStorageAccessible;
+
     if (ignoreDisabledOption) {
       return canAccess;
     }

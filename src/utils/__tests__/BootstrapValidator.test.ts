@@ -40,7 +40,7 @@ describe('BootstrapValidator', () => {
 
   it('returns false when userid doesnt match empty evaluted_keys', () => {
     const result = BootstrapValidator.isValid(
-      { userID: 'a-user-id'},
+      { userID: 'a-user-id' },
       {
         evaluated_keys: {},
       },
@@ -51,7 +51,7 @@ describe('BootstrapValidator', () => {
 
   it('returns false when customid doesnt match empty evaluted_keys', () => {
     const result = BootstrapValidator.isValid(
-      { customIDs: {workID: 'a-work-id'}},
+      { customIDs: { workID: 'a-work-id' } },
       {
         evaluated_keys: {},
       },
@@ -62,7 +62,7 @@ describe('BootstrapValidator', () => {
 
   it('returns false when userid doesnt match empty evaluted_keys', () => {
     const result = BootstrapValidator.isValid(
-      { userID: 'a-user-id'},
+      { userID: 'a-user-id' },
       {
         evaluated_keys: {},
       },
@@ -76,8 +76,8 @@ describe('BootstrapValidator', () => {
       {},
       {
         evaluated_keys: {
-          customIDs: {workID: 'a-work-id'},
-        }
+          customIDs: { workID: 'a-work-id' },
+        },
       },
     );
 
@@ -88,7 +88,7 @@ describe('BootstrapValidator', () => {
     const result = BootstrapValidator.isValid(
       {},
       {
-        evaluated_keys: {userID: 'a-user-id'},
+        evaluated_keys: { userID: 'a-user-id' },
       },
     );
 

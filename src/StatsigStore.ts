@@ -92,7 +92,10 @@ export default class StatsigStore {
   private userCacheKey: string;
   private reason: EvaluationReason;
 
-  public constructor(sdkInternal: IHasStatsigInternal, initializeValues: Record<string, any> | null) {
+  public constructor(
+    sdkInternal: IHasStatsigInternal,
+    initializeValues: Record<string, any> | null,
+  ) {
     this.sdkInternal = sdkInternal;
     this.userCacheKey = this.sdkInternal.getCurrentUserCacheKey();
     this.values = {};
@@ -227,7 +230,7 @@ export default class StatsigStore {
   }
 
   private loadOverrides(): void {
-    if (this.sdkInternal.getOptions().getDisableOverrides()) {
+    if (this.sdkInternal.getOptions().getDisableLocalOverrides()) {
       return;
     }
     const overrides = StatsigLocalStorage.getItem(OVERRIDES_STORE_KEY);

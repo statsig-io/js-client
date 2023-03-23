@@ -18,11 +18,7 @@ describe('Verify behavior of Identity module', () => {
   test('Test setUser', () => {
     const id = new StatsigIdentity({ userID: 'test_user' });
     expect(id.getUser()).toStrictEqual({ userID: 'test_user' });
-    const previousSessionID = id.getStatsigMetadata().sessionToken;
     id.updateUser(null);
-    expect(id.getStatsigMetadata().sessionToken).toStrictEqual(
-      previousSessionID,
-    );
     expect(id.getUser()).toStrictEqual(null);
     id.updateUser({ userID: 'test_user2' });
     expect(id.getUser()).toStrictEqual({ userID: 'test_user2' });
@@ -87,15 +83,5 @@ describe('Verify behavior of Identity module', () => {
     expect(metadata.systemName).toEqual('iOS');
     expect(metadata.deviceModelName).toEqual('iPhone XS');
     expect(metadata.deviceModel).toEqual('iPhone7,2');
-  });
-
-  test('Test React Native UUID', () => {
-    const RNUUID = {
-      v4(): string | number[] {
-        return 'uuid_123';
-      },
-    };
-    const id = new StatsigIdentity({ userID: 'test_user' }, null, RNUUID);
-    expect(id.getStatsigMetadata().sessionToken).toEqual('uuid_123');
   });
 });
