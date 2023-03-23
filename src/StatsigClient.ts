@@ -218,12 +218,17 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       this.ready = true;
       this.initCalled = true;
 
+      setTimeout(() => this.delayedSetup(), 20);
       this.handleOptionalLogging();
-      this.logger.sendSavedRequests();
       if (cb) {
         cb(now() - this.startTime, true, null);
       }
     }
+  }
+
+  private delayedSetup(): void {
+    this.identity.saveStableID();
+    this.logger.sendSavedRequests();
   }
 
   public setInitializeValues(initializeValues: Record<string, unknown>): void {
@@ -317,7 +322,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         ).finally(async () => {
           this.pendingInitPromise = null;
           this.ready = true;
-          this.logger.sendSavedRequests();
+          this.delayedSetup();
           this.initializeDiagnostics.mark(
             DiagnosticsKey.OVERALL,
             DiagnosticsEvent.END,

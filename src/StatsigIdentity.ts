@@ -90,10 +90,15 @@ export default class Identity {
         stableID ??
         StatsigLocalStorage.getItem(STATSIG_STABLE_ID_KEY) ??
         this.getUUID();
-      StatsigLocalStorage.setItem(STATSIG_STABLE_ID_KEY, stableID);
     }
     if (stableID) {
       this.statsigMetadata.stableID = stableID;
+    }
+  }
+
+  public saveStableID(): void {
+    if (this.statsigMetadata.stableID != null) {
+      StatsigLocalStorage.setItem(STATSIG_STABLE_ID_KEY, this.statsigMetadata.stableID);
     }
   }
 
