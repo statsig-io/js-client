@@ -217,6 +217,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       let cb = this.options.getInitCompletionCallback();
       this.ready = true;
       this.initCalled = true;
+      this.fireAndForgetPrefechUsers();
 
       setTimeout(() => this.delayedSetup(), 20);
       this.handleOptionalLogging();
@@ -583,13 +584,18 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         }
 
         this.identity.updateUser(this.normalizeUser(user));
+
+        const userCacheKey = this.getCurrentUserCacheKey();
         const isUserPrefetched = Boolean(
-          this.prefetchedUsersByCacheKey[this.getCurrentUserCacheKey()],
+          this.prefetchedUsersByCacheKey[userCacheKey],
         );
-        const foundCacheValue = this.store.updateUser(isUserPrefetched);
+        const cachedTime = this.store.updateUser(isUserPrefetched);
         this.logger.resetDedupeKeys();
 
-        if (foundCacheValue && isUserPrefetched) {
+        if (
+          cachedTime != null &&
+          (isUserPrefetched || this.isCacheValidForFetchMode(cachedTime))
+        ) {
           return Promise.resolve(true);
         }
 
@@ -821,6 +827,15 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     if (expoDevice != null) {
       this.identity.setExpoDevice(expoDevice);
     }
+  }
+
+  private isCacheValidForFetchMode(cachedTime: number): boolean {
+    if (this.options.getFetchMode() !== 'cache-or-network') {
+      return false;
+    }
+
+    // Only valid if the cache was during this session
+    return cachedTime > this.startTime;
   }
 
   private handleOptionalLogging(): void {
@@ -1178,5 +1193,9 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       '',
       this.getEvalutionDetailsForError(),
     );
+  }
+
+  private fireAndForgetPrefechUsers() {
+    this.prefetchUsers(this.options.getPrefetchUsers());
   }
 }

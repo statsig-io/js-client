@@ -111,6 +111,8 @@ describe('Prefetch Users', () => {
     expect(client.getConfig('a_config').value).toEqual({
       key: 'empty_user_value',
     });
+
+    expect(initializeCalls).toBe(1);
   });
 
   it('can be initialized with a singular user and prefetchUsers', async () => {

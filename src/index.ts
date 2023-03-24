@@ -32,12 +32,12 @@ export type {
   UUID,
 } from './StatsigIdentity';
 export { StatsigEnvironment, StatsigOptions } from './StatsigSDKOptions';
+export type { InitCompletionCallback } from './StatsigSDKOptions';
 export { EvaluationReason } from './StatsigStore';
 export type { EvaluationDetails } from './StatsigStore';
 export { StatsigUser } from './StatsigUser';
 export { default as StatsigAsyncStorage } from './utils/StatsigAsyncStorage';
 export type { AsyncStorage } from './utils/StatsigAsyncStorage';
-export type { InitCompletionCallback } from './StatsigSDKOptions';
 
 PolyfillObjectEntries();
 PolyfillObjectFromEntries();

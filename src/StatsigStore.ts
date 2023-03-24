@@ -118,7 +118,7 @@ export default class StatsigStore {
     }
   }
 
-  public updateUser(isUserPrefetched: boolean): boolean {
+  public updateUser(isUserPrefetched: boolean): number | null {
     this.userCacheKey = this.sdkInternal.getCurrentUserCacheKey();
     return this.setUserValueFromCache(isUserPrefetched);
   }
@@ -209,19 +209,22 @@ export default class StatsigStore {
     this.loadOverrides();
   }
 
-  private setUserValueFromCache(isUserPrefetched: boolean = false): boolean {
+  private setUserValueFromCache(
+    isUserPrefetched: boolean = false,
+  ): number | null {
     let cachedValues = this.values[this.userCacheKey];
     if (cachedValues == null) {
       this.resetUserValues();
       this.reason = EvaluationReason.Uninitialized;
-      return false;
+      return null;
     }
 
     this.userValues = cachedValues;
     this.reason = isUserPrefetched
       ? EvaluationReason.Prefetch
       : EvaluationReason.Cache;
-    return true;
+
+    return cachedValues.evaluation_time ?? 0;
   }
 
   private removeFromStorage(key: string) {
