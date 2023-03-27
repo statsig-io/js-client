@@ -1001,47 +1001,15 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       sinceTime = this.store.getLastUpdateTime(user);
     }
 
-    if (this.options.getEnableInitializeWithDeltas()) {
-      try {
-        const json = await this.network.fetchDeltasSinceTime(
-          user,
-          sinceTime,
-          this.options.getInitTimeoutMs(),
-          prefetchUsers.length === 0 ? diagnostics : undefined,
-          prefetchUsers.length > 0 ? keyedPrefetchUsers : undefined,
-        );
-
-        this.errorBoundary.swallow('fetchAndSaveValues', async () => {
-          diagnostics?.mark(
-            DiagnosticsKey.INITIALIZE_WITH_DELTAS,
-            DiagnosticsEvent.START,
-            'process',
-          );
-
-          if (json?.has_updates) {
-            await this.store.saveInitDeltas(user, json);
-          } else if (json?.is_no_content) {
-            this.store.setEvaluationReason(EvaluationReason.NetworkNotModified);
-          }
-
-          this.prefetchedUsersByCacheKey = {
-            ...this.prefetchedUsersByCacheKey,
-            ...keyedPrefetchUsers,
-          };
-
-          diagnostics?.mark(
-            DiagnosticsKey.INITIALIZE_WITH_DELTAS,
-            DiagnosticsEvent.END,
-            'process',
-          );
-        });
-
-        completionCallback?.(true, null);
-      } catch (e: any) {
-        completionCallback?.(false, e?.message ?? '');
-      }
-
-      return;
+    if (sinceTime && this.options.getEnableInitializeWithDeltas()) {
+      return await this.fetchAndSaveValuesWithDeltas(
+        user,
+        sinceTime,
+        prefetchUsers,
+        diagnostics,
+        keyedPrefetchUsers,
+        completionCallback,
+      );
     }
 
     return this.network
@@ -1085,6 +1053,58 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       .catch((e) => {
         completionCallback?.(false, e.message);
       });
+  }
+
+  private async fetchAndSaveValuesWithDeltas(
+    user: StatsigUser | null,
+    sinceTime: number,
+    prefetchUsers: StatsigUser[],
+    diagnostics: Diagnostics | undefined,
+    keyedPrefetchUsers: Record<string, StatsigUser>,
+    completionCallback:
+      | ((success: boolean, message: string | null) => void)
+      | null,
+  ) {
+    try {
+      const json = await this.network.fetchDeltasSinceTime(
+        user,
+        sinceTime,
+        this.options.getInitTimeoutMs(),
+        prefetchUsers.length === 0 ? diagnostics : undefined,
+        prefetchUsers.length > 0 ? keyedPrefetchUsers : undefined,
+      );
+
+      this.errorBoundary.swallow('fetchAndSaveValuesWithDeltas', async () => {
+        diagnostics?.mark(
+          DiagnosticsKey.INITIALIZE_WITH_DELTAS,
+          DiagnosticsEvent.START,
+          'process',
+        );
+
+        if (json?.has_updates) {
+          await this.store.saveInitDeltas(user, json);
+        } else if (json?.is_no_content) {
+          this.store.setEvaluationReason(EvaluationReason.NetworkNotModified);
+        }
+
+        this.prefetchedUsersByCacheKey = {
+          ...this.prefetchedUsersByCacheKey,
+          ...keyedPrefetchUsers,
+        };
+
+        diagnostics?.mark(
+          DiagnosticsKey.INITIALIZE_WITH_DELTAS,
+          DiagnosticsEvent.END,
+          'process',
+        );
+      });
+
+      completionCallback?.(true, null);
+    } catch (e: any) {
+      completionCallback?.(false, e?.message ?? '');
+    }
+
+    return;
   }
 
   private checkGateImpl(
