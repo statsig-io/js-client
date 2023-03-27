@@ -16,6 +16,9 @@ declare global {
     interface Matchers<R> {
       toMatchConfig(config: DynamicConfig): R;
     }
+    interface AsymmetricMatchers {
+      toMatchConfig(config: DynamicConfig): void;
+    }
   }
 }
 

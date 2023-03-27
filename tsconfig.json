@@ -12,7 +12,9 @@
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "types": [
-      "@types/webpack-env"
+      "@types/webpack-env",
+      "node",
+      "jest",
     ],
   },
   "include": ["src/**/*", "src/utils/*"],
