@@ -55,7 +55,7 @@ export default class StatsigNetwork {
     user: StatsigUser | null,
     sinceTime: number | null,
     timeout: number,
-    resolveCallback: (json: Record<string, any>) => Promise<void>,
+    resolveCallback: (json: Record<string, any>) => void,
     rejectCallback: (e: Error) => void,
     diagnostics?: Diagnostics,
     prefetchUsers?: Record<string, StatsigUser>,
@@ -108,7 +108,7 @@ export default class StatsigNetwork {
   private postWithTimeout(
     endpointName: StatsigEndpoint,
     body: object,
-    resolveCallback: (json: Record<string, any>) => Promise<void>,
+    resolveCallback: (json: Record<string, any>) => void,
     rejectCallback: (e: Error) => void,
     diagnostics?: Diagnostics,
     timeout: number = 0,

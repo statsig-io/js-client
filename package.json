@@ -54,6 +54,7 @@
     "webpack-cli": "^4.10.0"
   },
   "dependencies": {
+    "@types/webpack-env": "^1.18.0",
     "js-sha256": "^0.9.0",
     "uuid": "^8.3.2"
   },
