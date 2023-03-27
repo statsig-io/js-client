@@ -1001,6 +1001,49 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       sinceTime = this.store.getLastUpdateTime(user);
     }
 
+    if (this.options.getEnableInitializeWithDeltas()) {
+      try {
+        const json = await this.network.fetchDeltasSinceTime(
+          user,
+          sinceTime,
+          this.options.getInitTimeoutMs(),
+          prefetchUsers.length === 0 ? diagnostics : undefined,
+          prefetchUsers.length > 0 ? keyedPrefetchUsers : undefined,
+        );
+
+        this.errorBoundary.swallow('fetchAndSaveValues', async () => {
+          diagnostics?.mark(
+            DiagnosticsKey.INITIALIZE_WITH_DELTAS,
+            DiagnosticsEvent.START,
+            'process',
+          );
+
+          if (json?.has_updates) {
+            await this.store.saveInitDeltas(user, json);
+          } else if (json?.is_no_content) {
+            this.store.setEvaluationReason(EvaluationReason.NetworkNotModified);
+          }
+
+          this.prefetchedUsersByCacheKey = {
+            ...this.prefetchedUsersByCacheKey,
+            ...keyedPrefetchUsers,
+          };
+
+          diagnostics?.mark(
+            DiagnosticsKey.INITIALIZE_WITH_DELTAS,
+            DiagnosticsEvent.END,
+            'process',
+          );
+        });
+
+        completionCallback?.(true, null);
+      } catch (e: any) {
+        completionCallback?.(false, e?.message ?? '');
+      }
+
+      return;
+    }
+
     return this.network
       .fetchValues(
         user,

@@ -8,6 +8,7 @@ import Diagnostics, {
 
 export enum StatsigEndpoint {
   Initialize = 'initialize',
+  InitializeWithDeltas = 'initialize_with_deltas',
   Rgstr = 'rgstr',
   LogEventBeacon = 'log_event_beacon',
 }
@@ -75,6 +76,33 @@ export default class StatsigNetwork {
       timeout, // timeout for early returns
       3, // retries
     );
+  }
+
+  public fetchDeltasSinceTime(
+    user: StatsigUser | null,
+    sinceTime: number | null,
+    timeout: number,
+    diagnostics?: Diagnostics,
+    prefetchUsers?: Record<string, StatsigUser>,
+  ): Promise<Record<string, any>> {
+    const input = {
+      user,
+      prefetchUsers,
+      statsigMetadata: this.sdkInternal.getStatsigMetadata(),
+      sinceTime: sinceTime ?? undefined,
+    };
+
+    return new Promise<Record<string, any>>((resolve, reject) => {
+      this.postWithTimeout(
+        StatsigEndpoint.InitializeWithDeltas,
+        input,
+        resolve,
+        reject,
+        diagnostics,
+        timeout, // timeout for early returns
+        3, // retries
+      );
+    });
   }
 
   private postWithTimeout(

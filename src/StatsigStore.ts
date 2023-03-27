@@ -281,6 +281,92 @@ export default class StatsigStore {
       }
     }
 
+    await this.writeValuesToStorage();
+  }
+
+  public async saveInitDeltas(
+    user: StatsigUser | null,
+    jsonConfigs: Record<string, any>,
+  ): Promise<void> {
+    const requestedUserCacheKey = getUserCacheKey(user);
+    const data = jsonConfigs as APIInitializeDataWithPrefetchedUsers;
+
+    if (data.prefetched_user_values) {
+      const cacheKeys = Object.keys(data.prefetched_user_values);
+      for (const key of cacheKeys) {
+        const deltas = this.convertAPIDataToCacheValues(
+          data.prefetched_user_values[key],
+          key,
+        );
+        const baseValues =
+          this.values[requestedUserCacheKey] ??
+          this.getDefaultUserCacheValues();
+
+        const mergedValues = this.merge(baseValues, deltas);
+        this.values[key] = mergedValues;
+      }
+    }
+
+    if (requestedUserCacheKey) {
+      const requestedUserValues = this.convertAPIDataToCacheValues(
+        data,
+        requestedUserCacheKey,
+      );
+      if (data.has_updates && data.time) {
+        const userHash = getHashValue(JSON.stringify(user));
+        requestedUserValues.user_hash = userHash;
+      }
+
+      const baseValues =
+        this.values[requestedUserCacheKey] ?? this.getDefaultUserCacheValues();
+      const mergedValues = this.merge(baseValues, requestedUserValues);
+
+      this.values[requestedUserCacheKey] = mergedValues;
+
+      if (requestedUserCacheKey == this.userCacheKey) {
+        this.userValues = requestedUserValues;
+        this.reason = EvaluationReason.Network;
+      }
+    }
+
+    await this.writeValuesToStorage();
+  }
+
+  private getDefaultUserCacheValues(): UserCacheValues {
+    return {
+      feature_gates: {},
+      layer_configs: {},
+      dynamic_configs: {},
+      sticky_experiments: {},
+      time: 0,
+      evaluation_time: 0,
+    };
+  }
+
+  private merge(
+    baseValues: UserCacheValues,
+    valuesToMerge: UserCacheValues,
+  ): UserCacheValues {
+    return {
+      feature_gates: {
+        ...baseValues.feature_gates,
+        ...valuesToMerge.feature_gates,
+      },
+      layer_configs: {
+        ...baseValues.layer_configs,
+        ...valuesToMerge.layer_configs,
+      },
+      dynamic_configs: {
+        ...baseValues.dynamic_configs,
+        ...valuesToMerge.dynamic_configs,
+      },
+      sticky_experiments: baseValues.sticky_experiments,
+      time: valuesToMerge.time,
+      evaluation_time: valuesToMerge.evaluation_time,
+    };
+  }
+
+  private async writeValuesToStorage(): Promise<void> {
     // trim values to only have the max allowed
     const filteredValues = Object.entries(this.values)
       .sort(({ 1: a }, { 1: b }) => {
