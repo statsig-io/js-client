@@ -317,6 +317,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
             return { success: true, message: null };
           })
           .catch((e) => {
+            this.errorBoundary.logError('initializeAsync:fetchAndSaveValues', e);
             return { success: false, message: e.message };
           })
           .then(({success, message}) => {
@@ -1011,6 +1012,8 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         keyedPrefetchUsers,
       );
     }
+
+    console.log('fetch values', this.network.fetchValues);
 
     return this.network
       .fetchValues(

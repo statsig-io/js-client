@@ -202,7 +202,6 @@ export default class StatsigNetwork {
               eventuals.forEach(fn => fn(json as T));
               eventuals = [];
             }
-
             return Promise.resolve(json);
           },
           () => {

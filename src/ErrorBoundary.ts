@@ -33,13 +33,16 @@ export default class ErrorBoundary {
   ): T {
     try {
       const result = task();
+      console.log('result:',result);
       if (result instanceof Promise) {
         return (result as any).catch((e: unknown) => {
+          console.log('caught promise');
           return this.onCaught(tag, e, recover, getExtraData);
         });
       }
       return result;
     } catch (error) {
+      console.log('caught', error)
       return this.onCaught(tag, error, recover, getExtraData);
     }
   }

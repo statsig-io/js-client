@@ -266,12 +266,12 @@ export default class StatsigStore {
     );
 
     const userValues = this.values[requestedUserCacheKey];
-    if (userValues) {
+    if (userValues && requestedUserCacheKey && requestedUserCacheKey == this.userCacheKey) {
       this.userValues = userValues;
       this.reason = EvaluationReason.Network;
     }
 
-    await this.writeValuesToStorage(this.values);
+    this.values = await this.writeValuesToStorage(this.values);
   }
 
   /**
@@ -319,12 +319,12 @@ export default class StatsigStore {
     );
 
     const userValues = this.values[requestedUserCacheKey];
-    if (userValues) {
+    if (userValues && requestedUserCacheKey == this.userCacheKey) {
       this.userValues = userValues;
       this.reason = EvaluationReason.Network;
     }
 
-    await this.writeValuesToStorage(this.values);
+    this.values = await this.writeValuesToStorage(this.values);
   }
 
   /**
@@ -393,9 +393,14 @@ export default class StatsigStore {
     };
   }
 
+  /**
+   * Writes the provided values to storage, truncating down to
+   * MAX_USER_VALUE_CACHED number entries. 
+   * @returns The truncated entry list
+   */
   private async writeValuesToStorage(
     valuesToWrite: Record<string, UserCacheValues | undefined>,
-  ): Promise<void> {
+  ): Promise<Record<string, UserCacheValues | undefined>> {
     // trim values to only have the max allowed
     const filteredValues = Object.entries(valuesToWrite)
       .sort(({ 1: a }, { 1: b }) => {
@@ -420,6 +425,8 @@ export default class StatsigStore {
         JSON.stringify(valuesToWrite),
       );
     }
+
+    return valuesToWrite;
   }
 
   public checkGate(
