@@ -252,7 +252,7 @@ export default class StatsigNetwork {
     }
 
     const api =
-      endpointName == StatsigEndpoint.Initialize
+      [StatsigEndpoint.Initialize, StatsigEndpoint.InitializeWithDeltas].includes(endpointName)
         ? this.sdkInternal.getOptions().getApi()
         : this.sdkInternal.getOptions().getEventLoggingApi();
     const url = api + endpointName;

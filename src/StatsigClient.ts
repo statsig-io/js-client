@@ -1066,15 +1066,14 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       | null,
   ) {
     try {
-      const json = await this.network.fetchDeltasSinceTime(
-        user,
-        sinceTime,
-        this.options.getInitTimeoutMs(),
-        prefetchUsers.length === 0 ? diagnostics : undefined,
-        prefetchUsers.length > 0 ? keyedPrefetchUsers : undefined,
-      );
+        const json = await this.network.fetchDeltasSinceTime(
+          user,
+          sinceTime,
+          this.options.getInitTimeoutMs(),
+          prefetchUsers.length === 0 ? diagnostics : undefined,
+          prefetchUsers.length > 0 ? keyedPrefetchUsers : undefined,
+        );
 
-      this.errorBoundary.swallow('fetchAndSaveValuesWithDeltas', async () => {
         diagnostics?.mark(
           DiagnosticsKey.INITIALIZE_WITH_DELTAS,
           DiagnosticsEvent.START,
@@ -1082,6 +1081,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         );
 
         if (json?.has_updates) {
+          console.log('saving deltas');
           await this.store.saveInitDeltas(user, json);
         } else if (json?.is_no_content) {
           this.store.setEvaluationReason(EvaluationReason.NetworkNotModified);
@@ -1097,14 +1097,12 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
           DiagnosticsEvent.END,
           'process',
         );
-      });
 
-      completionCallback?.(true, null);
+        completionCallback?.(true, null);
     } catch (e: any) {
       completionCallback?.(false, e?.message ?? '');
+      return undefined;
     }
-
-    return;
   }
 
   private checkGateImpl(
