@@ -255,33 +255,46 @@ export default class StatsigStore {
     jsonConfigs: Record<string, any>,
   ): Promise<void> {
     const requestedUserCacheKey = getUserCacheKey(user);
-    const data = jsonConfigs as APIInitializeDataWithPrefetchedUsers;
-    if (data.prefetched_user_values) {
-      const cacheKeys = Object.keys(data.prefetched_user_values);
-      for (const key of cacheKeys) {
-        const prefetched = data.prefetched_user_values[key];
-        this.values[key] = this.convertAPIDataToCacheValues(prefetched, key);
-      }
+    const initResponse = jsonConfigs as APIInitializeDataWithPrefetchedUsers;
+    
+    this.mergeInitializeResponseIntoUserMap(
+      initResponse,
+      this.values,
+      requestedUserCacheKey,
+      user,
+      (userValues) => userValues,
+    );
+
+    const userValues = this.values[requestedUserCacheKey];
+    if (userValues) {
+      this.userValues = userValues;
+      this.reason = EvaluationReason.Network;
     }
 
-    if (requestedUserCacheKey) {
-      const requestedUserValues = this.convertAPIDataToCacheValues(
-        data,
-        requestedUserCacheKey,
-      );
-      if (data.has_updates && data.time) {
-        const userHash = getHashValue(JSON.stringify(user));
-        requestedUserValues.user_hash = userHash;
-      }
-      this.values[requestedUserCacheKey] = requestedUserValues;
+    await this.writeValuesToStorage(this.values);
+  }
 
-      if (requestedUserCacheKey == this.userCacheKey) {
-        this.userValues = requestedUserValues;
-        this.reason = EvaluationReason.Network;
-      }
-    }
+  /**
+   * Persists the init values to storage, but DOES NOT update the state of the store.
+   */
+  public async saveWithoutUpdatingClientState(
+    user: StatsigUser | null,
+    jsonConfigs: Record<string, any>,
+  ): Promise<void> {
+    const requestedUserCacheKey = getUserCacheKey(user);
+    const initResponse = jsonConfigs as APIInitializeDataWithPrefetchedUsers;
+    const copiedValues: Record<string, UserCacheValues | undefined> =
+      JSON.parse(JSON.stringify(this.values));
 
-    await this.writeValuesToStorage();
+    this.mergeInitializeResponseIntoUserMap(
+      initResponse,
+      copiedValues,
+      requestedUserCacheKey,
+      user,
+      (userValues) => userValues,
+    );
+
+    await this.writeValuesToStorage(copiedValues);
   }
 
   public async saveInitDeltas(
@@ -289,21 +302,46 @@ export default class StatsigStore {
     jsonConfigs: Record<string, any>,
   ): Promise<void> {
     const requestedUserCacheKey = getUserCacheKey(user);
-    const data = jsonConfigs as APIInitializeDataWithPrefetchedUsers;
+    const initResponse = jsonConfigs as APIInitializeDataWithPrefetchedUsers;
 
+    this.mergeInitializeResponseIntoUserMap(
+      initResponse,
+      this.values,
+      requestedUserCacheKey,
+      user,
+      (deltas, key) => {
+        const baseValues =
+          this.values[key] ??
+          this.getDefaultUserCacheValues();
+
+        return this.mergeUserCacheValues(baseValues, deltas);
+      },
+    );
+
+    const userValues = this.values[requestedUserCacheKey];
+    if (userValues) {
+      this.userValues = userValues;
+      this.reason = EvaluationReason.Network;
+    }
+
+    await this.writeValuesToStorage(this.values);
+  }
+
+  /**
+   * Merges the provided init configs into the provided config map, according to the provided merge function
+   */
+  private mergeInitializeResponseIntoUserMap(
+    data: APIInitializeDataWithPrefetchedUsers,
+    configMap: Record<string, UserCacheValues | undefined>,
+    requestedUserCacheKey: string,
+    user: StatsigUser | null,
+    mergeFn: (user: UserCacheValues, key: string) => UserCacheValues,
+  ) {
     if (data.prefetched_user_values) {
       const cacheKeys = Object.keys(data.prefetched_user_values);
       for (const key of cacheKeys) {
-        const deltas = this.convertAPIDataToCacheValues(
-          data.prefetched_user_values[key],
-          key,
-        );
-        const baseValues =
-          this.values[requestedUserCacheKey] ??
-          this.getDefaultUserCacheValues();
-
-        const mergedValues = this.merge(baseValues, deltas);
-        this.values[key] = mergedValues;
+        const prefetched = data.prefetched_user_values[key];
+        configMap[key] = mergeFn(this.convertAPIDataToCacheValues(prefetched, key), key);
       }
     }
 
@@ -316,20 +354,9 @@ export default class StatsigStore {
         const userHash = getHashValue(JSON.stringify(user));
         requestedUserValues.user_hash = userHash;
       }
-
-      const baseValues =
-        this.values[requestedUserCacheKey] ?? this.getDefaultUserCacheValues();
-      const mergedValues = this.merge(baseValues, requestedUserValues);
-
-      this.values[requestedUserCacheKey] = mergedValues;
-
-      if (requestedUserCacheKey == this.userCacheKey) {
-        this.userValues = requestedUserValues;
-        this.reason = EvaluationReason.Network;
-      }
+      
+      configMap[requestedUserCacheKey] = mergeFn(requestedUserValues, requestedUserCacheKey);
     }
-
-    await this.writeValuesToStorage();
   }
 
   private getDefaultUserCacheValues(): UserCacheValues {
@@ -343,7 +370,7 @@ export default class StatsigStore {
     };
   }
 
-  private merge(
+  private mergeUserCacheValues(
     baseValues: UserCacheValues,
     valuesToMerge: UserCacheValues,
   ): UserCacheValues {
@@ -366,9 +393,11 @@ export default class StatsigStore {
     };
   }
 
-  private async writeValuesToStorage(): Promise<void> {
+  private async writeValuesToStorage(
+    valuesToWrite: Record<string, UserCacheValues | undefined>,
+  ): Promise<void> {
     // trim values to only have the max allowed
-    const filteredValues = Object.entries(this.values)
+    const filteredValues = Object.entries(valuesToWrite)
       .sort(({ 1: a }, { 1: b }) => {
         if (a == null) {
           return 1;
@@ -379,16 +408,16 @@ export default class StatsigStore {
         return b?.time - a?.time;
       })
       .slice(0, MAX_USER_VALUE_CACHED);
-    this.values = Object.fromEntries(filteredValues);
+    valuesToWrite = Object.fromEntries(filteredValues);
     if (StatsigAsyncStorage.asyncStorage) {
       await StatsigAsyncStorage.setItemAsync(
         INTERNAL_STORE_KEY,
-        JSON.stringify(this.values),
+        JSON.stringify(valuesToWrite),
       );
     } else {
       StatsigLocalStorage.setItem(
         INTERNAL_STORE_KEY,
-        JSON.stringify(this.values),
+        JSON.stringify(valuesToWrite),
       );
     }
   }
