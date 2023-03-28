@@ -1013,8 +1013,6 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       );
     }
 
-    console.log('fetch values', this.network.fetchValues);
-
     return this.network
       .fetchValues(
         user,
