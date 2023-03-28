@@ -294,7 +294,7 @@ export default class StatsigNetwork {
     let postBody = JSON.stringify(body);
 
     fullUrl.searchParams.append('k', this.sdkInternal.getSDKKey());
-    fullUrl.searchParams.append('t', this.sdkInternal.getSDKKey());
+    fullUrl.searchParams.append('t', Date.now() + '');
     fullUrl.searchParams.append('st', this.sdkInternal.getSDKType());
     fullUrl.searchParams.append('sv', this.sdkInternal.getSDKVersion());
 
