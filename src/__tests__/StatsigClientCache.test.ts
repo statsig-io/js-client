@@ -25,6 +25,8 @@ describe('Verify behavior of StatsigClient', () => {
     },
   };
 
+  let requestTimeoutTime = 1000;
+
   // @ts-ignore
   global.fetch = jest.fn(() => {
     return new Promise((resolve) => {
@@ -53,8 +55,12 @@ describe('Verify behavior of StatsigClient', () => {
               }),
             ),
         });
-      }, 1000);
+      }, requestTimeoutTime);
     });
+  });
+
+  beforeEach(() => {
+    requestTimeoutTime = 1000
   });
 
   test('cache used before initialize resolves, then network result used', async () => {
@@ -79,5 +85,34 @@ describe('Verify behavior of StatsigClient', () => {
     expect(
       statsig.getConfig('test_config').get<string>('param', 'default'),
     ).toEqual('network');
+  });
+
+  test('storage is updated but cache is not when the request time exceeds the timeout', async () => {
+    requestTimeoutTime = 10000;
+    const statsig = new StatsigClient(sdkKey, { userID: '123' });
+    await statsig.getStore().save({ userID: '123' }, values);
+    const init = statsig.initializeAsync();
+
+    expect(statsig.initializeCalled()).toBe(true);
+
+    // test_gate is true from the cache
+    expect(statsig.checkGate('test_gate')).toBe(true);
+    expect(
+      statsig.getConfig('test_config').get<string>('param', 'default'),
+    ).toEqual('cache');
+    jest.advanceTimersByTime(10000);
+    await init;
+
+
+    // Test gate should still return the same value, because the request timed out
+    expect(statsig.checkGate('test_gate')).toBe(true);
+    expect(
+      statsig.getConfig('test_config').get<string>('param', 'default'),
+    ).toEqual('cache');
+
+    // Constructing a new client, which reads from storage, should have the
+    // updated values from the cache
+    const newerStatsig = new StatsigClient(sdkKey, { userID: '123' });
+    expect(newerStatsig.checkGate('test_gate')).toBe(false);
   });
 });
