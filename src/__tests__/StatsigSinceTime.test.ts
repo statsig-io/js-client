@@ -86,8 +86,6 @@ describe('Verify behavior of StatsigClient with sinceTime', () => {
       null,
       expect.anything(),
       expect.anything(),
-      expect.anything(),
-      expect.anything(),
       undefined,
     );
 
@@ -104,8 +102,6 @@ describe('Verify behavior of StatsigClient with sinceTime', () => {
     expect(spy).toHaveBeenCalledWith(
       user,
       1646026677490,
-      expect.anything(),
-      expect.anything(),
       expect.anything(),
       undefined,
       undefined,

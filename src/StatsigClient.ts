@@ -1018,7 +1018,15 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         user,
         sinceTime,
         this.options.getInitTimeoutMs(),
-        async (json: Record<string, any>): Promise<void> => {
+        prefetchUsers.length === 0 ? diagnostics : undefined,
+        prefetchUsers.length > 0 ? keyedPrefetchUsers : undefined,
+      )
+        .eventually((json) => {
+          if (json?.has_updates) {
+            this.store.saveWithoutUpdatingClientState(user, json);
+          }
+        })
+        .then(async (json: Record<string, any>) => {
           return this.errorBoundary.swallow('fetchAndSaveValues', async () => {
             diagnostics?.mark(
               DiagnosticsKey.INITIALIZE,
@@ -1043,11 +1051,8 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
               'process',
             );
           });
-        },
-        (e: Error) => {},
-        prefetchUsers.length === 0 ? diagnostics : undefined,
-        prefetchUsers.length > 0 ? keyedPrefetchUsers : undefined,
-      );
+        })
+      
   }
 
   private async fetchAndSaveValuesWithDeltas(
