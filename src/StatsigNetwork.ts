@@ -8,6 +8,7 @@ import Diagnostics, {
 
 export enum StatsigEndpoint {
   Initialize = 'initialize',
+  InitializeWithDeltas = 'initialize_with_deltas',
   Rgstr = 'rgstr',
   LogEventBeacon = 'log_event_beacon',
 }
@@ -54,7 +55,7 @@ export default class StatsigNetwork {
     user: StatsigUser | null,
     sinceTime: number | null,
     timeout: number,
-    resolveCallback: (json: Record<string, any>) => Promise<void>,
+    resolveCallback: (json: Record<string, any>) => void,
     rejectCallback: (e: Error) => void,
     diagnostics?: Diagnostics,
     prefetchUsers?: Record<string, StatsigUser>,
@@ -77,10 +78,37 @@ export default class StatsigNetwork {
     );
   }
 
+  public fetchDeltasSinceTime(
+    user: StatsigUser | null,
+    sinceTime: number | null,
+    timeout: number,
+    diagnostics?: Diagnostics,
+    prefetchUsers?: Record<string, StatsigUser>,
+  ): Promise<Record<string, any>> {
+    const input = {
+      user,
+      prefetchUsers,
+      statsigMetadata: this.sdkInternal.getStatsigMetadata(),
+      sinceTime: sinceTime ?? undefined,
+    };
+
+    return new Promise<Record<string, any>>((resolve, reject) => {
+      this.postWithTimeout(
+        StatsigEndpoint.InitializeWithDeltas,
+        input,
+        resolve,
+        reject,
+        diagnostics,
+        timeout, // timeout for early returns
+        3, // retries
+      );
+    });
+  }
+
   private postWithTimeout(
     endpointName: StatsigEndpoint,
     body: object,
-    resolveCallback: (json: Record<string, any>) => Promise<void>,
+    resolveCallback: (json: Record<string, any>) => void,
     rejectCallback: (e: Error) => void,
     diagnostics?: Diagnostics,
     timeout: number = 0,
@@ -224,7 +252,7 @@ export default class StatsigNetwork {
     }
 
     const api =
-      endpointName == StatsigEndpoint.Initialize
+      [StatsigEndpoint.Initialize, StatsigEndpoint.InitializeWithDeltas].includes(endpointName)
         ? this.sdkInternal.getOptions().getApi()
         : this.sdkInternal.getOptions().getEventLoggingApi();
     const url = api + endpointName;

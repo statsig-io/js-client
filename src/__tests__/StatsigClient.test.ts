@@ -7,8 +7,30 @@ import StatsigAsyncStorage from '../utils/StatsigAsyncStorage';
 import LocalStorageMock from './LocalStorageMock';
 import Statsig from '..';
 
+import { getHashValue } from '../utils/Hashing';
+
 describe('Verify behavior of StatsigClient', () => {
   const sdkKey = 'client-clienttestkey';
+  const baseInitResponse = {
+    feature_gates: {
+      [getHashValue('test_gate')]: {
+        value: true,
+        rule_id: 'ruleID123',
+      },
+    },
+    dynamic_configs: {
+      [getHashValue('test_config')]: {
+        value: {
+          num: 4,
+        },
+      },
+    },
+    has_updates: true,
+    time: 123456789
+  };
+
+  let respObject: any = baseInitResponse;
+
   var parsedRequestBody: {
     events: Record<string, any>[];
     statsigMetadata: Record<string, any>;
@@ -16,34 +38,20 @@ describe('Verify behavior of StatsigClient', () => {
   // @ts-ignore
   global.fetch = jest.fn((url, params) => {
     if (
-      url &&
-      typeof url === 'string' &&
-      url.includes('initialize') &&
-      url !== 'https://featuregates.org/v1/initialize'
+      ![
+        'https://featuregates.org/v1/initialize',
+        'https://featuregates.org/v1/initialize_with_deltas',
+      ].includes(url.toString())
     ) {
       return Promise.reject(new Error('invalid initialize endpoint'));
     }
+
     parsedRequestBody = JSON.parse(params?.body as string);
     return Promise.resolve({
       ok: true,
       text: () =>
         Promise.resolve(
-          JSON.stringify({
-            feature_gates: {
-              'AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=': {
-                value: true,
-                rule_id: 'ruleID123',
-              },
-            },
-            dynamic_configs: {
-              'RMv0YJlLOBe7cY7HgZ3Jox34R0Wrk7jLv3DZyBETA7I=': {
-                value: {
-                  num: 4,
-                },
-              },
-            },
-            has_updates: true,
-          }),
+          JSON.stringify(respObject),
         ),
     });
   });
@@ -55,6 +63,7 @@ describe('Verify behavior of StatsigClient', () => {
   });
 
   beforeEach(() => {
+    let respObject = baseInitResponse;
     jest.resetModules();
     parsedRequestBody = null;
 
@@ -346,6 +355,70 @@ describe('Verify behavior of StatsigClient', () => {
     expect(statsig.getConfig('test_config').getValue()).toEqual({});
 
     expect(statsig.updateUser({ userID: '123456' })).resolves.not.toThrow();
+  });
+
+  test('initializing with deltas does not overwrite previous values', async () => {
+    // Init the local storage with the default data
+    const statsig = new StatsigClient(sdkKey, { userID: '123' });
+    await statsig.initializeAsync();
+
+    respObject = {
+      feature_gates: {},
+      dynamic_configs: {},
+    };
+
+    const statsigWithDeltas = new StatsigClient(sdkKey, { userID: '123' }, { enableInitializeWithDeltas: true });
+    await statsigWithDeltas.initializeAsync();
+
+    expect(statsigWithDeltas.checkGate('test_gate')).toBe(true);
+    expect(statsigWithDeltas.getConfig('test_config').getValue()).toEqual({ num: 4 });
+  });
+
+  test('initializing with deltas adds new values', async () => {
+    // Init the local storage with the default data
+    const statsig = new StatsigClient(sdkKey, { userID: '123' });
+    await statsig.initializeAsync();
+    expect(statsig.checkGate('another_gate')).toBe(false);
+
+    respObject = {
+      feature_gates: {
+        [getHashValue('another_gate')]: {
+          value: true,
+          rule_id: 'ruleID1234',
+        },
+      },
+      dynamic_configs: {},
+      has_updates: true,
+      time: 1234567890,
+    };
+
+    const statsigWithDeltas = new StatsigClient(sdkKey, { userID: '123' }, { enableInitializeWithDeltas: true });
+    await statsigWithDeltas.initializeAsync();
+
+    expect(statsigWithDeltas.checkGate('another_gate')).toBe(true);
+  });
+
+  test('initializing with deltas overries old values', async () => {
+    // Init the local storage with the default data
+    const statsig = new StatsigClient(sdkKey, { userID: '123' });
+    await statsig.initializeAsync();
+
+    respObject = {
+      feature_gates: {
+        [getHashValue('test_gate')]: {
+          value: false,
+          rule_id: 'ruleID123',
+        },
+      },
+      dynamic_configs: {},
+      has_updates: true,
+      time: 1234567890,
+    };
+
+    const statsigWithDeltas = new StatsigClient(sdkKey, { userID: '123' }, { enableInitializeWithDeltas: true });
+    await statsigWithDeltas.initializeAsync();
+
+    expect(statsigWithDeltas.checkGate('test_gate')).toBe(false);
   });
 });
 

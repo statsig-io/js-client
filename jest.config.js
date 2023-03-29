@@ -5,7 +5,6 @@ module.exports = {
   testPathIgnorePatterns: [
     '<rootDir>/node_modules/',
     '<rootDir>/dist/',
-    '<rootDir>/src/__tests__/jest.setup.ts',
   ],
   transform: {
     '^.+\\.ts$': 'ts-jest',
