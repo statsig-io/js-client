@@ -9,6 +9,7 @@ export enum DiagnosticsKey {
   OVERALL = 'overall',
   INITIALIZE = 'initialize',
   INITIALIZE_WITH_DELTAS = 'initialize_with_deltas',
+  REQUEST = 'request',
 }
 
 export type DiagnosticsMarker = Record<
@@ -42,13 +43,15 @@ export default class Diagnostics {
     action: DiagnosticsEvent,
     step: string | null = null,
     value: string | number | boolean | null = null,
+    time: number | null = null,
   ): void {
     this.markers.push({
       key,
       step,
       action,
       value,
-      timestamp: now(),
+      timestamp: time != null ? time : now(),
     });
   }
+
 }

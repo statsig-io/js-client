@@ -338,6 +338,23 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
             );
             if (!this.options.getDisableDiagnosticsLogging()) {
               this.logger.logDiagnostics(user, this.initializeDiagnostics);
+              if (typeof window !== 'undefined' && window.performance) {
+                window.performance.getEntriesByType('resource').forEach((entry) => {
+                  // @ts-ignore
+                  if (entry.initiatorType === 'fetch' && entry.name.includes(this.options.getApi())) {
+                    const perfDiagnostics = new Diagnostics('performance_resources');
+                    // @ts-ignore
+                    perfDiagnostics.mark(DiagnosticsKey.REQUEST, DiagnosticsEvent.START, "dns", entry.name, entry.domainLookupStart);
+                    // @ts-ignore
+                    perfDiagnostics.mark(DiagnosticsKey.REQUEST, DiagnosticsEvent.END, "dns", entry.name,entry.domainLookupEnd);
+                    // @ts-ignore
+                    perfDiagnostics.mark(DiagnosticsKey.REQUEST, DiagnosticsEvent.START, "req", entry.name, entry.fetchStart);
+                    // @ts-ignore
+                    perfDiagnostics.mark(DiagnosticsKey.REQUEST, DiagnosticsEvent.END, "req", entry.name, entry.responseEnd);
+                    this.logger.logDiagnostics(user, perfDiagnostics);
+                  }
+                });
+              }
             }
           });
 
