@@ -38,10 +38,7 @@ describe('Verify behavior of StatsigClient', () => {
   // @ts-ignore
   global.fetch = jest.fn((url, params) => {
     if (
-      ![
-        'https://featuregates.org/v1/initialize',
-        'https://featuregates.org/v1/initialize_with_deltas',
-      ].includes(url.toString())
+      !url.toString().startsWith('https://featuregates.org/v1/initialize')
     ) {
       return Promise.reject(new Error('invalid initialize endpoint'));
     }

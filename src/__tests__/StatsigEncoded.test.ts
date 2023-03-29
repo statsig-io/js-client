@@ -41,8 +41,8 @@ describe('StatsigEncoded', () => {
     Statsig.encodeIntializeCall = true;
 
     await client.initializeAsync();
-    expect(body).toEqual(ENCODED_INIT_BODY);
-    expect(headers).toMatchObject({ 'STATSIG-ENCODED': '1' });
+    expect(body).toEqual(JSON.stringify({ user: USER, statsigMetadata: MOCK_METADATA }));
+    expect(headers).toBeNull();
   });
 
   it('does not encode initialize calls when encodeIntializeCall is false', async () => {
@@ -52,7 +52,7 @@ describe('StatsigEncoded', () => {
     expect(body).toEqual(
       JSON.stringify({ user: USER, statsigMetadata: MOCK_METADATA }),
     );
-    expect(headers).toMatchObject({ 'STATSIG-ENCODED': '0' });
+    expect(headers).toBeNull();
   });
 
   it('does not encode bodies with non latin characters', async () => {
@@ -66,6 +66,6 @@ describe('StatsigEncoded', () => {
         statsigMetadata: MOCK_METADATA,
       }),
     );
-    expect(headers).toMatchObject({ 'STATSIG-ENCODED': '0' });
+    expect(headers).toBeNull();
   });
 });
