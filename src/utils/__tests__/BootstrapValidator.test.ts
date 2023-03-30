@@ -38,6 +38,63 @@ describe('BootstrapValidator', () => {
     expect(result).toBe(true);
   });
 
+  it('returns false when userid doesnt match empty evaluted_keys', () => {
+    const result = BootstrapValidator.isValid(
+      { userID: 'a-user-id' },
+      {
+        evaluated_keys: {},
+      },
+    );
+
+    expect(result).toBe(false);
+  });
+
+  it('returns false when customid doesnt match empty evaluted_keys', () => {
+    const result = BootstrapValidator.isValid(
+      { customIDs: { workID: 'a-work-id' } },
+      {
+        evaluated_keys: {},
+      },
+    );
+
+    expect(result).toBe(false);
+  });
+
+  it('returns false when userid doesnt match empty evaluted_keys', () => {
+    const result = BootstrapValidator.isValid(
+      { userID: 'a-user-id' },
+      {
+        evaluated_keys: {},
+      },
+    );
+
+    expect(result).toBe(false);
+  });
+
+  it('returns false when customid doesnt match empty user', () => {
+    const result = BootstrapValidator.isValid(
+      {},
+      {
+        evaluated_keys: {
+          customIDs: { workID: 'a-work-id' },
+        },
+      },
+    );
+
+    expect(result).toBe(false);
+  });
+
+  it('returns false when userid doesnt match empty user', () => {
+    const result = BootstrapValidator.isValid(
+      {},
+      {
+        evaluated_keys: { userID: 'a-user-id' },
+      },
+    );
+
+    expect(false).toBe(result);
+  });
+
   it('returns false when userID does not match', () => {
     const result = BootstrapValidator.isValid(
       { userID: 'a-user-id', customIDs: { workID: 'a-work-id' } },
@@ -60,8 +117,8 @@ describe('BootstrapValidator', () => {
       {
         evaluated_keys: {
           userID: 'a-user-id',
+          stableID: 'an-invalid-stable-id',
           customIDs: {
-            stableID: 'an-invalid-stable-id',
             workID: 'a-work-id',
           },
         },

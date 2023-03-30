@@ -32,7 +32,19 @@ export type StatsigOptions = {
   disableLocalStorage?: boolean;
   initCompletionCallback?: InitCompletionCallback | null;
   disableDiagnosticsLogging?: boolean;
+  logLevel?: LogLevel | null;
+  ignoreWindowUndefined?: boolean;
+  fetchMode?: FetchMode;
+  disableLocalOverrides?: boolean;
 };
+
+export enum LogLevel {
+  'NONE',
+  'INFO',
+  'DEBUG',
+}
+
+export type FetchMode = 'cache-or-network' | 'network-only';
 
 type BoundedNumberInput = {
   default: number;
@@ -58,6 +70,10 @@ export default class StatsigSDKOptions {
   private disableLocalStorage: boolean;
   private initCompletionCallback: InitCompletionCallback | null;
   private disableDiagnosticsLogging: boolean;
+  private logLevel: LogLevel;
+  private ignoreWindowUndefined: boolean;
+  private fetchMode: FetchMode;
+  private disableLocalOverrides: boolean;
 
   constructor(options?: StatsigOptions | null) {
     if (options == null) {
@@ -103,6 +119,10 @@ export default class StatsigSDKOptions {
     this.disableLocalStorage = options.disableLocalStorage ?? false;
     this.initCompletionCallback = options.initCompletionCallback ?? null;
     this.disableDiagnosticsLogging = options.disableDiagnosticsLogging ?? false;
+    this.logLevel = options?.logLevel ?? LogLevel.NONE;
+    this.ignoreWindowUndefined = options?.ignoreWindowUndefined ?? false;
+    this.fetchMode = options.fetchMode ?? 'network-only';
+    this.disableLocalOverrides = options?.disableLocalOverrides ?? false;
   }
 
   getApi(): string {
@@ -167,6 +187,22 @@ export default class StatsigSDKOptions {
 
   getDisableDiagnosticsLogging(): boolean {
     return this.disableDiagnosticsLogging;
+  }
+
+  getLogLevel(): LogLevel {
+    return this.logLevel;
+  }
+
+  getIgnoreWindowUndefined(): boolean {
+    return this.ignoreWindowUndefined;
+  }
+
+  getFetchMode(): FetchMode {
+    return this.fetchMode;
+  }
+
+  getDisableLocalOverrides(): boolean {
+    return this.disableLocalOverrides;
   }
 
   private normalizeNumberInput(

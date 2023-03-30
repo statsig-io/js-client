@@ -19,6 +19,8 @@ const APP_METRICS_PAGE_LOAD_EVENT =
 const APP_METRICS_DOM_INTERACTIVE_EVENT =
   INTERNAL_EVENT_PREFIX + 'app_metrics::dom_interactive_time';
 const DIAGNOSTICS_EVENT = INTERNAL_EVENT_PREFIX + 'diagnostics';
+const DEFAULT_VALUE_WARNING =
+  INTERNAL_EVENT_PREFIX + 'default_value_type_mismatch';
 
 type FailedLogEventBody = {
   events: object[];
@@ -76,7 +78,7 @@ export default class StatsigLogger {
         this.flush(document.visibilityState !== 'visible');
       });
     }
-    if (typeof window === 'undefined' || window == null) {
+    if (!this.sdkInternal.getOptions().getIgnoreWindowUndefined() && (typeof window === 'undefined' || window == null)) {
       // dont set the flush interval outside of client browser environments
       return;
     }
@@ -109,7 +111,7 @@ export default class StatsigLogger {
           event.addStatsigMetadata('currentPage', parts[0]);
         }
       }
-    } catch (_e) {}
+    } catch (_e) { }
 
     this.queue.push(event.toJsonObject());
 
@@ -248,6 +250,20 @@ export default class StatsigLogger {
     this.log(configExposure);
   }
 
+  public logConfigDefaultValueFallback(
+    user: StatsigUser | null,
+    message: string,
+    metadata: object,
+  ): void {
+    const defaultValueEvent = new LogEvent(DEFAULT_VALUE_WARNING);
+    defaultValueEvent.setUser(user);
+    defaultValueEvent.setValue(message);
+    defaultValueEvent.setMetadata(metadata);
+    this.log(defaultValueEvent);
+    this.loggedErrors.add(message);
+    this.sdkInternal.getConsoleLogger().error(message);
+  }
+
   public logAppError(
     user: StatsigUser | null,
     message: string,
@@ -369,23 +385,29 @@ export default class StatsigLogger {
       .catch((error) => {
         if (typeof error.text === 'function') {
           error.text().then((errorText: string) => {
-            const logFailureEvent = new LogEvent(LOG_FAILURE_EVENT);
-            logFailureEvent.setMetadata({
-              error: `${error.status}: ${errorText}`,
-            });
-            logFailureEvent.setUser(processor.sdkInternal.getCurrentUser());
-            processor.appendFailureLog(logFailureEvent, oldQueue);
+            this.sdkInternal
+              .getErrorBoundary()
+              .logError(LOG_FAILURE_EVENT, error, async () => {
+                return {
+                  eventCount: oldQueue.length,
+                  error: errorText,
+                };
+              });
           });
         } else {
-          const logFailureEvent = new LogEvent(LOG_FAILURE_EVENT);
-          logFailureEvent.setMetadata({
-            error: error.message,
-          });
-          logFailureEvent.setUser(processor.sdkInternal.getCurrentUser());
-          processor.appendFailureLog(logFailureEvent, oldQueue);
+          this.sdkInternal
+            .getErrorBoundary()
+            .logError(LOG_FAILURE_EVENT, error, async () => {
+              return {
+                eventCount: oldQueue.length,
+                error: error.message,
+              };
+            });
         }
+        processor.newFailedRequest(LOG_FAILURE_EVENT, oldQueue);
       })
       .finally(async () => {
+
         if (isClosing) {
           if (this.queue.length > 0) {
             this.addFailedRequest({
@@ -498,12 +520,11 @@ export default class StatsigLogger {
     }
   }
 
-  private appendFailureLog(event: LogEvent, queue: object[]): void {
-    if (this.loggedErrors.has(event.getName())) {
+  private newFailedRequest(name: string, queue: object[]): void {
+    if (this.loggedErrors.has(name)) {
       return;
     }
-    this.loggedErrors.add(event.getName());
-    queue.push(event);
+    this.loggedErrors.add(name);
 
     this.failedLogEvents.push({
       events: queue,

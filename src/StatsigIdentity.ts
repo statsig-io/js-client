@@ -49,7 +49,6 @@ export type UUID = {
 };
 
 type StatsigMetadata = {
-  sessionID: string;
   sdkType: string;
   sdkVersion: string;
   stableID?: string;
@@ -79,7 +78,6 @@ export default class Identity {
     this.user = user;
     this.sdkVersion = require('../package.json')?.version ?? '';
     this.statsigMetadata = {
-      sessionID: this.getUUID(),
       sdkType: this.sdkType,
       sdkVersion: this.sdkVersion,
     };
@@ -90,10 +88,18 @@ export default class Identity {
         stableID ??
         StatsigLocalStorage.getItem(STATSIG_STABLE_ID_KEY) ??
         this.getUUID();
-      StatsigLocalStorage.setItem(STATSIG_STABLE_ID_KEY, stableID);
     }
     if (stableID) {
       this.statsigMetadata.stableID = stableID;
+    }
+  }
+
+  public saveStableID(): void {
+    if (this.statsigMetadata.stableID != null) {
+      StatsigLocalStorage.setItem(
+        STATSIG_STABLE_ID_KEY,
+        this.statsigMetadata.stableID,
+      );
     }
   }
 
@@ -128,7 +134,6 @@ export default class Identity {
 
   public updateUser(user: StatsigUser | null): void {
     this.user = user;
-    this.statsigMetadata.sessionID = this.getUUID();
   }
 
   public setSDKPackageInfo(SDKPackageInfo: _SDKPackageInfo): void {

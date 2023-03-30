@@ -12,6 +12,8 @@ type InitializeResponse = {
   dynamic_configs: Record<string, Record<string, any>>;
 };
 
+function onConfigDefaultValueFallback() {}
+
 function generateTestConfigs(
   value: any,
   inExperiment: boolean,
@@ -91,6 +93,8 @@ describe('Verify behavior of InternalStore', () => {
         ruleID: 'rule_1',
       },
     ],
+    '',
+    onConfigDefaultValueFallback,
   );
 
   const localStorage = new LocalStorageMock();
@@ -160,10 +164,10 @@ describe('Verify behavior of InternalStore', () => {
       reason: EvaluationReason.Network,
       time: now,
     });
-    expect(spyOnSet).toHaveBeenCalledTimes(2);
-    expect(spyOnGet).toHaveBeenCalledTimes(4); // load 2 cache values, overrides, and stableid
+    expect(spyOnSet).toHaveBeenCalledTimes(1); // stableid not saved by default
+    expect(spyOnGet).toHaveBeenCalledTimes(4); // load 2 cache values, 1 overrides and 1 stableid
     const config = store.getConfig('test_config', false);
-    expect(config).toEqual(config_obj);
+    expect(config).toMatchConfig(config_obj);
     expect(config.getEvaluationDetails()).toEqual({
       reason: EvaluationReason.Network,
       time: now,
@@ -176,7 +180,7 @@ describe('Verify behavior of InternalStore', () => {
     const spyOnSet = jest.spyOn(window.localStorage.__proto__, 'setItem');
     const spyOnGet = jest.spyOn(window.localStorage.__proto__, 'getItem');
     const client = new StatsigClient(sdkKey);
-    expect(spyOnSet).toHaveBeenCalledTimes(1);
+    expect(spyOnSet).toHaveBeenCalledTimes(0);
     const store = client.getStore();
     expect(
       store.getConfig('test_config', false).getEvaluationDetails().reason,
@@ -186,10 +190,40 @@ describe('Verify behavior of InternalStore', () => {
       feature_gates: feature_gates,
       dynamic_configs: configs,
     });
-    expect(spyOnSet).toHaveBeenCalledTimes(2);
+    expect(spyOnSet).toHaveBeenCalledTimes(1);
     expect(spyOnGet).toHaveBeenCalledTimes(4); // load 2 cache values and 1 overrides and 1 stableid
     const config = store.getConfig('test_config', false);
-    expect(config).toEqual(config_obj);
+    expect(config).toMatchConfig(config_obj);
+    expect(config.getEvaluationDetails()).toEqual({
+      reason: EvaluationReason.Network,
+      time: now,
+    });
+    expect(store.checkGate('test_gate', false).gate.value).toEqual(true);
+  });
+
+  test('Verify local storage usage with override id', () => {
+    expect.assertions(8);
+    const spyOnSet = jest.spyOn(window.localStorage.__proto__, 'setItem');
+    const spyOnGet = jest.spyOn(window.localStorage.__proto__, 'getItem');
+    const client = new StatsigClient(sdkKey, {}, {overrideStableID: "999"});
+    expect(spyOnSet).toHaveBeenCalledTimes(0);
+    const store = client.getStore();
+    expect(
+      store.getConfig('test_config', false).getEvaluationDetails().reason,
+    ).toEqual(EvaluationReason.Uninitialized);
+
+    store.save(null, {
+      feature_gates: feature_gates,
+      dynamic_configs: configs,
+    });
+    expect(spyOnSet).toHaveBeenCalledTimes(1);
+    expect(spyOnGet).toHaveBeenCalledTimes(3); // load 2 cache values and 1 overrides
+
+    // @ts-ignore
+    client.delayedSetup();
+    expect(spyOnSet).toHaveBeenCalledTimes(2); // only now do we save the stableid
+    const config = store.getConfig('test_config', false);
+    expect(config).toMatchConfig(config_obj);
     expect(config.getEvaluationDetails()).toEqual({
       reason: EvaluationReason.Network,
       time: now,
@@ -292,7 +326,7 @@ describe('Verify behavior of InternalStore', () => {
     const statsig = new StatsigClient(sdkKey, { userID: '123' });
     await statsig.initializeAsync();
     // test_config matches without override
-    expect(statsig.getStore().getConfig('test_config', false)).toEqual(
+    expect(statsig.getStore().getConfig('test_config', false)).toMatchConfig(
       config_obj,
     );
 

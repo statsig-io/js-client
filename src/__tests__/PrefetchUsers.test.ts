@@ -4,6 +4,7 @@
 
 import Statsig from '..';
 import StatsigClient from '../StatsigClient';
+import { getUserCacheKey } from '../utils/Hashing';
 
 const aConfigHash = 'klGzwI7eIlw4LSeTwhb4C0NCIhHJrIf441Dni6g7DkE=';
 
@@ -23,12 +24,15 @@ function makeConfigDef(value: Record<string, string>) {
 describe('Prefetch Users', () => {
   const user = { userID: 'a-user' };
   const prefetchUsers = [
-    ['b-user', 'group_1'],
-    ['c-user', 'group_2'],
-  ].map(([userID, customID]) => ({
-    userID,
-    customIDs: { GroupID: customID },
-  }));
+    {
+      userID: 'b-user',
+      customIDs: { GroupID: 'group_1' },
+    },
+    {
+      userID: 'c-user',
+      customIDs: { GroupID: 'group_2' },
+    },
+  ];
 
   let initializeCalls = 0;
 
@@ -65,7 +69,7 @@ describe('Prefetch Users', () => {
 
     if (body.prefetchUsers) {
       response['prefetched_user_values'] = {
-        '-1491500988': {
+        '-1773350080': {
           // b-user
           feature_gates: {},
           dynamic_configs: {
@@ -74,7 +78,7 @@ describe('Prefetch Users', () => {
           layer_configs: {},
           has_updates: true,
         },
-        '-1940197626': {
+        '483560928': {
           // c-user
           feature_gates: {},
           dynamic_configs: {
@@ -107,6 +111,8 @@ describe('Prefetch Users', () => {
     expect(client.getConfig('a_config').value).toEqual({
       key: 'empty_user_value',
     });
+
+    expect(initializeCalls).toBe(1);
   });
 
   it('can be initialized with a singular user and prefetchUsers', async () => {

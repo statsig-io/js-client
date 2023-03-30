@@ -1,4 +1,4 @@
-import DynamicConfig from './DynamicConfig';
+import DynamicConfig, { OnDefaultValueFallback } from './DynamicConfig';
 import Layer, { LogParameterFunction } from './Layer';
 import { IHasStatsigInternal, StatsigOverrides } from './StatsigClient';
 import BootstrapValidator from './utils/BootstrapValidator';
@@ -23,6 +23,7 @@ export enum EvaluationReason {
   Unrecognized = 'Unrecognized',
   Uninitialized = 'Uninitialized',
   Error = 'Error',
+  NetworkNotModified = 'NetworkNotModified',
 }
 
 export type EvaluationDetails = {
@@ -91,7 +92,10 @@ export default class StatsigStore {
   private userCacheKey: string;
   private reason: EvaluationReason;
 
-  public constructor(sdkInternal: IHasStatsigInternal) {
+  public constructor(
+    sdkInternal: IHasStatsigInternal,
+    initializeValues: Record<string, any> | null,
+  ) {
     this.sdkInternal = sdkInternal;
     this.userCacheKey = this.sdkInternal.getCurrentUserCacheKey();
     this.values = {};
@@ -107,10 +111,14 @@ export default class StatsigStore {
     this.stickyDeviceExperiments = {};
     this.loaded = false;
     this.reason = EvaluationReason.Uninitialized;
-    this.loadFromLocalStorage();
+    if (initializeValues) {
+      this.bootstrap(initializeValues);
+    } else {
+      this.loadFromLocalStorage();
+    }
   }
 
-  public updateUser(isUserPrefetched: boolean): boolean {
+  public updateUser(isUserPrefetched: boolean): number | null {
     this.userCacheKey = this.sdkInternal.getCurrentUserCacheKey();
     return this.setUserValueFromCache(isUserPrefetched);
   }
@@ -120,13 +128,13 @@ export default class StatsigStore {
       await StatsigAsyncStorage.getItemAsync(INTERNAL_STORE_KEY),
       await StatsigAsyncStorage.getItemAsync(STICKY_DEVICE_EXPERIMENTS_KEY),
     );
+    // triggered for react native, when async storage is setup.  Need to update the cache key
+    // as the stableID is not available when this is set in the constructor (RN/async storage clients only)
+    this.userCacheKey = this.sdkInternal.getCurrentUserCacheKey();
     this.loaded = true;
   }
 
-  public bootstrap(
-    stableID: string,
-    initializeValues: Record<string, any>,
-  ): void {
+  public bootstrap(initializeValues: Record<string, any>): void {
     const key = this.sdkInternal.getCurrentUserCacheKey();
     const user = this.sdkInternal.getCurrentUser();
 
@@ -201,19 +209,22 @@ export default class StatsigStore {
     this.loadOverrides();
   }
 
-  private setUserValueFromCache(isUserPrefetched: boolean = false): boolean {
+  private setUserValueFromCache(
+    isUserPrefetched: boolean = false,
+  ): number | null {
     let cachedValues = this.values[this.userCacheKey];
     if (cachedValues == null) {
       this.resetUserValues();
       this.reason = EvaluationReason.Uninitialized;
-      return false;
+      return null;
     }
 
     this.userValues = cachedValues;
     this.reason = isUserPrefetched
       ? EvaluationReason.Prefetch
       : EvaluationReason.Cache;
-    return true;
+
+    return cachedValues.evaluation_time ?? 0;
   }
 
   private removeFromStorage(key: string) {
@@ -222,6 +233,9 @@ export default class StatsigStore {
   }
 
   private loadOverrides(): void {
+    if (this.sdkInternal.getOptions().getDisableLocalOverrides()) {
+      return;
+    }
     const overrides = StatsigLocalStorage.getItem(OVERRIDES_STORE_KEY);
     if (overrides != null) {
       try {
@@ -232,14 +246,15 @@ export default class StatsigStore {
     }
   }
 
+  public setEvaluationReason(evalReason: EvaluationReason) {
+    this.reason = evalReason;
+  }
+
   public async save(
     user: StatsigUser | null,
     jsonConfigs: Record<string, any>,
   ): Promise<void> {
-    const requestedUserCacheKey = getUserCacheKey(
-      this.sdkInternal.getStatsigMetadata().stableID as string,
-      user,
-    );
+    const requestedUserCacheKey = getUserCacheKey(user);
     const data = jsonConfigs as APIInitializeDataWithPrefetchedUsers;
     if (data.prefetched_user_values) {
       const cacheKeys = Object.keys(data.prefetched_user_values);
@@ -343,6 +358,11 @@ export default class StatsigStore {
         this.overrides.configs[configName],
         'override',
         details,
+        [],
+        '',
+        this.makeOnConfigDefaultValueFallback(
+          this.sdkInternal.getCurrentUser(),
+        ),
       );
     } else if (this.userValues?.dynamic_configs[configNameHash] != null) {
       const rawConfigValue = this.userValues?.dynamic_configs[configNameHash];
@@ -575,6 +595,7 @@ export default class StatsigStore {
       details,
       apiConfig?.secondary_exposures,
       apiConfig?.allocated_experiment_name ?? '',
+      this.makeOnConfigDefaultValueFallback(this.sdkInternal.getCurrentUser()),
     );
   }
 
@@ -691,5 +712,28 @@ export default class StatsigStore {
     } else {
       StatsigLocalStorage.setItem(key, value);
     }
+  }
+
+  private makeOnConfigDefaultValueFallback(
+    user: StatsigUser | null,
+  ): OnDefaultValueFallback {
+    return (config, parameter, defaultValueType, valueType) => {
+      if (!this.isLoaded()) {
+        return;
+      }
+
+      this.sdkInternal.getLogger().logConfigDefaultValueFallback(
+        user,
+        `Parameter ${parameter} is a value of type ${valueType}.
+          Returning requested defaultValue type ${defaultValueType}`,
+        {
+          name: config.getName(),
+          ruleID: config.getRuleID(),
+          parameter,
+          defaultValueType,
+          valueType,
+        },
+      );
+    };
   }
 }

@@ -10,47 +10,16 @@ export default abstract class BootstrapValidator {
       if (!evaluatedKeys || typeof evaluatedKeys !== 'object') {
         return true;
       }
+      const evaluatedKeysRecord = this.copyObject(
+        evaluatedKeys as Record<string, unknown>,
+      );
 
-      const keys = this.copyObject(evaluatedKeys ?? {});
-      const customIDs: Record<string, unknown> = this.copyObject({
-        ...user?.customIDs,
-      });
+      const userToCompare = user == null ? null : this.copyObject(user);
 
-      for (let [key, value] of Object.entries(keys)) {
-        switch (key) {
-          case 'userID':
-            if (value !== user?.userID) {
-              return false;
-            }
-            break;
-
-          case 'customIDs':
-            if (typeof value !== 'object' || typeof customIDs !== 'object') {
-              return false;
-            }
-
-            if (value?.['stableID'] || customIDs?.['stableID']) {
-              var a = 1;
-            }
-
-            // StableID may be present, but should not be compared
-            delete value?.['stableID'];
-            delete customIDs?.['stableID'];
-
-            const actualKeys = Object.keys(value);
-            const expectedKeys = Object.keys(customIDs);
-            if (actualKeys.length !== expectedKeys.length) {
-              return false;
-            }
-
-            for (let [customID, customIDValue] of Object.entries(value)) {
-              if (customIDs[customID] !== customIDValue) {
-                return false;
-              }
-            }
-            break;
-        }
-      }
+      return (
+        BootstrapValidator.validate(evaluatedKeysRecord, userToCompare) &&
+        BootstrapValidator.validate(userToCompare, evaluatedKeysRecord)
+      );
     } catch (error) {
       // This is best-effort. If we fail, return true.
     }
@@ -58,7 +27,64 @@ export default abstract class BootstrapValidator {
     return true;
   }
 
-  private static copyObject<T>(obj: T): T {
-    return JSON.parse(JSON.stringify(obj));
+  private static validate(
+    one: Record<string, unknown> | null,
+    two: Record<string, unknown> | null,
+  ): boolean {
+    if (one == null) {
+      return two == null;
+    } else if (two == null) {
+      return false;
+    }
+
+    for (let [key, value] of Object.entries(one)) {
+      if (key === 'stableID') {
+        continue;
+      }
+
+      if (typeof value !== typeof two[key]) {
+        return false;
+      }
+
+      if (typeof value === 'string') {
+        if (value !== two[key]) {
+          return false;
+        }
+      } else if (typeof value === 'object') {
+        return this.validate(
+          value as Record<string, unknown>,
+          two[key] as Record<string, unknown>,
+        );
+      } else {
+        // unexpected
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private static copyObject(
+    obj?: Record<string, unknown>,
+  ): Record<string, unknown> | null {
+    if (obj == null) {
+      return null;
+    }
+
+    let copy: Record<string, unknown> = {};
+    if (obj?.userID) {
+      copy['userID'] = obj?.userID;
+    }
+
+    if (obj?.customIDs) {
+      const customIDs: Record<string, unknown> = {
+        ...(obj.customIDs as Record<string, unknown>),
+      };
+      delete customIDs['stableID'];
+      if (Object.keys(customIDs).length !== 0) {
+        copy['customIDs'] = customIDs;
+      }
+    }
+
+    return copy;
   }
 }
