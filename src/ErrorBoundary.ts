@@ -1,6 +1,7 @@
 import {
   StatsigUninitializedError,
   StatsigInvalidArgumentError,
+  ExternalError,
 } from './Errors';
 export const ExceptionEndpoint = 'https://statsigapi.net/v1/sdk_exception';
 
@@ -35,11 +36,17 @@ export default class ErrorBoundary {
       const result = task();
       if (result instanceof Promise) {
         return (result as any).catch((e: unknown) => {
+          if (e instanceof ExternalError) {
+            throw e;
+          }
           return this.onCaught(tag, e, recover, getExtraData);
         });
       }
       return result;
     } catch (error) {
+      if (error instanceof ExternalError) {
+        throw error;
+      }
       return this.onCaught(tag, error, recover, getExtraData);
     }
   }

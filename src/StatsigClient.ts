@@ -1,6 +1,7 @@
 import DynamicConfig from './DynamicConfig';
 import ErrorBoundary from './ErrorBoundary';
 import {
+  ExternalError,
   StatsigInvalidArgumentError,
   StatsigUninitializedError,
 } from './Errors';
@@ -320,13 +321,16 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
             this.errorBoundary.logError('initializeAsync:fetchAndSaveValues', e);
             return { success: false, message: e.message };
           })
-          .then(({success, message}) => {
-            const cb = this.options.getInitCompletionCallback();
-            if (cb) {
-              cb(now() - this.startTime, success, message);
+          .then(({ success, message }) => {
+            try {
+              const cb = this.options.getInitCompletionCallback();
+              if (cb) {
+                cb(now() - this.startTime, success, message);
+              }
+              return;
+            } catch (e) {
+              throw new ExternalError(e as Error);
             }
-
-            return;
           })
           .finally(async () => {
             this.pendingInitPromise = null;
