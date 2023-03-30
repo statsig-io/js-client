@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "es5",
-    "lib": ["es5", "dom"],
+    "lib": ["es5", "dom", "esnext"],
     "module": "commonjs",
     "strict": true,
     "outDir": "dist",
@@ -10,7 +10,12 @@
     "declaration": true,
     "skipLibCheck": true,
     "moduleResolution": "node",
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "types": [
+      "@types/webpack-env",
+      "node",
+      "jest",
+    ],
   },
   "include": ["src/**/*", "src/utils/*"],
   "exclude": [

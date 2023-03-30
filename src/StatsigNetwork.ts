@@ -8,6 +8,7 @@ import Diagnostics, {
 
 export enum StatsigEndpoint {
   Initialize = 'initialize',
+  InitializeWithDeltas = 'initialize_with_deltas',
   Rgstr = 'rgstr',
   LogEventBeacon = 'log_event_beacon',
 }
@@ -17,6 +18,17 @@ type NetworkResponse = Response & {
 };
 
 const NO_CONTENT = 204;
+
+/**
+ * An extension of the promise type, it adds a
+ * function `eventually`. In the event that the provided timeout
+ * is reached, the function will still be called regardless.
+ * 
+ * This function WILL NOT BE CALLED if the promise resolves normally.
+ */
+type PromiseWithTimeout<T> = Promise<T> & {
+  eventually: (fn: (t: T) => void) => PromiseWithTimeout<T>;
+}
 
 export default class StatsigNetwork {
   private sdkInternal: IHasStatsigInternal;
@@ -54,11 +66,9 @@ export default class StatsigNetwork {
     user: StatsigUser | null,
     sinceTime: number | null,
     timeout: number,
-    resolveCallback: (json: Record<string, any>) => Promise<void>,
-    rejectCallback: (e: Error) => void,
     diagnostics?: Diagnostics,
     prefetchUsers?: Record<string, StatsigUser>,
-  ): Promise<void> {
+  ): PromiseWithTimeout<Record<string, any>> {
     const input = {
       user,
       prefetchUsers,
@@ -69,24 +79,43 @@ export default class StatsigNetwork {
     return this.postWithTimeout(
       StatsigEndpoint.Initialize,
       input,
-      resolveCallback,
-      rejectCallback,
       diagnostics,
       timeout, // timeout for early returns
       3, // retries
     );
   }
 
-  private postWithTimeout(
+  public fetchDeltasSinceTime(
+    user: StatsigUser | null,
+    sinceTime: number | null,
+    timeout: number,
+    diagnostics?: Diagnostics,
+    prefetchUsers?: Record<string, StatsigUser>,
+  ): PromiseWithTimeout<Record<string, any>> {
+    const input = {
+      user,
+      prefetchUsers,
+      statsigMetadata: this.sdkInternal.getStatsigMetadata(),
+      sinceTime: sinceTime ?? undefined,
+    };
+
+    return this.postWithTimeout(
+      StatsigEndpoint.InitializeWithDeltas,
+      input,
+      diagnostics,
+      timeout, // timeout for early returns
+      3, // retries
+    );
+  }
+
+  private postWithTimeout<T>(
     endpointName: StatsigEndpoint,
     body: object,
-    resolveCallback: (json: Record<string, any>) => Promise<void>,
-    rejectCallback: (e: Error) => void,
     diagnostics?: Diagnostics,
     timeout: number = 0,
     retries: number = 0,
     backoff: number = 1000,
-  ): Promise<void> {
+  ): PromiseWithTimeout<T> {
     if (endpointName === StatsigEndpoint.Initialize) {
       diagnostics?.mark(
         DiagnosticsKey.INITIALIZE,
@@ -94,6 +123,35 @@ export default class StatsigNetwork {
         'network_request',
       );
     }
+
+    let hasTimedOut = false;
+    let timer = null;
+    let cachedReturnValue: T | null = null;
+    let eventuals: ((t: T) => void)[] = [];
+
+    const eventually = (boundScope: PromiseWithTimeout<T>) => (fn: (t: T) => void) => {
+      if (hasTimedOut && cachedReturnValue) {
+        fn(cachedReturnValue);
+      } else {
+        eventuals.push(fn);
+      }
+
+      return boundScope;
+    };
+
+    if (timeout != 0) {
+      timer = new Promise<void>((resolve, reject) => {
+        setTimeout(() => {
+          hasTimedOut = true;
+          reject(
+            new Error(
+              `The initialization timeout of ${timeout}ms has been hit before the network request has completed.`,
+            ),
+          );
+        }, timeout);
+      });
+    }
+
     const fetchPromise = this.postToEndpoint(
       endpointName,
       body,
@@ -139,7 +197,11 @@ export default class StatsigNetwork {
         return this.sdkInternal.getErrorBoundary().capture(
           'postWithTimeout',
           async () => {
-            resolveCallback(json);
+            cachedReturnValue = json as T;
+            if (hasTimedOut) {
+              eventuals.forEach(fn => fn(json as T));
+              eventuals = [];
+            }
             return Promise.resolve(json);
           },
           () => {
@@ -149,9 +211,6 @@ export default class StatsigNetwork {
             return this.getErrorData(endpointName, body, retries, backoff, res);
           },
         );
-      })
-      .then(() => {
-        /* return Promise<void> */
       })
       .catch((e) => {
         if (endpointName === StatsigEndpoint.Initialize) {
@@ -163,25 +222,13 @@ export default class StatsigNetwork {
           );
         }
 
-        if (typeof rejectCallback === 'function') {
-          rejectCallback(e);
-        }
         return Promise.reject(e);
       });
+    
+    const racingPromise = (timer ? Promise.race([fetchPromise, timer]) : fetchPromise) as PromiseWithTimeout<T>;
+    racingPromise.eventually = eventually(racingPromise);
 
-    if (timeout != 0) {
-      const timer = new Promise<void>((resolve, reject) => {
-        setTimeout(() => {
-          reject(
-            new Error(
-              `The initialization timeout of ${timeout}ms has been hit before the network request has completed.`,
-            ),
-          );
-        }, timeout);
-      });
-      return Promise.race([fetchPromise, timer]);
-    }
-    return fetchPromise;
+    return racingPromise;
   }
 
   public sendLogBeacon(payload: Record<string, any>): boolean {
@@ -224,7 +271,7 @@ export default class StatsigNetwork {
     }
 
     const api =
-      endpointName == StatsigEndpoint.Initialize
+      [StatsigEndpoint.Initialize, StatsigEndpoint.InitializeWithDeltas].includes(endpointName)
         ? this.sdkInternal.getOptions().getApi()
         : this.sdkInternal.getOptions().getEventLoggingApi();
     const url = api + endpointName;

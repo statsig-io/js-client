@@ -307,34 +307,39 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
           return Promise.resolve();
         }
 
-        const completionCallback = (
-          success: boolean,
-          message: string | null,
-        ) => {
-          const cb = this.options.getInitCompletionCallback();
-          if (cb) {
-            cb(now() - this.startTime, success, message);
-          }
-        };
-
         const user = this.identity.getUser();
         this.pendingInitPromise = this.fetchAndSaveValues(
           user,
           this.options.getPrefetchUsers(),
-          completionCallback,
           this.initializeDiagnostics,
-        ).finally(async () => {
-          this.pendingInitPromise = null;
-          this.ready = true;
-          this.delayedSetup();
-          this.initializeDiagnostics.mark(
-            DiagnosticsKey.OVERALL,
-            DiagnosticsEvent.END,
-          );
-          if (!this.options.getDisableDiagnosticsLogging()) {
-            this.logger.logDiagnostics(user, this.initializeDiagnostics);
-          }
-        });
+        )
+          .then(() => {
+            return { success: true, message: null };
+          })
+          .catch((e) => {
+            this.errorBoundary.logError('initializeAsync:fetchAndSaveValues', e);
+            return { success: false, message: e.message };
+          })
+          .then(({success, message}) => {
+            const cb = this.options.getInitCompletionCallback();
+            if (cb) {
+              cb(now() - this.startTime, success, message);
+            }
+
+            return;
+          })
+          .finally(async () => {
+            this.pendingInitPromise = null;
+            this.ready = true;
+            this.delayedSetup();
+            this.initializeDiagnostics.mark(
+              DiagnosticsKey.OVERALL,
+              DiagnosticsEvent.END,
+            );
+            if (!this.options.getDisableDiagnosticsLogging()) {
+              this.logger.logDiagnostics(user, this.initializeDiagnostics);
+            }
+          });
 
         this.handleOptionalLogging();
         return this.pendingInitPromise;
@@ -982,9 +987,6 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   private async fetchAndSaveValues(
     user: StatsigUser | null,
     prefetchUsers: StatsigUser[] = [],
-    completionCallback:
-      | ((success: boolean, message: string | null) => void)
-      | null = null,
     diagnostics?: Diagnostics,
   ): Promise<void> {
     if (prefetchUsers.length > 5) {
@@ -1001,12 +1003,30 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       sinceTime = this.store.getLastUpdateTime(user);
     }
 
+    if (sinceTime && this.options.getEnableInitializeWithDeltas()) {
+      return await this.fetchAndSaveValuesWithDeltas(
+        user,
+        sinceTime,
+        prefetchUsers,
+        diagnostics,
+        keyedPrefetchUsers,
+      );
+    }
+
     return this.network
       .fetchValues(
         user,
         sinceTime,
         this.options.getInitTimeoutMs(),
-        async (json: Record<string, any>): Promise<void> => {
+        prefetchUsers.length === 0 ? diagnostics : undefined,
+        prefetchUsers.length > 0 ? keyedPrefetchUsers : undefined,
+      )
+        .eventually((json) => {
+          if (json?.has_updates) {
+            this.store.saveWithoutUpdatingClientState(user, json);
+          }
+        })
+        .then(async (json: Record<string, any>) => {
           return this.errorBoundary.swallow('fetchAndSaveValues', async () => {
             diagnostics?.mark(
               DiagnosticsKey.INITIALIZE,
@@ -1031,17 +1051,49 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
               'process',
             );
           });
-        },
-        (e: Error) => {},
-        prefetchUsers.length === 0 ? diagnostics : undefined,
-        prefetchUsers.length > 0 ? keyedPrefetchUsers : undefined,
-      )
-      .then(() => {
-        completionCallback?.(true, null);
-      })
-      .catch((e) => {
-        completionCallback?.(false, e.message);
-      });
+        })
+      
+  }
+
+  private async fetchAndSaveValuesWithDeltas(
+    user: StatsigUser | null,
+    sinceTime: number,
+    prefetchUsers: StatsigUser[],
+    diagnostics: Diagnostics | undefined,
+    keyedPrefetchUsers: Record<string, StatsigUser>,
+  ) {
+    const json = await this.network.fetchDeltasSinceTime(
+      user,
+      sinceTime,
+      this.options.getInitTimeoutMs(),
+      prefetchUsers.length === 0 ? diagnostics : undefined,
+      prefetchUsers.length > 0 ? keyedPrefetchUsers : undefined,
+    );
+
+    this.errorBoundary.swallow('fetchAndSaveValuesWithDeltas', async () => {
+      diagnostics?.mark(
+        DiagnosticsKey.INITIALIZE_WITH_DELTAS,
+        DiagnosticsEvent.START,
+        'process',
+      );
+
+      if (json?.has_updates) {
+        await this.store.saveInitDeltas(user, json);
+      } else if (json?.is_no_content) {
+        this.store.setEvaluationReason(EvaluationReason.NetworkNotModified);
+      }
+
+      this.prefetchedUsersByCacheKey = {
+        ...this.prefetchedUsersByCacheKey,
+        ...keyedPrefetchUsers,
+      };
+
+      diagnostics?.mark(
+        DiagnosticsKey.INITIALIZE_WITH_DELTAS,
+        DiagnosticsEvent.END,
+        'process',
+      );
+    });
   }
 
   private checkGateImpl(
