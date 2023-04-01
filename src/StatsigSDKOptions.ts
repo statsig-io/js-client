@@ -14,6 +14,12 @@ export type InitCompletionCallback = (
   message: string | null,
 ) => void;
 
+export type UpdateUserCompletionCallback = (
+  durationMs: number,
+  success: boolean,
+  message: string | null,
+) => void;
+
 export type StatsigOptions = {
   api?: string;
   disableCurrentPageLogging?: boolean;
@@ -31,6 +37,7 @@ export type StatsigOptions = {
   prefetchUsers?: StatsigUser[];
   disableLocalStorage?: boolean;
   initCompletionCallback?: InitCompletionCallback | null;
+  updateUserCompletionCallback?: UpdateUserCompletionCallback | null;
   disableDiagnosticsLogging?: boolean;
   logLevel?: LogLevel | null;
   ignoreWindowUndefined?: boolean;
@@ -70,6 +77,7 @@ export default class StatsigSDKOptions {
   private prefetchUsers: StatsigUser[];
   private disableLocalStorage: boolean;
   private initCompletionCallback: InitCompletionCallback | null;
+  private updateCompletionCallback: UpdateUserCompletionCallback | null;
   private disableDiagnosticsLogging: boolean;
   private logLevel: LogLevel;
   private ignoreWindowUndefined: boolean;
@@ -120,12 +128,15 @@ export default class StatsigSDKOptions {
     this.prefetchUsers = options.prefetchUsers ?? [];
     this.disableLocalStorage = options.disableLocalStorage ?? false;
     this.initCompletionCallback = options.initCompletionCallback ?? null;
+    this.updateCompletionCallback =
+      options.updateUserCompletionCallback ?? null;
     this.disableDiagnosticsLogging = options.disableDiagnosticsLogging ?? false;
     this.logLevel = options?.logLevel ?? LogLevel.NONE;
     this.ignoreWindowUndefined = options?.ignoreWindowUndefined ?? false;
     this.fetchMode = options.fetchMode ?? 'network-only';
     this.disableLocalOverrides = options?.disableLocalOverrides ?? false;
-    this.enableInitializeWithDeltas = options?.enableInitializeWithDeltas ?? false;
+    this.enableInitializeWithDeltas =
+      options?.enableInitializeWithDeltas ?? false;
   }
 
   getApi(): string {
@@ -186,6 +197,10 @@ export default class StatsigSDKOptions {
 
   getInitCompletionCallback(): InitCompletionCallback | null {
     return this.initCompletionCallback;
+  }
+
+  getUpdateUserCompletionCallback(): UpdateUserCompletionCallback | null {
+    return this.updateCompletionCallback;
   }
 
   getDisableDiagnosticsLogging(): boolean {
