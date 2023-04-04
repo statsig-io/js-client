@@ -32,7 +32,10 @@ export type {
   UUID,
 } from './StatsigIdentity';
 export { StatsigEnvironment, StatsigOptions } from './StatsigSDKOptions';
-export type { InitCompletionCallback } from './StatsigSDKOptions';
+export type {
+  InitCompletionCallback,
+  UpdateUserCompletionCallback,
+} from './StatsigSDKOptions';
 export { EvaluationReason } from './StatsigStore';
 export type { EvaluationDetails } from './StatsigStore';
 export { StatsigUser } from './StatsigUser';
