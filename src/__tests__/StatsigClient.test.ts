@@ -420,6 +420,40 @@ describe('Verify behavior of StatsigClient', () => {
 
     expect(statsigWithDeltas.checkGate('test_gate')).toBe(false);
   });
+
+  test('initializing with deleted entities removes them', async () => {
+    respObject = {
+      feature_gates: {
+        [getHashValue('test_gate1')]: {
+          value: true,
+          rule_id: 'ruleID123',
+        },
+        [getHashValue('test_gate2')]: {
+          value: true,
+          rule_id: 'ruleID123',
+        },
+      },
+      dynamic_configs: {},
+      has_updates: true,
+      time: 1234567890,
+    };
+    const statsig = new StatsigClient(sdkKey, { userID: '123' });
+    await statsig.initializeAsync();
+
+    respObject = {
+      feature_gates: {},
+      dynamic_configs: {},
+      has_updates: true,
+      time: 1234567891,
+      deleted_entities: [getHashValue('test_gate1')],
+    };
+    const statsigWithDeltas = new StatsigClient(sdkKey, { userID: '123' }, { enableInitializeWithDeltas: true });
+    await statsigWithDeltas.initializeAsync();
+
+    // The first gate should be removed, the second should still be present
+    expect(statsigWithDeltas.checkGate('test_gate1')).toBe(false);
+    expect(statsigWithDeltas.checkGate('test_gate2')).toBe(true);
+  });
 });
 
 function setFakeAsyncStorage() {
