@@ -453,6 +453,11 @@ describe('Verify behavior of StatsigClient', () => {
     // The first gate should be removed, the second should still be present
     expect(statsigWithDeltas.checkGate('test_gate1')).toBe(false);
     expect(statsigWithDeltas.checkGate('test_gate2')).toBe(true);
+
+    // Validate the correct values are being written to localStorage
+    const fromLocalStorage = new StatsigClient(sdkKey, { userID: '123' });
+    expect(fromLocalStorage.checkGate('test_gate1')).toBe(false);
+    expect(fromLocalStorage.checkGate('test_gate2')).toBe(true);
   });
 });
 
