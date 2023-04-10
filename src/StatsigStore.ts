@@ -66,7 +66,9 @@ type APIInitializeData = {
 };
 
 type APIInitializeDataWithDeltas = APIInitializeData & {
-  deleted_entities: string[];
+  deleted_configs: string[];
+  deleted_gates: string[];
+  deleted_layers: string[];
 };
 
 type APIInitializeDataWithPrefetchedUsers = APIInitializeData & {
@@ -878,9 +880,13 @@ export default class StatsigStore {
   }
 }
 function removeDeletedKeysFromUserValues(initResponse: APIInitializeDataWithDeltasWithPrefetchedUsers, userValues: UserCacheValues) {
-  initResponse.deleted_entities.forEach(key => {
+  initResponse.deleted_configs.forEach(key => {
     delete userValues.dynamic_configs[key];
+  });
+  initResponse.deleted_gates.forEach(key => {
     delete userValues.feature_gates[key];
+  });
+  initResponse.deleted_layers.forEach(key => {
     delete userValues.layer_configs[key];
   });
 }

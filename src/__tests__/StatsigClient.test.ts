@@ -445,7 +445,9 @@ describe('Verify behavior of StatsigClient', () => {
       dynamic_configs: {},
       has_updates: true,
       time: 1234567891,
-      deleted_entities: [getHashValue('test_gate1')],
+      deleted_configs: [],
+      deleted_gates: [getHashValue('test_gate1')],
+      deleted_layers: [],
     };
     const statsigWithDeltas = new StatsigClient(sdkKey, { userID: '123' }, { enableInitializeWithDeltas: true });
     await statsigWithDeltas.initializeAsync();
