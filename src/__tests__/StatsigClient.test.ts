@@ -7,26 +7,26 @@ import StatsigAsyncStorage from '../utils/StatsigAsyncStorage';
 import LocalStorageMock from './LocalStorageMock';
 import Statsig from '..';
 
-import { getHashValue } from '../utils/Hashing';
+import { sha256Hash } from '../utils/Hashing';
 
 describe('Verify behavior of StatsigClient', () => {
   const sdkKey = 'client-clienttestkey';
   const baseInitResponse = {
     feature_gates: {
-      [getHashValue('test_gate')]: {
+      [sha256Hash('test_gate')]: {
         value: true,
         rule_id: 'ruleID123',
       },
     },
     dynamic_configs: {
-      [getHashValue('test_config')]: {
+      [sha256Hash('test_config')]: {
         value: {
           num: 4,
         },
       },
     },
     has_updates: true,
-    time: 123456789
+    time: 123456789,
   };
 
   let respObject: any = baseInitResponse;
@@ -49,10 +49,7 @@ describe('Verify behavior of StatsigClient', () => {
     parsedRequestBody = JSON.parse(params?.body as string);
     return Promise.resolve({
       ok: true,
-      text: () =>
-        Promise.resolve(
-          JSON.stringify(respObject),
-        ),
+      text: () => Promise.resolve(JSON.stringify(respObject)),
     });
   });
 
@@ -367,11 +364,17 @@ describe('Verify behavior of StatsigClient', () => {
       dynamic_configs: {},
     };
 
-    const statsigWithDeltas = new StatsigClient(sdkKey, { userID: '123' }, { enableInitializeWithDeltas: true });
+    const statsigWithDeltas = new StatsigClient(
+      sdkKey,
+      { userID: '123' },
+      { enableInitializeWithDeltas: true },
+    );
     await statsigWithDeltas.initializeAsync();
 
     expect(statsigWithDeltas.checkGate('test_gate')).toBe(true);
-    expect(statsigWithDeltas.getConfig('test_config').getValue()).toEqual({ num: 4 });
+    expect(statsigWithDeltas.getConfig('test_config').getValue()).toEqual({
+      num: 4,
+    });
   });
 
   test('initializing with deltas adds new values', async () => {
@@ -382,7 +385,7 @@ describe('Verify behavior of StatsigClient', () => {
 
     respObject = {
       feature_gates: {
-        [getHashValue('another_gate')]: {
+        [sha256Hash('another_gate')]: {
           value: true,
           rule_id: 'ruleID1234',
         },
@@ -392,7 +395,11 @@ describe('Verify behavior of StatsigClient', () => {
       time: 1234567890,
     };
 
-    const statsigWithDeltas = new StatsigClient(sdkKey, { userID: '123' }, { enableInitializeWithDeltas: true });
+    const statsigWithDeltas = new StatsigClient(
+      sdkKey,
+      { userID: '123' },
+      { enableInitializeWithDeltas: true },
+    );
     await statsigWithDeltas.initializeAsync();
 
     expect(statsigWithDeltas.checkGate('another_gate')).toBe(true);
@@ -405,7 +412,7 @@ describe('Verify behavior of StatsigClient', () => {
 
     respObject = {
       feature_gates: {
-        [getHashValue('test_gate')]: {
+        [sha256Hash('test_gate')]: {
           value: false,
           rule_id: 'ruleID123',
         },
@@ -415,7 +422,11 @@ describe('Verify behavior of StatsigClient', () => {
       time: 1234567890,
     };
 
-    const statsigWithDeltas = new StatsigClient(sdkKey, { userID: '123' }, { enableInitializeWithDeltas: true });
+    const statsigWithDeltas = new StatsigClient(
+      sdkKey,
+      { userID: '123' },
+      { enableInitializeWithDeltas: true },
+    );
     await statsigWithDeltas.initializeAsync();
 
     expect(statsigWithDeltas.checkGate('test_gate')).toBe(false);
@@ -424,11 +435,11 @@ describe('Verify behavior of StatsigClient', () => {
   test('initializing with deleted entities removes them', async () => {
     respObject = {
       feature_gates: {
-        [getHashValue('test_gate1')]: {
+        [sha256Hash('test_gate1')]: {
           value: true,
           rule_id: 'ruleID123',
         },
-        [getHashValue('test_gate2')]: {
+        [sha256Hash('test_gate2')]: {
           value: true,
           rule_id: 'ruleID123',
         },
@@ -446,10 +457,14 @@ describe('Verify behavior of StatsigClient', () => {
       has_updates: true,
       time: 1234567891,
       deleted_configs: [],
-      deleted_gates: [getHashValue('test_gate1')],
+      deleted_gates: [sha256Hash('test_gate1')],
       deleted_layers: [],
     };
-    const statsigWithDeltas = new StatsigClient(sdkKey, { userID: '123' }, { enableInitializeWithDeltas: true });
+    const statsigWithDeltas = new StatsigClient(
+      sdkKey,
+      { userID: '123' },
+      { enableInitializeWithDeltas: true },
+    );
     await statsigWithDeltas.initializeAsync();
 
     // The first gate should be removed, the second should still be present

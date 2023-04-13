@@ -8,7 +8,7 @@ import {
   OVERRIDES_STORE_KEY,
   STICKY_DEVICE_EXPERIMENTS_KEY,
 } from './utils/Constants';
-import { getHashValue, getUserCacheKey } from './utils/Hashing';
+import { djb2Hash, sha256Hash, getUserCacheKey } from './utils/Hashing';
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
 
@@ -62,7 +62,7 @@ type APIInitializeData = {
   layer_configs: Record<string, APIDynamicConfig | undefined>;
   has_updates?: boolean;
   time: number;
-  user_hash?: string;
+  hash_used?: 'djb2' | 'sha256' | 'none';
 };
 
 type APIInitializeDataWithDeltas = APIInitializeData & {
@@ -75,13 +75,15 @@ type APIInitializeDataWithPrefetchedUsers = APIInitializeData & {
   prefetched_user_values?: Record<string, APIInitializeData>;
 };
 
-type APIInitializeDataWithDeltasWithPrefetchedUsers = APIInitializeDataWithDeltas & {
-  prefetched_user_values?: Record<string, APIInitializeDataWithDeltas>;
-};
+type APIInitializeDataWithDeltasWithPrefetchedUsers =
+  APIInitializeDataWithDeltas & {
+    prefetched_user_values?: Record<string, APIInitializeDataWithDeltas>;
+  };
 
 type UserCacheValues = APIInitializeDataWithPrefetchedUsers & {
   sticky_experiments: Record<string, APIDynamicConfig | undefined>;
   evaluation_time?: number;
+  user_hash?: string;
 };
 
 const MAX_USER_VALUE_CACHED = 10;
@@ -121,6 +123,7 @@ export default class StatsigStore {
     this.stickyDeviceExperiments = {};
     this.loaded = false;
     this.reason = EvaluationReason.Uninitialized;
+
     if (initializeValues) {
       this.bootstrap(initializeValues);
     } else {
@@ -186,7 +189,7 @@ export default class StatsigStore {
   }
 
   public getLastUpdateTime(user: StatsigUser | null): number | null {
-    const userHash = getHashValue(JSON.stringify(user));
+    const userHash = sha256Hash(JSON.stringify(user));
     if (this.userValues.user_hash == userHash) {
       return this.userValues.time;
     }
@@ -266,7 +269,7 @@ export default class StatsigStore {
   ): Promise<void> {
     const requestedUserCacheKey = getUserCacheKey(user);
     const initResponse = jsonConfigs as APIInitializeDataWithPrefetchedUsers;
-    
+
     this.mergeInitializeResponseIntoUserMap(
       initResponse,
       this.values,
@@ -276,7 +279,11 @@ export default class StatsigStore {
     );
 
     const userValues = this.values[requestedUserCacheKey];
-    if (userValues && requestedUserCacheKey && requestedUserCacheKey == this.userCacheKey) {
+    if (
+      userValues &&
+      requestedUserCacheKey &&
+      requestedUserCacheKey == this.userCacheKey
+    ) {
       this.userValues = userValues;
       this.reason = EvaluationReason.Network;
     }
@@ -312,7 +319,8 @@ export default class StatsigStore {
     jsonConfigs: Record<string, any>,
   ): Promise<void> {
     const requestedUserCacheKey = getUserCacheKey(user);
-    const initResponse = jsonConfigs as APIInitializeDataWithDeltasWithPrefetchedUsers;
+    const initResponse =
+      jsonConfigs as APIInitializeDataWithDeltasWithPrefetchedUsers;
 
     this.mergeInitializeResponseIntoUserMap(
       initResponse,
@@ -320,21 +328,19 @@ export default class StatsigStore {
       requestedUserCacheKey,
       user,
       (deltas, key) => {
-        const baseValues =
-          this.values[key] ??
-          this.getDefaultUserCacheValues();
+        const baseValues = this.values[key] ?? this.getDefaultUserCacheValues();
 
         return this.mergeUserCacheValues(baseValues, deltas);
       },
     );
 
     const cacheKeys = Object.keys(initResponse.prefetched_user_values ?? {});
-    cacheKeys.forEach(userKey => {
+    cacheKeys.forEach((userKey) => {
       const user = this.values[userKey];
       if (user) {
         removeDeletedKeysFromUserValues(initResponse, user);
       }
-    })
+    });
 
     const userValues = this.values[requestedUserCacheKey];
     if (userValues && requestedUserCacheKey == this.userCacheKey) {
@@ -361,7 +367,10 @@ export default class StatsigStore {
       const cacheKeys = Object.keys(data.prefetched_user_values);
       for (const key of cacheKeys) {
         const prefetched = data.prefetched_user_values[key];
-        configMap[key] = mergeFn(this.convertAPIDataToCacheValues(prefetched, key), key);
+        configMap[key] = mergeFn(
+          this.convertAPIDataToCacheValues(prefetched, key),
+          key,
+        );
       }
     }
 
@@ -371,11 +380,14 @@ export default class StatsigStore {
         requestedUserCacheKey,
       );
       if (data.has_updates && data.time) {
-        const userHash = getHashValue(JSON.stringify(user));
+        const userHash = sha256Hash(JSON.stringify(user));
         requestedUserValues.user_hash = userHash;
       }
-      
-      configMap[requestedUserCacheKey] = mergeFn(requestedUserValues, requestedUserCacheKey);
+
+      configMap[requestedUserCacheKey] = mergeFn(
+        requestedUserValues,
+        requestedUserCacheKey,
+      );
     }
   }
 
@@ -415,7 +427,7 @@ export default class StatsigStore {
 
   /**
    * Writes the provided values to storage, truncating down to
-   * MAX_USER_VALUE_CACHED number entries. 
+   * MAX_USER_VALUE_CACHED number entries.
    * @returns The truncated entry list
    */
   private async writeValuesToStorage(
@@ -453,7 +465,7 @@ export default class StatsigStore {
     gateName: string,
     ignoreOverrides: boolean = false,
   ): StoreGateFetchResult {
-    const gateNameHash = getHashValue(gateName);
+    const gateNameHash = this.getHashedSpecName(gateName);
     let gateValue: APIFeatureGate = {
       name: gateName,
       value: false,
@@ -487,7 +499,7 @@ export default class StatsigStore {
     configName: string,
     ignoreOverrides: boolean = false,
   ): DynamicConfig {
-    const configNameHash = getHashValue(configName);
+    const configNameHash = this.getHashedSpecName(configName);
     let configValue: DynamicConfig;
     let details: EvaluationDetails;
     if (!ignoreOverrides && this.overrides.configs[configName] != null) {
@@ -672,7 +684,7 @@ export default class StatsigStore {
     name: string,
     topLevelKey: 'layer_configs' | 'dynamic_configs',
   ): APIDynamicConfig | undefined {
-    const hash = getHashValue(name);
+    const hash = this.getHashedSpecName(name);
     return (
       this.userValues?.[topLevelKey]?.[hash] ??
       this.userValues?.[topLevelKey]?.[name]
@@ -742,7 +754,7 @@ export default class StatsigStore {
   }
 
   private getStickyValue(name: string) {
-    const key = getHashValue(name);
+    const key = this.getHashedSpecName(name);
 
     return (
       this.userValues?.sticky_experiments[key] ??
@@ -759,7 +771,7 @@ export default class StatsigStore {
       return;
     }
 
-    const key = getHashValue(name);
+    const key = this.getHashedSpecName(name);
     if (config.is_device_based === true) {
       // save sticky values in memory
       this.stickyDeviceExperiments[key] = config;
@@ -778,7 +790,7 @@ export default class StatsigStore {
       return;
     }
 
-    const key = getHashValue(name);
+    const key = this.getHashedSpecName(name);
 
     delete this.userValues?.sticky_experiments[key];
     delete this.stickyDeviceExperiments[key];
@@ -833,6 +845,17 @@ export default class StatsigStore {
     };
   }
 
+  private getHashedSpecName(input: string): string {
+    switch (this.userValues.hash_used) {
+      case 'djb2':
+        return djb2Hash(input);
+      case 'none':
+        return input;
+      default:
+        return sha256Hash(input);
+    }
+  }
+
   private convertAPIDataToCacheValues(
     data: APIInitializeData,
     cacheKey: string,
@@ -845,6 +868,7 @@ export default class StatsigStore {
       sticky_experiments: this.values[cacheKey]?.sticky_experiments ?? {},
       time: data.time == null || isNaN(data.time) ? 0 : data.time,
       evaluation_time: Date.now(),
+      hash_used: data.hash_used,
     };
   }
 
@@ -879,15 +903,17 @@ export default class StatsigStore {
     };
   }
 }
-function removeDeletedKeysFromUserValues(initResponse: APIInitializeDataWithDeltasWithPrefetchedUsers, userValues: UserCacheValues) {
-  initResponse.deleted_configs.forEach(key => {
+function removeDeletedKeysFromUserValues(
+  initResponse: APIInitializeDataWithDeltasWithPrefetchedUsers,
+  userValues: UserCacheValues,
+) {
+  initResponse.deleted_configs.forEach((key) => {
     delete userValues.dynamic_configs[key];
   });
-  initResponse.deleted_gates.forEach(key => {
+  initResponse.deleted_gates.forEach((key) => {
     delete userValues.feature_gates[key];
   });
-  initResponse.deleted_layers.forEach(key => {
+  initResponse.deleted_layers.forEach((key) => {
     delete userValues.layer_configs[key];
   });
 }
-

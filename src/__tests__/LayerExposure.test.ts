@@ -4,7 +4,7 @@
 
 import Statsig from '../index';
 import { EvaluationReason } from '../StatsigStore';
-import { getHashValue } from '../utils/Hashing';
+import { sha256Hash } from '../utils/Hashing';
 import { StatsigInitializeResponse } from './index.test';
 
 type Indexable = {
@@ -48,7 +48,7 @@ describe('Layer Exposure Logging', () => {
 
   it('does not log on invalid types', async () => {
     // @ts-ignore
-    response.layer_configs[getHashValue('layer')] = {
+    response.layer_configs[sha256Hash('layer')] = {
       value: { an_int: 99 },
     };
 
@@ -81,7 +81,7 @@ describe('Layer Exposure Logging', () => {
     });
 
     it('logs layers without an allocated experiment correctly', async () => {
-      response.layer_configs[getHashValue('layer')] = {
+      response.layer_configs[sha256Hash('layer')] = {
         value: { an_int: 99 },
         rule_id: 'default',
         secondary_exposures: [{ gate: 'secondary_exp' }],
@@ -119,7 +119,7 @@ describe('Layer Exposure Logging', () => {
     });
 
     it('logs explicit and implicit parameters correctly', async () => {
-      response.layer_configs[getHashValue('layer')] = {
+      response.layer_configs[sha256Hash('layer')] = {
         value: { an_int: 99, a_string: 'value' },
         rule_id: 'default',
         secondary_exposures: [{ gate: 'secondary_exp' }],
@@ -173,7 +173,7 @@ describe('Layer Exposure Logging', () => {
     });
 
     it('logs different object types correctly', async () => {
-      response.layer_configs[getHashValue('layer')] = {
+      response.layer_configs[sha256Hash('layer')] = {
         value: {
           a_bool: true,
           an_int: 99,
@@ -219,7 +219,7 @@ describe('Layer Exposure Logging', () => {
     });
 
     it('does not log when shutdown', async () => {
-      response.layer_configs[getHashValue('layer')] = {
+      response.layer_configs[sha256Hash('layer')] = {
         value: {
           a_bool: true,
         },
@@ -240,7 +240,7 @@ describe('Layer Exposure Logging', () => {
     });
 
     it('logs the correct name and user values', async () => {
-      response.layer_configs[getHashValue('layer')] = {
+      response.layer_configs[sha256Hash('layer')] = {
         value: { an_int: 99 },
       };
 

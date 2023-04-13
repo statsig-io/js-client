@@ -7,7 +7,7 @@ import { INTERNAL_STORE_KEY } from '../utils/Constants';
 import Statsig from '..';
 import LocalStorageMock from './LocalStorageMock';
 import * as TestData from './initialize_response.json';
-import { getHashValue, getUserCacheKey } from '../utils/Hashing';
+import { sha256Hash, getUserCacheKey } from '../utils/Hashing';
 
 describe('Verify behavior of StatsigClient with sinceTime', () => {
   const sdkKey = 'client-clienttestkey';
@@ -90,7 +90,7 @@ describe('Verify behavior of StatsigClient with sinceTime', () => {
     );
 
     const key = getUserCacheKey(user);
-    const userHash = getHashValue(JSON.stringify(user));
+    const userHash = sha256Hash(JSON.stringify(user));
     const storeObject = JSON.parse(
       localStorage.getItem(INTERNAL_STORE_KEY) ?? '',
     );

@@ -23,12 +23,12 @@ const NO_CONTENT = 204;
  * An extension of the promise type, it adds a
  * function `eventually`. In the event that the provided timeout
  * is reached, the function will still be called regardless.
- * 
+ *
  * This function WILL NOT BE CALLED if the promise resolves normally.
  */
 type PromiseWithTimeout<T> = Promise<T> & {
   eventually: (fn: (t: T) => void) => PromiseWithTimeout<T>;
-}
+};
 
 export default class StatsigNetwork {
   private sdkInternal: IHasStatsigInternal;
@@ -58,7 +58,7 @@ export default class StatsigNetwork {
     if (!this.sdkInternal.getOptions().getDisableNetworkKeepalive()) {
       try {
         this.canUseKeepalive = 'keepalive' in new Request('');
-      } catch (_e) { }
+      } catch (_e) {}
     }
   }
 
@@ -74,6 +74,7 @@ export default class StatsigNetwork {
       prefetchUsers,
       statsigMetadata: this.sdkInternal.getStatsigMetadata(),
       sinceTime: sinceTime ?? undefined,
+      hash: 'djb2',
     };
 
     return this.postWithTimeout(
@@ -97,6 +98,7 @@ export default class StatsigNetwork {
       prefetchUsers,
       statsigMetadata: this.sdkInternal.getStatsigMetadata(),
       sinceTime: sinceTime ?? undefined,
+      hash: 'djb2',
     };
 
     return this.postWithTimeout(
@@ -129,15 +131,16 @@ export default class StatsigNetwork {
     let cachedReturnValue: T | null = null;
     let eventuals: ((t: T) => void)[] = [];
 
-    const eventually = (boundScope: PromiseWithTimeout<T>) => (fn: (t: T) => void) => {
-      if (hasTimedOut && cachedReturnValue) {
-        fn(cachedReturnValue);
-      } else {
-        eventuals.push(fn);
-      }
+    const eventually =
+      (boundScope: PromiseWithTimeout<T>) => (fn: (t: T) => void) => {
+        if (hasTimedOut && cachedReturnValue) {
+          fn(cachedReturnValue);
+        } else {
+          eventuals.push(fn);
+        }
 
-      return boundScope;
-    };
+        return boundScope;
+      };
 
     if (timeout != 0) {
       timer = new Promise<void>((resolve, reject) => {
@@ -199,7 +202,7 @@ export default class StatsigNetwork {
           async () => {
             cachedReturnValue = json as T;
             if (hasTimedOut) {
-              eventuals.forEach(fn => fn(json as T));
+              eventuals.forEach((fn) => fn(json as T));
               eventuals = [];
             }
             return Promise.resolve(json);
@@ -224,8 +227,10 @@ export default class StatsigNetwork {
 
         return Promise.reject(e);
       });
-    
-    const racingPromise = (timer ? Promise.race([fetchPromise, timer]) : fetchPromise) as PromiseWithTimeout<T>;
+
+    const racingPromise = (
+      timer ? Promise.race([fetchPromise, timer]) : fetchPromise
+    ) as PromiseWithTimeout<T>;
     racingPromise.eventually = eventually(racingPromise);
 
     return racingPromise;
@@ -237,7 +242,7 @@ export default class StatsigNetwork {
     }
     const url = new URL(
       this.sdkInternal.getOptions().getEventLoggingApi() +
-      StatsigEndpoint.LogEventBeacon,
+        StatsigEndpoint.LogEventBeacon,
     );
     url.searchParams.append('k', this.sdkInternal.getSDKKey());
     payload.clientTime = Date.now() + '';
@@ -265,15 +270,20 @@ export default class StatsigNetwork {
       return Promise.reject('fetch is not defined');
     }
 
-    if (typeof window === 'undefined' && !this.sdkInternal.getOptions().getIgnoreWindowUndefined()) {
+    if (
+      typeof window === 'undefined' &&
+      !this.sdkInternal.getOptions().getIgnoreWindowUndefined()
+    ) {
       // by default, dont issue requests from the server
       return Promise.reject('window is not defined');
     }
 
-    const api =
-      [StatsigEndpoint.Initialize, StatsigEndpoint.InitializeWithDeltas].includes(endpointName)
-        ? this.sdkInternal.getOptions().getApi()
-        : this.sdkInternal.getOptions().getEventLoggingApi();
+    const api = [
+      StatsigEndpoint.Initialize,
+      StatsigEndpoint.InitializeWithDeltas,
+    ].includes(endpointName)
+      ? this.sdkInternal.getOptions().getApi()
+      : this.sdkInternal.getOptions().getEventLoggingApi();
     const url = api + endpointName;
     const counter = this.leakyBucket[url];
     if (counter != null && counter >= 30) {

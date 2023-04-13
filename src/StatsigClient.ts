@@ -189,7 +189,10 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     user?: StatsigUser | null,
     options?: StatsigOptions | null,
   ) {
-    if (typeof sdkKey !== 'string' || !sdkKey.startsWith('client-')) {
+    if (
+      options?.localMode !== true &&
+      (typeof sdkKey !== 'string' || !sdkKey.startsWith('client-'))
+    ) {
       throw new StatsigInvalidArgumentError(
         'Invalid key provided.  You must use a Client SDK Key from the Statsig console to initialize the sdk',
       );
