@@ -210,17 +210,17 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       this.options.getOverrideStableID(),
       StatsigClient.reactNativeUUID,
     );
+
     this.network = new StatsigNetwork(this);
-    this.store = new StatsigStore(this, options?.initializeValues ?? null);
+    this.store = new StatsigStore(this, this.options.getInitializeValues());
     this.logger = new StatsigLogger(this);
 
     this.errorBoundary.setStatsigMetadata(this.getStatsigMetadata());
 
-    if (options?.initializeValues != null) {
+    if (this.options.getInitializeValues() != null) {
       let cb = this.options.getInitCompletionCallback();
       this.ready = true;
       this.initCalled = true;
-      this.fireAndForgetPrefechUsers();
 
       setTimeout(() => this.delayedSetup(), 20);
       this.handleOptionalLogging();
@@ -231,6 +231,9 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   }
 
   private delayedSetup(): void {
+    if (this.options.getInitializeValues() != null) {
+      this.fireAndForgetPrefechUsers();
+    }
     this.identity.saveStableID();
     this.logger.sendSavedRequests();
   }
@@ -871,19 +874,25 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   }
 
   private handleOptionalLogging(): void {
-    if (typeof window === 'undefined' || !window) {
-      return;
-    }
-    if (this.optionalLoggingSetup) {
+    const isErrorLoggingDisabled = this.options.getDisableErrorLogging();
+    const isAutoMetricsLoggingDisabled =
+      this.options.getDisableAutoMetricsLogging();
+
+    if (isErrorLoggingDisabled && isAutoMetricsLoggingDisabled) {
       return;
     }
 
-    if (!window.addEventListener) {
+    if (
+      this.optionalLoggingSetup ||
+      typeof window === 'undefined' ||
+      !window ||
+      !window.addEventListener
+    ) {
       return;
     }
 
     const user = this.identity.getUser();
-    if (!this.options.getDisableErrorLogging()) {
+    if (!isErrorLoggingDisabled) {
       window.addEventListener('error', (e) => {
         let errorObj = e.error;
         if (errorObj != null && typeof errorObj === 'object') {
@@ -899,7 +908,8 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         });
       });
     }
-    if (!this.options.getDisableAutoMetricsLogging()) {
+
+    if (!isAutoMetricsLoggingDisabled) {
       if (
         typeof document === 'undefined' ||
         !document ||

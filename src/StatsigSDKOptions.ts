@@ -72,7 +72,7 @@ export default class StatsigSDKOptions {
   private initTimeoutMs: number;
   private disableErrorLogging: boolean;
   private disableAutoMetricsLogging: boolean;
-  private initializeValues?: Record<string, any> | null;
+  private initializeValues: Record<string, any> | null;
   private eventLoggingApi: string;
   private prefetchUsers: StatsigUser[];
   private disableLocalStorage: boolean;
@@ -181,6 +181,10 @@ export default class StatsigSDKOptions {
 
   getDisableAutoMetricsLogging(): boolean {
     return this.disableAutoMetricsLogging;
+  }
+
+  getInitializeValues(): Record<string, any> | null {
+    return this.initializeValues;
   }
 
   getEventLoggingApi(): string {
