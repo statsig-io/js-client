@@ -2,15 +2,15 @@
  * @jest-environment jsdom
  */
 import StatsigClient from '../StatsigClient';
-import { sha256Hash } from '../utils/Hashing';
+import { getHashValue } from '../utils/Hashing';
 import StatsigAsyncStorage from '../utils/StatsigAsyncStorage';
 import LocalStorageMock from './LocalStorageMock';
 
 const configKey = 'a_config';
-const hashedConfigKey = sha256Hash(configKey);
+const hashedConfigKey = getHashValue(configKey);
 
 const anotherConfigKey = 'another_config';
-const hashedAnotherConfigKey = sha256Hash(anotherConfigKey);
+const hashedAnotherConfigKey = getHashValue(anotherConfigKey);
 
 const dynamicConfigs = {
   [hashedConfigKey]: {
@@ -30,12 +30,12 @@ const dynamicConfigs = {
 };
 
 const layerConfigWithExperimentKey = 'allocated_experiment';
-const hashedLayerConfigWithExperimentKey = sha256Hash(
+const hashedLayerConfigWithExperimentKey = getHashValue(
   layerConfigWithExperimentKey,
 );
 
 const layerConfigWithoutExperimentKey = 'unallocated_experiment';
-const hashedLayerConfigWithoutExperimentKey = sha256Hash(
+const hashedLayerConfigWithoutExperimentKey = getHashValue(
   layerConfigWithoutExperimentKey,
 );
 

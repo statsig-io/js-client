@@ -1,13 +1,13 @@
 {
   "disableAutoEventLogging": true,
   "gates": {
-    "3114454104": true
+    "AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=": true
   },
   "feature_gates": {
-    "3114454104": {
+    "AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=": {
       "value": true,
       "rule_id": "ruleID123",
-      "name": "3114454104",
+      "name": "AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=",
       "secondary_exposures": [
         {
           "gate": "dependent_gate_1",
@@ -23,7 +23,7 @@
     }
   },
   "dynamic_configs": {
-    "3591394191": {
+    "RMv0YJlLOBe7cY7HgZ3Jox34R0Wrk7jLv3DZyBETA7I=": {
       "value": {
         "bool": true,
         "number": 2,
@@ -42,6 +42,5 @@
     }
   },
   "layer_configs": {},
-  "has_updates": true,
-  "hash_used": "djb2"
+  "has_updates": true
 }

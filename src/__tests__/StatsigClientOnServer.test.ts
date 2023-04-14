@@ -44,7 +44,10 @@ describe('Verify behavior of StatsigClient outside of browser environment', () =
       if (url.toString().includes('initialize')) {
         return Promise.resolve({
           ok: true,
-          text: () => Promise.resolve(JSON.stringify(TestData)),
+          text: () =>
+            Promise.resolve(
+              JSON.stringify(TestData),
+            ),
         });
       }
     });

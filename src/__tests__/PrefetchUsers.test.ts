@@ -4,9 +4,9 @@
 
 import Statsig from '..';
 import StatsigClient from '../StatsigClient';
-import { djb2Hash, userCacheKeyHash } from '../utils/Hashing';
+import { getUserCacheKey } from '../utils/Hashing';
 
-const aConfigHash = djb2Hash('a_config');
+const aConfigHash = 'klGzwI7eIlw4LSeTwhb4C0NCIhHJrIf441Dni6g7DkE=';
 
 function makeConfigDef(value: Record<string, string>) {
   return {
@@ -53,7 +53,6 @@ describe('Prefetch Users', () => {
           },
           layer_configs: {},
           has_updates: true,
-          hash_used: 'djb2',
         };
         break;
       case 'a-user':
@@ -64,30 +63,29 @@ describe('Prefetch Users', () => {
           },
           layer_configs: {},
           has_updates: true,
-          hash_used: 'djb2',
         };
         break;
     }
 
     if (body.prefetchUsers) {
       response['prefetched_user_values'] = {
-        [userCacheKeyHash('userID:b-user;GroupID:group_1')]: {
+        '-1773350080': {
+          // b-user
           feature_gates: {},
           dynamic_configs: {
             [aConfigHash]: makeConfigDef({ key: 'b_user_value' }),
           },
           layer_configs: {},
           has_updates: true,
-          hash_used: 'djb2',
         },
-        [userCacheKeyHash('userID:c-user;GroupID:group_2')]: {
+        '483560928': {
+          // c-user
           feature_gates: {},
           dynamic_configs: {
             [aConfigHash]: makeConfigDef({ key: 'c_user_value' }),
           },
           layer_configs: {},
           has_updates: true,
-          hash_used: 'djb2',
         },
       };
     }

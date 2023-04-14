@@ -3,7 +3,7 @@
  */
 
 import Statsig from '..';
-import { sha256Hash } from '../utils/Hashing';
+import { getHashValue } from '../utils/Hashing';
 
 describe('ExposureLogging', () => {
   let events: {
@@ -27,20 +27,20 @@ describe('ExposureLogging', () => {
           Promise.resolve(
             JSON.stringify({
               feature_gates: {
-                [sha256Hash('a_gate')]: {
+                [getHashValue('a_gate')]: {
                   value: true,
                 },
               },
               dynamic_configs: {
-                [sha256Hash('an_experiment')]: {
+                [getHashValue('an_experiment')]: {
                   value: { a_bool: true },
                 },
-                [sha256Hash('a_config')]: {
+                [getHashValue('a_config')]: {
                   value: { a_bool: true },
                 },
               },
               layer_configs: {
-                [sha256Hash('a_layer')]: {
+                [getHashValue('a_layer')]: {
                   value: { a_bool: true },
                 },
               },

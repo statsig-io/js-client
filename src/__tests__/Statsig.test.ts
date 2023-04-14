@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 import Statsig from '../index';
-import { sha256Hash } from '../utils/Hashing';
+import { getHashValue } from '../utils/Hashing';
 import { StatsigInitializeResponse } from './index.test';
 
 describe('Statsig', () => {
@@ -33,8 +33,8 @@ describe('Statsig', () => {
   });
 
   test('sticky bucketing', async () => {
-    const expHash = sha256Hash('exp');
-    const layerHash = sha256Hash('layer');
+    const expHash = getHashValue('exp');
+    const layerHash = getHashValue('layer');
 
     // 1. Saves sticky value and returns latest
 
@@ -87,7 +87,7 @@ describe('Statsig', () => {
       is_experiment_active: false,
     };
 
-    const newExpHash = sha256Hash('new_exp');
+    const newExpHash = getHashValue('new_exp');
     response.dynamic_configs[newExpHash] = {
       value: { key: 'new_exp_v3' },
       is_user_in_experiment: true,
