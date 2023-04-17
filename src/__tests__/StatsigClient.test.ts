@@ -26,7 +26,7 @@ describe('Verify behavior of StatsigClient', () => {
       },
     },
     has_updates: true,
-    time: 123456789
+    time: 123456789,
   };
 
   let respObject: any = baseInitResponse;
@@ -365,9 +365,10 @@ describe('Verify behavior of StatsigClient', () => {
     respObject = {
       feature_gates: {},
       dynamic_configs: {},
+      is_delta: true,
     };
 
-    const statsigWithDeltas = new StatsigClient(sdkKey, { userID: '123' }, { enableInitializeWithDeltas: true });
+    const statsigWithDeltas = new StatsigClient(sdkKey, { userID: '123' });
     await statsigWithDeltas.initializeAsync();
 
     expect(statsigWithDeltas.checkGate('test_gate')).toBe(true);
@@ -390,9 +391,10 @@ describe('Verify behavior of StatsigClient', () => {
       dynamic_configs: {},
       has_updates: true,
       time: 1234567890,
+      is_delta: true,
     };
 
-    const statsigWithDeltas = new StatsigClient(sdkKey, { userID: '123' }, { enableInitializeWithDeltas: true });
+    const statsigWithDeltas = new StatsigClient(sdkKey, { userID: '123' });
     await statsigWithDeltas.initializeAsync();
 
     expect(statsigWithDeltas.checkGate('another_gate')).toBe(true);
@@ -413,9 +415,10 @@ describe('Verify behavior of StatsigClient', () => {
       dynamic_configs: {},
       has_updates: true,
       time: 1234567890,
+      is_delta: true,
     };
 
-    const statsigWithDeltas = new StatsigClient(sdkKey, { userID: '123' }, { enableInitializeWithDeltas: true });
+    const statsigWithDeltas = new StatsigClient(sdkKey, { userID: '123' });
     await statsigWithDeltas.initializeAsync();
 
     expect(statsigWithDeltas.checkGate('test_gate')).toBe(false);
@@ -448,8 +451,9 @@ describe('Verify behavior of StatsigClient', () => {
       deleted_configs: [],
       deleted_gates: [getHashValue('test_gate1')],
       deleted_layers: [],
+      is_delta: true,
     };
-    const statsigWithDeltas = new StatsigClient(sdkKey, { userID: '123' }, { enableInitializeWithDeltas: true });
+    const statsigWithDeltas = new StatsigClient(sdkKey, { userID: '123' });
     await statsigWithDeltas.initializeAsync();
 
     // The first gate should be removed, the second should still be present
@@ -460,56 +464,6 @@ describe('Verify behavior of StatsigClient', () => {
     const fromLocalStorage = new StatsigClient(sdkKey, { userID: '123' });
     expect(fromLocalStorage.checkGate('test_gate1')).toBe(false);
     expect(fromLocalStorage.checkGate('test_gate2')).toBe(true);
-  });
-
-  test('initializing with deltas marked as a full payload falls back to default behavior', async () => {
-    respObject = {
-      feature_gates: {
-        [getHashValue('test_gate1')]: {
-          value: true,
-          rule_id: 'ruleID123',
-        },
-        [getHashValue('test_gate2')]: {
-          value: true,
-          rule_id: 'ruleID123',
-        },
-      },
-      dynamic_configs: {},
-      has_updates: true,
-      time: 1234567890,
-    };
-    const statsig = new StatsigClient(sdkKey, { userID: '123' });
-    await statsig.initializeAsync();
-
-    respObject = {
-      feature_gates: {
-        [getHashValue('test_gate3')]: {
-          value: true,
-          rule_id: 'ruleID123',
-        },
-        [getHashValue('test_gate4')]: {
-          value: true,
-          rule_id: 'ruleID123',
-        },
-      },
-      dynamic_configs: {},
-      has_updates: true,
-      time: 1234567891,
-      deleted_configs: [],
-      deleted_gates: [],
-      deleted_layers: [],
-      is_full_payload: true,
-    };
-    const statsigWithDeltas = new StatsigClient(sdkKey, { userID: '123' }, { enableInitializeWithDeltas: true });
-    await statsigWithDeltas.initializeAsync();
-
-    // The first gates were not in the next payload, so they should have been overwritten
-    expect(statsigWithDeltas.checkGate('test_gate1')).toBe(false);
-    expect(statsigWithDeltas.checkGate('test_gate2')).toBe(false);
-
-    // Validate the correct values being written
-    expect(statsigWithDeltas.checkGate('test_gate3')).toBe(true);
-    expect(statsigWithDeltas.checkGate('test_gate4')).toBe(true);
   });
 });
 

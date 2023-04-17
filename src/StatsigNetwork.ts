@@ -8,7 +8,6 @@ import Diagnostics, {
 
 export enum StatsigEndpoint {
   Initialize = 'initialize',
-  InitializeWithDeltas = 'initialize_with_deltas',
   Rgstr = 'rgstr',
   LogEventBeacon = 'log_event_beacon',
 }
@@ -78,29 +77,6 @@ export default class StatsigNetwork {
 
     return this.postWithTimeout(
       StatsigEndpoint.Initialize,
-      input,
-      diagnostics,
-      timeout, // timeout for early returns
-      3, // retries
-    );
-  }
-
-  public fetchDeltasSinceTime(
-    user: StatsigUser | null,
-    sinceTime: number | null,
-    timeout: number,
-    diagnostics?: Diagnostics,
-    prefetchUsers?: Record<string, StatsigUser>,
-  ): PromiseWithTimeout<Record<string, any>> {
-    const input = {
-      user,
-      prefetchUsers,
-      statsigMetadata: this.sdkInternal.getStatsigMetadata(),
-      sinceTime: sinceTime ?? undefined,
-    };
-
-    return this.postWithTimeout(
-      StatsigEndpoint.InitializeWithDeltas,
       input,
       diagnostics,
       timeout, // timeout for early returns
@@ -271,7 +247,7 @@ export default class StatsigNetwork {
     }
 
     const api =
-      [StatsigEndpoint.Initialize, StatsigEndpoint.InitializeWithDeltas].includes(endpointName)
+      [StatsigEndpoint.Initialize].includes(endpointName)
         ? this.sdkInternal.getOptions().getApi()
         : this.sdkInternal.getOptions().getEventLoggingApi();
     const url = api + endpointName;
