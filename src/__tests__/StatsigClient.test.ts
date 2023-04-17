@@ -461,6 +461,56 @@ describe('Verify behavior of StatsigClient', () => {
     expect(fromLocalStorage.checkGate('test_gate1')).toBe(false);
     expect(fromLocalStorage.checkGate('test_gate2')).toBe(true);
   });
+
+  test('initializing with deltas marked as a full payload falls back to default behavior', async () => {
+    respObject = {
+      feature_gates: {
+        [getHashValue('test_gate1')]: {
+          value: true,
+          rule_id: 'ruleID123',
+        },
+        [getHashValue('test_gate2')]: {
+          value: true,
+          rule_id: 'ruleID123',
+        },
+      },
+      dynamic_configs: {},
+      has_updates: true,
+      time: 1234567890,
+    };
+    const statsig = new StatsigClient(sdkKey, { userID: '123' });
+    await statsig.initializeAsync();
+
+    respObject = {
+      feature_gates: {
+        [getHashValue('test_gate3')]: {
+          value: true,
+          rule_id: 'ruleID123',
+        },
+        [getHashValue('test_gate4')]: {
+          value: true,
+          rule_id: 'ruleID123',
+        },
+      },
+      dynamic_configs: {},
+      has_updates: true,
+      time: 1234567891,
+      deleted_configs: [],
+      deleted_gates: [],
+      deleted_layers: [],
+      is_full_payload: true,
+    };
+    const statsigWithDeltas = new StatsigClient(sdkKey, { userID: '123' }, { enableInitializeWithDeltas: true });
+    await statsigWithDeltas.initializeAsync();
+
+    // The first gates were not in the next payload, so they should have been overwritten
+    expect(statsigWithDeltas.checkGate('test_gate1')).toBe(false);
+    expect(statsigWithDeltas.checkGate('test_gate2')).toBe(false);
+
+    // Validate the correct values being written
+    expect(statsigWithDeltas.checkGate('test_gate3')).toBe(true);
+    expect(statsigWithDeltas.checkGate('test_gate4')).toBe(true);
+  });
 });
 
 function setFakeAsyncStorage() {

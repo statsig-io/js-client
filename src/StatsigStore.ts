@@ -69,6 +69,7 @@ type APIInitializeDataWithDeltas = APIInitializeData & {
   deleted_configs: string[];
   deleted_gates: string[];
   deleted_layers: string[];
+  is_full_payload: boolean;
 };
 
 type APIInitializeDataWithPrefetchedUsers = APIInitializeData & {
@@ -313,6 +314,10 @@ export default class StatsigStore {
   ): Promise<void> {
     const requestedUserCacheKey = getUserCacheKey(user);
     const initResponse = jsonConfigs as APIInitializeDataWithDeltasWithPrefetchedUsers;
+
+    if (initResponse.is_full_payload) {
+      return this.save(user, jsonConfigs);
+    }
 
     this.mergeInitializeResponseIntoUserMap(
       initResponse,
