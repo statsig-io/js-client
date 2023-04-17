@@ -73,6 +73,7 @@ export default class StatsigNetwork {
       prefetchUsers,
       statsigMetadata: this.sdkInternal.getStatsigMetadata(),
       sinceTime: sinceTime ?? undefined,
+      acceptsDeltas: true,
     };
 
     return this.postWithTimeout(
