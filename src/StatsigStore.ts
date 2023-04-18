@@ -446,7 +446,9 @@ export default class StatsigStore {
         if (b == null) {
           return -1;
         }
-        return b?.time - a?.time;
+        return (
+          (b?.evaluation_time ?? b?.time) - (a?.evaluation_time ?? a?.time)
+        );
       })
       .slice(0, MAX_USER_VALUE_CACHED);
     valuesToWrite = Object.fromEntries(filteredValues);
