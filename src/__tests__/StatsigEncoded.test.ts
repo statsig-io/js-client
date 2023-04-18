@@ -11,7 +11,7 @@ const MOCK_METADATA = {
   sdkVersion: '4.2.0',
 };
 const ENCODED_INIT_BODY =
-  '==Qf9JCMuIjL0IiOi42bpNnclZ1akNnIsICduVWasNWLzpmI6ISZwlHVrR2ciwiIklWLu9WazNXZz1SYiojIuV2avRlbvl2czV2cisnOiEGdhRWY0VWTnl2c0FGdzJCL9JiclNXdtEmI6ICRJJXZzVnI7pjIyV2c1Jye';
+  '==QflVnc0pjIzFGdsVGRzRHclN2YhJCL9JCMuIjL0IiOi42bpNnclZ1akNnIsICduVWasNWLzpmI6ISZwlHVrR2ciwiIklWLu9WazNXZz1SYiojIuV2avRlbvl2czV2cisnOiEGdhRWY0VWTnl2c0FGdzJCL9JiclNXdtEmI6ICRJJXZzVnI7pjIyV2c1Jye';
 
 const USER = {
   userID: 'a-user',
@@ -50,7 +50,7 @@ describe('StatsigEncoded', () => {
 
     await client.initializeAsync();
     expect(body).toEqual(
-      JSON.stringify({ user: USER, statsigMetadata: MOCK_METADATA }),
+      JSON.stringify({ user: USER, statsigMetadata: MOCK_METADATA, acceptsDeltas: true, }),
     );
     expect(headers).toMatchObject({ 'STATSIG-ENCODED': '0' });
   });
@@ -64,6 +64,7 @@ describe('StatsigEncoded', () => {
       JSON.stringify({
         user: { userID: '大' },
         statsigMetadata: MOCK_METADATA,
+        acceptsDeltas: true,
       }),
     );
     expect(headers).toMatchObject({ 'STATSIG-ENCODED': '0' });

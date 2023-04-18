@@ -43,7 +43,6 @@ export type StatsigOptions = {
   ignoreWindowUndefined?: boolean;
   fetchMode?: FetchMode;
   disableLocalOverrides?: boolean;
-  enableInitializeWithDeltas?: boolean;
 };
 
 export enum LogLevel {
@@ -83,7 +82,6 @@ export default class StatsigSDKOptions {
   private ignoreWindowUndefined: boolean;
   private fetchMode: FetchMode;
   private disableLocalOverrides: boolean;
-  private enableInitializeWithDeltas: boolean;
 
   constructor(options?: StatsigOptions | null) {
     if (options == null) {
@@ -135,8 +133,6 @@ export default class StatsigSDKOptions {
     this.ignoreWindowUndefined = options?.ignoreWindowUndefined ?? false;
     this.fetchMode = options.fetchMode ?? 'network-only';
     this.disableLocalOverrides = options?.disableLocalOverrides ?? false;
-    this.enableInitializeWithDeltas =
-      options?.enableInitializeWithDeltas ?? false;
   }
 
   getApi(): string {
@@ -225,10 +221,6 @@ export default class StatsigSDKOptions {
 
   getDisableLocalOverrides(): boolean {
     return this.disableLocalOverrides;
-  }
-
-  getEnableInitializeWithDeltas(): boolean {
-    return this.enableInitializeWithDeltas;
   }
 
   private normalizeNumberInput(

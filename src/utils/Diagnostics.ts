@@ -8,7 +8,6 @@ export enum DiagnosticsEvent {
 export enum DiagnosticsKey {
   OVERALL = 'overall',
   INITIALIZE = 'initialize',
-  INITIALIZE_WITH_DELTAS = 'initialize_with_deltas',
 }
 
 export type DiagnosticsMarker = Record<

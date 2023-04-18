@@ -26,7 +26,7 @@ describe('Verify behavior of StatsigClient', () => {
       },
     },
     has_updates: true,
-    time: 123456789
+    time: 123456789,
   };
 
   let respObject: any = baseInitResponse;
@@ -365,9 +365,10 @@ describe('Verify behavior of StatsigClient', () => {
     respObject = {
       feature_gates: {},
       dynamic_configs: {},
+      is_delta: true,
     };
 
-    const statsigWithDeltas = new StatsigClient(sdkKey, { userID: '123' }, { enableInitializeWithDeltas: true });
+    const statsigWithDeltas = new StatsigClient(sdkKey, { userID: '123' });
     await statsigWithDeltas.initializeAsync();
 
     expect(statsigWithDeltas.checkGate('test_gate')).toBe(true);
@@ -390,9 +391,10 @@ describe('Verify behavior of StatsigClient', () => {
       dynamic_configs: {},
       has_updates: true,
       time: 1234567890,
+      is_delta: true,
     };
 
-    const statsigWithDeltas = new StatsigClient(sdkKey, { userID: '123' }, { enableInitializeWithDeltas: true });
+    const statsigWithDeltas = new StatsigClient(sdkKey, { userID: '123' });
     await statsigWithDeltas.initializeAsync();
 
     expect(statsigWithDeltas.checkGate('another_gate')).toBe(true);
@@ -413,9 +415,10 @@ describe('Verify behavior of StatsigClient', () => {
       dynamic_configs: {},
       has_updates: true,
       time: 1234567890,
+      is_delta: true,
     };
 
-    const statsigWithDeltas = new StatsigClient(sdkKey, { userID: '123' }, { enableInitializeWithDeltas: true });
+    const statsigWithDeltas = new StatsigClient(sdkKey, { userID: '123' });
     await statsigWithDeltas.initializeAsync();
 
     expect(statsigWithDeltas.checkGate('test_gate')).toBe(false);
@@ -448,8 +451,9 @@ describe('Verify behavior of StatsigClient', () => {
       deleted_configs: [],
       deleted_gates: [getHashValue('test_gate1')],
       deleted_layers: [],
+      is_delta: true,
     };
-    const statsigWithDeltas = new StatsigClient(sdkKey, { userID: '123' }, { enableInitializeWithDeltas: true });
+    const statsigWithDeltas = new StatsigClient(sdkKey, { userID: '123' });
     await statsigWithDeltas.initializeAsync();
 
     // The first gate should be removed, the second should still be present
