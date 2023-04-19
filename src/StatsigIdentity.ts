@@ -6,6 +6,8 @@ import { STATSIG_STABLE_ID_KEY } from './utils/Constants';
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
 
+import { version as SDKVersion } from './SDKVersion';
+
 export type DeviceInfo = {
   getVersion(): string | null;
   getSystemVersion(): string | null;
@@ -76,7 +78,7 @@ export default class Identity {
   ) {
     this.reactNativeUUID = reactNativeUUID;
     this.user = user;
-    this.sdkVersion = require('../package.json')?.version ?? '';
+    this.sdkVersion = SDKVersion;
     this.statsigMetadata = {
       sdkType: this.sdkType,
       sdkVersion: this.sdkVersion,
