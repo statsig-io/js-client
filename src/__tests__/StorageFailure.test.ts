@@ -63,7 +63,8 @@ describe('Verify behavior of StatsigClient', () => {
     // Constructing a new client, which reads from storage, should have the
     // updated values from the cache
     // but the cache was cleared on an exception writing to storage
-    const newerStatsig = new StatsigClient(sdkKey, { userID: '123' });
+    const newerStatsig = new StatsigClient(sdkKey, { userID: '123' }, {localMode: true});
+    newerStatsig.initializeAsync();
     expect(newerStatsig.checkGate('test_gate')).toBe(false);
   });
 });

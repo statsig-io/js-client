@@ -6,7 +6,4 @@ module.exports = {
     '<rootDir>/node_modules/',
     '<rootDir>/dist/',
   ],
-  transform: {
-    '^.+\\.ts$': 'ts-jest',
-  },
 };
