@@ -375,7 +375,9 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
           return;
         }
 
-        return this.fetchAndSaveValues(null, users, 0);
+        return this.fetchAndSaveValues(null, users, 0).catch(() => {
+          // timeouts are expected, so we don't want to log them to EB
+        });
       },
       () => {
         return Promise.resolve();
