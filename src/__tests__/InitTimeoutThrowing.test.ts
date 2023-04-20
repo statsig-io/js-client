@@ -10,6 +10,8 @@ jest.mock('../StatsigSDKOptions', () => {
   return actual;
 });
 
+const NETWORK_TIME = 100;
+
 describe('Init Timeout Throwing', () => {
   beforeEach(async () => {
     // @ts-ignore
@@ -23,7 +25,7 @@ describe('Init Timeout Throwing', () => {
               status: 200,
               text: () => Promise.resolve(JSON.stringify({})),
             }),
-          1000,
+          NETWORK_TIME,
         );
       });
     });
@@ -39,13 +41,13 @@ describe('Init Timeout Throwing', () => {
     const start = Date.now();
     await Statsig.updateUser({ userID: 'b-user' });
     const end = Date.now();
-    expect(end - start).toBeLessThan(100);
+    expect(end - start).toBeLessThan(50);
   });
 
   it('prefetch users does not throw or apply initialize timeout', async () => {
     const start = Date.now();
     await Statsig.prefetchUsers([{ userID: 'c-user' }]);
     const end = Date.now();
-    expect(end - start).toBeGreaterThanOrEqual(1000);
+    expect(end - start).toBeGreaterThanOrEqual(NETWORK_TIME);
   });
 });
