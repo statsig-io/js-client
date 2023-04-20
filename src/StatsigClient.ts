@@ -375,9 +375,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
           return;
         }
 
-        return this.fetchAndSaveValues(null, users, 0).catch(() => {
-          // timeouts are expected, so we don't want to log them to EB
-        });
+        return this.fetchAndSaveValues(null, users, 0);
       },
       () => {
         return Promise.resolve();
@@ -386,14 +384,18 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   }
 
   public getEvaluationDetails(): EvaluationDetails {
-    return this.errorBoundary.capture('getEvaluationDetails', () => {
-      return this.store.getGlobalEvaluationDetails();
-    }, () => {
-      return {
-        time: Date.now(),
-        reason: EvaluationReason.Error,
-      };
-    });
+    return this.errorBoundary.capture(
+      'getEvaluationDetails',
+      () => {
+        return this.store.getGlobalEvaluationDetails();
+      },
+      () => {
+        return {
+          time: Date.now(),
+          reason: EvaluationReason.Error,
+        };
+      },
+    );
   }
 
   /**
