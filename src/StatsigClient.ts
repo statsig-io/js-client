@@ -234,11 +234,13 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   }
 
   private delayedSetup(): void {
-    if (this.options.getInitializeValues() != null) {
-      this.fireAndForgetPrefechUsers();
-    }
-    this.identity.saveStableID();
-    this.logger.sendSavedRequests();
+    this.errorBoundary.swallow('delayedSetup', () => {
+      if (this.options.getInitializeValues() != null) {
+        this.fireAndForgetPrefechUsers();
+      }
+      this.identity.saveStableID();
+      this.logger.sendSavedRequests();
+    });
   }
 
   public setInitializeValues(initializeValues: Record<string, unknown>): void {
@@ -422,7 +424,9 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   }
 
   public logGateExposure(gateName: string) {
-    this.logGateExposureImpl(gateName);
+    this.errorBoundary.swallow('logGateExposure', () => {
+      this.logGateExposureImpl(gateName);
+    });
   }
 
   /**
@@ -461,7 +465,9 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   }
 
   public logConfigExposure(configName: string) {
-    this.logConfigExposureImpl(configName);
+    this.errorBoundary.swallow('logConfigExposure', () => {
+      this.logConfigExposureImpl(configName);
+    });
   }
 
   /**
@@ -514,7 +520,9 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     experimentName: string,
     keepDeviceValue: boolean,
   ) {
-    this.logExperimentExposureImpl(experimentName, keepDeviceValue);
+    this.errorBoundary.swallow('logExperimentExposure', () => {
+      this.logExperimentExposureImpl(experimentName, keepDeviceValue);
+    });
   }
 
   public getLayer(layerName: string, keepDeviceValue: boolean = false): Layer {
@@ -551,8 +559,10 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     parameterName: string,
     keepDeviceValue: boolean = false,
   ) {
-    const layer = this.getLayerImpl(null, layerName, keepDeviceValue);
-    this.logLayerParameterExposureForLayer(layer, parameterName, true);
+    this.errorBoundary.swallow('logLayerParameterExposure', () => {
+      const layer = this.getLayerImpl(null, layerName, keepDeviceValue);
+      this.logLayerParameterExposureForLayer(layer, parameterName, true);
+    });
   }
 
   public logEvent(
