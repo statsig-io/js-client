@@ -16,7 +16,10 @@ import type {
 import StatsigIdentity, { UUID } from './StatsigIdentity';
 import StatsigLogger from './StatsigLogger';
 import StatsigNetwork from './StatsigNetwork';
-import StatsigSDKOptions, { StatsigOptions } from './StatsigSDKOptions';
+import StatsigSDKOptions, {
+  INIT_TIMEOUT_DEFAULT_MS,
+  StatsigOptions,
+} from './StatsigSDKOptions';
 import StatsigStore, {
   EvaluationDetails,
   EvaluationReason,
@@ -317,6 +320,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         this.pendingInitPromise = this.fetchAndSaveValues(
           user,
           this.options.getPrefetchUsers(),
+          this.options.getInitTimeoutMs(),
           this.initializeDiagnostics,
         )
           .then(() => {
@@ -362,11 +366,19 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   }
 
   public async prefetchUsers(users: StatsigUser[]): Promise<void> {
-    if (!users || users.length == 0) {
-      return;
-    }
+    return this.errorBoundary.capture(
+      'prefetchUsers',
+      () => {
+        if (!users || users.length == 0) {
+          return;
+        }
 
-    return this.fetchAndSaveValues(null, users);
+        return this.fetchAndSaveValues(null, users, INIT_TIMEOUT_DEFAULT_MS);
+      },
+      () => {
+        return Promise.resolve();
+      },
+    );
   }
 
   public getEvaluationDetails(): EvaluationDetails {
@@ -1024,6 +1036,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   private async fetchAndSaveValues(
     user: StatsigUser | null,
     prefetchUsers: StatsigUser[] = [],
+    timeout: number = this.options.getInitTimeoutMs(),
     diagnostics?: Diagnostics,
   ): Promise<void> {
     if (prefetchUsers.length > 5) {
@@ -1044,7 +1057,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       .fetchValues(
         user,
         sinceTime,
-        this.options.getInitTimeoutMs(),
+        timeout,
         prefetchUsers.length === 0 ? diagnostics : undefined,
         prefetchUsers.length > 0 ? keyedPrefetchUsers : undefined,
       )

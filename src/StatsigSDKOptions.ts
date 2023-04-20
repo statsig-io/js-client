@@ -3,6 +3,8 @@ import { StatsigUser } from './StatsigUser';
 const DEFAULT_FEATURE_GATE_API = 'https://featuregates.org/v1/';
 const DEFAULT_EVENT_LOGGING_API = 'https://events.statsigapi.net/v1/';
 
+export const INIT_TIMEOUT_DEFAULT_MS = 3000;
+
 export type StatsigEnvironment = {
   tier?: 'production' | 'staging' | 'development' | string;
   [key: string]: string | undefined;
@@ -114,7 +116,7 @@ export default class StatsigSDKOptions {
     this.initTimeoutMs =
       options.initTimeoutMs && options.initTimeoutMs >= 0
         ? options.initTimeoutMs
-        : 3000;
+        : INIT_TIMEOUT_DEFAULT_MS;
     this.disableErrorLogging = options.disableErrorLogging ?? false;
     this.disableAutoMetricsLogging = options.disableAutoMetricsLogging ?? false;
     this.initializeValues = options.initializeValues ?? null;
