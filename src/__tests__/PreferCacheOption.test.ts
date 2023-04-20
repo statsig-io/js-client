@@ -23,6 +23,7 @@ describe('StatsigOptions.PreferCache', () => {
     url: string;
     body: Record<string, unknown>;
   }[] = [];
+  let onRequest: (() => void) | undefined;
 
   beforeEach(async () => {
     Statsig.encodeIntializeCall = false;
@@ -41,6 +42,11 @@ describe('StatsigOptions.PreferCache', () => {
         url: url.toString(),
         body,
       });
+
+      if (onRequest) {
+        const onReq = onRequest;
+        setTimeout(onReq, 1);
+      }
 
       return Promise.resolve({
         ok: true,
@@ -156,44 +162,72 @@ describe('StatsigOptions.PreferCache', () => {
   });
 
   describe('Bootstrap Initialization', () => {
-    beforeEach(async () => {
-      await Statsig.initialize(
-        'client-key',
-        { userID: 'bootstrapped_user' },
-        {
-          fetchMode: 'cache-or-network',
-          prefetchUsers: [{ userID: 'prefetched_user' }],
-          initializeValues: initialValues,
-        },
-      );
+    describe('awaiting prefetchUsers', () => {
+      beforeEach(async () => {
+        await Statsig.initialize(
+          'client-key',
+          { userID: 'bootstrapped_user' },
+          {
+            fetchMode: 'cache-or-network',
+            prefetchUsers: [{ userID: 'prefetched_user' }],
+            initializeValues: initialValues,
+          },
+        );
 
-      requests = [];
+        await new Promise<void>((r) => (onRequest = r));
+
+        requests = [];
+      });
+
+      it('does not make requests when switching to a bootstrapped user', async () => {
+        await Statsig.updateUser({ userID: 'bootstrapped_user' });
+        expect(requests.length).toBe(0);
+      });
+
+      it('makes a request when switching to an outdated cache value', async () => {
+        (Statsig as any).instance.startTime = Date.now() + 1000 * 60;
+        await Statsig.updateUser({ userID: 'bootstrapped_user' });
+        expect(requests.length).toBe(1);
+      });
+
+      it('makes a request when switching to a non-bootstrapped user', async () => {
+        await Statsig.updateUser({ userID: 'network_user' });
+        expect(requests.length).toBe(1);
+      });
+
+      it('does not make requests switching between cached, bootstrapped and prefetched', async () => {
+        await Statsig.updateUser({ userID: 'network_user' });
+        requests = [];
+
+        await Statsig.updateUser({ userID: 'bootstrapped_user' });
+        await Statsig.updateUser({ userID: 'network_user' });
+        await Statsig.updateUser({ userID: 'prefetched_user' });
+        expect(requests.length).toBe(0);
+      });
     });
 
-    it('does not make requests when switching to a bootstrapped user', async () => {
-      await Statsig.updateUser({ userID: 'bootstrapped_user' });
-      expect(requests.length).toBe(0);
-    });
+    describe('not awaiting prefetchUsers', () => {
+      beforeEach(async () => {
+        await Statsig.initialize(
+          'client-key',
+          { userID: 'bootstrapped_user' },
+          {
+            fetchMode: 'cache-or-network',
+            prefetchUsers: [{ userID: 'prefetched_user' }],
+            initializeValues: initialValues,
+          },
+        );
 
-    it('makes a request when switching to an outdated cache value', async () => {
-      (Statsig as any).instance.startTime = Date.now() + 1000 * 60;
-      await Statsig.updateUser({ userID: 'bootstrapped_user' });
-      expect(requests.length).toBe(1);
-    });
+        requests = [];
+      });
 
-    it('makes a request when switching to a non-bootstrapped user', async () => {
-      await Statsig.updateUser({ userID: 'network_user' });
-      expect(requests.length).toBe(1);
-    });
+      it('makes a request when switching to a inflight prefetch user', async () => {
+        await Statsig.updateUser({ userID: 'network_user' });
+        requests = [];
 
-    it('does not make requests switching between cached, bootstrapped and prefetched', async () => {
-      await Statsig.updateUser({ userID: 'network_user' });
-      requests = [];
-
-      await Statsig.updateUser({ userID: 'bootstrapped_user' });
-      await Statsig.updateUser({ userID: 'network_user' });
-      await Statsig.updateUser({ userID: 'prefetched_user' });
-      expect(requests.length).toBe(0);
+        await Statsig.updateUser({ userID: 'prefetched_user' });
+        expect(requests.length).toBe(1);
+      });
     });
   });
 });

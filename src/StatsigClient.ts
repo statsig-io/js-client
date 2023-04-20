@@ -17,7 +17,10 @@ import type {
 import StatsigIdentity, { UUID } from './StatsigIdentity';
 import StatsigLogger from './StatsigLogger';
 import StatsigNetwork from './StatsigNetwork';
-import StatsigSDKOptions, { StatsigOptions } from './StatsigSDKOptions';
+import StatsigSDKOptions, {
+  INIT_TIMEOUT_DEFAULT_MS,
+  StatsigOptions,
+} from './StatsigSDKOptions';
 import StatsigStore, {
   EvaluationDetails,
   EvaluationReason,
@@ -190,7 +193,10 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     user?: StatsigUser | null,
     options?: StatsigOptions | null,
   ) {
-    if (typeof sdkKey !== 'string' || !sdkKey.startsWith('client-')) {
+    if (
+      options?.localMode !== true &&
+      (typeof sdkKey !== 'string' || !sdkKey.startsWith('client-'))
+    ) {
       throw new StatsigInvalidArgumentError(
         'Invalid key provided.  You must use a Client SDK Key from the Statsig console to initialize the sdk',
       );
@@ -208,17 +214,17 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       this.options.getOverrideStableID(),
       StatsigClient.reactNativeUUID,
     );
+
     this.network = new StatsigNetwork(this);
-    this.store = new StatsigStore(this, options?.initializeValues ?? null);
+    this.store = new StatsigStore(this, this.options.getInitializeValues());
     this.logger = new StatsigLogger(this);
 
     this.errorBoundary.setStatsigMetadata(this.getStatsigMetadata());
 
-    if (options?.initializeValues != null) {
+    if (this.options.getInitializeValues() != null) {
       let cb = this.options.getInitCompletionCallback();
       this.ready = true;
       this.initCalled = true;
-      this.fireAndForgetPrefechUsers();
 
       setTimeout(() => this.delayedSetup(), 20);
       this.handleOptionalLogging();
@@ -229,6 +235,9 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   }
 
   private delayedSetup(): void {
+    if (this.options.getInitializeValues() != null) {
+      this.fireAndForgetPrefechUsers();
+    }
     this.identity.saveStableID();
     this.logger.sendSavedRequests();
   }
@@ -312,13 +321,17 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         this.pendingInitPromise = this.fetchAndSaveValues(
           user,
           this.options.getPrefetchUsers(),
+          this.options.getInitTimeoutMs(),
           this.initializeDiagnostics,
         )
           .then(() => {
             return { success: true, message: null };
           })
           .catch((e) => {
-            this.errorBoundary.logError('initializeAsync:fetchAndSaveValues', e);
+            this.errorBoundary.logError(
+              'initializeAsync:fetchAndSaveValues',
+              e,
+            );
             return { success: false, message: e.message };
           })
           .then(({ success, message }) => {
@@ -357,11 +370,19 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   }
 
   public async prefetchUsers(users: StatsigUser[]): Promise<void> {
-    if (!users || users.length == 0) {
-      return;
-    }
+    return this.errorBoundary.capture(
+      'prefetchUsers',
+      () => {
+        if (!users || users.length == 0) {
+          return;
+        }
 
-    return this.fetchAndSaveValues(null, users);
+        return this.fetchAndSaveValues(null, users, INIT_TIMEOUT_DEFAULT_MS);
+      },
+      () => {
+        return Promise.resolve();
+      },
+    );
   }
 
   public getEvaluationDetails(): EvaluationDetails {
@@ -585,12 +606,23 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   }
 
   public async updateUser(user: StatsigUser | null): Promise<boolean> {
+    const updateStartTime = Date.now();
+    let fireCompletionCallback: (
+      success: boolean,
+      error: string | null,
+    ) => void | null;
+
     return this.errorBoundary.capture(
       'updateUser',
       async () => {
         if (!this.initializeCalled()) {
           throw new StatsigUninitializedError('Call initialize() first.');
         }
+
+        fireCompletionCallback = (success: boolean, error: string | null) => {
+          const cb = this.options.getUpdateUserCompletionCallback();
+          cb?.(Date.now() - updateStartTime, success, error);
+        };
 
         this.identity.updateUser(this.normalizeUser(user));
 
@@ -605,6 +637,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
           cachedTime != null &&
           (isUserPrefetched || this.isCacheValidForFetchMode(cachedTime))
         ) {
+          fireCompletionCallback(true, null);
           return Promise.resolve(true);
         }
 
@@ -613,6 +646,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         }
 
         if (this.options.getLocalModeEnabled()) {
+          fireCompletionCallback(true, null);
           return Promise.resolve(true);
         }
 
@@ -625,13 +659,21 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
 
         return this.pendingInitPromise
           .then(() => {
+            fireCompletionCallback(true, null);
             return Promise.resolve(true);
           })
-          .catch(() => {
+          .catch((error) => {
+            fireCompletionCallback(false, `Failed to update user: ${error}`);
             return Promise.resolve(false);
           });
       },
-      () => Promise.resolve(false),
+      () => {
+        fireCompletionCallback?.(
+          false,
+          'Failed to update user. An unexpected error occured.',
+        );
+        return Promise.resolve(false);
+      },
     );
   }
 
@@ -848,19 +890,25 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   }
 
   private handleOptionalLogging(): void {
-    if (typeof window === 'undefined' || !window) {
-      return;
-    }
-    if (this.optionalLoggingSetup) {
+    const isErrorLoggingDisabled = this.options.getDisableErrorLogging();
+    const isAutoMetricsLoggingDisabled =
+      this.options.getDisableAutoMetricsLogging();
+
+    if (isErrorLoggingDisabled && isAutoMetricsLoggingDisabled) {
       return;
     }
 
-    if (!window.addEventListener) {
+    if (
+      this.optionalLoggingSetup ||
+      typeof window === 'undefined' ||
+      !window ||
+      !window.addEventListener
+    ) {
       return;
     }
 
     const user = this.identity.getUser();
-    if (!this.options.getDisableErrorLogging()) {
+    if (!isErrorLoggingDisabled) {
       window.addEventListener('error', (e) => {
         let errorObj = e.error;
         if (errorObj != null && typeof errorObj === 'object') {
@@ -876,7 +924,8 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         });
       });
     }
-    if (!this.options.getDisableAutoMetricsLogging()) {
+
+    if (!isAutoMetricsLoggingDisabled) {
       if (
         typeof document === 'undefined' ||
         !document ||
@@ -991,6 +1040,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   private async fetchAndSaveValues(
     user: StatsigUser | null,
     prefetchUsers: StatsigUser[] = [],
+    timeout: number = this.options.getInitTimeoutMs(),
     diagnostics?: Diagnostics,
   ): Promise<void> {
     if (prefetchUsers.length > 5) {
@@ -1007,97 +1057,43 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       sinceTime = this.store.getLastUpdateTime(user);
     }
 
-    if (sinceTime && this.options.getEnableInitializeWithDeltas()) {
-      return await this.fetchAndSaveValuesWithDeltas(
-        user,
-        sinceTime,
-        prefetchUsers,
-        diagnostics,
-        keyedPrefetchUsers,
-      );
-    }
-
     return this.network
       .fetchValues(
         user,
         sinceTime,
-        this.options.getInitTimeoutMs(),
+        timeout,
         prefetchUsers.length === 0 ? diagnostics : undefined,
         prefetchUsers.length > 0 ? keyedPrefetchUsers : undefined,
       )
-        .eventually((json) => {
+      .eventually((json) => {
+        if (json?.has_updates) {
+          this.store.saveWithoutUpdatingClientState(user, json);
+        }
+      })
+      .then(async (json: Record<string, any>) => {
+        return this.errorBoundary.swallow('fetchAndSaveValues', async () => {
+          diagnostics?.mark(
+            DiagnosticsKey.INITIALIZE,
+            DiagnosticsEvent.START,
+            'process',
+          );
           if (json?.has_updates) {
-            this.store.saveWithoutUpdatingClientState(user, json);
+            await this.store.save(user, json);
+          } else if (json?.is_no_content) {
+            this.store.setEvaluationReason(EvaluationReason.NetworkNotModified);
           }
-        })
-        .then(async (json: Record<string, any>) => {
-          return this.errorBoundary.swallow('fetchAndSaveValues', async () => {
-            diagnostics?.mark(
-              DiagnosticsKey.INITIALIZE,
-              DiagnosticsEvent.START,
-              'process',
-            );
-            if (json?.has_updates) {
-              await this.store.save(user, json);
-            } else if (json?.is_no_content) {
-              this.store.setEvaluationReason(
-                EvaluationReason.NetworkNotModified,
-              );
-            }
 
-            this.prefetchedUsersByCacheKey = {
-              ...this.prefetchedUsersByCacheKey,
-              ...keyedPrefetchUsers,
-            };
-            diagnostics?.mark(
-              DiagnosticsKey.INITIALIZE,
-              DiagnosticsEvent.END,
-              'process',
-            );
-          });
-        })
-      
-  }
-
-  private async fetchAndSaveValuesWithDeltas(
-    user: StatsigUser | null,
-    sinceTime: number,
-    prefetchUsers: StatsigUser[],
-    diagnostics: Diagnostics | undefined,
-    keyedPrefetchUsers: Record<string, StatsigUser>,
-  ) {
-    const json = await this.network.fetchDeltasSinceTime(
-      user,
-      sinceTime,
-      this.options.getInitTimeoutMs(),
-      prefetchUsers.length === 0 ? diagnostics : undefined,
-      prefetchUsers.length > 0 ? keyedPrefetchUsers : undefined,
-    );
-
-    this.errorBoundary.swallow('fetchAndSaveValuesWithDeltas', async () => {
-      diagnostics?.mark(
-        DiagnosticsKey.INITIALIZE_WITH_DELTAS,
-        DiagnosticsEvent.START,
-        'process',
-      );
-
-      if (json?.has_updates) {
-        await this.store.saveInitDeltas(user, json);
-      } else if (json?.is_no_content) {
-        this.store.setEvaluationReason(EvaluationReason.NetworkNotModified);
-      }
-
-      this.prefetchedUsersByCacheKey = {
-        ...this.prefetchedUsersByCacheKey,
-        ...keyedPrefetchUsers,
-      };
-
-      diagnostics?.mark(
-        DiagnosticsKey.INITIALIZE_WITH_DELTAS,
-        DiagnosticsEvent.END,
-        'process',
-      );
-    });
+          this.prefetchedUsersByCacheKey = {
+            ...this.prefetchedUsersByCacheKey,
+            ...keyedPrefetchUsers,
+          };
+          diagnostics?.mark(
+            DiagnosticsKey.INITIALIZE,
+            DiagnosticsEvent.END,
+            'process',
+          );
+        });
+      });
   }
 
   private checkGateImpl(

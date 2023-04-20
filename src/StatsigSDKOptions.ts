@@ -3,6 +3,8 @@ import { StatsigUser } from './StatsigUser';
 const DEFAULT_FEATURE_GATE_API = 'https://featuregates.org/v1/';
 const DEFAULT_EVENT_LOGGING_API = 'https://events.statsigapi.net/v1/';
 
+export const INIT_TIMEOUT_DEFAULT_MS = 3000;
+
 export type StatsigEnvironment = {
   tier?: 'production' | 'staging' | 'development' | string;
   [key: string]: string | undefined;
@@ -10,6 +12,12 @@ export type StatsigEnvironment = {
 
 export type InitCompletionCallback = (
   initDurationMs: number,
+  success: boolean,
+  message: string | null,
+) => void;
+
+export type UpdateUserCompletionCallback = (
+  durationMs: number,
   success: boolean,
   message: string | null,
 ) => void;
@@ -31,12 +39,12 @@ export type StatsigOptions = {
   prefetchUsers?: StatsigUser[];
   disableLocalStorage?: boolean;
   initCompletionCallback?: InitCompletionCallback | null;
+  updateUserCompletionCallback?: UpdateUserCompletionCallback | null;
   disableDiagnosticsLogging?: boolean;
   logLevel?: LogLevel | null;
   ignoreWindowUndefined?: boolean;
   fetchMode?: FetchMode;
   disableLocalOverrides?: boolean;
-  enableInitializeWithDeltas?: boolean;
 };
 
 export enum LogLevel {
@@ -65,17 +73,17 @@ export default class StatsigSDKOptions {
   private initTimeoutMs: number;
   private disableErrorLogging: boolean;
   private disableAutoMetricsLogging: boolean;
-  private initializeValues?: Record<string, any> | null;
+  private initializeValues: Record<string, any> | null;
   private eventLoggingApi: string;
   private prefetchUsers: StatsigUser[];
   private disableLocalStorage: boolean;
   private initCompletionCallback: InitCompletionCallback | null;
+  private updateCompletionCallback: UpdateUserCompletionCallback | null;
   private disableDiagnosticsLogging: boolean;
   private logLevel: LogLevel;
   private ignoreWindowUndefined: boolean;
   private fetchMode: FetchMode;
   private disableLocalOverrides: boolean;
-  private enableInitializeWithDeltas: boolean;
 
   constructor(options?: StatsigOptions | null) {
     if (options == null) {
@@ -108,7 +116,7 @@ export default class StatsigSDKOptions {
     this.initTimeoutMs =
       options.initTimeoutMs && options.initTimeoutMs >= 0
         ? options.initTimeoutMs
-        : 3000;
+        : INIT_TIMEOUT_DEFAULT_MS;
     this.disableErrorLogging = options.disableErrorLogging ?? false;
     this.disableAutoMetricsLogging = options.disableAutoMetricsLogging ?? false;
     this.initializeValues = options.initializeValues ?? null;
@@ -120,12 +128,13 @@ export default class StatsigSDKOptions {
     this.prefetchUsers = options.prefetchUsers ?? [];
     this.disableLocalStorage = options.disableLocalStorage ?? false;
     this.initCompletionCallback = options.initCompletionCallback ?? null;
+    this.updateCompletionCallback =
+      options.updateUserCompletionCallback ?? null;
     this.disableDiagnosticsLogging = options.disableDiagnosticsLogging ?? false;
     this.logLevel = options?.logLevel ?? LogLevel.NONE;
     this.ignoreWindowUndefined = options?.ignoreWindowUndefined ?? false;
     this.fetchMode = options.fetchMode ?? 'network-only';
     this.disableLocalOverrides = options?.disableLocalOverrides ?? false;
-    this.enableInitializeWithDeltas = options?.enableInitializeWithDeltas ?? false;
   }
 
   getApi(): string {
@@ -172,6 +181,10 @@ export default class StatsigSDKOptions {
     return this.disableAutoMetricsLogging;
   }
 
+  getInitializeValues(): Record<string, any> | null {
+    return this.initializeValues;
+  }
+
   getEventLoggingApi(): string {
     return this.eventLoggingApi;
   }
@@ -186,6 +199,10 @@ export default class StatsigSDKOptions {
 
   getInitCompletionCallback(): InitCompletionCallback | null {
     return this.initCompletionCallback;
+  }
+
+  getUpdateUserCompletionCallback(): UpdateUserCompletionCallback | null {
+    return this.updateCompletionCallback;
   }
 
   getDisableDiagnosticsLogging(): boolean {
@@ -206,10 +223,6 @@ export default class StatsigSDKOptions {
 
   getDisableLocalOverrides(): boolean {
     return this.disableLocalOverrides;
-  }
-
-  getEnableInitializeWithDeltas(): boolean {
-    return this.enableInitializeWithDeltas;
   }
 
   private normalizeNumberInput(

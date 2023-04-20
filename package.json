@@ -1,11 +1,11 @@
 {
   "name": "statsig-js",
-  "version": "4.32.0",
+  "version": "4.33.2",
   "description": "Statsig JavaScript client SDK for single user environments.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "prepare": "rm -rf build/ && rm -rf dist/ && tsc && webpack",
+    "prepare": "rm -rf build/ && rm -rf dist/ && genversion src/SDKVersion.ts --es6 && tsc && webpack",
     "postbuild": "rm -rf build/**/*.map",
     "test": "jest --config=jest-debug.config.js",
     "testForGithubOrRedisEnthusiasts": "jest",
@@ -47,6 +47,7 @@
     "@types/webpack-env": "^1.18.0",
     "circular-dependency-plugin": "^5.2.2",
     "core-js": "^3.16.4",
+    "genversion": "^3.1.1",
     "jest": "^27.1.0",
     "terser-webpack-plugin": "^5.1.4",
     "ts-jest": "^27.1.0",

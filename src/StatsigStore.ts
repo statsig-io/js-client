@@ -65,9 +65,21 @@ type APIInitializeData = {
   user_hash?: string;
 };
 
+type APIInitializeDataWithDeltas = APIInitializeData & {
+  deleted_configs?: string[];
+  deleted_gates?: string[];
+  deleted_layers?: string[];
+  is_delta?: boolean;
+};
+
 type APIInitializeDataWithPrefetchedUsers = APIInitializeData & {
   prefetched_user_values?: Record<string, APIInitializeData>;
 };
+
+type APIInitializeDataWithDeltasWithPrefetchedUsers =
+  APIInitializeDataWithDeltas & {
+    prefetched_user_values?: Record<string, APIInitializeDataWithDeltas>;
+  };
 
 type UserCacheValues = APIInitializeDataWithPrefetchedUsers & {
   sticky_experiments: Record<string, APIDynamicConfig | undefined>;
@@ -255,8 +267,12 @@ export default class StatsigStore {
     jsonConfigs: Record<string, any>,
   ): Promise<void> {
     const requestedUserCacheKey = getUserCacheKey(user);
-    const initResponse = jsonConfigs as APIInitializeDataWithPrefetchedUsers;
-    
+    const initResponse = jsonConfigs as APIInitializeDataWithDeltas;
+
+    if (initResponse.is_delta) {
+      return this.saveInitDeltas(user, jsonConfigs);
+    }
+
     this.mergeInitializeResponseIntoUserMap(
       initResponse,
       this.values,
@@ -266,7 +282,11 @@ export default class StatsigStore {
     );
 
     const userValues = this.values[requestedUserCacheKey];
-    if (userValues && requestedUserCacheKey && requestedUserCacheKey == this.userCacheKey) {
+    if (
+      userValues &&
+      requestedUserCacheKey &&
+      requestedUserCacheKey == this.userCacheKey
+    ) {
       this.userValues = userValues;
       this.reason = EvaluationReason.Network;
     }
@@ -282,7 +302,8 @@ export default class StatsigStore {
     jsonConfigs: Record<string, any>,
   ): Promise<void> {
     const requestedUserCacheKey = getUserCacheKey(user);
-    const initResponse = jsonConfigs as APIInitializeDataWithPrefetchedUsers;
+    const initResponse =
+      jsonConfigs as APIInitializeDataWithDeltasWithPrefetchedUsers;
     const copiedValues: Record<string, UserCacheValues | undefined> =
       JSON.parse(JSON.stringify(this.values));
 
@@ -302,7 +323,8 @@ export default class StatsigStore {
     jsonConfigs: Record<string, any>,
   ): Promise<void> {
     const requestedUserCacheKey = getUserCacheKey(user);
-    const initResponse = jsonConfigs as APIInitializeDataWithPrefetchedUsers;
+    const initResponse =
+      jsonConfigs as APIInitializeDataWithDeltasWithPrefetchedUsers;
 
     this.mergeInitializeResponseIntoUserMap(
       initResponse,
@@ -310,16 +332,24 @@ export default class StatsigStore {
       requestedUserCacheKey,
       user,
       (deltas, key) => {
-        const baseValues =
-          this.values[key] ??
-          this.getDefaultUserCacheValues();
+        const baseValues = this.values[key] ?? this.getDefaultUserCacheValues();
 
         return this.mergeUserCacheValues(baseValues, deltas);
       },
     );
 
+    const cacheKeys = Object.keys(initResponse.prefetched_user_values ?? {});
+    cacheKeys.forEach((userKey) => {
+      const user = this.values[userKey];
+      if (user) {
+        removeDeletedKeysFromUserValues(initResponse, user);
+      }
+    });
+
     const userValues = this.values[requestedUserCacheKey];
     if (userValues && requestedUserCacheKey == this.userCacheKey) {
+      removeDeletedKeysFromUserValues(initResponse, userValues);
+
       this.userValues = userValues;
       this.reason = EvaluationReason.Network;
     }
@@ -341,7 +371,10 @@ export default class StatsigStore {
       const cacheKeys = Object.keys(data.prefetched_user_values);
       for (const key of cacheKeys) {
         const prefetched = data.prefetched_user_values[key];
-        configMap[key] = mergeFn(this.convertAPIDataToCacheValues(prefetched, key), key);
+        configMap[key] = mergeFn(
+          this.convertAPIDataToCacheValues(prefetched, key),
+          key,
+        );
       }
     }
 
@@ -354,8 +387,11 @@ export default class StatsigStore {
         const userHash = getHashValue(JSON.stringify(user));
         requestedUserValues.user_hash = userHash;
       }
-      
-      configMap[requestedUserCacheKey] = mergeFn(requestedUserValues, requestedUserCacheKey);
+
+      configMap[requestedUserCacheKey] = mergeFn(
+        requestedUserValues,
+        requestedUserCacheKey,
+      );
     }
   }
 
@@ -395,7 +431,7 @@ export default class StatsigStore {
 
   /**
    * Writes the provided values to storage, truncating down to
-   * MAX_USER_VALUE_CACHED number entries. 
+   * MAX_USER_VALUE_CACHED number entries.
    * @returns The truncated entry list
    */
   private async writeValuesToStorage(
@@ -410,7 +446,9 @@ export default class StatsigStore {
         if (b == null) {
           return -1;
         }
-        return b?.time - a?.time;
+        return (
+          (b?.evaluation_time ?? b?.time) - (a?.evaluation_time ?? a?.time)
+        );
       })
       .slice(0, MAX_USER_VALUE_CACHED);
     valuesToWrite = Object.fromEntries(filteredValues);
@@ -858,4 +896,19 @@ export default class StatsigStore {
       );
     };
   }
+}
+
+function removeDeletedKeysFromUserValues(
+  initResponse: APIInitializeDataWithDeltasWithPrefetchedUsers,
+  userValues: UserCacheValues,
+) {
+  (initResponse.deleted_configs ?? []).forEach((key) => {
+    delete userValues.dynamic_configs[key];
+  });
+  (initResponse.deleted_gates ?? []).forEach((key) => {
+    delete userValues.feature_gates[key];
+  });
+  (initResponse.deleted_layers ?? []).forEach((key) => {
+    delete userValues.layer_configs[key];
+  });
 }
