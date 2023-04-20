@@ -384,7 +384,14 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   }
 
   public getEvaluationDetails(): EvaluationDetails {
-    return this.store.getGlobalEvaluationDetails();
+    return this.errorBoundary.capture('getEvaluationDetails', () => {
+      return this.store.getGlobalEvaluationDetails();
+    }, () => {
+      return {
+        time: Date.now(),
+        reason: EvaluationReason.Error,
+      };
+    });
   }
 
   /**
