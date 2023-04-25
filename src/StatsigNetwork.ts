@@ -143,6 +143,12 @@ export default class StatsigNetwork {
             'network_request',
             res.status,
           );
+
+          const is_delta = (res?.data?.is_delta as boolean | undefined) ?? false;
+          diagnostics?.addMetadata(
+            'is_delta',
+            is_delta,
+          );
         }
         if (!res.ok) {
           return Promise.reject(

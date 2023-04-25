@@ -269,6 +269,9 @@ describe('Verify behavior of StatsigLogger', () => {
           value: null,
         },
       ],
+      metadata: {
+        is_delta: false,
+      },
     });
     event.setUser({ userID: 'user_key' });
     expect(spyOnLog).toHaveBeenCalledWith(event);

@@ -8,39 +8,49 @@ export enum DiagnosticsEvent {
 export enum DiagnosticsKey {
   OVERALL = 'overall',
   INITIALIZE = 'initialize',
+  INITIALIZE_WITH_DELTA = 'initialize_with_delta',
 }
 
-export type DiagnosticsMarker = Record<
+export type Primitive = string | number | boolean | null | undefined;
+export type PrimitiveRecords = Record<
   string,
-  string | number | boolean | null | undefined
+  Primitive
 >;
 
 export type DiagnosticsMarkers = {
   context: string;
-  markers: DiagnosticsMarker[];
+  markers: PrimitiveRecords[];
+  metadata: PrimitiveRecords;
 };
 
 export default class Diagnostics {
-  private markers: DiagnosticsMarker[];
+  private markers: PrimitiveRecords[];
   private context: string;
+  private metadata: PrimitiveRecords;
 
   public constructor(context: string) {
     this.context = context;
     this.markers = [];
+    this.metadata = {};
   }
 
   public getMarkers(): DiagnosticsMarkers {
     return {
       context: this.context,
       markers: this.markers,
+      metadata: this.metadata
     };
+  }
+
+  public addMetadata(key: string, value: Primitive) {
+    this.metadata[key] = value;
   }
 
   public mark(
     key: DiagnosticsKey,
     action: DiagnosticsEvent,
     step: string | null = null,
-    value: string | number | boolean | null = null,
+    value: Primitive = null,
   ): void {
     this.markers.push({
       key,
