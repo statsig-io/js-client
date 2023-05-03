@@ -995,6 +995,14 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     return false;
   }
 
+  private normalizePrefetchUsers(users: StatsigUser[] | null): StatsigUser[] {
+    if (users == null) {
+      return [];
+    }
+
+    return users.map((user) => this.normalizeUser(user));
+  }
+
   private normalizeUser(user: StatsigUser | null): StatsigUser {
     let userCopy: StatsigUser = {};
     try {
@@ -1064,10 +1072,12 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       this.consoleLogger.info('Cannot prefetch more than 5 users.');
     }
 
-    const keyedPrefetchUsers = prefetchUsers.slice(0, 5).reduce((acc, curr) => {
-      acc[getUserCacheKey(curr)] = curr;
-      return acc;
-    }, {} as Record<string, StatsigUser>);
+    const keyedPrefetchUsers = this.normalizePrefetchUsers(prefetchUsers)
+      .slice(0, 5)
+      .reduce((acc, curr) => {
+        acc[getUserCacheKey(curr)] = curr;
+        return acc;
+      }, {} as Record<string, StatsigUser>);
 
     let sinceTime: number | null = null;
     if (prefetchUsers.length === 0) {
