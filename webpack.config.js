@@ -45,17 +45,17 @@ module.exports = {
     }),
   ],
   optimization: {
+    minimize: true,
     minimizer: [
       new TerserPlugin({
-        extractComments: false,
+        minify: TerserPlugin.uglifyJsMinify,
         terserOptions: {
-          compress: {
-            drop_console: false,
+          mangle: {
+            properties: {
+              reserved: [],
+            },
           },
-          format: {
-            comments: false,
-          },
-        },
+        }
       }),
     ],
   },
