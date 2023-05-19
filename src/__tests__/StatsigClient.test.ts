@@ -49,10 +49,7 @@ describe('Verify behavior of StatsigClient', () => {
     parsedRequestBody = JSON.parse(params?.body as string);
     return Promise.resolve({
       ok: true,
-      text: () =>
-        Promise.resolve(
-          JSON.stringify(respObject),
-        ),
+      text: () => Promise.resolve(JSON.stringify(respObject)),
     });
   });
 
@@ -372,7 +369,9 @@ describe('Verify behavior of StatsigClient', () => {
     await statsigWithDeltas.initializeAsync();
 
     expect(statsigWithDeltas.checkGate('test_gate')).toBe(true);
-    expect(statsigWithDeltas.getConfig('test_config').getValue()).toEqual({ num: 4 });
+    expect(statsigWithDeltas.getConfig('test_config').getValue()).toEqual({
+      num: 4,
+    });
   });
 
   test('initializing with deltas adds new values', async () => {

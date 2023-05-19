@@ -205,7 +205,7 @@ describe('Verify behavior of InternalStore', () => {
     expect.assertions(8);
     const spyOnSet = jest.spyOn(window.localStorage.__proto__, 'setItem');
     const spyOnGet = jest.spyOn(window.localStorage.__proto__, 'getItem');
-    const client = new StatsigClient(sdkKey, {}, {overrideStableID: "999"});
+    const client = new StatsigClient(sdkKey, {}, { overrideStableID: '999' });
     expect(spyOnSet).toHaveBeenCalledTimes(0);
     const store = client.getStore();
     expect(
