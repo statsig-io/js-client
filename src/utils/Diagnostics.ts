@@ -12,10 +12,7 @@ export enum DiagnosticsKey {
 }
 
 export type Primitive = string | number | boolean | null | undefined;
-export type PrimitiveRecords = Record<
-  string,
-  Primitive
->;
+export type PrimitiveRecords = Record<string, Primitive>;
 
 export type DiagnosticsMarkers = {
   context: string;
@@ -38,7 +35,7 @@ export default class Diagnostics {
     return {
       context: this.context,
       markers: this.markers,
-      metadata: this.metadata
+      metadata: this.metadata,
     };
   }
 

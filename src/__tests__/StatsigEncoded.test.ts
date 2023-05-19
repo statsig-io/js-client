@@ -50,7 +50,11 @@ describe('StatsigEncoded', () => {
 
     await client.initializeAsync();
     expect(body).toEqual(
-      JSON.stringify({ user: USER, statsigMetadata: MOCK_METADATA, acceptsDeltas: true, }),
+      JSON.stringify({
+        user: USER,
+        statsigMetadata: MOCK_METADATA,
+        acceptsDeltas: true,
+      }),
     );
     expect(headers).toMatchObject({ 'STATSIG-ENCODED': '0' });
   });
