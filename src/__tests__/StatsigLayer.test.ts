@@ -65,7 +65,7 @@ const initialResponse = {
 };
 
 describe('Statsig Layers', () => {
-  var client: StatsigClient;
+  let client: StatsigClient;
 
   const localStorage = new LocalStorageMock();
   // @ts-ignore
@@ -94,10 +94,10 @@ describe('Statsig Layers', () => {
   });
 
   it('returns experiment values when allocated', () => {
-    let config = client.getLayer(layerConfigWithExperimentKey);
+    const config = client.getLayer(layerConfigWithExperimentKey);
     expect(config.get('a_key', 'ERR')).toBe('a_config_value');
 
-    let another = client.getLayer(layerConfigWithoutExperimentKey);
+    const another = client.getLayer(layerConfigWithoutExperimentKey);
     expect(another.get('a_key', 'ERR')).toBe('another_layer_default_value');
   });
 

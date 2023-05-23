@@ -1,0 +1,6 @@
+dist
+Promise.finally.ts
+Object.fromEntries.ts
+
+# Disabled tests folder for now
+__tests__

@@ -89,9 +89,9 @@ export default class StatsigLogger {
       // unnecessary interval in local mode since logs dont flush anyway
       return;
     }
-    const me = this;
+
     this.flushInterval = setInterval(() => {
-      me.flush();
+      this.flush();
     }, this.sdkInternal.getOptions().getLoggingIntervalMillis());
 
     // Quick flush
@@ -114,7 +114,9 @@ export default class StatsigLogger {
           event.addStatsigMetadata('currentPage', parts[0]);
         }
       }
-    } catch (_e) {}
+    } catch {
+      // noop
+    }
 
     this.queue.push(event.toJsonObject());
 
@@ -304,7 +306,7 @@ export default class StatsigLogger {
       return;
     }
 
-    const navEntry = entries[0] as any;
+    const navEntry = entries[0];
     const metadata = {
       statsig_dimensions: {
         url: navEntry.name,
@@ -317,11 +319,17 @@ export default class StatsigLogger {
     latencyEvent.setMetadata(metadata);
     this.log(latencyEvent);
 
-    const domInteractiveEvent = new LogEvent(APP_METRICS_DOM_INTERACTIVE_EVENT);
-    domInteractiveEvent.setUser(user);
-    domInteractiveEvent.setValue(navEntry.domInteractive - navEntry.startTime);
-    domInteractiveEvent.setMetadata(metadata);
-    this.log(domInteractiveEvent);
+    if (navEntry instanceof PerformanceNavigationTiming) {
+      const domInteractiveEvent = new LogEvent(
+        APP_METRICS_DOM_INTERACTIVE_EVENT,
+      );
+      domInteractiveEvent.setUser(user);
+      domInteractiveEvent.setValue(
+        navEntry.domInteractive - navEntry.startTime,
+      );
+      domInteractiveEvent.setMetadata(metadata);
+      this.log(domInteractiveEvent);
+    }
   }
 
   public shutdown(): void {
@@ -333,7 +341,7 @@ export default class StatsigLogger {
     this.flush(true);
   }
 
-  public flush(isClosing: boolean = false): void {
+  public flush(isClosing = false): void {
     if (this.queue.length === 0) {
       return;
     }
@@ -344,9 +352,7 @@ export default class StatsigLogger {
       isClosing &&
       !this.sdkInternal.getNetwork().supportsKeepalive() &&
       typeof navigator !== 'undefined' &&
-      navigator != null &&
-      // @ts-ignore
-      navigator.sendBeacon
+      navigator?.sendBeacon != null
     ) {
       const beacon = this.sdkInternal.getNetwork().sendLogBeacon({
         events: oldQueue,
@@ -367,7 +373,6 @@ export default class StatsigLogger {
       return;
     }
 
-    const processor = this;
     this.sdkInternal
       .getNetwork()
       .postToEndpoint(
@@ -407,7 +412,7 @@ export default class StatsigLogger {
               };
             });
         }
-        processor.newFailedRequest(LOG_FAILURE_EVENT, oldQueue);
+        this.newFailedRequest(LOG_FAILURE_EVENT, oldQueue);
       })
       .finally(async () => {
         if (isClosing) {
@@ -421,25 +426,32 @@ export default class StatsigLogger {
             // on app background/window blur, save unsent events as a request and clean up the queue (in case app foregrounds)
             this.queue = [];
           }
-          await processor.saveFailedRequests();
+
+          this.saveFailedRequests();
         }
       });
   }
 
-  private async saveFailedRequests(): Promise<void> {
+  private saveFailedRequests(): void {
     if (this.failedLogEvents.length > 0) {
       const requestsCopy = JSON.stringify(this.failedLogEvents);
       if (requestsCopy.length > MAX_LOCAL_STORAGE_SIZE) {
         this.clearLocalStorageRequests();
         return;
       }
+
       if (StatsigAsyncStorage.asyncStorage) {
-        await StatsigAsyncStorage.setItemAsync(
+        StatsigAsyncStorage.setItemAsync(
           STATSIG_LOCAL_STORAGE_LOGGING_REQUEST_KEY,
           requestsCopy,
+        ).catch((reason) =>
+          this.sdkInternal
+            .getErrorBoundary()
+            .logError('saveFailedRequests', reason),
         );
         return;
       }
+
       StatsigLocalStorage.setItem(
         STATSIG_LOCAL_STORAGE_LOGGING_REQUEST_KEY,
         requestsCopy,
@@ -483,7 +495,7 @@ export default class StatsigLogger {
                 throw Error(response.status + '');
               }
             })
-            .catch((_e) => {
+            .catch(() => {
               if (fireAndForget) {
                 return;
               }
@@ -491,7 +503,8 @@ export default class StatsigLogger {
             });
         }
       }
-    } catch (_e) {
+    } catch (e) {
+      this.sdkInternal.getErrorBoundary().logError('sendSavedRequests', e);
     } finally {
       this.clearLocalStorageRequests();
     }
@@ -516,6 +529,10 @@ export default class StatsigLogger {
     if (StatsigAsyncStorage.asyncStorage) {
       StatsigAsyncStorage.removeItemAsync(
         STATSIG_LOCAL_STORAGE_LOGGING_REQUEST_KEY,
+      ).catch((reason) =>
+        this.sdkInternal
+          .getErrorBoundary()
+          .logError('clearLocalStorageRequests', reason),
       );
     } else {
       StatsigLocalStorage.removeItem(STATSIG_LOCAL_STORAGE_LOGGING_REQUEST_KEY);

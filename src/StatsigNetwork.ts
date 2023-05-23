@@ -45,7 +45,7 @@ export default class StatsigNetwork {
 
   private leakyBucket: Record<string, number>;
 
-  private canUseKeepalive: boolean = false;
+  private canUseKeepalive = false;
 
   public constructor(sdkInternal: IHasStatsigInternal) {
     this.sdkInternal = sdkInternal;
@@ -57,7 +57,9 @@ export default class StatsigNetwork {
     if (!this.sdkInternal.getOptions().getDisableNetworkKeepalive()) {
       try {
         this.canUseKeepalive = 'keepalive' in new Request('');
-      } catch (_e) {}
+      } catch (_e) {
+        this.canUseKeepalive = false;
+      }
     }
   }
 
@@ -67,7 +69,7 @@ export default class StatsigNetwork {
     timeout: number,
     diagnostics?: Diagnostics,
     prefetchUsers?: Record<string, StatsigUser>,
-  ): PromiseWithTimeout<Record<string, any>> {
+  ): PromiseWithTimeout<Record<string, unknown>> {
     const input = {
       user,
       prefetchUsers,
@@ -89,9 +91,9 @@ export default class StatsigNetwork {
     endpointName: StatsigEndpoint,
     body: object,
     diagnostics?: Diagnostics,
-    timeout: number = 0,
-    retries: number = 0,
-    backoff: number = 1000,
+    timeout = 0,
+    retries = 0,
+    backoff = 1000,
   ): PromiseWithTimeout<T> {
     if (endpointName === StatsigEndpoint.Initialize) {
       diagnostics?.mark(
@@ -215,7 +217,7 @@ export default class StatsigNetwork {
     return racingPromise;
   }
 
-  public sendLogBeacon(payload: Record<string, any>): boolean {
+  public sendLogBeacon(payload: Record<string, unknown>): boolean {
     if (this.sdkInternal.getOptions().getLocalModeEnabled()) {
       return true;
     }
@@ -237,9 +239,9 @@ export default class StatsigNetwork {
   public async postToEndpoint(
     endpointName: StatsigEndpoint,
     body: object,
-    retries: number = 0,
-    backoff: number = 1000,
-    useKeepalive: boolean = false,
+    retries = 0,
+    backoff = 1000,
+    useKeepalive = false,
   ): Promise<NetworkResponse> {
     if (this.sdkInternal.getOptions().getLocalModeEnabled()) {
       return Promise.reject('no network requests in localMode');

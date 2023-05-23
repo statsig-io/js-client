@@ -8,8 +8,9 @@ export type OnDefaultValueFallback = (
 ) => void;
 
 export default class DynamicConfig {
+  public value: Record<string, unknown>;
+
   private name: string;
-  public value: Record<string, any>;
   private ruleID: string;
   private secondaryExposures: Record<string, string>[];
   private allocatedExperimentName: string;
@@ -18,11 +19,11 @@ export default class DynamicConfig {
 
   public constructor(
     configName: string,
-    configValue: Record<string, any>,
+    configValue: Record<string, unknown>,
     ruleID: string,
     evaluationDetails: EvaluationDetails,
     secondaryExposures: Record<string, string>[] = [],
-    allocatedExperimentName: string = '',
+    allocatedExperimentName = '',
     onDefaultValueFallback: OnDefaultValueFallback | null = null,
   ) {
     this.name = configName;
@@ -67,10 +68,7 @@ export default class DynamicConfig {
     return defaultValue;
   }
 
-  public getValue(
-    key?: string,
-    defaultValue?: any | null,
-  ): boolean | number | string | object | Array<any> | null {
+  public getValue(key?: string, defaultValue?: unknown): unknown {
     if (key == null) {
       return this.value;
     }

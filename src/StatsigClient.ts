@@ -16,10 +16,7 @@ import type {
 import StatsigIdentity, { UUID } from './StatsigIdentity';
 import StatsigLogger from './StatsigLogger';
 import StatsigNetwork from './StatsigNetwork';
-import StatsigSDKOptions, {
-  INIT_TIMEOUT_DEFAULT_MS,
-  StatsigOptions,
-} from './StatsigSDKOptions';
+import StatsigSDKOptions, { StatsigOptions } from './StatsigSDKOptions';
 import StatsigStore, {
   EvaluationDetails,
   EvaluationReason,
@@ -65,6 +62,10 @@ export type _SDKPackageInfo = {
   sdkVersion: string;
 };
 
+/* Should be Record<string, unknown>, but that is a breaking change for React */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+type LegacyOverrideValue = Record<string, any>;
+
 export interface IStatsig {
   initializeAsync(): Promise<void>;
   checkGate(gateName: string, ignoreOverrides?: boolean): boolean;
@@ -82,7 +83,7 @@ export interface IStatsig {
   updateUser(user: StatsigUser | null): Promise<boolean>;
   shutdown(): void;
   overrideGate(gateName: string, value: boolean): void;
-  overrideConfig(gateName: string, value: Record<string, any>): void;
+  overrideConfig(gateName: string, value: Record<string, unknown>): void;
   removeGateOverride(gateName?: string): void;
   removeConfigOverride(configName?: string): void;
   getAllOverrides(): StatsigOverrides;
@@ -90,7 +91,7 @@ export interface IStatsig {
 
   // DEPRECATED
   removeOverride(overrideName?: string | null): void;
-  getOverrides(): Record<string, any>;
+  getOverrides(): Record<string, unknown>;
 }
 
 export interface IHasStatsigInternal {
@@ -110,8 +111,8 @@ export interface IHasStatsigInternal {
 
 export type StatsigOverrides = {
   gates: Record<string, boolean>;
-  configs: Record<string, Record<string, any>>;
-  layers: Record<string, Record<string, any>>;
+  configs: Record<string, Record<string, unknown>>;
+  layers: Record<string, Record<string, unknown>>;
 };
 
 export default class StatsigClient implements IHasStatsigInternal, IStatsig {
@@ -121,9 +122,9 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   private currentAppState: AppStateStatus | null = null;
 
   private ready: boolean;
-  private initCalled: boolean = false;
+  private initCalled = false;
   private pendingInitPromise: Promise<void> | null = null;
-  private optionalLoggingSetup: boolean = false;
+  private optionalLoggingSetup = false;
   private prefetchedUsersByCacheKey: Record<string, StatsigUser> = {};
   private startTime;
 
@@ -221,7 +222,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     this.errorBoundary.setStatsigMetadata(this.getStatsigMetadata());
 
     if (this.options.getInitializeValues() != null) {
-      let cb = this.options.getInitCompletionCallback();
+      const cb = this.options.getInitCompletionCallback();
       this.ready = true;
       this.initCalled = true;
 
@@ -239,7 +240,11 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         this.fireAndForgetPrefechUsers();
       }
       this.identity.saveStableID();
-      this.logger.sendSavedRequests();
+      this.logger
+        .sendSavedRequests()
+        .catch((reason) =>
+          this.errorBoundary.logError('sendSavedRequests:delayedSetup', reason),
+        );
     });
   }
 
@@ -262,7 +267,14 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         // we wont have access to window/document/localStorage if these run on the server
         // so try to run whenever this is called
         this.handleOptionalLogging();
-        this.logger.sendSavedRequests();
+        this.logger
+          .sendSavedRequests()
+          .catch((reason) =>
+            this.errorBoundary.logError(
+              'sendSavedRequests:setInitializeValues',
+              reason,
+            ),
+          );
         if (cb) {
           cb(now() - this.startTime, true, null);
         }
@@ -405,10 +417,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
    * @returns {boolean} - value of a gate for the user. Gates are "off" (return false) by default
    * @throws Error if initialize() is not called first, or gateName is not a string
    */
-  public checkGate(
-    gateName: string,
-    ignoreOverrides: boolean = false,
-  ): boolean {
+  public checkGate(gateName: string, ignoreOverrides = false): boolean {
     return this.errorBoundary.capture(
       'checkGate',
       () => {
@@ -422,7 +431,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
 
   public checkGateWithExposureLoggingDisabled(
     gateName: string,
-    ignoreOverrides: boolean = false,
+    ignoreOverrides = false,
   ): boolean {
     return this.errorBoundary.capture(
       'checkGateWithExposureLoggingDisabled',
@@ -447,10 +456,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
    * @returns {DynamicConfig} - value of a config for the user
    * @throws Error if initialize() is not called first, or configName is not a string
    */
-  public getConfig(
-    configName: string,
-    ignoreOverrides: boolean = false,
-  ): DynamicConfig {
+  public getConfig(configName: string, ignoreOverrides = false): DynamicConfig {
     return this.errorBoundary.capture(
       'getConfig',
       () => {
@@ -464,7 +470,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
 
   public getConfigWithExposureLoggingDisabled(
     configName: string,
-    ignoreOverrides: boolean = false,
+    ignoreOverrides = false,
   ): DynamicConfig {
     return this.errorBoundary.capture(
       'getConfig',
@@ -491,8 +497,8 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
    */
   public getExperiment(
     experimentName: string,
-    keepDeviceValue: boolean = false,
-    ignoreOverrides: boolean = false,
+    keepDeviceValue = false,
+    ignoreOverrides = false,
   ): DynamicConfig {
     return this.errorBoundary.capture(
       'getExperiment',
@@ -511,8 +517,8 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
 
   public getExperimentWithExposureLoggingDisabled(
     experimentName: string,
-    keepDeviceValue: boolean = false,
-    ignoreOverrides: boolean = false,
+    keepDeviceValue = false,
+    ignoreOverrides = false,
   ): DynamicConfig {
     return this.errorBoundary.capture(
       'getExperimentWithExposureLoggingDisabled',
@@ -536,7 +542,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     });
   }
 
-  public getLayer(layerName: string, keepDeviceValue: boolean = false): Layer {
+  public getLayer(layerName: string, keepDeviceValue = false): Layer {
     return this.errorBoundary.capture(
       'getLayer',
       () => {
@@ -553,7 +559,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
 
   public getLayerWithExposureLoggingDisabled(
     layerName: string,
-    keepDeviceValue: boolean = false,
+    keepDeviceValue = false,
   ): Layer {
     return this.errorBoundary.capture(
       'getLayerWithExposureLoggingDisabled',
@@ -568,7 +574,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   public logLayerParameterExposure(
     layerName: string,
     parameterName: string,
-    keepDeviceValue: boolean = false,
+    keepDeviceValue = false,
   ) {
     this.errorBoundary.swallow('logLayerParameterExposure', () => {
       const layer = this.getLayerImpl(null, layerName, keepDeviceValue);
@@ -733,7 +739,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
    * @param configName the config to override
    * @param value the json value to override the config to
    */
-  public overrideConfig(configName: string, value: Record<string, any>): void {
+  public overrideConfig(configName: string, value: LegacyOverrideValue): void {
     this.errorBoundary.swallow('overrideConfig', () => {
       this.ensureStoreLoaded();
       this.store.overrideConfig(configName, value);
@@ -745,7 +751,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
    * @param layerName the layer to override
    * @param value the json value to override the config to
    */
-  public overrideLayer(layerName: string, value: Record<string, any>): void {
+  public overrideLayer(layerName: string, value: LegacyOverrideValue): void {
     this.errorBoundary.swallow('overrideLayer', () => {
       this.ensureStoreLoaded();
       this.store.overrideLayer(layerName, value);
@@ -801,7 +807,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
    * @deprecated - use getAllOverrides to get gate and config overrides
    * @returns Gate overrides
    */
-  public getOverrides(): Record<string, any> {
+  public getOverrides(): Record<string, unknown> {
     return this.errorBoundary.capture(
       'getOverrides',
       () => {
@@ -931,7 +937,9 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         if (errorObj != null && typeof errorObj === 'object') {
           try {
             errorObj = JSON.stringify(errorObj);
-          } catch (e) {}
+          } catch (e) {
+            errorObj = 'Failed to stringify Error';
+          }
         }
         this.logger.logAppError(user, e.message ?? '', {
           filename: e.filename,
@@ -977,7 +985,14 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       this.currentAppState?.match(/inactive|background/) &&
       nextAppState === 'active'
     ) {
-      this.logger.sendSavedRequests();
+      this.logger
+        .sendSavedRequests()
+        .catch((reason) =>
+          this.errorBoundary.logError(
+            'sendSavedRequests:handleAppStateChange',
+            reason,
+          ),
+        );
     }
     this.currentAppState = nextAppState;
   }
@@ -1004,7 +1019,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   }
 
   private normalizeUser(user: StatsigUser | null): StatsigUser {
-    let userCopy: StatsigUser = {};
+    let userCopy: StatsigUser & { statsigEnvironment?: unknown } = {};
     try {
       userCopy = JSON.parse(JSON.stringify(user));
     } catch (error) {
@@ -1015,7 +1030,6 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
 
     userCopy = this.trimUserObjIfNeeded(userCopy);
     if (this.options.getEnvironment() != null) {
-      // @ts-ignore
       userCopy.statsigEnvironment = this.options.getEnvironment();
     }
     return userCopy;
@@ -1094,10 +1108,17 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       )
       .eventually((json) => {
         if (json?.has_updates) {
-          this.store.saveWithoutUpdatingClientState(user, json);
+          this.store
+            .saveWithoutUpdatingClientState(user, json)
+            .catch((reason) =>
+              this.errorBoundary.logError(
+                'fetchAndSaveValues:eventually',
+                reason,
+              ),
+            );
         }
       })
-      .then(async (json: Record<string, any>) => {
+      .then(async (json: Record<string, unknown>) => {
         return this.errorBoundary.swallow('fetchAndSaveValues', async () => {
           diagnostics?.mark(
             DiagnosticsKey.INITIALIZE,
@@ -1242,7 +1263,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   private logLayerParameterExposureForLayer = (
     layer: Layer,
     parameterName: string,
-    isManualExposure: boolean = false,
+    isManualExposure = false,
   ) => {
     let allocatedExperiment = '';
     let exposures = layer._getUndelegatedSecondaryExposures();
@@ -1275,6 +1296,8 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   }
 
   private fireAndForgetPrefechUsers() {
-    this.prefetchUsers(this.options.getPrefetchUsers());
+    this.prefetchUsers(this.options.getPrefetchUsers()).catch(() => {
+      /* noop */
+    });
   }
 }

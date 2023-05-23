@@ -11,7 +11,8 @@
     "testForGithubOrRedisEnthusiasts": "jest",
     "test:watch": "jest --watch",
     "build:dryrun": "npx tsc --noEmit",
-    "types": "npx tsc"
+    "types": "npx tsc",
+    "lint": "eslint '*/**/*.{ts,tsx}' --fix --max-warnings 0 --cache --cache-strategy content && git status"
   },
   "files": [
     "build/statsig-prod-web-sdk.js",
@@ -45,8 +46,11 @@
     "@types/node": "^18.15.10",
     "@types/uuid": "^8.3.1",
     "@types/webpack-env": "^1.18.0",
+    "@typescript-eslint/eslint-plugin": "^5.59.7",
+    "@typescript-eslint/parser": "^5.59.7",
     "circular-dependency-plugin": "^5.2.2",
     "core-js": "^3.16.4",
+    "eslint": "^8.41.0",
     "genversion": "^3.1.1",
     "jest": "^27.1.0",
     "terser-webpack-plugin": "^5.1.4",

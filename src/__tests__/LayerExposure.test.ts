@@ -20,7 +20,7 @@ describe('Layer Exposure Logging', () => {
     has_updates: true,
     time: 1647984444418,
   };
-  var logs: {
+  let logs: {
     events: Record<string, any>[];
   };
 
@@ -56,7 +56,7 @@ describe('Layer Exposure Logging', () => {
       disableDiagnosticsLogging: true,
     });
 
-    let layer = Statsig.getLayer('layer') as unknown as Indexable;
+    const layer = Statsig.getLayer('layer') as unknown as Indexable;
     layer.get('an_int', '');
     Statsig.shutdown();
 
@@ -71,7 +71,7 @@ describe('Layer Exposure Logging', () => {
         disableDiagnosticsLogging: true,
       });
 
-      let layer = Statsig.getLayer('layer') as unknown as Indexable;
+      const layer = Statsig.getLayer('layer') as unknown as Indexable;
       layer[method]('an_int', 0);
       Statsig.shutdown();
 
@@ -96,7 +96,7 @@ describe('Layer Exposure Logging', () => {
         disableDiagnosticsLogging: true,
       });
 
-      let layer = Statsig.getLayer('layer') as unknown as Indexable;
+      const layer = Statsig.getLayer('layer') as unknown as Indexable;
       layer[method]('an_int', 0);
       Statsig.shutdown();
 
@@ -134,7 +134,7 @@ describe('Layer Exposure Logging', () => {
         disableDiagnosticsLogging: true,
       });
 
-      let layer = Statsig.getLayer('layer') as unknown as Indexable;
+      const layer = Statsig.getLayer('layer') as unknown as Indexable;
       layer[method]('an_int', 0);
       layer[method]('a_string', '');
       Statsig.shutdown();
@@ -189,7 +189,7 @@ describe('Layer Exposure Logging', () => {
         disableDiagnosticsLogging: true,
       });
 
-      let layer = Statsig.getLayer('layer') as unknown as Indexable;
+      const layer = Statsig.getLayer('layer') as unknown as Indexable;
       layer[method]('a_bool', false);
       layer[method]('an_int', 0);
       layer[method]('a_double', 0.0);
@@ -229,7 +229,7 @@ describe('Layer Exposure Logging', () => {
         disableDiagnosticsLogging: true,
       });
 
-      let layer = Statsig.getLayer('layer') as unknown as Indexable;
+      const layer = Statsig.getLayer('layer') as unknown as Indexable;
       Statsig.shutdown();
 
       layer[method]('a_bool', false);
@@ -255,7 +255,7 @@ describe('Layer Exposure Logging', () => {
         },
       );
 
-      let layer = Statsig.getLayer('layer') as unknown as Indexable;
+      const layer = Statsig.getLayer('layer') as unknown as Indexable;
       layer[method]('an_int', 0);
       Statsig.shutdown();
 

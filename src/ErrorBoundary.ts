@@ -34,6 +34,7 @@ export default class ErrorBoundary {
     try {
       const result = task();
       if (result instanceof Promise) {
+        /* eslint-disable @typescript-eslint/no-explicit-any */
         return (result as any).catch((e: unknown) => {
           return this.onCaught(tag, e, recover, getExtraData);
         });
@@ -44,44 +45,49 @@ export default class ErrorBoundary {
     }
   }
 
-  public async logError(
+  public logError(
     tag: string,
     error: unknown,
     getExtraData?: ExtraDataExtractor,
-  ): Promise<void> {
-    try {
-      const extra =
-        typeof getExtraData === 'function' ? await getExtraData() : null;
-      const unwrapped = (error ?? Error('[Statsig] Error was empty')) as any;
-      const isError = unwrapped instanceof Error;
-      const name = isError ? unwrapped.name : 'No Name';
+  ): void {
+    (async () => {
+      try {
+        const extra =
+          typeof getExtraData === 'function' ? await getExtraData() : null;
+        const unwrapped = (error ??
+          Error('[Statsig] Error was empty')) as unknown;
+        const isError = unwrapped instanceof Error;
+        const name = isError ? unwrapped.name : 'No Name';
 
-      if (this.seen.has(name)) return;
-      this.seen.add(name);
+        if (this.seen.has(name)) return;
+        this.seen.add(name);
 
-      const info = isError ? unwrapped.stack : this.getDescription(unwrapped);
-      const metadata = this.statsigMetadata ?? {};
-      const body = JSON.stringify({
-        tag,
-        exception: name,
-        info,
-        statsigMetadata: metadata,
-        extra: extra ?? {},
-      });
-      fetch(ExceptionEndpoint, {
-        method: 'POST',
-        headers: {
-          'STATSIG-API-KEY': this.sdkKey,
-          'STATSIG-SDK-TYPE': String(metadata['sdkType']),
-          'STATSIG-SDK-VERSION': String(metadata['sdkVersion']),
-          'Content-Type': 'application/json',
-          'Content-Length': `${body.length}`,
-        },
-        body,
-      }).catch(() => {});
-    } catch (_error) {
-      /* noop */
-    }
+        const info = isError ? unwrapped.stack : this.getDescription(unwrapped);
+        const metadata = this.statsigMetadata ?? {};
+        const body = JSON.stringify({
+          tag,
+          exception: name,
+          info,
+          statsigMetadata: metadata,
+          extra: extra ?? {},
+        });
+        return fetch(ExceptionEndpoint, {
+          method: 'POST',
+          headers: {
+            'STATSIG-API-KEY': this.sdkKey,
+            'STATSIG-SDK-TYPE': String(metadata['sdkType']),
+            'STATSIG-SDK-VERSION': String(metadata['sdkVersion']),
+            'Content-Type': 'application/json',
+            'Content-Length': `${body.length}`,
+          },
+          body,
+        });
+      } catch (_error) {
+        /* noop */
+      }
+    })().catch(() => {
+      /*noop*/
+    });
   }
 
   private onCaught<T>(
@@ -104,7 +110,7 @@ export default class ErrorBoundary {
     return recover();
   }
 
-  private getDescription(obj: any): string {
+  private getDescription(obj: unknown): string {
     try {
       return JSON.stringify(obj);
     } catch {

@@ -2,7 +2,7 @@ export default class LocalStorageMock {
   constructor() {}
 
   clear(): void {
-    for (var key in this) {
+    for (const key in this) {
       if (key in ['getItem', 'setItem', 'removeItem']) {
         continue;
       }

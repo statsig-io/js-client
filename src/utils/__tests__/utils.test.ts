@@ -10,7 +10,7 @@ describe('Verify behavior of core utility functions', () => {
     expect.hasAssertions();
   });
 
-  test('Test local storage is the same across multiple gets', () => {
+  test('local storage is the same across multiple gets', () => {
     expect.assertions(3);
     expect(
       StatsigLocalStorage.getItem('STATSIG_LOCAL_STORAGE_STABLE_ID'),
@@ -25,7 +25,7 @@ describe('Verify behavior of core utility functions', () => {
     ).toEqual('123');
   });
 
-  test('Test async storage doesnt work when not provided', () => {
+  test('async storage doesnt work when not provided', () => {
     expect.assertions(1);
     return StatsigAsyncStorage.setItemAsync('123', 'ABC').then(() => {
       StatsigAsyncStorage.getItemAsync('123').then((result) => {
@@ -34,7 +34,7 @@ describe('Verify behavior of core utility functions', () => {
     });
   });
 
-  test('Test async storage is the same across multiple gets', () => {
+  test('async storage is the same across multiple gets', () => {
     expect.assertions(3);
     const store: Record<string, string> = {};
     StatsigAsyncStorage.asyncStorage = {
@@ -56,7 +56,7 @@ describe('Verify behavior of core utility functions', () => {
         StatsigAsyncStorage.getItemAsync('123').then((result) => {
           expect(result).toEqual('ABC');
         });
-        StatsigAsyncStorage.removeItemAsync('123').then((result) => {
+        StatsigAsyncStorage.removeItemAsync('123').then(() => {
           StatsigAsyncStorage.getItemAsync('123').then((result) => {
             expect(result).toBeNull();
           });

@@ -37,7 +37,7 @@ export default abstract class BootstrapValidator {
       return false;
     }
 
-    for (let [key, value] of Object.entries(one)) {
+    for (const [key, value] of Object.entries(one)) {
       if (key === 'stableID') {
         continue;
       }
@@ -70,7 +70,7 @@ export default abstract class BootstrapValidator {
       return null;
     }
 
-    let copy: Record<string, unknown> = {};
+    const copy: Record<string, unknown> = {};
     if (obj?.userID) {
       copy['userID'] = obj?.userID;
     }

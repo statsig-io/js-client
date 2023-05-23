@@ -57,8 +57,6 @@ export default class Statsig {
     StatsigRuntime.encodeInitializeCall = value;
   }
 
-  private constructor() {}
-
   public static async initialize(
     sdkKey: string,
     user?: StatsigUser | null,
@@ -83,16 +81,13 @@ export default class Statsig {
     Statsig.getClientX().setInitializeValues(initializeValues);
   }
 
-  public static checkGate(
-    gateName: string,
-    ignoreOverrides: boolean = false,
-  ): boolean {
+  public static checkGate(gateName: string, ignoreOverrides = false): boolean {
     return Statsig.getClientX().checkGate(gateName, ignoreOverrides);
   }
 
   public static checkGateWithExposureLoggingDisabled(
     gateName: string,
-    ignoreOverrides: boolean = false,
+    ignoreOverrides = false,
   ): boolean {
     return Statsig.getClientX().checkGateWithExposureLoggingDisabled(
       gateName,
@@ -106,14 +101,14 @@ export default class Statsig {
 
   public static getConfig(
     configName: string,
-    ignoreOverrides: boolean = false,
+    ignoreOverrides = false,
   ): DynamicConfig {
     return Statsig.getClientX().getConfig(configName, ignoreOverrides);
   }
 
   public static getConfigWithExposureLoggingDisabled(
     configName: string,
-    ignoreOverrides: boolean = false,
+    ignoreOverrides = false,
   ): DynamicConfig {
     return Statsig.getClientX().getConfigWithExposureLoggingDisabled(
       configName,
@@ -127,8 +122,8 @@ export default class Statsig {
 
   public static getExperiment(
     experimentName: string,
-    keepDeviceValue: boolean = false,
-    ignoreOverrides: boolean = false,
+    keepDeviceValue = false,
+    ignoreOverrides = false,
   ): DynamicConfig {
     return Statsig.getClientX().getExperiment(
       experimentName,
@@ -139,8 +134,8 @@ export default class Statsig {
 
   public static getExperimentWithExposureLoggingDisabled(
     experimentName: string,
-    keepDeviceValue: boolean = false,
-    ignoreOverrides: boolean = false,
+    keepDeviceValue = false,
+    ignoreOverrides = false,
   ): DynamicConfig {
     return Statsig.getClientX().getExperimentWithExposureLoggingDisabled(
       experimentName,
@@ -151,21 +146,18 @@ export default class Statsig {
 
   public static manuallyLogExperimentExposure(
     configName: string,
-    keepDeviceValue: boolean = false,
+    keepDeviceValue = false,
   ) {
     Statsig.getClientX().logExperimentExposure(configName, keepDeviceValue);
   }
 
-  public static getLayer(
-    layerName: string,
-    keepDeviceValue: boolean = false,
-  ): Layer {
+  public static getLayer(layerName: string, keepDeviceValue = false): Layer {
     return Statsig.getClientX().getLayer(layerName, keepDeviceValue);
   }
 
   public static getLayerWithExposureLoggingDisabled(
     layerName: string,
-    keepDeviceValue: boolean = false,
+    keepDeviceValue = false,
   ): Layer {
     return Statsig.getClientX().getLayerWithExposureLoggingDisabled(
       layerName,
@@ -176,7 +168,7 @@ export default class Statsig {
   public static manuallyLogLayerParameterExposure(
     layerName: string,
     parameterName: string,
-    keepDeviceValue: boolean = false,
+    keepDeviceValue = false,
   ) {
     Statsig.getClientX().logLayerParameterExposure(
       layerName,
@@ -216,7 +208,10 @@ export default class Statsig {
    * @param configName - name of the config to override
    * @param value - value to assign to the config
    */
-  public static overrideConfig(configName: string, value: object): void {
+  public static overrideConfig(
+    configName: string,
+    value: Record<string, unknown>,
+  ): void {
     Statsig.getClientX().overrideConfig(configName, value);
   }
 
@@ -225,7 +220,10 @@ export default class Statsig {
    * @param layerName - name of the layer to override
    * @param value - value to assign to the layer
    */
-  public static overrideLayer(layerName: string, value: object): void {
+  public static overrideLayer(
+    layerName: string,
+    value: Record<string, unknown>,
+  ): void {
     Statsig.getClientX().overrideLayer(layerName, value);
   }
 
@@ -290,7 +288,7 @@ export default class Statsig {
    * @deprecated use getAllOverrides
    * @returns the gate overrides
    */
-  public static getOverrides(): Record<string, any> {
+  public static getOverrides(): Record<string, unknown> {
     return Statsig.getClientX().getOverrides();
   }
 

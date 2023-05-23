@@ -20,5 +20,5 @@ jobs:
         with:
           path: ~/.npm
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
-      - run: npm ci
+      - run: npm install
       - run: npm run testForGithubOrRedisEnthusiasts

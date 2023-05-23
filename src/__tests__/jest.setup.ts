@@ -1,7 +1,7 @@
 import DynamicConfig from '../DynamicConfig';
 
-//@ts-ignore
-global.console = {
+/* eslint-disable @typescript-eslint/no-explicit-any */
+(global as any).console = {
   log: console.log, // console.log are kept in tests for debugging
 
   // Mock other console functions so they don't pollute the console when running test
@@ -12,6 +12,7 @@ global.console = {
 };
 
 declare global {
+  /* eslint-disable @typescript-eslint/no-namespace */
   namespace jest {
     interface Matchers<R> {
       toMatchConfig(config: DynamicConfig): R;

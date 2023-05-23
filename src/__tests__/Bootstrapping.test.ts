@@ -10,7 +10,7 @@ import LocalStorageMock from './LocalStorageMock';
 
 describe('Statsig Client Bootstrapping', () => {
   const sdkKey = 'client-clienttestkey';
-  var parsedRequestBody: Record<string, any> | null;
+  let parsedRequestBody: Record<string, any> | null;
   // @ts-ignore
   global.fetch = jest.fn((url, params) => {
     if (
@@ -112,7 +112,7 @@ describe('Statsig Client Bootstrapping', () => {
       },
     );
     expect(spyOnSet).not.toHaveBeenCalled();
-    expect(spyOnGet).not.toBeCalled();
+    expect(spyOnGet).not.toHaveBeenCalled();
 
     // we get defaults everywhere else
     expect(client.checkGate('test_gate')).toBe(false);

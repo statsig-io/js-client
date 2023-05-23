@@ -21,4 +21,4 @@ export const LOCAL_STORAGE_KEYS: Record<string, boolean> = {
   STATSIG_LOCAL_STORAGE_LOGGING_REQUEST: true,
 };
 
-export const STORAGE_PREFIX: string = 'STATSIG_LOCAL_STORAGE';
+export const STORAGE_PREFIX = 'STATSIG_LOCAL_STORAGE';

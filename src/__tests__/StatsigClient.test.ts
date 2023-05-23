@@ -31,7 +31,7 @@ describe('Verify behavior of StatsigClient', () => {
 
   let respObject: any = baseInitResponse;
 
-  var parsedRequestBody: {
+  let parsedRequestBody: {
     events: Record<string, any>[];
     statsigMetadata: Record<string, any>;
   } | null;
@@ -60,7 +60,7 @@ describe('Verify behavior of StatsigClient', () => {
   });
 
   beforeEach(() => {
-    let respObject = baseInitResponse;
+    const respObject = baseInitResponse;
     jest.resetModules();
     parsedRequestBody = null;
 
@@ -73,7 +73,7 @@ describe('Verify behavior of StatsigClient', () => {
     StatsigAsyncStorage.asyncStorage = null;
   });
 
-  test('Test constructor will populate from cache on create', () => {
+  test('constructor will populate from cache on create', () => {
     expect.assertions(4);
     const client = new StatsigClient(sdkKey);
     expect(() => {
@@ -267,7 +267,7 @@ describe('Verify behavior of StatsigClient', () => {
 
     const statsig = new StatsigClient(sdkKey);
     await statsig.initializeAsync();
-    let stableID = parsedRequestBody!['statsigMetadata']['stableID'];
+    const stableID = parsedRequestBody!['statsigMetadata']['stableID'];
     expect(stableID).toBeTruthy();
     expect(statsig.getStableID()).toEqual(stableID);
 
@@ -298,7 +298,7 @@ describe('Verify behavior of StatsigClient', () => {
 
     const statsig = new StatsigClient(sdkKey);
     await statsig.initializeAsync();
-    let stableID = parsedRequestBody!['statsigMetadata']['stableID'];
+    const stableID = parsedRequestBody!['statsigMetadata']['stableID'];
     expect(stableID).toBeTruthy();
     expect(statsig.getStableID()).toEqual(stableID);
 

@@ -50,7 +50,7 @@ describe('Verify behavior of StatsigLogger', () => {
     expect.hasAssertions();
   });
 
-  test('Test constructor', () => {
+  test('constructor', () => {
     expect.assertions(11);
     const client = new StatsigClient(
       sdkKey,
@@ -83,7 +83,7 @@ describe('Verify behavior of StatsigLogger', () => {
       client.getExperiment('test_config');
       expect(spyOnLog).toHaveBeenCalledTimes(6);
       client.getExperiment('test_config');
-      for (var i = 0; i < 95; i++) {
+      for (let i = 0; i < 95; i++) {
         logger.log(new LogEvent('event'));
       }
       expect(spyOnFlush).toHaveBeenCalledTimes(1);
@@ -118,7 +118,7 @@ describe('Verify behavior of StatsigLogger', () => {
     });
   });
 
-  test('Test local mode does not set up a flush interval', () => {
+  test('local mode does not set up a flush interval', () => {
     expect.assertions(1);
     const client = new StatsigClient(
       sdkKey,
@@ -213,7 +213,7 @@ describe('Verify behavior of StatsigLogger', () => {
     });
   });
 
-  test('Test diagnostics', async () => {
+  test('diagnostics', async () => {
     expect.assertions(2);
     const client = new StatsigClient(
       sdkKey,

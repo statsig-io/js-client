@@ -34,7 +34,7 @@ export type StatsigOptions = {
   initTimeoutMs?: number;
   disableErrorLogging?: boolean;
   disableAutoMetricsLogging?: boolean;
-  initializeValues?: Record<string, any> | null;
+  initializeValues?: Record<string, unknown> | null;
   eventLoggingApi?: string;
   prefetchUsers?: StatsigUser[];
   disableLocalStorage?: boolean;
@@ -73,7 +73,7 @@ export default class StatsigSDKOptions {
   private initTimeoutMs: number;
   private disableErrorLogging: boolean;
   private disableAutoMetricsLogging: boolean;
-  private initializeValues: Record<string, any> | null;
+  private initializeValues: Record<string, unknown> | null;
   private eventLoggingApi: string;
   private prefetchUsers: StatsigUser[];
   private disableLocalStorage: boolean;
@@ -89,7 +89,7 @@ export default class StatsigSDKOptions {
     if (options == null) {
       options = {};
     }
-    let api = options.api ?? DEFAULT_FEATURE_GATE_API;
+    const api = options.api ?? DEFAULT_FEATURE_GATE_API;
     this.api = api.endsWith('/') ? api : api + '/';
     this.disableCurrentPageLogging = options.disableCurrentPageLogging ?? false;
     this.environment = options.environment ?? null;
@@ -120,7 +120,7 @@ export default class StatsigSDKOptions {
     this.disableErrorLogging = options.disableErrorLogging ?? false;
     this.disableAutoMetricsLogging = options.disableAutoMetricsLogging ?? false;
     this.initializeValues = options.initializeValues ?? null;
-    let eventLoggingApi =
+    const eventLoggingApi =
       options.eventLoggingApi ?? options.api ?? DEFAULT_EVENT_LOGGING_API;
     this.eventLoggingApi = eventLoggingApi.endsWith('/')
       ? eventLoggingApi
@@ -181,7 +181,7 @@ export default class StatsigSDKOptions {
     return this.disableAutoMetricsLogging;
   }
 
-  getInitializeValues(): Record<string, any> | null {
+  getInitializeValues(): Record<string, unknown> | null {
     return this.initializeValues;
   }
 

@@ -11,7 +11,7 @@ import { getHashValue, getUserCacheKey } from '../utils/Hashing';
 
 describe('Verify behavior of StatsigClient with sinceTime', () => {
   const sdkKey = 'client-clienttestkey';
-  var parsedRequestBody;
+  let parsedRequestBody;
 
   const gate = {
     'AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=': {
@@ -70,7 +70,7 @@ describe('Verify behavior of StatsigClient with sinceTime', () => {
     );
   });
 
-  test('Test sincetime provided to network request', async () => {
+  test('sincetime provided to network request', async () => {
     expect.assertions(4);
     const user = { userID: 'zenyatta' };
     const stableID = 'Experience Tranquility';

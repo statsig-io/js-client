@@ -92,7 +92,7 @@ describe('Verify behavior of DynamicConfig', () => {
     expect.hasAssertions();
   });
 
-  test('Test typed get', () => {
+  test('typed get', () => {
     expect(testConfig.get('bool', 3)).toStrictEqual(3);
     expectFallback(testConfig, 'bool', 3, 'boolean');
     expect(testConfig.getValue('111', 222)).toStrictEqual(222);
@@ -113,7 +113,7 @@ describe('Verify behavior of DynamicConfig', () => {
     expect(fallback).toBeNull();
   });
 
-  test('Test optional type guard when runtime check succeeds', () => {
+  test('optional type guard when runtime check succeeds', () => {
     const defaultTestObject: TestObject = {
       key: 'default',
       key2: 0,
@@ -126,7 +126,7 @@ describe('Verify behavior of DynamicConfig', () => {
     });
   });
 
-  test('Test optional type guard default', () => {
+  test('optional type guard default', () => {
     const defaultOtherTestObject: OtherTestObject = {
       someProp: 'other',
       otherProp: 0,
@@ -136,7 +136,7 @@ describe('Verify behavior of DynamicConfig', () => {
     ).toStrictEqual(defaultOtherTestObject);
   });
 
-  test('Test optional type guard default when given a narrower type', () => {
+  test('optional type guard default when given a narrower type', () => {
     const narrowerOtherTestObject = {
       someProp: 'specificallyThisString',
       otherProp: 0,
@@ -146,7 +146,7 @@ describe('Verify behavior of DynamicConfig', () => {
     ).toStrictEqual(narrowerOtherTestObject);
   });
 
-  test('Test optional type guard default when given a wider type', () => {
+  test('optional type guard default when given a wider type', () => {
     const widerOtherTestObject = {
       someProp: 'Wider type than OtherTestObject',
     };
@@ -155,11 +155,11 @@ describe('Verify behavior of DynamicConfig', () => {
     ).toStrictEqual(widerOtherTestObject);
   });
 
-  test('Test optional type guard default when given null', () => {
+  test('optional type guard default when given null', () => {
     expect(testConfig.get('object', null, isOtherTestObject)).toBeNull();
   });
 
-  test('Test optional type guard default given undefined', () => {
+  test('optional type guard default given undefined', () => {
     expect(
       testConfig.get('object', undefined, isOtherTestObject),
     ).toBeUndefined();
