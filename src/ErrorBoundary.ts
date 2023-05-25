@@ -2,45 +2,78 @@ import {
   StatsigUninitializedError,
   StatsigInvalidArgumentError,
 } from './Errors';
+import Diagnostics, { DiagnosticsEvent } from './utils/Diagnostics';
+import { DiagnosticsKey } from './utils/Diagnostics';
 export const ExceptionEndpoint = 'https://statsigapi.net/v1/sdk_exception';
 
 type ExtraDataExtractor = () => Promise<Record<string, unknown>>;
 
+type CaptureOptions = {
+  getExtraData?: ExtraDataExtractor;
+  diagnosticsKey?: DiagnosticsKey;
+};
+
 export default class ErrorBoundary {
-  private sdkKey: string;
   private statsigMetadata?: Record<string, string | number>;
   private seen = new Set<string>();
+  private diagnostics?: Diagnostics;
 
-  constructor(sdkKey: string) {
-    this.sdkKey = sdkKey;
+  constructor(private sdkKey: string, disableDiagnostics = false) {
+    if (disableDiagnostics) {
+      return;
+    }
+
+    const sampling = Math.floor(Math.random() * 10_000);
+    if (sampling !== 0) {
+      return;
+    }
+
+    this.diagnostics = new Diagnostics('error_boundary', 30);
   }
 
   setStatsigMetadata(statsigMetadata: Record<string, string | number>) {
     this.statsigMetadata = statsigMetadata;
   }
 
-  swallow<T>(tag: string, task: () => T) {
-    this.capture(tag, task, () => {
-      return undefined;
-    });
+  swallow<T>(tag: string, task: () => T, options: CaptureOptions = {}) {
+    this.capture(
+      tag,
+      task,
+      () => {
+        return undefined;
+      },
+      options,
+    );
   }
 
   capture<T>(
     tag: string,
     task: () => T,
     recover: () => T,
-    getExtraData?: ExtraDataExtractor,
+    { getExtraData, diagnosticsKey }: CaptureOptions = {},
   ): T {
+    let markerID = -1;
     try {
+      markerID = this.beginMarker(diagnosticsKey);
+
       const result = task();
+      let wasSuccessful = true;
       if (result instanceof Promise) {
-        /* eslint-disable @typescript-eslint/no-explicit-any */
-        return (result as any).catch((e: unknown) => {
-          return this.onCaught(tag, e, recover, getExtraData);
-        });
+        return result
+          .catch((e: unknown) => {
+            wasSuccessful = false;
+            return this.onCaught(tag, e, recover, getExtraData);
+          })
+          .then((possiblyRecoveredResult) => {
+            this.endMarker(diagnosticsKey, wasSuccessful, markerID);
+            return possiblyRecoveredResult;
+          }) as unknown as T;
       }
+
+      this.endMarker(diagnosticsKey, true, markerID);
       return result;
     } catch (error) {
+      this.endMarker(diagnosticsKey, false, markerID);
       return this.onCaught(tag, error, recover, getExtraData);
     }
   }
@@ -88,6 +121,40 @@ export default class ErrorBoundary {
     })().catch(() => {
       /*noop*/
     });
+  }
+
+  public getDiagnostics(): Diagnostics | null {
+    return this.diagnostics ?? null;
+  }
+
+  private beginMarker(key: DiagnosticsKey | null = null): number {
+    if (!key || !this.diagnostics) {
+      return -1;
+    }
+    const id = this.diagnostics.getCount();
+    const wasAdded = this.diagnostics.mark(
+      key,
+      DiagnosticsEvent.START,
+      `${key}_${id}`,
+    );
+    return wasAdded ? id : -1;
+  }
+
+  private endMarker(
+    key: DiagnosticsKey | null = null,
+    wasSuccessful: boolean,
+    markerID: number,
+  ): void {
+    if (!key || !this.diagnostics || markerID === -1) {
+      return;
+    }
+
+    this.diagnostics.mark(
+      key,
+      DiagnosticsEvent.END,
+      `${key}_${markerID}`,
+      wasSuccessful,
+    );
   }
 
   private onCaught<T>(

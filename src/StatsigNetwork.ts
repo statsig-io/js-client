@@ -147,9 +147,8 @@ export default class StatsigNetwork {
             res.status,
           );
 
-          const is_delta =
-            (res?.data?.is_delta as boolean | undefined) ?? false;
-          diagnostics?.addMetadata('is_delta', is_delta);
+          const isDelta = res?.data?.is_delta === true;
+          diagnostics?.addMetadata('is_delta', isDelta);
         }
         if (!res.ok) {
           return Promise.reject(
@@ -191,8 +190,16 @@ export default class StatsigNetwork {
           () => {
             return Promise.resolve({});
           },
-          async () => {
-            return this.getErrorData(endpointName, body, retries, backoff, res);
+          {
+            getExtraData: async () => {
+              return this.getErrorData(
+                endpointName,
+                body,
+                retries,
+                backoff,
+                res,
+              );
+            },
           },
         );
       })

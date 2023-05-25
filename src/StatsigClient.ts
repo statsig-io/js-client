@@ -202,7 +202,10 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       );
     }
     this.startTime = now();
-    this.errorBoundary = new ErrorBoundary(sdkKey);
+    this.errorBoundary = new ErrorBoundary(
+      sdkKey,
+      options?.disableDiagnosticsLogging,
+    );
     this.ready = false;
     this.sdkKey = sdkKey;
     this.options = new StatsigSDKOptions(options);
@@ -426,6 +429,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         return result.gate.value === true;
       },
       () => false,
+      { diagnosticsKey: DiagnosticsKey.CHECK_GATE },
     );
   }
 
@@ -465,6 +469,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         return result;
       },
       () => this.getEmptyConfig(configName),
+      { diagnosticsKey: DiagnosticsKey.GET_CONFIG },
     );
   }
 
@@ -512,6 +517,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         return result;
       },
       () => this.getEmptyConfig(experimentName),
+      { diagnosticsKey: DiagnosticsKey.GET_EXPERIMENT },
     );
   }
 
@@ -554,6 +560,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       },
       () =>
         Layer._create(layerName, {}, '', this.getEvalutionDetailsForError()),
+      { diagnosticsKey: DiagnosticsKey.GET_LAYER },
     );
   }
 
@@ -654,6 +661,8 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
           this.prefetchedUsersByCacheKey[userCacheKey],
         );
         const cachedTime = this.store.updateUser(isUserPrefetched);
+
+        this.errorBoundary.getDiagnostics()?.reset();
         this.logger.resetDedupeKeys();
 
         if (

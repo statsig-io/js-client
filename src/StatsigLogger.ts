@@ -291,10 +291,8 @@ export default class StatsigLogger {
   }
 
   public logDiagnostics(user: StatsigUser | null, diagnostics: Diagnostics) {
-    const latencyEvent = new LogEvent(DIAGNOSTICS_EVENT);
-    latencyEvent.setUser(user);
-    latencyEvent.setMetadata(diagnostics.getMarkers());
-    this.log(latencyEvent);
+    const event = this.makeDiagnosticsEvent(user, diagnostics);
+    this.log(event);
   }
 
   public logAppMetrics(user: StatsigUser | null) {
@@ -342,6 +340,8 @@ export default class StatsigLogger {
   }
 
   public flush(isClosing = false): void {
+    this.addErrorBoundaryDiagnostics();
+
     if (this.queue.length === 0) {
       return;
     }
@@ -552,5 +552,29 @@ export default class StatsigLogger {
     });
 
     this.saveFailedRequests();
+  }
+
+  private makeDiagnosticsEvent(
+    user: StatsigUser | null,
+    diagnostics: Diagnostics,
+  ) {
+    const latencyEvent = new LogEvent(DIAGNOSTICS_EVENT);
+    latencyEvent.setUser(user);
+    latencyEvent.setMetadata(diagnostics.getMarkers());
+    return latencyEvent;
+  }
+
+  private addErrorBoundaryDiagnostics() {
+    const diagnostics = this.sdkInternal.getErrorBoundary().getDiagnostics();
+    if (!diagnostics || diagnostics.getCount() === 0) {
+      return;
+    }
+
+    const diagEvent = this.makeDiagnosticsEvent(
+      this.sdkInternal.getCurrentUser(),
+      diagnostics,
+    );
+    this.queue.push(diagEvent);
+    diagnostics.reset();
   }
 }
