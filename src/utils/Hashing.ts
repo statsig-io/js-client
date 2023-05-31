@@ -4,17 +4,27 @@ import { Base64 } from './Base64';
 
 const hashLookupTable: Record<string, string> = {};
 
-export function SimpleHash(value: string): string {
+function fasthash(value: string): number {
   let hash = 0;
   for (let i = 0; i < value.length; i++) {
-    const character = value.charCodeAt(i);
+    let character = value.charCodeAt(i);
     hash = (hash << 5) - hash + character;
     hash = hash & hash; // Convert to 32bit integer
   }
-  return String(hash);
+  return hash;
 }
 
-export function getHashValue(value: string): string {
+// Keeping this around to prevent busting existing caches
+// This is just the same as djb2Hash but it can have negative values
+export function userCacheKeyHash(value: string): string {
+  return String(fasthash(value));
+}
+
+export function djb2Hash(value: string): string {
+  return String(fasthash(value) >>> 0);
+}
+
+export function sha256Hash(value: string): string {
   const seen = hashLookupTable[value];
   if (seen) {
     return seen;
@@ -41,7 +51,7 @@ export function getUserCacheKey(user: StatsigUser | null): string {
     return seen;
   }
 
-  const hash = SimpleHash(key);
+  const hash = userCacheKeyHash(key);
   hashLookupTable[key] = hash;
   return hash;
 }

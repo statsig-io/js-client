@@ -8,7 +8,7 @@ import {
   OVERRIDES_STORE_KEY,
   STICKY_DEVICE_EXPERIMENTS_KEY,
 } from './utils/Constants';
-import { getHashValue, getUserCacheKey } from './utils/Hashing';
+import { djb2Hash, sha256Hash, getUserCacheKey } from './utils/Hashing';
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
 
@@ -62,7 +62,7 @@ type APIInitializeData = {
   layer_configs: Record<string, APIDynamicConfig | undefined>;
   has_updates?: boolean;
   time: number;
-  user_hash?: string;
+  hash_used?: 'djb2' | 'sha256' | 'none';
 };
 
 type APIInitializeDataWithDeltas = APIInitializeData & {
@@ -84,6 +84,7 @@ type APIInitializeDataWithDeltasWithPrefetchedUsers =
 type UserCacheValues = APIInitializeDataWithPrefetchedUsers & {
   sticky_experiments: Record<string, APIDynamicConfig | undefined>;
   evaluation_time?: number;
+  user_hash?: string;
 };
 
 const MAX_USER_VALUE_CACHED = 10;
@@ -123,6 +124,7 @@ export default class StatsigStore {
     this.stickyDeviceExperiments = {};
     this.loaded = false;
     this.reason = EvaluationReason.Uninitialized;
+
     if (initializeValues) {
       this.bootstrap(initializeValues);
     } else {
@@ -191,7 +193,7 @@ export default class StatsigStore {
   }
 
   public getLastUpdateTime(user: StatsigUser | null): number | null {
-    const userHash = getHashValue(JSON.stringify(user));
+    const userHash = sha256Hash(JSON.stringify(user));
     if (this.userValues.user_hash == userHash) {
       return this.userValues.time;
     }
@@ -387,7 +389,7 @@ export default class StatsigStore {
         requestedUserCacheKey,
       );
       if (data.has_updates && data.time) {
-        const userHash = getHashValue(JSON.stringify(user));
+        const userHash = sha256Hash(JSON.stringify(user));
         requestedUserValues.user_hash = userHash;
       }
 
@@ -474,7 +476,7 @@ export default class StatsigStore {
     gateName: string,
     ignoreOverrides = false,
   ): StoreGateFetchResult {
-    const gateNameHash = getHashValue(gateName);
+    const gateNameHash = this.getHashedSpecName(gateName);
     let gateValue: APIFeatureGate = {
       name: gateName,
       value: false,
@@ -504,8 +506,11 @@ export default class StatsigStore {
     return { evaluationDetails: details, gate: gateValue };
   }
 
-  public getConfig(configName: string, ignoreOverrides = false): DynamicConfig {
-    const configNameHash = getHashValue(configName);
+  public getConfig(
+    configName: string,
+    ignoreOverrides: boolean = false,
+  ): DynamicConfig {
+    const configNameHash = this.getHashedSpecName(configName);
     let configValue: DynamicConfig;
     let details: EvaluationDetails;
     if (!ignoreOverrides && this.overrides.configs[configName] != null) {
@@ -696,7 +701,7 @@ export default class StatsigStore {
     name: string,
     topLevelKey: 'layer_configs' | 'dynamic_configs',
   ): APIDynamicConfig | undefined {
-    const hash = getHashValue(name);
+    const hash = this.getHashedSpecName(name);
     return (
       this.userValues?.[topLevelKey]?.[hash] ??
       this.userValues?.[topLevelKey]?.[name]
@@ -766,7 +771,7 @@ export default class StatsigStore {
   }
 
   private getStickyValue(name: string) {
-    const key = getHashValue(name);
+    const key = this.getHashedSpecName(name);
 
     return (
       this.userValues?.sticky_experiments[key] ??
@@ -783,7 +788,7 @@ export default class StatsigStore {
       return;
     }
 
-    const key = getHashValue(name);
+    const key = this.getHashedSpecName(name);
     if (config.is_device_based === true) {
       // save sticky values in memory
       this.stickyDeviceExperiments[key] = config;
@@ -802,7 +807,7 @@ export default class StatsigStore {
       return;
     }
 
-    const key = getHashValue(name);
+    const key = this.getHashedSpecName(name);
 
     delete this.userValues?.sticky_experiments[key];
     delete this.stickyDeviceExperiments[key];
@@ -857,6 +862,17 @@ export default class StatsigStore {
     };
   }
 
+  private getHashedSpecName(input: string): string {
+    switch (this.userValues.hash_used) {
+      case 'djb2':
+        return djb2Hash(input);
+      case 'none':
+        return input;
+      default:
+        return sha256Hash(input);
+    }
+  }
+
   private convertAPIDataToCacheValues(
     data: APIInitializeData,
     cacheKey: string,
@@ -869,6 +885,7 @@ export default class StatsigStore {
       sticky_experiments: this.values[cacheKey]?.sticky_experiments ?? {},
       time: data.time == null || isNaN(data.time) ? 0 : data.time,
       evaluation_time: Date.now(),
+      hash_used: data.hash_used,
     };
   }
 

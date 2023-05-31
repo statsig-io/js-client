@@ -76,6 +76,7 @@ export default class StatsigNetwork {
       statsigMetadata: this.sdkInternal.getStatsigMetadata(),
       sinceTime: sinceTime ?? undefined,
       acceptsDeltas: true,
+      hash: 'djb2',
     };
 
     return this.postWithTimeout(

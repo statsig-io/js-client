@@ -7,19 +7,19 @@ import StatsigAsyncStorage from '../utils/StatsigAsyncStorage';
 import LocalStorageMock from './LocalStorageMock';
 import Statsig from '..';
 
-import { getHashValue } from '../utils/Hashing';
+import { sha256Hash } from '../utils/Hashing';
 
 describe('Verify behavior of StatsigClient', () => {
   const sdkKey = 'client-clienttestkey';
   const baseInitResponse = {
     feature_gates: {
-      [getHashValue('test_gate')]: {
+      [sha256Hash('test_gate')]: {
         value: true,
         rule_id: 'ruleID123',
       },
     },
     dynamic_configs: {
-      [getHashValue('test_config')]: {
+      [sha256Hash('test_config')]: {
         value: {
           num: 4,
         },
@@ -382,7 +382,7 @@ describe('Verify behavior of StatsigClient', () => {
 
     respObject = {
       feature_gates: {
-        [getHashValue('another_gate')]: {
+        [sha256Hash('another_gate')]: {
           value: true,
           rule_id: 'ruleID1234',
         },
@@ -406,7 +406,7 @@ describe('Verify behavior of StatsigClient', () => {
 
     respObject = {
       feature_gates: {
-        [getHashValue('test_gate')]: {
+        [sha256Hash('test_gate')]: {
           value: false,
           rule_id: 'ruleID123',
         },
@@ -426,11 +426,11 @@ describe('Verify behavior of StatsigClient', () => {
   test('initializing with deleted entities removes them', async () => {
     respObject = {
       feature_gates: {
-        [getHashValue('test_gate1')]: {
+        [sha256Hash('test_gate1')]: {
           value: true,
           rule_id: 'ruleID123',
         },
-        [getHashValue('test_gate2')]: {
+        [sha256Hash('test_gate2')]: {
           value: true,
           rule_id: 'ruleID123',
         },
@@ -448,7 +448,7 @@ describe('Verify behavior of StatsigClient', () => {
       has_updates: true,
       time: 1234567891,
       deleted_configs: [],
-      deleted_gates: [getHashValue('test_gate1')],
+      deleted_gates: [sha256Hash('test_gate1')],
       deleted_layers: [],
       is_delta: true,
     };
