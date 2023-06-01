@@ -60,14 +60,14 @@ describe('Verify behavior of StatsigClient', () => {
   });
 
   beforeEach(() => {
-    requestTimeoutTime = 1000
+    requestTimeoutTime = 1000;
   });
 
   test('cache used before initialize resolves, then network result used', async () => {
     expect.assertions(7);
     const statsig = new StatsigClient(sdkKey, { userID: '123' });
     await statsig.getStore().save({ userID: '123' }, values);
-    expect(statsig.initializeCalled()).toBe(false)
+    expect(statsig.initializeCalled()).toBe(false);
     const init = statsig.initializeAsync();
 
     expect(statsig.initializeCalled()).toBe(true);
@@ -79,7 +79,7 @@ describe('Verify behavior of StatsigClient', () => {
     ).toEqual('cache');
     jest.advanceTimersByTime(2000);
     await init;
-    expect(statsig.initializeCalled()).toBe(true)
+    expect(statsig.initializeCalled()).toBe(true);
     jest.advanceTimersByTime(2000);
     expect(statsig.checkGate('test_gate')).toBe(false);
     expect(
@@ -102,7 +102,6 @@ describe('Verify behavior of StatsigClient', () => {
     ).toEqual('cache');
     jest.advanceTimersByTime(10000);
     await init;
-
 
     // Test gate should still return the same value, because the request timed out
     expect(statsig.checkGate('test_gate')).toBe(true);

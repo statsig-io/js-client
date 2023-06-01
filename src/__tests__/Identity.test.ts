@@ -5,7 +5,7 @@ describe('Verify behavior of Identity module', () => {
     expect.hasAssertions();
   });
 
-  test('Test constructor', () => {
+  test('constructor', () => {
     const id = new StatsigIdentity(null);
     expect(id.getUser()).toStrictEqual(null);
     expect(id.getStatsigMetadata()).not.toBeNull();
@@ -15,7 +15,7 @@ describe('Verify behavior of Identity module', () => {
     expect(id.getUser()).toStrictEqual(user);
   });
 
-  test('Test setUser', () => {
+  test('setUser', () => {
     const id = new StatsigIdentity({ userID: 'test_user' });
     expect(id.getUser()).toStrictEqual({ userID: 'test_user' });
     id.updateUser(null);

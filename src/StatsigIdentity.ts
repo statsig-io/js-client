@@ -68,7 +68,7 @@ export default class Identity {
   private platform: Platform | null = null;
   private nativeModules: NativeModules | null = null;
   private reactNativeUUID?: UUID;
-  private sdkType: string = 'js-client';
+  private sdkType = 'js-client';
   private sdkVersion: string;
 
   public constructor(
@@ -111,7 +111,11 @@ export default class Identity {
       stableID = await StatsigAsyncStorage.getItemAsync(STATSIG_STABLE_ID_KEY);
       stableID = stableID ?? this.getUUID();
     }
-    StatsigAsyncStorage.setItemAsync(STATSIG_STABLE_ID_KEY, stableID);
+    StatsigAsyncStorage.setItemAsync(STATSIG_STABLE_ID_KEY, stableID).catch(
+      () => {
+        //noop
+      },
+    );
     this.statsigMetadata.stableID = stableID;
     return this;
   }

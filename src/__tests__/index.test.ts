@@ -33,7 +33,7 @@ describe('Verify behavior of top level index functions', () => {
       return Promise.resolve({ ok: true });
     }
     if (url.toString().includes('initialize')) {
-      let body = JSON.parse(params?.body as string);
+      const body = JSON.parse(params?.body as string);
       hasCustomID = body.user.customIDs?.['customID'] != null;
       return Promise.resolve({
         ok: true,
@@ -55,14 +55,14 @@ describe('Verify behavior of top level index functions', () => {
     window.localStorage.removeItem('STATSIG_LOCAL_STORAGE_INTERNAL_STORE_V4');
 
     // ensure Date.now() returns the same value in each test
-    let now = Date.now();
+    const now = Date.now();
     jest.spyOn(global.Date, 'now').mockImplementation(() => now);
   });
 
   test('Verify checkGate throws when calling before initialize', () => {
     expect(() => {
       statsig.checkGate('gate_that_doesnt_exist');
-    }).toThrowError('Call and wait for initialize() to finish first.');
+    }).toThrow('Call and wait for initialize() to finish first.');
     // @ts-ignore
     expect(statsig.instance).toBeNull();
   });
@@ -72,7 +72,7 @@ describe('Verify behavior of top level index functions', () => {
       expect(() => {
         // @ts-ignore
         statsig.checkGate();
-      }).toThrowError('Must pass a valid string as the gateName.');
+      }).toThrow('Must pass a valid string as the gateName.');
     });
   });
 
@@ -81,7 +81,7 @@ describe('Verify behavior of top level index functions', () => {
       expect(() => {
         // @ts-ignore
         statsig.checkGate(false);
-      }).toThrowError('Must pass a valid string as the gateName.');
+      }).toThrow('Must pass a valid string as the gateName.');
     });
   });
 
@@ -91,11 +91,11 @@ describe('Verify behavior of top level index functions', () => {
       expect(() => {
         // @ts-ignore
         statsig.getConfig();
-      }).toThrowError('Must pass a valid string as the configName.');
+      }).toThrow('Must pass a valid string as the configName.');
       expect(() => {
         // @ts-ignore
         statsig.getExperiment();
-      }).toThrowError('Must pass a valid string as the experimentName.');
+      }).toThrow('Must pass a valid string as the experimentName.');
     });
   });
 
@@ -105,11 +105,11 @@ describe('Verify behavior of top level index functions', () => {
       expect(() => {
         // @ts-ignore
         statsig.getConfig(12);
-      }).toThrowError('Must pass a valid string as the configName.');
+      }).toThrow('Must pass a valid string as the configName.');
       expect(() => {
         // @ts-ignore
         statsig.getExperiment(12);
-      }).toThrowError('Must pass a valid string as the experimentName.');
+      }).toThrow('Must pass a valid string as the experimentName.');
     });
   });
 
@@ -117,10 +117,10 @@ describe('Verify behavior of top level index functions', () => {
     expect.assertions(3);
     expect(() => {
       statsig.getConfig('config_that_doesnt_exist');
-    }).toThrowError('Call and wait for initialize() to finish first.');
+    }).toThrow('Call and wait for initialize() to finish first.');
     expect(() => {
       statsig.getExperiment('config_that_doesnt_exist');
-    }).toThrowError('Call and wait for initialize() to finish first.');
+    }).toThrow('Call and wait for initialize() to finish first.');
     // @ts-ignore
     expect(statsig.instance).toBeNull();
   });
@@ -128,7 +128,7 @@ describe('Verify behavior of top level index functions', () => {
   test('Verify logEvent throws if called before initialize()', () => {
     expect(() => {
       statsig.logEvent('test_event');
-    }).toThrowError('Call and wait for initialize() to finish first.');
+    }).toThrow('Call and wait for initialize() to finish first.');
     // @ts-ignore
     expect(statsig.instance).toBeNull();
   });
@@ -144,7 +144,7 @@ describe('Verify behavior of top level index functions', () => {
 
         //@ts-ignore
         const spy = jest.spyOn(statsig.instance.logger, 'log');
-        let gateExposure = new LogEvent('statsig::gate_exposure');
+        const gateExposure = new LogEvent('statsig::gate_exposure');
         gateExposure.setUser({});
         gateExposure.setMetadata({
           gate: 'test_gate',
@@ -176,7 +176,7 @@ describe('Verify behavior of top level index functions', () => {
     expect.assertions(1);
     return expect(() => {
       statsig.updateUser({ userID: 123 });
-    }).toThrowError('Call and wait for initialize() to finish first.');
+    }).toThrow('Call and wait for initialize() to finish first.');
   });
 
   test('Initialize, switch, sdk ready', () => {
@@ -218,7 +218,7 @@ describe('Verify behavior of top level index functions', () => {
 
         //@ts-ignore
         const spy = jest.spyOn(statsig.instance.logger, 'log');
-        let configExposure = new LogEvent('statsig::config_exposure');
+        const configExposure = new LogEvent('statsig::config_exposure');
         configExposure.setUser({});
         configExposure.setMetadata({
           config: 'test_config',
@@ -259,7 +259,7 @@ describe('Verify behavior of top level index functions', () => {
     expect(statsig.checkGate('test_gate')).toBe(true);
 
     // update user to be 'fail', but don't wait for the request to return
-    let p = statsig.updateUser({ userID: 'fail' });
+    const p = statsig.updateUser({ userID: 'fail' });
     // should return the default value, false, instead of the previous user's value, until promise is done
     expect(statsig.checkGate('test_gate')).toBe(false);
     await p;
@@ -274,12 +274,12 @@ describe('Verify behavior of top level index functions', () => {
     expect(statsig.checkGate('test_gate')).toBe(true);
 
     // initializing and not awaiting should also use cached value
-    let client = new StatsigClient('client-key', { userID: 'pass' });
+    const client = new StatsigClient('client-key', { userID: 'pass' });
     client.initializeAsync();
     expect(client.checkGate('test_gate')).toBe(true);
 
     // but not for a new user
-    let client2 = new StatsigClient('client-key', { userID: 'pass_2' });
+    const client2 = new StatsigClient('client-key', { userID: 'pass_2' });
     client2.initializeAsync();
     expect(client2.checkGate('test_gate')).toBe(false);
   });
@@ -292,7 +292,7 @@ describe('Verify behavior of top level index functions', () => {
     expect(statsig.checkGate('test_gate')).toBe(true);
 
     // update user, but don't wait for the request to return
-    let p = statsig.updateUser({ userID: 'fail' });
+    const p = statsig.updateUser({ userID: 'fail' });
     // should return the default value, false
     expect(statsig.checkGate('test_gate')).toBe(false);
 
@@ -313,7 +313,7 @@ describe('Verify behavior of top level index functions', () => {
 
         //@ts-ignore
         const spy = jest.spyOn(statsig.instance.logger, 'log');
-        let configExposure = new LogEvent('statsig::config_exposure');
+        const configExposure = new LogEvent('statsig::config_exposure');
         configExposure.setUser({});
         configExposure.setMetadata({
           config: 'test_config',
@@ -364,7 +364,7 @@ describe('Verify behavior of top level index functions', () => {
       )
       .then(() => {
         // @ts-ignore
-        let user: StatsigUser = statsig.instance.identity.getUser();
+        const user: StatsigUser = statsig.instance.identity.getUser();
         expect(user).not.toBeNull();
         expect(user.userID.length).toBe(64);
         expect(user.userID).toEqual(str_64);

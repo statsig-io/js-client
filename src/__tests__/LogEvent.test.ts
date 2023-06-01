@@ -25,9 +25,11 @@ describe('Verify log event is constructed correctly', () => {
         ruleID: 'rule_2',
       },
     ]);
-    expect(event.toJsonObject().user.privateAttributes).toBeUndefined();
+    const asJson = event.toJsonObject();
+    const eventUser = asJson.user as Record<string, unknown>;
+    expect(eventUser.privateAttributes).toBeUndefined();
     expect(user.privateAttributes.secret).toEqual('Statsig is awesome!');
-    expect(event.toJsonObject().secondaryExposures).toEqual([
+    expect(asJson.secondaryExposures).toEqual([
       {
         gate: 'dependent_gate_1',
         gateValue: 'true',

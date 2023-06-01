@@ -3,11 +3,11 @@
  */
 
 import Statsig from '..';
-import { getHashValue } from '../utils/Hashing';
+import { sha256Hash } from '../utils/Hashing';
 
 const initialValues = {
   feature_gates: {
-    [getHashValue('bootstrapped_gate')]: {
+    [sha256Hash('bootstrapped_gate')]: {
       value: true,
     },
   },
@@ -55,7 +55,7 @@ describe('StatsigOptions.PreferCache', () => {
             JSON.stringify({
               ...initialValues,
               feature_gates: {
-                [getHashValue('fetched_gate')]: {
+                [sha256Hash('fetched_gate')]: {
                   value: true,
                 },
               },
@@ -64,7 +64,7 @@ describe('StatsigOptions.PreferCache', () => {
                 : {
                     '1240249408' /*prefetchd_user*/: {
                       feature_gates: {
-                        [getHashValue('prefetched_gate')]: {
+                        [sha256Hash('prefetched_gate')]: {
                           value: true,
                         },
                       },

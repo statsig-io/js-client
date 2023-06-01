@@ -205,7 +205,7 @@ describe('Verify behavior of InternalStore', () => {
     expect.assertions(8);
     const spyOnSet = jest.spyOn(window.localStorage.__proto__, 'setItem');
     const spyOnGet = jest.spyOn(window.localStorage.__proto__, 'getItem');
-    const client = new StatsigClient(sdkKey, {}, {overrideStableID: "999"});
+    const client = new StatsigClient(sdkKey, {}, { overrideStableID: '999' });
     expect(spyOnSet).toHaveBeenCalledTimes(0);
     const store = client.getStore();
     expect(
@@ -336,7 +336,7 @@ describe('Verify behavior of InternalStore', () => {
       count: 1,
     };
     statsig.getStore().overrideConfig('test_config', overrideConfig);
-    let config = statsig.getStore().getConfig('test_config', false);
+    const config = statsig.getStore().getConfig('test_config', false);
     expect(config.getValue()).toEqual(overrideConfig);
     expect(config.getEvaluationDetails()).toEqual({
       reason: EvaluationReason.LocalOverride,
@@ -392,7 +392,7 @@ describe('Verify behavior of InternalStore', () => {
     expect(statsig.getAllOverrides().gates).toEqual({ nonexistent_gate: true });
   });
 
-  test('test experiment sticky bucketing behavior', async () => {
+  test('experiment sticky bucketing behavior', async () => {
     expect.assertions(30);
     const statsig = new StatsigClient(sdkKey, { userID: '123' });
     await statsig.initializeAsync();
@@ -504,7 +504,7 @@ describe('Verify behavior of InternalStore', () => {
     });
   });
 
-  test('test experiment sticky bucketing behavior when user changes', async () => {
+  test('experiment sticky bucketing behavior when user changes', async () => {
     expect.assertions(12);
     const statsig = new StatsigClient(sdkKey, { userID: '456' });
     await statsig.initializeAsync();
@@ -552,7 +552,7 @@ describe('Verify behavior of InternalStore', () => {
     );
   });
 
-  test('test experiment sticky bucketing behavior across sessions', async () => {
+  test('experiment sticky bucketing behavior across sessions', async () => {
     expect.assertions(9);
     const statsig = new StatsigClient(sdkKey, { userID: '789' });
     await statsig.initializeAsync();
@@ -591,7 +591,7 @@ describe('Verify behavior of InternalStore', () => {
     );
   });
 
-  test('test user cache key when there are customIDs', async () => {
+  test('user cache key when there are customIDs', async () => {
     expect.assertions(9);
     const statsig = new StatsigClient(sdkKey, {
       customIDs: { deviceId: '' },
@@ -645,7 +645,7 @@ describe('Verify behavior of InternalStore', () => {
     );
   });
 
-  test('test that we purge the oldest cache when we have more than 10', async () => {
+  test('that we purge the oldest cache when we have more than 10', async () => {
     expect.assertions(2);
     const statsig = new StatsigClient(sdkKey, { userID: '1' });
     await statsig.initializeAsync();
@@ -669,7 +669,7 @@ describe('Verify behavior of InternalStore', () => {
     store.save({ userID: '9' }, generateTestConfigs('v0', true, true));
     await statsig.updateUser({ userID: '10' });
     store.save({ userID: '10' }, generateTestConfigs('v0', true, true));
-    let cache = JSON.parse(
+    const cache = JSON.parse(
       window.localStorage.getItem('STATSIG_LOCAL_STORAGE_INTERNAL_STORE_V4') ??
         '{}',
     );

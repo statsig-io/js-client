@@ -8,7 +8,7 @@ export type LogParameterFunction = (
 export default class Layer {
   private logParameterFunction: LogParameterFunction | null;
   private name: string;
-  private value: Record<string, any>;
+  private value: Record<string, unknown>;
   private ruleID: string;
   private secondaryExposures: Record<string, string>[];
   private undelegatedSecondaryExposures: Record<string, string>[];
@@ -18,13 +18,13 @@ export default class Layer {
 
   private constructor(
     name: string,
-    layerValue: Record<string, any>,
+    layerValue: Record<string, unknown>,
     ruleID: string,
     evaluationDetails: EvaluationDetails,
     logParameterFunction: LogParameterFunction | null = null,
     secondaryExposures: Record<string, string>[] = [],
     undelegatedSecondaryExposures: Record<string, string>[] = [],
-    allocatedExperimentName: string = '',
+    allocatedExperimentName = '',
     explicitParameters: string[] = [],
   ) {
     this.logParameterFunction = logParameterFunction;
@@ -40,13 +40,13 @@ export default class Layer {
 
   public static _create(
     name: string,
-    value: Record<string, any>,
+    value: Record<string, unknown>,
     ruleID: string,
     evaluationDetails: EvaluationDetails,
     logParameterFunction: LogParameterFunction | null = null,
     secondaryExposures: Record<string, string>[] = [],
     undelegatedSecondaryExposures: Record<string, string>[] = [],
-    allocatedExperimentName: string = '',
+    allocatedExperimentName = '',
     explicitParameters: string[] = [],
   ): Layer {
     return new Layer(
@@ -96,10 +96,7 @@ export default class Layer {
     return defaultValue;
   }
 
-  public getValue(
-    key: string,
-    defaultValue?: any | null,
-  ): boolean | number | string | object | Array<any> | null {
+  public getValue(key: string, defaultValue?: unknown): unknown {
     if (defaultValue == undefined) {
       defaultValue = null;
     }

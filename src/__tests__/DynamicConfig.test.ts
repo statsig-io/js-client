@@ -30,7 +30,7 @@ describe('Verify behavior of DynamicConfig', () => {
     expect.hasAssertions();
   });
 
-  test('Test constructor', () => {
+  test('constructor', () => {
     const config = new DynamicConfig('name', { test: 123 }, 'default', {
       reason: EvaluationReason.Network,
       time: Date.now(),
@@ -39,7 +39,7 @@ describe('Verify behavior of DynamicConfig', () => {
     expect(config.getRuleID()).toStrictEqual('default');
   });
 
-  test('Test nonexistent keys', () => {
+  test('nonexistent keys', () => {
     expect(testConfig.getValue('key_not_found', false)).toStrictEqual(false);
     expect(testConfig.getValue('key_not_found', true)).toStrictEqual(true);
     expect(testConfig.getValue('key_not_found', 456.2)).toStrictEqual(456.2);
@@ -56,7 +56,7 @@ describe('Verify behavior of DynamicConfig', () => {
     expect(testConfig.get<string>('test', '')).toStrictEqual('');
   });
 
-  test('Test strings', () => {
+  test('strings', () => {
     expect(testConfig.getValue('boolStr1', '123')).toStrictEqual('true');
     expect(testConfig.getValue('number', '123')).toStrictEqual(2);
     expect(testConfig.getValue('boolStr1')).toStrictEqual('true');
@@ -67,24 +67,24 @@ describe('Verify behavior of DynamicConfig', () => {
     expect(testConfig.get('boolStr2', '')).toStrictEqual('FALSE');
   });
 
-  test('Test numbers', () => {
+  test('numbers', () => {
     expect(testConfig.getValue('number')).toStrictEqual(2);
     expect(testConfig.getValue('numberStr1')).toStrictEqual('3');
     expect(testConfig.getValue('numberStr2')).toStrictEqual('3.3');
     expect(testConfig.get('numberStr2', 7)).toStrictEqual(7);
   });
 
-  test('Test booleans', () => {
+  test('booleans', () => {
     expect(testConfig.getValue('bool')).toStrictEqual(true);
     expect(testConfig.get<boolean>('bool', false)).toStrictEqual(true);
   });
 
-  test('Test arrays', () => {
+  test('arrays', () => {
     expect(testConfig.getValue('arr')).toStrictEqual([1, 2, 'three']);
     expect(testConfig.get<string[]>('bool', [])).toStrictEqual([]);
   });
 
-  test('Test objects', () => {
+  test('objects', () => {
     expect(testConfig.getValue('object')).toStrictEqual({
       key: 'value',
       key2: 123,
@@ -96,7 +96,7 @@ describe('Verify behavior of DynamicConfig', () => {
     });
   });
 
-  test('Test null', () => {
+  test('null', () => {
     expect(testConfig.getValue('bool', null)).toStrictEqual(true);
     expect(testConfig.getValue('bool', undefined)).toStrictEqual(true);
 

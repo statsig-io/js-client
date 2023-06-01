@@ -30,7 +30,7 @@ describe('Verify behavior of Layer', () => {
     expect.hasAssertions();
   });
 
-  test('Test constructor', () => {
+  test('constructor', () => {
     const layer = Layer._create('name', { test: 123 }, 'default', {
       reason: EvaluationReason.Network,
       time: Date.now(),
@@ -38,7 +38,7 @@ describe('Verify behavior of Layer', () => {
     expect(layer.getRuleID()).toStrictEqual('default');
   });
 
-  test('Test nonexistent keys', () => {
+  test('nonexistent keys', () => {
     expect(testLayer.getValue('key_not_found', false)).toStrictEqual(false);
     expect(testLayer.getValue('key_not_found', true)).toStrictEqual(true);
     expect(testLayer.getValue('key_not_found', 456.2)).toStrictEqual(456.2);
@@ -55,7 +55,7 @@ describe('Verify behavior of Layer', () => {
     expect(testLayer.get<string>('test', '')).toStrictEqual('');
   });
 
-  test('Test strings', () => {
+  test('strings', () => {
     expect(testLayer.getValue('boolStr1', '123')).toStrictEqual('true');
     expect(testLayer.getValue('number', '123')).toStrictEqual(2);
     expect(testLayer.getValue('boolStr1')).toStrictEqual('true');
@@ -66,24 +66,24 @@ describe('Verify behavior of Layer', () => {
     expect(testLayer.get('boolStr2', '')).toStrictEqual('FALSE');
   });
 
-  test('Test numbers', () => {
+  test('numbers', () => {
     expect(testLayer.getValue('number')).toStrictEqual(2);
     expect(testLayer.getValue('numberStr1')).toStrictEqual('3');
     expect(testLayer.getValue('numberStr2')).toStrictEqual('3.3');
     expect(testLayer.get('numberStr2', 7)).toStrictEqual(7);
   });
 
-  test('Test booleans', () => {
+  test('booleans', () => {
     expect(testLayer.getValue('bool')).toStrictEqual(true);
     expect(testLayer.get<boolean>('bool', false)).toStrictEqual(true);
   });
 
-  test('Test arrays', () => {
+  test('arrays', () => {
     expect(testLayer.getValue('arr')).toStrictEqual([1, 2, 'three']);
     expect(testLayer.get<string[]>('bool', [])).toStrictEqual([]);
   });
 
-  test('Test objects', () => {
+  test('objects', () => {
     expect(testLayer.getValue('object')).toStrictEqual({
       key: 'value',
       key2: 123,
@@ -95,7 +95,7 @@ describe('Verify behavior of Layer', () => {
     });
   });
 
-  test('Test null', () => {
+  test('null', () => {
     expect(testLayer.getValue('bool', null)).toStrictEqual(true);
     expect(testLayer.getValue('bool', undefined)).toStrictEqual(true);
 

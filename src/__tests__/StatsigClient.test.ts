@@ -7,19 +7,19 @@ import StatsigAsyncStorage from '../utils/StatsigAsyncStorage';
 import LocalStorageMock from './LocalStorageMock';
 import Statsig from '..';
 
-import { getHashValue } from '../utils/Hashing';
+import { sha256Hash } from '../utils/Hashing';
 
 describe('Verify behavior of StatsigClient', () => {
   const sdkKey = 'client-clienttestkey';
   const baseInitResponse = {
     feature_gates: {
-      [getHashValue('test_gate')]: {
+      [sha256Hash('test_gate')]: {
         value: true,
         rule_id: 'ruleID123',
       },
     },
     dynamic_configs: {
-      [getHashValue('test_config')]: {
+      [sha256Hash('test_config')]: {
         value: {
           num: 4,
         },
@@ -31,7 +31,7 @@ describe('Verify behavior of StatsigClient', () => {
 
   let respObject: any = baseInitResponse;
 
-  var parsedRequestBody: {
+  let parsedRequestBody: {
     events: Record<string, any>[];
     statsigMetadata: Record<string, any>;
   } | null;
@@ -49,10 +49,7 @@ describe('Verify behavior of StatsigClient', () => {
     parsedRequestBody = JSON.parse(params?.body as string);
     return Promise.resolve({
       ok: true,
-      text: () =>
-        Promise.resolve(
-          JSON.stringify(respObject),
-        ),
+      text: () => Promise.resolve(JSON.stringify(respObject)),
     });
   });
 
@@ -63,7 +60,7 @@ describe('Verify behavior of StatsigClient', () => {
   });
 
   beforeEach(() => {
-    let respObject = baseInitResponse;
+    const respObject = baseInitResponse;
     jest.resetModules();
     parsedRequestBody = null;
 
@@ -76,7 +73,7 @@ describe('Verify behavior of StatsigClient', () => {
     StatsigAsyncStorage.asyncStorage = null;
   });
 
-  test('Test constructor will populate from cache on create', () => {
+  test('constructor will populate from cache on create', () => {
     expect.assertions(4);
     const client = new StatsigClient(sdkKey);
     expect(() => {
@@ -270,7 +267,7 @@ describe('Verify behavior of StatsigClient', () => {
 
     const statsig = new StatsigClient(sdkKey);
     await statsig.initializeAsync();
-    let stableID = parsedRequestBody!['statsigMetadata']['stableID'];
+    const stableID = parsedRequestBody!['statsigMetadata']['stableID'];
     expect(stableID).toBeTruthy();
     expect(statsig.getStableID()).toEqual(stableID);
 
@@ -301,7 +298,7 @@ describe('Verify behavior of StatsigClient', () => {
 
     const statsig = new StatsigClient(sdkKey);
     await statsig.initializeAsync();
-    let stableID = parsedRequestBody!['statsigMetadata']['stableID'];
+    const stableID = parsedRequestBody!['statsigMetadata']['stableID'];
     expect(stableID).toBeTruthy();
     expect(statsig.getStableID()).toEqual(stableID);
 
@@ -372,7 +369,9 @@ describe('Verify behavior of StatsigClient', () => {
     await statsigWithDeltas.initializeAsync();
 
     expect(statsigWithDeltas.checkGate('test_gate')).toBe(true);
-    expect(statsigWithDeltas.getConfig('test_config').getValue()).toEqual({ num: 4 });
+    expect(statsigWithDeltas.getConfig('test_config').getValue()).toEqual({
+      num: 4,
+    });
   });
 
   test('initializing with deltas adds new values', async () => {
@@ -383,7 +382,7 @@ describe('Verify behavior of StatsigClient', () => {
 
     respObject = {
       feature_gates: {
-        [getHashValue('another_gate')]: {
+        [sha256Hash('another_gate')]: {
           value: true,
           rule_id: 'ruleID1234',
         },
@@ -407,7 +406,7 @@ describe('Verify behavior of StatsigClient', () => {
 
     respObject = {
       feature_gates: {
-        [getHashValue('test_gate')]: {
+        [sha256Hash('test_gate')]: {
           value: false,
           rule_id: 'ruleID123',
         },
@@ -427,11 +426,11 @@ describe('Verify behavior of StatsigClient', () => {
   test('initializing with deleted entities removes them', async () => {
     respObject = {
       feature_gates: {
-        [getHashValue('test_gate1')]: {
+        [sha256Hash('test_gate1')]: {
           value: true,
           rule_id: 'ruleID123',
         },
-        [getHashValue('test_gate2')]: {
+        [sha256Hash('test_gate2')]: {
           value: true,
           rule_id: 'ruleID123',
         },
@@ -449,7 +448,7 @@ describe('Verify behavior of StatsigClient', () => {
       has_updates: true,
       time: 1234567891,
       deleted_configs: [],
-      deleted_gates: [getHashValue('test_gate1')],
+      deleted_gates: [sha256Hash('test_gate1')],
       deleted_layers: [],
       is_delta: true,
     };

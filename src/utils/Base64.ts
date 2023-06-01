@@ -3,9 +3,9 @@ export const Base64 = {
   _keyStr: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=',
 
   _encodeBinary: function (input: string): string {
-    var output = '';
-    var chr1, chr2, chr3, enc1, enc2, enc3, enc4;
-    var i = 0;
+    let output = '';
+    let chr1, chr2, chr3, enc1, enc2, enc3, enc4;
+    let i = 0;
 
     while (i < input.length) {
       chr1 = input.charCodeAt(i++);
@@ -35,10 +35,10 @@ export const Base64 = {
   },
 
   encodeArrayBuffer(buffer: ArrayBuffer): string {
-    var binary = '';
-    var bytes = new Uint8Array(buffer);
-    var len = bytes.byteLength;
-    for (var i = 0; i < len; i++) {
+    let binary = '';
+    const bytes = new Uint8Array(buffer);
+    const len = bytes.byteLength;
+    for (let i = 0; i < len; i++) {
       binary += String.fromCharCode(bytes[i]);
     }
     return Base64._encodeBinary(binary);

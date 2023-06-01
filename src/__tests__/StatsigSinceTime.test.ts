@@ -7,11 +7,11 @@ import { INTERNAL_STORE_KEY } from '../utils/Constants';
 import Statsig from '..';
 import LocalStorageMock from './LocalStorageMock';
 import * as TestData from './initialize_response.json';
-import { getHashValue, getUserCacheKey } from '../utils/Hashing';
+import { sha256Hash, getUserCacheKey } from '../utils/Hashing';
 
 describe('Verify behavior of StatsigClient with sinceTime', () => {
   const sdkKey = 'client-clienttestkey';
-  var parsedRequestBody;
+  let parsedRequestBody;
 
   const gate = {
     'AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=': {
@@ -70,7 +70,7 @@ describe('Verify behavior of StatsigClient with sinceTime', () => {
     );
   });
 
-  test('Test sincetime provided to network request', async () => {
+  test('sincetime provided to network request', async () => {
     expect.assertions(4);
     const user = { userID: 'zenyatta' };
     const stableID = 'Experience Tranquility';
@@ -90,7 +90,7 @@ describe('Verify behavior of StatsigClient with sinceTime', () => {
     );
 
     const key = getUserCacheKey(user);
-    const userHash = getHashValue(JSON.stringify(user));
+    const userHash = sha256Hash(JSON.stringify(user));
     const storeObject = JSON.parse(
       localStorage.getItem(INTERNAL_STORE_KEY) ?? '',
     );

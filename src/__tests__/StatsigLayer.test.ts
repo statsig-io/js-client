@@ -2,15 +2,15 @@
  * @jest-environment jsdom
  */
 import StatsigClient from '../StatsigClient';
-import { getHashValue } from '../utils/Hashing';
+import { sha256Hash } from '../utils/Hashing';
 import StatsigAsyncStorage from '../utils/StatsigAsyncStorage';
 import LocalStorageMock from './LocalStorageMock';
 
 const configKey = 'a_config';
-const hashedConfigKey = getHashValue(configKey);
+const hashedConfigKey = sha256Hash(configKey);
 
 const anotherConfigKey = 'another_config';
-const hashedAnotherConfigKey = getHashValue(anotherConfigKey);
+const hashedAnotherConfigKey = sha256Hash(anotherConfigKey);
 
 const dynamicConfigs = {
   [hashedConfigKey]: {
@@ -30,12 +30,12 @@ const dynamicConfigs = {
 };
 
 const layerConfigWithExperimentKey = 'allocated_experiment';
-const hashedLayerConfigWithExperimentKey = getHashValue(
+const hashedLayerConfigWithExperimentKey = sha256Hash(
   layerConfigWithExperimentKey,
 );
 
 const layerConfigWithoutExperimentKey = 'unallocated_experiment';
-const hashedLayerConfigWithoutExperimentKey = getHashValue(
+const hashedLayerConfigWithoutExperimentKey = sha256Hash(
   layerConfigWithoutExperimentKey,
 );
 
@@ -65,7 +65,7 @@ const initialResponse = {
 };
 
 describe('Statsig Layers', () => {
-  var client: StatsigClient;
+  let client: StatsigClient;
 
   const localStorage = new LocalStorageMock();
   // @ts-ignore
@@ -94,10 +94,10 @@ describe('Statsig Layers', () => {
   });
 
   it('returns experiment values when allocated', () => {
-    let config = client.getLayer(layerConfigWithExperimentKey);
+    const config = client.getLayer(layerConfigWithExperimentKey);
     expect(config.get('a_key', 'ERR')).toBe('a_config_value');
 
-    let another = client.getLayer(layerConfigWithoutExperimentKey);
+    const another = client.getLayer(layerConfigWithoutExperimentKey);
     expect(another.get('a_key', 'ERR')).toBe('another_layer_default_value');
   });
 

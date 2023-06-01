@@ -1,14 +1,16 @@
 import { LOCAL_STORAGE_KEYS, STORAGE_PREFIX } from './Constants';
 
 export default class StatsigLocalStorage {
-  public static disabled: boolean = false;
+  public static disabled = false;
   private static fallbackSessionCache: Record<string, string> = {};
   public static getItem(key: string): string | null {
     try {
       if (this.isStorageAccessible()) {
         return window.localStorage.getItem(key);
       }
-    } catch (e) {}
+    } catch (e) {
+      // noop
+    }
 
     return this.fallbackSessionCache[key] ?? null;
   }
@@ -19,7 +21,9 @@ export default class StatsigLocalStorage {
         window.localStorage.setItem(key, value);
         return;
       }
-    } catch (e) {}
+    } catch (e) {
+      // noop
+    }
     this.fallbackSessionCache[key] = value;
   }
 
@@ -29,7 +33,9 @@ export default class StatsigLocalStorage {
         window.localStorage.removeItem(key);
         return;
       }
-    } catch (e) {}
+    } catch (e) {
+      // noop
+    }
 
     delete this.fallbackSessionCache[key];
   }
@@ -39,7 +45,7 @@ export default class StatsigLocalStorage {
       if (
         this.isStorageAccessible(true) // clean up all storage keys if this session sets disabled
       ) {
-        for (var key in window.localStorage) {
+        for (const key in window.localStorage) {
           if (typeof window.localStorage[key] !== 'string') {
             continue;
           }
@@ -60,13 +66,13 @@ export default class StatsigLocalStorage {
           window.localStorage.removeItem(key);
         }
       }
-    } catch (e) {}
+    } catch (e) {
+      // noop
+    }
   }
 
   private static canAccessStorageAccessible: boolean | null = null;
-  private static isStorageAccessible(
-    ignoreDisabledOption: boolean = false,
-  ): boolean {
+  private static isStorageAccessible(ignoreDisabledOption = false): boolean {
     if (this.canAccessStorageAccessible == null) {
       this.canAccessStorageAccessible =
         typeof Storage !== 'undefined' &&

@@ -59,7 +59,7 @@ describe('Verify local storage limits are enforced', () => {
     return client.initializeAsync().then(() => {
       expect(() => {
         localStorage.getItem('any');
-      }).toThrowError('SecurityException');
+      }).toThrow('SecurityException');
       const stable_id = StatsigLocalStorage.getItem(STATSIG_STABLE_ID_KEY);
       expect(stable_id).toEqual('00000000-0000-0000-0000-000000000420');
 

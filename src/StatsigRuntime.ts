@@ -1,3 +1,3 @@
 export default abstract class StatsigRuntime {
-  static encodeInitializeCall: boolean = true;
+  static encodeInitializeCall = true;
 }

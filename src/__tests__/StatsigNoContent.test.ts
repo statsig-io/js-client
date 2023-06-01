@@ -7,7 +7,7 @@ import Statsig, { EvaluationReason } from '..';
 
 describe('Verify behavior of StatsigClient when 204 returned from initialize', () => {
   const sdkKey = 'client-clienttestkey';
-  var parsedRequestBody;
+  let parsedRequestBody;
   // @ts-ignore
   global.fetch = jest.fn((url, params) => {
     if (
@@ -51,7 +51,7 @@ describe('Verify behavior of StatsigClient when 204 returned from initialize', (
     Statsig.encodeIntializeCall = false;
   });
 
-  test('Test status 204 response is a noop', async () => {
+  test('status 204 response is a noop', async () => {
     expect.assertions(2);
     const statsig = new StatsigClient(sdkKey, { userID: '123' });
     await statsig.initializeAsync();

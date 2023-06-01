@@ -19,5 +19,12 @@ jobs:
         with:
           path: ~/.npm
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
-      - run: npm ci
-      - run: npm run build:dryrun
+      
+      - name: Install
+        run: npm install
+      
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build:dryrun

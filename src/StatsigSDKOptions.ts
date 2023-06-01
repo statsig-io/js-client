@@ -22,6 +22,14 @@ export type UpdateUserCompletionCallback = (
   message: string | null,
 ) => void;
 
+export type GateEvaluationCallback = (
+  key: string,
+  value: boolean,
+  details: {
+    withExposureLoggingDisabled: boolean,
+  }
+) => void;
+
 export type StatsigOptions = {
   api?: string;
   disableCurrentPageLogging?: boolean;
@@ -34,7 +42,7 @@ export type StatsigOptions = {
   initTimeoutMs?: number;
   disableErrorLogging?: boolean;
   disableAutoMetricsLogging?: boolean;
-  initializeValues?: Record<string, any> | null;
+  initializeValues?: Record<string, unknown> | null;
   eventLoggingApi?: string;
   prefetchUsers?: StatsigUser[];
   disableLocalStorage?: boolean;
@@ -45,6 +53,7 @@ export type StatsigOptions = {
   ignoreWindowUndefined?: boolean;
   fetchMode?: FetchMode;
   disableLocalOverrides?: boolean;
+  gateEvaluationCallback?: GateEvaluationCallback;
 };
 
 export enum LogLevel {
@@ -73,7 +82,7 @@ export default class StatsigSDKOptions {
   private initTimeoutMs: number;
   private disableErrorLogging: boolean;
   private disableAutoMetricsLogging: boolean;
-  private initializeValues: Record<string, any> | null;
+  private initializeValues: Record<string, unknown> | null;
   private eventLoggingApi: string;
   private prefetchUsers: StatsigUser[];
   private disableLocalStorage: boolean;
@@ -84,12 +93,13 @@ export default class StatsigSDKOptions {
   private ignoreWindowUndefined: boolean;
   private fetchMode: FetchMode;
   private disableLocalOverrides: boolean;
+  private gateEvaluationCallback: GateEvaluationCallback | null;
 
   constructor(options?: StatsigOptions | null) {
     if (options == null) {
       options = {};
     }
-    let api = options.api ?? DEFAULT_FEATURE_GATE_API;
+    const api = options.api ?? DEFAULT_FEATURE_GATE_API;
     this.api = api.endsWith('/') ? api : api + '/';
     this.disableCurrentPageLogging = options.disableCurrentPageLogging ?? false;
     this.environment = options.environment ?? null;
@@ -120,7 +130,7 @@ export default class StatsigSDKOptions {
     this.disableErrorLogging = options.disableErrorLogging ?? false;
     this.disableAutoMetricsLogging = options.disableAutoMetricsLogging ?? false;
     this.initializeValues = options.initializeValues ?? null;
-    let eventLoggingApi =
+    const eventLoggingApi =
       options.eventLoggingApi ?? options.api ?? DEFAULT_EVENT_LOGGING_API;
     this.eventLoggingApi = eventLoggingApi.endsWith('/')
       ? eventLoggingApi
@@ -135,6 +145,7 @@ export default class StatsigSDKOptions {
     this.ignoreWindowUndefined = options?.ignoreWindowUndefined ?? false;
     this.fetchMode = options.fetchMode ?? 'network-only';
     this.disableLocalOverrides = options?.disableLocalOverrides ?? false;
+    this.gateEvaluationCallback = options?.gateEvaluationCallback ?? null;
   }
 
   getApi(): string {
@@ -181,7 +192,7 @@ export default class StatsigSDKOptions {
     return this.disableAutoMetricsLogging;
   }
 
-  getInitializeValues(): Record<string, any> | null {
+  getInitializeValues(): Record<string, unknown> | null {
     return this.initializeValues;
   }
 
@@ -223,6 +234,10 @@ export default class StatsigSDKOptions {
 
   getDisableLocalOverrides(): boolean {
     return this.disableLocalOverrides;
+  }
+
+  getGateEvaluationCallback(): GateEvaluationCallback | null {
+    return this.gateEvaluationCallback;
   }
 
   private normalizeNumberInput(

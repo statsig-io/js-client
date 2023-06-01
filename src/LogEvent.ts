@@ -41,7 +41,7 @@ export default class LogEvent {
     this.secondaryExposures = exposures;
   }
 
-  public toJsonObject(): Record<string, any> {
+  public toJsonObject(): Record<string, unknown> {
     return {
       eventName: this.eventName,
       user: this.user,

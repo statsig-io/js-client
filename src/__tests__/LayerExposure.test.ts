@@ -4,7 +4,7 @@
 
 import Statsig from '../index';
 import { EvaluationReason } from '../StatsigStore';
-import { getHashValue } from '../utils/Hashing';
+import { sha256Hash } from '../utils/Hashing';
 import { StatsigInitializeResponse } from './index.test';
 
 type Indexable = {
@@ -20,7 +20,7 @@ describe('Layer Exposure Logging', () => {
     has_updates: true,
     time: 1647984444418,
   };
-  var logs: {
+  let logs: {
     events: Record<string, any>[];
   };
 
@@ -48,7 +48,7 @@ describe('Layer Exposure Logging', () => {
 
   it('does not log on invalid types', async () => {
     // @ts-ignore
-    response.layer_configs[getHashValue('layer')] = {
+    response.layer_configs[sha256Hash('layer')] = {
       value: { an_int: 99 },
     };
 
@@ -56,7 +56,7 @@ describe('Layer Exposure Logging', () => {
       disableDiagnosticsLogging: true,
     });
 
-    let layer = Statsig.getLayer('layer') as unknown as Indexable;
+    const layer = Statsig.getLayer('layer') as unknown as Indexable;
     layer.get('an_int', '');
     Statsig.shutdown();
 
@@ -71,7 +71,7 @@ describe('Layer Exposure Logging', () => {
         disableDiagnosticsLogging: true,
       });
 
-      let layer = Statsig.getLayer('layer') as unknown as Indexable;
+      const layer = Statsig.getLayer('layer') as unknown as Indexable;
       layer[method]('an_int', 0);
       Statsig.shutdown();
 
@@ -81,7 +81,7 @@ describe('Layer Exposure Logging', () => {
     });
 
     it('logs layers without an allocated experiment correctly', async () => {
-      response.layer_configs[getHashValue('layer')] = {
+      response.layer_configs[sha256Hash('layer')] = {
         value: { an_int: 99 },
         rule_id: 'default',
         secondary_exposures: [{ gate: 'secondary_exp' }],
@@ -96,7 +96,7 @@ describe('Layer Exposure Logging', () => {
         disableDiagnosticsLogging: true,
       });
 
-      let layer = Statsig.getLayer('layer') as unknown as Indexable;
+      const layer = Statsig.getLayer('layer') as unknown as Indexable;
       layer[method]('an_int', 0);
       Statsig.shutdown();
 
@@ -119,7 +119,7 @@ describe('Layer Exposure Logging', () => {
     });
 
     it('logs explicit and implicit parameters correctly', async () => {
-      response.layer_configs[getHashValue('layer')] = {
+      response.layer_configs[sha256Hash('layer')] = {
         value: { an_int: 99, a_string: 'value' },
         rule_id: 'default',
         secondary_exposures: [{ gate: 'secondary_exp' }],
@@ -134,7 +134,7 @@ describe('Layer Exposure Logging', () => {
         disableDiagnosticsLogging: true,
       });
 
-      let layer = Statsig.getLayer('layer') as unknown as Indexable;
+      const layer = Statsig.getLayer('layer') as unknown as Indexable;
       layer[method]('an_int', 0);
       layer[method]('a_string', '');
       Statsig.shutdown();
@@ -173,7 +173,7 @@ describe('Layer Exposure Logging', () => {
     });
 
     it('logs different object types correctly', async () => {
-      response.layer_configs[getHashValue('layer')] = {
+      response.layer_configs[sha256Hash('layer')] = {
         value: {
           a_bool: true,
           an_int: 99,
@@ -189,7 +189,7 @@ describe('Layer Exposure Logging', () => {
         disableDiagnosticsLogging: true,
       });
 
-      let layer = Statsig.getLayer('layer') as unknown as Indexable;
+      const layer = Statsig.getLayer('layer') as unknown as Indexable;
       layer[method]('a_bool', false);
       layer[method]('an_int', 0);
       layer[method]('a_double', 0.0);
@@ -219,7 +219,7 @@ describe('Layer Exposure Logging', () => {
     });
 
     it('does not log when shutdown', async () => {
-      response.layer_configs[getHashValue('layer')] = {
+      response.layer_configs[sha256Hash('layer')] = {
         value: {
           a_bool: true,
         },
@@ -229,7 +229,7 @@ describe('Layer Exposure Logging', () => {
         disableDiagnosticsLogging: true,
       });
 
-      let layer = Statsig.getLayer('layer') as unknown as Indexable;
+      const layer = Statsig.getLayer('layer') as unknown as Indexable;
       Statsig.shutdown();
 
       layer[method]('a_bool', false);
@@ -240,7 +240,7 @@ describe('Layer Exposure Logging', () => {
     });
 
     it('logs the correct name and user values', async () => {
-      response.layer_configs[getHashValue('layer')] = {
+      response.layer_configs[sha256Hash('layer')] = {
         value: { an_int: 99 },
       };
 
@@ -255,7 +255,7 @@ describe('Layer Exposure Logging', () => {
         },
       );
 
-      let layer = Statsig.getLayer('layer') as unknown as Indexable;
+      const layer = Statsig.getLayer('layer') as unknown as Indexable;
       layer[method]('an_int', 0);
       Statsig.shutdown();
 
