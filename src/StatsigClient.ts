@@ -426,6 +426,12 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       () => {
         const result = this.checkGateImpl(gateName, ignoreOverrides);
         this.logGateExposureImpl(gateName, result);
+        const cb = this.options.getGateEvaluationCallback();
+        if (cb) {
+          cb(gateName, result.gate.value, {
+            withExposureLoggingDisabled: false,
+          });
+        }
         return result.gate.value === true;
       },
       () => false,
@@ -441,6 +447,12 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       'checkGateWithExposureLoggingDisabled',
       () => {
         const result = this.checkGateImpl(gateName, ignoreOverrides);
+        const cb = this.options.getGateEvaluationCallback();
+        if (cb) {
+          cb(gateName, result.gate.value, {
+            withExposureLoggingDisabled: true,
+          });
+        }
         return result.gate.value === true;
       },
       () => false,

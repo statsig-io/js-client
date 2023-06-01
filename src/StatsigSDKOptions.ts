@@ -22,6 +22,14 @@ export type UpdateUserCompletionCallback = (
   message: string | null,
 ) => void;
 
+export type GateEvaluationCallback = (
+  key: string,
+  value: boolean,
+  details: {
+    withExposureLoggingDisabled: boolean,
+  }
+) => void;
+
 export type StatsigOptions = {
   api?: string;
   disableCurrentPageLogging?: boolean;
@@ -45,6 +53,7 @@ export type StatsigOptions = {
   ignoreWindowUndefined?: boolean;
   fetchMode?: FetchMode;
   disableLocalOverrides?: boolean;
+  gateEvaluationCallback?: GateEvaluationCallback;
 };
 
 export enum LogLevel {
@@ -84,6 +93,7 @@ export default class StatsigSDKOptions {
   private ignoreWindowUndefined: boolean;
   private fetchMode: FetchMode;
   private disableLocalOverrides: boolean;
+  private gateEvaluationCallback: GateEvaluationCallback | null;
 
   constructor(options?: StatsigOptions | null) {
     if (options == null) {
@@ -135,6 +145,7 @@ export default class StatsigSDKOptions {
     this.ignoreWindowUndefined = options?.ignoreWindowUndefined ?? false;
     this.fetchMode = options.fetchMode ?? 'network-only';
     this.disableLocalOverrides = options?.disableLocalOverrides ?? false;
+    this.gateEvaluationCallback = options?.gateEvaluationCallback ?? null;
   }
 
   getApi(): string {
@@ -223,6 +234,10 @@ export default class StatsigSDKOptions {
 
   getDisableLocalOverrides(): boolean {
     return this.disableLocalOverrides;
+  }
+
+  getGateEvaluationCallback(): GateEvaluationCallback | null {
+    return this.gateEvaluationCallback;
   }
 
   private normalizeNumberInput(
