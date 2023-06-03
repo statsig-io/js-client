@@ -1,0 +1,53 @@
+name: publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      new_version:
+        description: "The updated version"
+        type: string
+        required: true
+
+      title:
+        description: "A title"
+        type: string
+        required: true
+
+      release_notes:
+        description: "The release notes"
+        type: string
+        required: true
+
+jobs:
+  publish:
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Git Config
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          
+      - name: Bump Version
+        run: |
+         sed -i '' 's/"version": ".*"/"version": "${{ inputs.new_version }}"/' package.json
+         npm install
+
+      - name: Publish Commit
+        run: |
+          git add .
+          git commit -m "[Release][v${{ inputs.new_version }}] ${{ inputs.title }}"
+          git push -u origin releases-${{ inputs.new_version }}
+
+      - name: Create Pull Request
+        run: |
+          gh pr create -B ${{ github.ref_name }} \
+          -H releases-${{ inputs.new_version }}  \
+          --title "[Release][v${{ inputs.new_version }}] ${{ inputs.title }}" \
+          --body "${{ inputs.release_notes }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
