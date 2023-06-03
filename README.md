@@ -3,7 +3,7 @@
 [![npm version](https://badge.fury.io/js/statsig-js.svg)](https://badge.fury.io/js/statsig-js)
 [![jsdelivr](https://data.jsdelivr.com/v1/package/npm/statsig-js/badge)](https://www.jsdelivr.com/package/npm/statsig-js)
 
-## Statsig JavaScript Client SDK
+## Statsig JavaScript Client SDK!!!
 
 The JavaScript SDK for single user client environments. If you need a SDK for another language or server environment, check out our [other SDKs](https://docs.statsig.com/#sdks).
 
