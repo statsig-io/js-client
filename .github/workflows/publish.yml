@@ -1,22 +1,10 @@
 name: publish
 
 on:
-  workflow_dispatch:
-    inputs:
-      new_version:
-        description: "New Version"
-        type: string
-        required: true
-
-      title:
-        description: "Title"
-        type: string
-        required: true
-
-      release_notes:
-        description: "Release Notes"
-        type: string
-        required: true
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
 
 jobs:
   publish:
@@ -24,31 +12,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.KONG_FINE_GRAINED_REPO_PAT }}
+          ref: ${{ github.head_ref }}
       
-      - name: Setup Git Config
+      - name: Update Package Lock
         run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          
-      - name: Bump Version
-        run: |
-         sed -i 's/"version": ".*"/"version": "${{ inputs.new_version }}"/' package.json
          npm install
 
-      - name: Publish Commit
-        run: |
-          git checkout -b releases-${{ inputs.new_version }}
-          git add .
-          git commit -m "[Release][v${{ inputs.new_version }}] ${{ inputs.title }}"
-          git push -u origin releases-${{ inputs.new_version }}
-
-      - name: Create Pull Request
-        run: |
-          gh pr create -B ${{ github.ref_name }} \
-          -H releases-${{ inputs.new_version }}  \
-          --title "[Release][v${{ inputs.new_version }}] ${{ inputs.title }}" \
-          --body "${{ inputs.release_notes }}"
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_user_name: statsig-kong[bot]
+          commit_user_email: statsig-kong[bot]@users.noreply.github.com
+          commit_message: "Bot: Amending Changes"
 
 
