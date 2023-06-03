@@ -4,17 +4,17 @@ on:
   workflow_dispatch:
     inputs:
       new_version:
-        description: "The updated version"
+        description: "New Version"
         type: string
         required: true
 
       title:
-        description: "A title"
+        description: "Title"
         type: string
         required: true
 
       release_notes:
-        description: "The release notes"
+        description: "Release Notes"
         type: string
         required: true
 
@@ -32,11 +32,12 @@ jobs:
           
       - name: Bump Version
         run: |
-         sed -i '' 's/"version": ".*"/"version": "${{ inputs.new_version }}"/' package.json
+         sed -i 's/"version": ".*"/"version": "${{ inputs.new_version }}"/' package.json
          npm install
 
       - name: Publish Commit
         run: |
+          git checkout -b releases-${{ inputs.new_version }}
           git add .
           git commit -m "[Release][v${{ inputs.new_version }}] ${{ inputs.title }}"
           git push -u origin releases-${{ inputs.new_version }}
