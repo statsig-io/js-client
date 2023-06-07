@@ -169,6 +169,7 @@ export default class StatsigStore {
       this.userValues.layer_configs = values.layer_configs ?? {};
       this.userValues.evaluation_time = Date.now();
       this.userValues.time = Date.now();
+      this.userValues.hash_used = values.hash_used;
       this.values[key] = this.userValues;
       this.reason = reason;
       this.loadOverrides();
