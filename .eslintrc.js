@@ -24,6 +24,7 @@ module.exports = {
       },
       files: ['**/*.ts'],
       rules: {
+        "camchenry/no-single-letter": "error",
         '@typescript-eslint/no-floating-promises': [
           'error',
           { ignoreVoid: false },
