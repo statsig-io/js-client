@@ -120,6 +120,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   private static reactNativeUUID?: UUID;
   private appState: AppState | null = null;
   private currentAppState: AppStateStatus | null = null;
+  private onCacheLoadedForReact: (() => void) | null = null;
 
   private ready: boolean;
   private initCalled = false;
@@ -335,11 +336,14 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
           DiagnosticsKey.OVERALL,
           DiagnosticsEvent.START,
         );
+
         this.initCalled = true;
         if (StatsigAsyncStorage.asyncStorage) {
           await this.identity.initAsync();
           await this.store.loadFromAsyncStorage();
         }
+
+        this.onCacheLoadedForReact?.();
 
         if (
           this.appState &&
@@ -906,6 +910,10 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     if (asyncStorage != null) {
       StatsigAsyncStorage.asyncStorage = asyncStorage;
     }
+  }
+
+  public setOnCacheLoadedReactCallback(fn?: (() => void) | null) {
+    this.onCacheLoadedForReact = fn ?? null;
   }
 
   public static setReactNativeUUID(uuid?: UUID | null): void {
