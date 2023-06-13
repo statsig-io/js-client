@@ -1,4 +1,4 @@
-import errorBoundaryCheck from "../../custom_eslint/public-methods-error-boundary";
+import errorBoundaryCheck from "../public-methods-error-boundary";
 import { RuleTester } from "eslint";
 
 const ruleTester = new RuleTester({
