@@ -157,30 +157,54 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
 
   private sdkKey: string | null;
   public getSDKKey(): string {
-    if (this.sdkKey == null) {
-      return '';
-    }
-    return this.sdkKey;
+    return this.errorBoundary.capture(
+      'getSDKKey',
+      () => {
+        return this.sdkKey ?? '';
+      },
+      () => ''
+    );
+    
   }
 
   private identity: StatsigIdentity;
   public getCurrentUser(): StatsigUser | null {
-    return this.identity.getUser();
+    return this.errorBoundary.capture(
+      'getCurrentUser',
+      () => this.identity.getUser(),
+      () => null
+    );
   }
   public getCurrentUserCacheKey(): string {
-    return getUserCacheKey(this.getCurrentUser());
+    return this.errorBoundary.capture(
+      'getCurrentUserCacheKey',
+      () => getUserCacheKey(this.getCurrentUser()),
+      () => `userID:''`
+    );
   }
 
   public getStatsigMetadata(): Record<string, string | number> {
-    return this.identity.getStatsigMetadata();
+    return this.errorBoundary.capture(
+      'getStatsigMetadata',
+      () => this.identity.getStatsigMetadata(),
+      () => { return {} },
+    );
   }
 
   public getSDKType(): string {
-    return this.identity.getSDKType();
+    return this.errorBoundary.capture(
+      'getSDKType',
+      () => this.identity.getSDKType(),
+      () => ''
+    );
   }
 
   public getSDKVersion(): string {
-    return this.identity.getSDKVersion();
+    return this.errorBoundary.capture(
+      'getSDKVersion',
+      () => this.identity.getSDKVersion(),
+      () => '',
+    );
   }
 
   private consoleLogger: ConsoleLogger;
@@ -648,6 +672,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   }
 
   public async updateUser(user: StatsigUser | null): Promise<boolean> {
+    /* eslint-disable-next-line statsig-linter/public-methods-error-boundary */
     const updateStartTime = Date.now();
     let fireCompletionCallback: (
       success: boolean,
@@ -869,6 +894,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   }
 
   // All methods below are for the statsig react native SDK internal usage only!
+  /* eslint-disable statsig-linter/public-methods-error-boundary */
   public setSDKPackageInfo(sdkPackageInfo?: _SDKPackageInfo) {
     if (sdkPackageInfo != null) {
       this.identity.setSDKPackageInfo(sdkPackageInfo);
