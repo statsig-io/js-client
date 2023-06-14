@@ -676,9 +676,10 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   }
 
   public async updateUser(user: StatsigUser | null): Promise<boolean> {
-    /* eslint-disable-next-line statsig-linter/public-methods-error-boundary */
-    const updateStartTime = Date.now();
-    let fireCompletionCallback: (
+    // eslint-disable-next-line statsig-linter/public-methods-error-boundary
+    const updateStartTime = Date.now();  
+    // eslint-disable-next-line statsig-linter/public-methods-error-boundary
+    let fireCompletionCallback: ( 
       success: boolean,
       error: string | null,
     ) => void | null;
