@@ -651,6 +651,43 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     });
   }
 
+  public updateUserWithValues(
+    user: StatsigUser | null,
+    values: Record<string, unknown>,
+  ): boolean {
+    const updateStartTime = Date.now();
+    let fireCompletionCallback: (
+      success: boolean,
+      error: string | null,
+    ) => void | null;
+
+    return this.errorBoundary.capture(
+      'updateUserWithValues',
+      () => {
+        if (!this.initializeCalled()) {
+          throw new StatsigUninitializedError('Call initialize() first.');
+        }
+
+        fireCompletionCallback = (success: boolean, error: string | null) => {
+          const cb = this.options.getUpdateUserCompletionCallback();
+          cb?.(Date.now() - updateStartTime, success, error);
+        };
+
+        this.identity.updateUser(this.normalizeUser(user));
+        this.store.bootstrap(values);
+        fireCompletionCallback(true, null);
+        return true;
+      },
+      () => {
+        fireCompletionCallback?.(
+          false,
+          'Failed to update user. An unexpected error occured.',
+        );
+        return false;
+      },
+    );
+  }
+
   public async updateUser(user: StatsigUser | null): Promise<boolean> {
     const updateStartTime = Date.now();
     let fireCompletionCallback: (
