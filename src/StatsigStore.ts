@@ -509,7 +509,7 @@ export default class StatsigStore {
 
   public getConfig(
     configName: string,
-    ignoreOverrides: boolean = false,
+    ignoreOverrides = false,
   ): DynamicConfig {
     const configNameHash = this.getHashedSpecName(configName);
     let configValue: DynamicConfig;

@@ -7,7 +7,7 @@ const hashLookupTable: Record<string, string> = {};
 function fasthash(value: string): number {
   let hash = 0;
   for (let i = 0; i < value.length; i++) {
-    let character = value.charCodeAt(i);
+    const character = value.charCodeAt(i);
     hash = (hash << 5) - hash + character;
     hash = hash & hash; // Convert to 32bit integer
   }
