@@ -30,6 +30,7 @@ describe('UpdateUserCompletionCallback', () => {
     const opts: StatsigOptions = {
       updateUserCompletionCallback: completionCallbackSpy,
     };
+    (Statsig as any).instance = null;
     await Statsig.initialize('client-key', user, opts);
     completionCallbackSpy.mockClear();
   });
@@ -103,4 +104,14 @@ describe('UpdateUserCompletionCallback', () => {
       'Failed to update user. An unexpected error occured.',
     );
   });
+
+  it('fires the callback when calling updateUserWithValues', async () => {
+    Statsig.updateUserWithValues(user, InitRes);
+
+    expect(completionCallbackSpy).toHaveBeenCalledWith(
+      expect.any(Number),
+      true,
+      null,
+    );
+  })
 });

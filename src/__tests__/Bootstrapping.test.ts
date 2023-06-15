@@ -97,7 +97,7 @@ describe('Statsig Client Bootstrapping', () => {
   });
 
   it('uses defaults with bootstrap values is empty', async () => {
-    expect.assertions(7);
+    expect.assertions(14);
     const spyOnSet = jest.spyOn(window.localStorage.__proto__, 'setItem');
     const spyOnGet = jest.spyOn(window.localStorage.__proto__, 'getItem');
 
@@ -115,12 +115,29 @@ describe('Statsig Client Bootstrapping', () => {
     expect(spyOnGet).not.toHaveBeenCalled();
 
     // we get defaults everywhere else
+    expect(client.getCurrentUser()).toEqual({ email: 'tore@statsig.com' });
     expect(client.checkGate('test_gate')).toBe(false);
     expect(client.checkGate('always_on_gate')).toBe(false);
     expect(client.checkGate('on_for_statsig_email')).toBe(false);
     expect(client.getConfig('test_config').get('number', 10)).toEqual(10);
     expect(client.getConfig('test_config').getEvaluationDetails()).toEqual({
       reason: EvaluationReason.Unrecognized,
+      time: expect.any(Number),
+    });
+
+    client.updateUserWithValues({ email: 'kenny@statsig.com' }, TestData);
+    // user updated along with the gate values
+    expect(client.getCurrentUser()).toEqual({ email: 'kenny@statsig.com' });
+    expect(client.checkGate('always_on_gate')).toBe(true);
+    expect(client.checkGate('on_for_statsig_email')).toBe(true);
+    expect(client.getConfig('test_config').get('number', 10)).toEqual(7);
+    expect(client.getConfig('test_config').getEvaluationDetails()).toEqual({
+      reason: EvaluationReason.Bootstrap,
+      time: expect.any(Number),
+    });
+
+    expect(client.getEvaluationDetails()).toEqual({
+      reason: EvaluationReason.Bootstrap,
       time: expect.any(Number),
     });
   });
