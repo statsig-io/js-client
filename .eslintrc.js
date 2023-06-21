@@ -1,7 +1,7 @@
 module.exports = {
   root: true,
   parser: '@typescript-eslint/parser',
-  plugins: ['@typescript-eslint'],
+  plugins: ['@typescript-eslint', 'statsig-linter'],
   extends: [
     'eslint:recommended',
     'plugin:@typescript-eslint/eslint-recommended',
@@ -24,6 +24,7 @@ module.exports = {
       },
       files: ['**/*.ts'],
       rules: {
+        "statsig-linter/public-methods-error-boundary":"error",
         '@typescript-eslint/no-floating-promises': [
           'error',
           { ignoreVoid: false },
