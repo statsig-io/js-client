@@ -1,10 +1,7 @@
 import { IHasStatsigInternal } from './StatsigClient';
 import StatsigRuntime from './StatsigRuntime';
 import { StatsigUser } from './StatsigUser';
-import Diagnostics, {
-  DiagnosticsEvent,
-  DiagnosticsKey,
-} from './utils/Diagnostics';
+import Diagnostics from './utils/Diagnostics';
 
 export enum StatsigEndpoint {
   Initialize = 'initialize',
@@ -67,7 +64,6 @@ export default class StatsigNetwork {
     user: StatsigUser | null,
     sinceTime: number | null,
     timeout: number,
-    diagnostics?: Diagnostics,
     prefetchUsers?: Record<string, StatsigUser>,
   ): PromiseWithTimeout<Record<string, unknown>> {
     const input = {
@@ -82,7 +78,6 @@ export default class StatsigNetwork {
     return this.postWithTimeout(
       StatsigEndpoint.Initialize,
       input,
-      diagnostics,
       timeout, // timeout for early returns
       3, // retries
     );
@@ -91,17 +86,12 @@ export default class StatsigNetwork {
   private postWithTimeout<T>(
     endpointName: StatsigEndpoint,
     body: object,
-    diagnostics?: Diagnostics,
     timeout = 0,
     retries = 0,
     backoff = 1000,
   ): PromiseWithTimeout<T> {
     if (endpointName === StatsigEndpoint.Initialize) {
-      diagnostics?.mark(
-        DiagnosticsKey.INITIALIZE,
-        DiagnosticsEvent.START,
-        'network_request',
-      );
+      Diagnostics.mark.intialize.networkRequest.start({});
     }
 
     let hasTimedOut = false;
@@ -133,23 +123,22 @@ export default class StatsigNetwork {
       });
     }
 
+    let res: NetworkResponse;
     const fetchPromise = this.postToEndpoint(
       endpointName,
       body,
       retries,
       backoff,
     )
-      .then((res) => {
+      .then((localRes) => {
+        res = localRes;
         if (endpointName === StatsigEndpoint.Initialize) {
-          diagnostics?.mark(
-            DiagnosticsKey.INITIALIZE,
-            DiagnosticsEvent.END,
-            'network_request',
-            res.status,
-          );
-
-          const isDelta = res?.data?.is_delta === true;
-          diagnostics?.addMetadata('is_delta', isDelta);
+          Diagnostics.mark.intialize.networkRequest.end({
+            success: true,
+            statusCode: res?.status,
+            sdkRegion: res?.headers?.get('x-statsig-region'),
+            isDelta: res?.data?.is_delta === true,
+          });
         }
         if (!res.ok) {
           return Promise.reject(
@@ -206,12 +195,12 @@ export default class StatsigNetwork {
       })
       .catch((e) => {
         if (endpointName === StatsigEndpoint.Initialize) {
-          diagnostics?.mark(
-            DiagnosticsKey.INITIALIZE,
-            DiagnosticsEvent.END,
-            'network_request',
-            false,
-          );
+          Diagnostics.mark.intialize.networkRequest.end({
+            success: false,
+            statusCode: res?.status,
+            sdkRegion: res?.headers?.get('x-statsig-region'),
+            isDelta: res?.data?.is_delta === true,
+          });
         }
 
         return Promise.reject(e);

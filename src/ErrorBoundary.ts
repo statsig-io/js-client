@@ -2,40 +2,78 @@ import {
   StatsigUninitializedError,
   StatsigInvalidArgumentError,
 } from './Errors';
-import Diagnostics, { DiagnosticsEvent } from './utils/Diagnostics';
-import { DiagnosticsKey } from './utils/Diagnostics';
+import Diagnostics from './utils/Diagnostics';
 export const ExceptionEndpoint = 'https://statsigapi.net/v1/sdk_exception';
 
 type ExtraDataExtractor = () => Promise<Record<string, unknown>>;
 
 type CaptureOptions = {
   getExtraData?: ExtraDataExtractor;
-  diagnosticsKey?: DiagnosticsKey;
 };
+
+type errorBoundaryTagsType =
+  | 'getSDKKey'
+  | 'getCurrentUser'
+  | 'getCurrentUserCacheKey'
+  | 'getStatsigMetadata'
+  | 'getSDKType'
+  | 'getSDKVersion'
+  | 'setInitializeValues'
+  | 'initializeAsync'
+  | 'prefetchUsers'
+  | 'getEvaluationDetails'
+  | 'checkGate'
+  | 'checkGateWithExposureLoggingDisabled'
+  | 'getConfig'
+  | 'getConfig'
+  | 'getExperiment'
+  | 'getExperimentWithExposureLoggingDisabled'
+  | 'getLayer'
+  | 'getLayerWithExposureLoggingDisabled'
+  | 'updateUserWithValues'
+  | 'updateUser'
+  | 'getOverrides'
+  | 'getAllOverrides'
+  | 'getStableID'
+  | 'delayedSetup'
+  | 'logGateExposure'
+  | 'logConfigExposure'
+  | 'logExperimentExposure'
+  | 'logLayerParameterExposure'
+  | 'logEvent'
+  | 'shutdown'
+  | 'overrideGate'
+  | 'overrideConfig'
+  | 'overrideLayer'
+  | 'removeGateOverride'
+  | 'removeConfigOverride'
+  | 'removeLayerOverride'
+  | 'removeOverride'
+  | 'fetchAndSaveValues'
+  | 'postWithTimeout';
 
 export default class ErrorBoundary {
   private statsigMetadata?: Record<string, string | number>;
   private seen = new Set<string>();
-  private diagnostics?: Diagnostics;
 
-  constructor(private sdkKey: string, disableDiagnostics = false) {
-    if (disableDiagnostics) {
-      return;
-    }
-
+  constructor(private sdkKey: string) {
     const sampling = Math.floor(Math.random() * 10_000);
-    if (sampling !== 0) {
-      return;
+    if (sampling === 0) {
+      Diagnostics.setMaxMarkers('error_boundary', 30);
+    } else {
+      Diagnostics.setMaxMarkers('error_boundary', 0);
     }
-
-    this.diagnostics = new Diagnostics('error_boundary', 30);
   }
 
   setStatsigMetadata(statsigMetadata: Record<string, string | number>) {
     this.statsigMetadata = statsigMetadata;
   }
 
-  swallow<T>(tag: string, task: () => T, options: CaptureOptions = {}) {
+  swallow<T>(
+    tag: errorBoundaryTagsType,
+    task: () => T,
+    options: CaptureOptions = {},
+  ) {
     this.capture(
       tag,
       task,
@@ -47,14 +85,14 @@ export default class ErrorBoundary {
   }
 
   capture<T>(
-    tag: string,
+    tag: errorBoundaryTagsType,
     task: () => T,
     recover: () => T,
-    { getExtraData, diagnosticsKey }: CaptureOptions = {},
+    { getExtraData }: CaptureOptions = {},
   ): T {
-    let markerID = -1;
+    let markerID: string | null = null;
     try {
-      markerID = this.beginMarker(diagnosticsKey);
+      markerID = this.beginMarker(tag);
 
       const result = task();
       let wasSuccessful = true;
@@ -65,15 +103,15 @@ export default class ErrorBoundary {
             return this.onCaught(tag, e, recover, getExtraData);
           })
           .then((possiblyRecoveredResult) => {
-            this.endMarker(diagnosticsKey, wasSuccessful, markerID);
+            this.endMarker(tag, wasSuccessful, markerID);
             return possiblyRecoveredResult;
           }) as unknown as T;
       }
 
-      this.endMarker(diagnosticsKey, true, markerID);
+      this.endMarker(tag, true, markerID);
       return result;
     } catch (error) {
-      this.endMarker(diagnosticsKey, false, markerID);
+      this.endMarker(tag, false, markerID);
       return this.onCaught(tag, error, recover, getExtraData);
     }
   }
@@ -123,37 +161,37 @@ export default class ErrorBoundary {
     });
   }
 
-  public getDiagnostics(): Diagnostics | null {
-    return this.diagnostics ?? null;
-  }
-
-  private beginMarker(key: DiagnosticsKey | null = null): number {
-    if (!key || !this.diagnostics) {
-      return -1;
+  private beginMarker(tag: errorBoundaryTagsType): string | null {
+    const diagnostics = this.getDiagnosticsFromTag(tag);
+    if (!diagnostics) {
+      return null;
     }
-    const id = this.diagnostics.getCount();
-    const wasAdded = this.diagnostics.mark(
-      key,
-      DiagnosticsEvent.START,
-      `${key}_${id}`,
+    const count = Diagnostics.getMarkerCount('error_boundary');
+    const id = `${tag}_${count}`;
+    const wasAdded = diagnostics.start(
+      {
+        id,
+      },
+      'error_boundary',
     );
-    return wasAdded ? id : -1;
+    return wasAdded ? id : null;
   }
 
   private endMarker(
-    key: DiagnosticsKey | null = null,
+    tag: errorBoundaryTagsType,
     wasSuccessful: boolean,
-    markerID: number,
+    markerID: string | null,
   ): void {
-    if (!key || !this.diagnostics || markerID === -1) {
+    const diagnostics = this.getDiagnosticsFromTag(tag);
+    if (!markerID || !diagnostics) {
       return;
     }
-
-    this.diagnostics.mark(
-      key,
-      DiagnosticsEvent.END,
-      `${key}_${markerID}`,
-      wasSuccessful,
+    diagnostics.end(
+      {
+        id: markerID,
+        success: wasSuccessful,
+      },
+      'error_boundary',
     );
   }
 
@@ -183,5 +221,26 @@ export default class ErrorBoundary {
     } catch {
       return '[Statsig] Failed to get string for error.';
     }
+  }
+
+  private getDiagnosticsFromTag(
+    tag: errorBoundaryTagsType,
+  ):
+    | typeof Diagnostics.mark.get_config
+    | typeof Diagnostics.mark.get_experiment
+    | typeof Diagnostics.mark.check_gate
+    | typeof Diagnostics.mark.get_layer
+    | null {
+    switch (tag) {
+      case 'getConfig':
+        return Diagnostics.mark.get_config;
+      case 'getExperiment':
+        return Diagnostics.mark.get_experiment;
+      case 'checkGate':
+        return Diagnostics.mark.check_gate;
+      case 'getLayer':
+        return Diagnostics.mark.get_layer;
+    }
+    return null;
   }
 }

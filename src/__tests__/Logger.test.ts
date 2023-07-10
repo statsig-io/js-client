@@ -11,6 +11,11 @@ import StatsigLogger from '../StatsigLogger';
 describe('Verify behavior of StatsigLogger', () => {
   const sdkKey = 'client-loggertestkey';
   const waitAllPromises = () => new Promise(setImmediate);
+
+  const requestHeaders: HeadersInit = new Headers();
+  requestHeaders.set('Content-Type', 'application/json');
+  requestHeaders.set('x-statsig-region', 'us-west-1');
+
   //@ts-ignore
   global.fetch = jest.fn((url) => {
     if (url && typeof url === 'string' && url.includes('rgstr')) {
@@ -25,6 +30,7 @@ describe('Verify behavior of StatsigLogger', () => {
     return Promise.resolve({
       ok: true,
       status: 200,
+      headers: requestHeaders,
       text: () =>
         Promise.resolve(
           JSON.stringify({
@@ -44,7 +50,7 @@ describe('Verify behavior of StatsigLogger', () => {
             configs: {},
           }),
         ),
-    });
+    } as Response);
   });
   beforeEach(() => {
     expect.hasAssertions();
@@ -232,49 +238,44 @@ describe('Verify behavior of StatsigLogger', () => {
         {
           action: 'start',
           key: 'overall',
-          step: null,
           timestamp: expect.any(Number),
-          value: null,
         },
         {
           action: 'start',
           key: 'initialize',
           step: 'network_request',
           timestamp: expect.any(Number),
-          value: null,
         },
         {
           action: 'end',
           key: 'initialize',
           step: 'network_request',
           timestamp: expect.any(Number),
-          value: 200,
+          statusCode: 200,
+          isDelta: false,
+          sdkRegion: 'us-west-1',
+          success: true,
         },
         {
           action: 'start',
           key: 'initialize',
           step: 'process',
           timestamp: expect.any(Number),
-          value: null,
         },
         {
           action: 'end',
           key: 'initialize',
           step: 'process',
           timestamp: expect.any(Number),
-          value: null,
+          success: true,
         },
         {
           action: 'end',
           key: 'overall',
-          step: null,
           timestamp: expect.any(Number),
-          value: null,
+          success: true,
         },
       ],
-      metadata: {
-        is_delta: false,
-      },
     });
     event.setUser({ userID: 'user_key' });
     expect(spyOnLog).toHaveBeenCalledWith(event);

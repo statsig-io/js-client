@@ -27,10 +27,7 @@ import { getUserCacheKey } from './utils/Hashing';
 import type { AsyncStorage } from './utils/StatsigAsyncStorage';
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
-import Diagnostics, {
-  DiagnosticsEvent,
-  DiagnosticsKey,
-} from './utils/Diagnostics';
+import Diagnostics from './utils/Diagnostics';
 import ConsoleLogger from './utils/ConsoleLogger';
 import { now } from './utils/Timing';
 
@@ -129,8 +126,6 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   private prefetchedUsersByCacheKey: Record<string, StatsigUser> = {};
   private startTime;
 
-  private initializeDiagnostics: Diagnostics;
-
   private errorBoundary: ErrorBoundary;
   public getErrorBoundary(): ErrorBoundary {
     return this.errorBoundary;
@@ -163,9 +158,8 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       () => {
         return this.sdkKey ?? '';
       },
-      () => ''
+      () => '',
     );
-    
   }
 
   private identity: StatsigIdentity;
@@ -173,14 +167,14 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     return this.errorBoundary.capture(
       'getCurrentUser',
       () => this.identity.getUser(),
-      () => null
+      () => null,
     );
   }
   public getCurrentUserCacheKey(): string {
     return this.errorBoundary.capture(
       'getCurrentUserCacheKey',
       () => getUserCacheKey(this.getCurrentUser()),
-      () => `userID:''`
+      () => `userID:''`,
     );
   }
 
@@ -188,7 +182,9 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     return this.errorBoundary.capture(
       'getStatsigMetadata',
       () => this.identity.getStatsigMetadata(),
-      () => { return {} },
+      () => {
+        return {};
+      },
     );
   }
 
@@ -196,7 +192,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     return this.errorBoundary.capture(
       'getSDKType',
       () => this.identity.getSDKType(),
-      () => ''
+      () => '',
     );
   }
 
@@ -227,16 +223,17 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       );
     }
     this.startTime = now();
-    this.errorBoundary = new ErrorBoundary(
-      sdkKey,
-      options?.disableDiagnosticsLogging,
-    );
+    this.options = new StatsigSDKOptions(options);
+    this.logger = new StatsigLogger(this);
+    Diagnostics.initialize({
+      logger: this.logger,
+      options: this.options,
+    });
+    this.errorBoundary = new ErrorBoundary(sdkKey);
     this.ready = false;
     this.sdkKey = sdkKey;
-    this.options = new StatsigSDKOptions(options);
     this.consoleLogger = new ConsoleLogger(this.options.getLogLevel());
     StatsigLocalStorage.disabled = this.options.getDisableLocalStorage();
-    this.initializeDiagnostics = new Diagnostics('initialize');
     this.identity = new StatsigIdentity(
       this.normalizeUser(user ?? null),
       this.options.getOverrideStableID(),
@@ -245,8 +242,6 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
 
     this.network = new StatsigNetwork(this);
     this.store = new StatsigStore(this, this.options.getInitializeValues());
-    this.logger = new StatsigLogger(this);
-
     this.errorBoundary.setStatsigMetadata(this.getStatsigMetadata());
 
     if (this.options.getInitializeValues() != null) {
@@ -332,10 +327,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         if (this.ready) {
           return Promise.resolve();
         }
-        this.initializeDiagnostics.mark(
-          DiagnosticsKey.OVERALL,
-          DiagnosticsEvent.START,
-        );
+        Diagnostics.mark.overall.start({});
 
         this.initCalled = true;
         if (StatsigAsyncStorage.asyncStorage) {
@@ -366,9 +358,9 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
           user,
           this.options.getPrefetchUsers(),
           this.options.getInitTimeoutMs(),
-          this.initializeDiagnostics,
         )
           .then(() => {
+            Diagnostics.mark.overall.end({ success: true });
             return { success: true, message: null };
           })
           .catch((e) => {
@@ -376,6 +368,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
               'initializeAsync:fetchAndSaveValues',
               e,
             );
+            Diagnostics.mark.overall.end({ success: false });
             return { success: false, message: e.message };
           })
           .then(({ success, message }) => {
@@ -390,13 +383,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
             this.pendingInitPromise = null;
             this.ready = true;
             this.delayedSetup();
-            this.initializeDiagnostics.mark(
-              DiagnosticsKey.OVERALL,
-              DiagnosticsEvent.END,
-            );
-            if (!this.options.getDisableDiagnosticsLogging()) {
-              this.logger.logDiagnostics(user, this.initializeDiagnostics);
-            }
+            Diagnostics.logDiagnostics(user, 'initialize');
           });
 
         this.handleOptionalLogging();
@@ -463,7 +450,6 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         return result.gate.value === true;
       },
       () => false,
-      { diagnosticsKey: DiagnosticsKey.CHECK_GATE },
     );
   }
 
@@ -509,7 +495,6 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         return result;
       },
       () => this.getEmptyConfig(configName),
-      { diagnosticsKey: DiagnosticsKey.GET_CONFIG },
     );
   }
 
@@ -557,7 +542,6 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         return result;
       },
       () => this.getEmptyConfig(experimentName),
-      { diagnosticsKey: DiagnosticsKey.GET_EXPERIMENT },
     );
   }
 
@@ -600,7 +584,6 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       },
       () =>
         Layer._create(layerName, {}, '', this.getEvalutionDetailsForError()),
-      { diagnosticsKey: DiagnosticsKey.GET_LAYER },
     );
   }
 
@@ -714,9 +697,9 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
 
   public async updateUser(user: StatsigUser | null): Promise<boolean> {
     // eslint-disable-next-line statsig-linter/public-methods-error-boundary
-    const updateStartTime = Date.now();  
+    const updateStartTime = Date.now();
     // eslint-disable-next-line statsig-linter/public-methods-error-boundary
-    let fireCompletionCallback: ( 
+    let fireCompletionCallback: (
       success: boolean,
       error: string | null,
     ) => void | null;
@@ -741,7 +724,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         );
         const cachedTime = this.store.updateUser(isUserPrefetched);
 
-        this.errorBoundary.getDiagnostics()?.reset();
+        Diagnostics.clearContext('error_boundary');
         this.logger.resetDedupeKeys();
 
         if (
@@ -1196,7 +1179,6 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         user,
         sinceTime,
         timeout,
-        prefetchUsers.length === 0 ? diagnostics : undefined,
         prefetchUsers.length > 0 ? keyedPrefetchUsers : undefined,
       )
       .eventually((json) => {
@@ -1213,11 +1195,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       })
       .then(async (json: Record<string, unknown>) => {
         return this.errorBoundary.swallow('fetchAndSaveValues', async () => {
-          diagnostics?.mark(
-            DiagnosticsKey.INITIALIZE,
-            DiagnosticsEvent.START,
-            'process',
-          );
+          Diagnostics.mark.intialize.process.start({});
           if (json?.has_updates) {
             await this.store.save(user, json);
           } else if (json?.is_no_content) {
@@ -1228,11 +1206,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
             ...this.prefetchedUsersByCacheKey,
             ...keyedPrefetchUsers,
           };
-          diagnostics?.mark(
-            DiagnosticsKey.INITIALIZE,
-            DiagnosticsEvent.END,
-            'process',
-          );
+          Diagnostics.mark.intialize.process.end({ success: true });
         });
       });
   }

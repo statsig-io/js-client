@@ -3,6 +3,7 @@ import {
   StatsigInvalidArgumentError,
   StatsigUninitializedError,
 } from '../Errors';
+import StatsigClient from '../StatsigClient';
 
 type ErrorBoundaryRequest = {
   url: string;
@@ -22,6 +23,12 @@ describe('ErrorBoundary', () => {
       },
     },
   ];
+
+  beforeAll(() => {
+    const client = new StatsigClient('client-key', {
+      userID: 'user-a',
+    });
+  });
 
   beforeEach(() => {
     boundary = new ErrorBoundary('client-key');
