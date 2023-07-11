@@ -59,7 +59,6 @@ export class DiagnosticsImpl {
   markers: DiagnosticsMarkers;
 
   disabled: boolean;
-  logger: StatsigLogger;
   context: ContextType = 'initialize';
   defaultMaxMarkers = 30;
   maxMarkers: DiagnosticsMaxMarkers = {
@@ -70,7 +69,6 @@ export class DiagnosticsImpl {
   };
 
   constructor(args: {
-    logger: StatsigLogger;
     options: StatsigSDKOptions;
     markers?: DiagnosticsMarkers;
   }) {
@@ -80,7 +78,6 @@ export class DiagnosticsImpl {
       event_logging: [],
       error_boundary: [],
     };
-    this.logger = args.logger;
     this.disabled = args.options?.getDisableDiagnosticsLogging() ?? false;
   }
 
@@ -152,18 +149,6 @@ export class DiagnosticsImpl {
     return true;
   }
 
-  logDiagnostics(user: StatsigUser | null, context: ContextType) {
-    if (this.disabled) {
-      return;
-    }
-
-    this.logger.logDiagnostics(user, {
-      context,
-      markers: this.markers[context],
-    });
-    this.markers[context] = [];
-  }
-
   getMarkers(context: ContextType) {
     return this.markers[context];
   }
@@ -184,44 +169,25 @@ export default abstract class Diagnostics {
   private static instance: DiagnosticsImpl;
 
   public static mark: DiagnosticsImpl['mark'];
-  // public static logDiagnostics: DiagnosticsImpl['logDiagnostics'];
-  // public static getMarkers: DiagnosticsImpl['getMarkers'];
-  // public static getMarkerCount: DiagnosticsImpl['getMarkerCount'];
-  // public static setMaxMarkers: DiagnosticsImpl['setMaxMarkers'];
-  // public static setContext: DiagnosticsImpl['setContext'];
-  // public static clearContext: DiagnosticsImpl['clearContext'];
+  public static disabled: DiagnosticsImpl['disabled'];
+  public static getMarkers: DiagnosticsImpl['getMarkers'];
+  public static getMarkerCount: DiagnosticsImpl['getMarkerCount'];
+  public static setMaxMarkers: DiagnosticsImpl['setMaxMarkers'];
+  public static setContext: DiagnosticsImpl['setContext'];
+  public static clearContext: DiagnosticsImpl['clearContext'];
 
   static initialize(args: {
-    logger: StatsigLogger;
     options: StatsigSDKOptions;
     markers?: DiagnosticsMarkers;
   }) {
     this.instance = new DiagnosticsImpl(args);
     this.mark = this.instance.mark;
-  }
-
-  static logDiagnostics(user: StatsigUser | null, context: ContextType) {
-    this.instance.logDiagnostics(user, context);
-  }
-
-  static getMarkers(context: ContextType) {
-    return this.instance.getMarkers(context);
-  }
-
-  static getMarkerCount(context: ContextType) {
-    return this.instance.getMarkerCount(context);
-  }
-
-  static setMaxMarkers(context: ContextType, max: number) {
-    this.instance.setMaxMarkers(context, max);
-  }
-
-  static setContext(context: ContextType) {
-    this.instance.setContext(context);
-  }
-
-  static clearContext(context: ContextType) {
-    this.instance.clearContext(context);
+    this.disabled = this.instance.disabled;
+    this.getMarkers = this.instance.getMarkers.bind(this.instance);
+    this.getMarkerCount = this.instance.getMarkerCount.bind(this.instance);
+    this.setMaxMarkers = this.instance.setMaxMarkers.bind(this.instance);
+    this.setContext = this.instance.setContext.bind(this.instance);
+    this.clearContext = this.instance.clearContext.bind(this.instance);
   }
 }
 

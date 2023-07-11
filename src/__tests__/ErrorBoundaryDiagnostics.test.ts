@@ -10,15 +10,10 @@ describe('ErrorBoundaryDiagnostics', () => {
 
   let diagnosticsImpl: DiagnosticsImpl;
   function setup() {
-    const client = new StatsigClient('client-key', {
-      userID: 'user-a',
-    });
-    diagnosticsImpl = new DiagnosticsImpl({
-      logger: client.getLogger(),
+    Diagnostics.initialize({
       options: new StatsigSDKOptions(),
     });
-    Diagnostics.instance = diagnosticsImpl;
-    Diagnostics.mark = diagnosticsImpl.mark;
+    diagnosticsImpl = Diagnostics.instance;
   }
 
   describe('marker capture on success', () => {

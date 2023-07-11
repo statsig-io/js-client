@@ -290,11 +290,16 @@ export default class StatsigLogger {
     this.loggedErrors.add(trimmedMessage);
   }
 
-  public logDiagnostics(
-    user: StatsigUser | null,
-    data: { context: ContextType; markers: Marker[] },
-  ) {
-    const event = this.makeDiagnosticsEvent(user, data);
+  public logDiagnostics(user: StatsigUser | null, context: ContextType) {
+    if (Diagnostics.disabled) {
+      return;
+    }
+    const markers = Diagnostics.getMarkers(context);
+    Diagnostics.clearContext(context);
+    const event = this.makeDiagnosticsEvent(user, {
+      markers,
+      context,
+    });
     this.log(event);
   }
 

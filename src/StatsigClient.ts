@@ -226,7 +226,6 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     this.options = new StatsigSDKOptions(options);
     this.logger = new StatsigLogger(this);
     Diagnostics.initialize({
-      logger: this.logger,
       options: this.options,
     });
     this.errorBoundary = new ErrorBoundary(sdkKey);
@@ -383,7 +382,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
             this.pendingInitPromise = null;
             this.ready = true;
             this.delayedSetup();
-            Diagnostics.logDiagnostics(user, 'initialize');
+            this.logger.logDiagnostics(user, 'initialize');
           });
 
         this.handleOptionalLogging();
