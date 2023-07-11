@@ -661,7 +661,9 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     user: StatsigUser | null,
     values: Record<string, unknown>,
   ): boolean {
+    // eslint-disable-next-line statsig-linter/public-methods-error-boundary
     const updateStartTime = Date.now();
+    // eslint-disable-next-line statsig-linter/public-methods-error-boundary
     let fireCompletionCallback: (
       success: boolean,
       error: string | null,
@@ -1155,7 +1157,6 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     user: StatsigUser | null,
     prefetchUsers: StatsigUser[] = [],
     timeout: number = this.options.getInitTimeoutMs(),
-    diagnostics?: Diagnostics,
   ): Promise<void> {
     if (prefetchUsers.length > 5) {
       this.consoleLogger.info('Cannot prefetch more than 5 users.');

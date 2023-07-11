@@ -1,5 +1,4 @@
 import ErrorBoundary from '../ErrorBoundary';
-import StatsigClient from '../StatsigClient';
 import StatsigSDKOptions from '../StatsigSDKOptions';
 import Diagnostics, { DiagnosticsImpl, Marker } from '../utils/Diagnostics';
 
@@ -13,6 +12,7 @@ describe('ErrorBoundaryDiagnostics', () => {
     Diagnostics.initialize({
       options: new StatsigSDKOptions(),
     });
+    // @ts-ignore
     diagnosticsImpl = Diagnostics.instance;
   }
 
