@@ -12,6 +12,8 @@ export default class DynamicConfig {
 
   private name: string;
   private ruleID: string;
+  private groupName: string | null;
+  private idType: string | null;
   private secondaryExposures: Record<string, string>[];
   private allocatedExperimentName: string;
   private evaluationDetails: EvaluationDetails;
@@ -25,6 +27,8 @@ export default class DynamicConfig {
     secondaryExposures: Record<string, string>[] = [],
     allocatedExperimentName = '',
     onDefaultValueFallback: OnDefaultValueFallback | null = null,
+    groupName: string | null = null,
+    idType: string | null = null,
   ) {
     this.name = configName;
     this.value = JSON.parse(JSON.stringify(configValue ?? {}));
@@ -33,6 +37,8 @@ export default class DynamicConfig {
     this.allocatedExperimentName = allocatedExperimentName;
     this.evaluationDetails = evaluationDetails;
     this.onDefaultValueFallback = onDefaultValueFallback;
+    this.groupName = groupName;
+    this.idType = idType;
   }
 
   public get<T>(
@@ -83,6 +89,14 @@ export default class DynamicConfig {
 
   public getRuleID(): string {
     return this.ruleID;
+  }
+
+  public getGroupName(): string | null {
+    return this.groupName;
+  }
+
+  public getIDType(): string | null {
+    return this.idType;
   }
 
   public getName(): string {

@@ -24,6 +24,11 @@ describe('Verify behavior of DynamicConfig', () => {
       reason: EvaluationReason.Network,
       time: Date.now(),
     },
+    [],
+    '',
+    null,
+    'default',
+    'userID',
   );
 
   beforeEach(() => {
@@ -31,12 +36,9 @@ describe('Verify behavior of DynamicConfig', () => {
   });
 
   test('constructor', () => {
-    const config = new DynamicConfig('name', { test: 123 }, 'default', {
-      reason: EvaluationReason.Network,
-      time: Date.now(),
-    });
-    expect(config.getValue()).toStrictEqual({ test: 123 });
-    expect(config.getRuleID()).toStrictEqual('default');
+    expect(testConfig.getRuleID()).toStrictEqual('default');
+    expect(testConfig.getGroupName()).toStrictEqual('default');
+    expect(testConfig.getIDType()).toStrictEqual('userID');
   });
 
   test('nonexistent keys', () => {
