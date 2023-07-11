@@ -11,46 +11,6 @@ type CaptureOptions = {
   getExtraData?: ExtraDataExtractor;
 };
 
-export type errorBoundaryTagsType =
-  | 'getSDKKey'
-  | 'getCurrentUser'
-  | 'getCurrentUserCacheKey'
-  | 'getStatsigMetadata'
-  | 'getSDKType'
-  | 'getSDKVersion'
-  | 'setInitializeValues'
-  | 'initializeAsync'
-  | 'prefetchUsers'
-  | 'getEvaluationDetails'
-  | 'checkGate'
-  | 'checkGateWithExposureLoggingDisabled'
-  | 'getConfig'
-  | 'getExperiment'
-  | 'getExperimentWithExposureLoggingDisabled'
-  | 'getLayer'
-  | 'getLayerWithExposureLoggingDisabled'
-  | 'updateUserWithValues'
-  | 'updateUser'
-  | 'getOverrides'
-  | 'getAllOverrides'
-  | 'getStableID'
-  | 'delayedSetup'
-  | 'logGateExposure'
-  | 'logConfigExposure'
-  | 'logExperimentExposure'
-  | 'logLayerParameterExposure'
-  | 'logEvent'
-  | 'shutdown'
-  | 'overrideGate'
-  | 'overrideConfig'
-  | 'overrideLayer'
-  | 'removeGateOverride'
-  | 'removeConfigOverride'
-  | 'removeLayerOverride'
-  | 'removeOverride'
-  | 'fetchAndSaveValues'
-  | 'postWithTimeout';
-
 export default class ErrorBoundary {
   private statsigMetadata?: Record<string, string | number>;
   private seen = new Set<string>();
@@ -68,11 +28,7 @@ export default class ErrorBoundary {
     this.statsigMetadata = statsigMetadata;
   }
 
-  swallow<T>(
-    tag: errorBoundaryTagsType,
-    task: () => T,
-    options: CaptureOptions = {},
-  ) {
+  swallow<T>(tag: string, task: () => T, options: CaptureOptions = {}) {
     this.capture(
       tag,
       task,
@@ -84,7 +40,7 @@ export default class ErrorBoundary {
   }
 
   capture<T>(
-    tag: errorBoundaryTagsType,
+    tag: string,
     task: () => T,
     recover: () => T,
     { getExtraData }: CaptureOptions = {},
@@ -160,7 +116,7 @@ export default class ErrorBoundary {
     });
   }
 
-  private beginMarker(tag: errorBoundaryTagsType): string | null {
+  private beginMarker(tag: string): string | null {
     const diagnostics = Diagnostics.mark.error_boundary(tag);
     if (!diagnostics) {
       return null;
@@ -177,7 +133,7 @@ export default class ErrorBoundary {
   }
 
   private endMarker(
-    tag: errorBoundaryTagsType,
+    tag: string,
     wasSuccessful: boolean,
     markerID: string | null,
   ): void {

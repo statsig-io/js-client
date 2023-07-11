@@ -1,7 +1,4 @@
-import { errorBoundaryTagsType } from '../ErrorBoundary';
-import StatsigLogger from '../StatsigLogger';
-import StatsigSDKOptions, { StatsigOptions } from '../StatsigSDKOptions';
-import { StatsigUser } from '../StatsigUser';
+import StatsigSDKOptions from '../StatsigSDKOptions';
 
 export type ContextType =
   | 'initialize'
@@ -51,7 +48,7 @@ export class DiagnosticsImpl {
     overall: this.selectAction<OverrallDataType>('overall'),
     intialize: this.selectStep<InitializeDataType>('initialize'),
     bootstrap: this.selectStep<BootstrapDataType>('bootstrap'),
-    error_boundary: (tag: errorBoundaryTagsType) => {
+    error_boundary: (tag: string) => {
       switch (tag) {
         case 'getConfig':
           return this.selectAction<ErrorBoundaryDataType>('get_config');
