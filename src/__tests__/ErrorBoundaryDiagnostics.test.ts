@@ -35,14 +35,14 @@ describe('ErrorBoundaryDiagnostics', () => {
       const marker = markers[0];
       expect(marker?.action).toEqual('start');
       expect(marker?.key).toEqual('check_gate');
-      expect(marker?.id).toEqual('checkGate_0');
+      expect(marker?.markerID).toEqual('checkGate_0');
     });
 
     it('captures end', () => {
       const marker = markers[1];
       expect(marker?.action).toEqual('end');
       expect(marker?.key).toEqual('check_gate');
-      expect(marker?.id).toEqual('checkGate_0');
+      expect(marker?.markerID).toEqual('checkGate_0');
       expect(marker?.success).toBe(true);
     });
 
@@ -72,14 +72,14 @@ describe('ErrorBoundaryDiagnostics', () => {
       const marker = markers[0];
       expect(marker?.action).toEqual('start');
       expect(marker?.key).toEqual('get_config');
-      expect(marker?.id).toEqual('getConfig_0');
+      expect(marker?.markerID).toEqual('getConfig_0');
     });
 
     it('captures end', () => {
       const marker = markers[1];
       expect(marker?.action).toEqual('end');
       expect(marker?.key).toEqual('get_config');
-      expect(marker?.id).toEqual('getConfig_0');
+      expect(marker?.markerID).toEqual('getConfig_0');
       expect(marker?.success).toBe(false);
     });
 

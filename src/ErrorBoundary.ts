@@ -11,7 +11,7 @@ type CaptureOptions = {
   getExtraData?: ExtraDataExtractor;
 };
 
-type errorBoundaryTagsType =
+export type errorBoundaryTagsType =
   | 'getSDKKey'
   | 'getCurrentUser'
   | 'getCurrentUserCacheKey'
@@ -24,7 +24,6 @@ type errorBoundaryTagsType =
   | 'getEvaluationDetails'
   | 'checkGate'
   | 'checkGateWithExposureLoggingDisabled'
-  | 'getConfig'
   | 'getConfig'
   | 'getExperiment'
   | 'getExperimentWithExposureLoggingDisabled'
@@ -162,19 +161,19 @@ export default class ErrorBoundary {
   }
 
   private beginMarker(tag: errorBoundaryTagsType): string | null {
-    const diagnostics = this.getDiagnosticsFromTag(tag);
+    const diagnostics = Diagnostics.mark.error_boundary(tag);
     if (!diagnostics) {
       return null;
     }
     const count = Diagnostics.getMarkerCount('error_boundary');
-    const id = `${tag}_${count}`;
+    const markerID = `${tag}_${count}`;
     const wasAdded = diagnostics.start(
       {
-        id,
+        markerID,
       },
       'error_boundary',
     );
-    return wasAdded ? id : null;
+    return wasAdded ? markerID : null;
   }
 
   private endMarker(
@@ -182,13 +181,13 @@ export default class ErrorBoundary {
     wasSuccessful: boolean,
     markerID: string | null,
   ): void {
-    const diagnostics = this.getDiagnosticsFromTag(tag);
+    const diagnostics = Diagnostics.mark.error_boundary(tag);
     if (!markerID || !diagnostics) {
       return;
     }
     diagnostics.end(
       {
-        id: markerID,
+        markerID,
         success: wasSuccessful,
       },
       'error_boundary',
@@ -221,26 +220,5 @@ export default class ErrorBoundary {
     } catch {
       return '[Statsig] Failed to get string for error.';
     }
-  }
-
-  private getDiagnosticsFromTag(
-    tag: errorBoundaryTagsType,
-  ):
-    | typeof Diagnostics.mark.get_config
-    | typeof Diagnostics.mark.get_experiment
-    | typeof Diagnostics.mark.check_gate
-    | typeof Diagnostics.mark.get_layer
-    | null {
-    switch (tag) {
-      case 'getConfig':
-        return Diagnostics.mark.get_config;
-      case 'getExperiment':
-        return Diagnostics.mark.get_experiment;
-      case 'checkGate':
-        return Diagnostics.mark.check_gate;
-      case 'getLayer':
-        return Diagnostics.mark.get_layer;
-    }
-    return null;
   }
 }

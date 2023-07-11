@@ -1,3 +1,4 @@
+import { errorBoundaryTagsType } from '../ErrorBoundary';
 import StatsigLogger from '../StatsigLogger';
 import StatsigSDKOptions, { StatsigOptions } from '../StatsigSDKOptions';
 import { StatsigUser } from '../StatsigUser';
@@ -31,7 +32,7 @@ export interface Marker {
   idListCount?: number;
   reason?: 'timeout';
   sdkRegion?: string | null;
-  id?: string;
+  markerID?: string;
 }
 
 type DiagnosticsMarkers = {
@@ -50,10 +51,19 @@ export class DiagnosticsImpl {
     overall: this.selectAction<OverrallDataType>('overall'),
     intialize: this.selectStep<InitializeDataType>('initialize'),
     bootstrap: this.selectStep<BootstrapDataType>('bootstrap'),
-    check_gate: this.selectAction<ErrorBoundaryDataType>('check_gate'),
-    get_config: this.selectAction<ErrorBoundaryDataType>('get_config'),
-    get_experiment: this.selectAction<ErrorBoundaryDataType>('get_experiment'),
-    get_layer: this.selectAction<ErrorBoundaryDataType>('get_layer'),
+    error_boundary: (tag: errorBoundaryTagsType) => {
+      switch (tag) {
+        case 'getConfig':
+          return this.selectAction<ErrorBoundaryDataType>('get_config');
+        case 'getExperiment':
+          return this.selectAction<ErrorBoundaryDataType>('get_experiment');
+        case 'checkGate':
+          return this.selectAction<ErrorBoundaryDataType>('check_gate');
+        case 'getLayer':
+          return this.selectAction<ErrorBoundaryDataType>('get_layer');
+      }
+      return null;
+    },
   };
 
   markers: DiagnosticsMarkers;
@@ -245,10 +255,10 @@ interface BootstrapDataType extends RequiredMarkerTags {
 interface ErrorBoundaryDataType extends RequiredStepTags {
   errorBoundary: {
     start: {
-      id: string;
+      markerID: string;
     };
     end: {
-      id: string;
+      markerID: string;
       success: boolean;
     };
   };
