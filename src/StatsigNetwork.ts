@@ -291,6 +291,7 @@ export default class StatsigNetwork {
     }
 
     let res: Response;
+    let threwError = false;
     return fetch(url, params)
       .then(async (localRes) => {
         res = localRes;
@@ -303,20 +304,13 @@ export default class StatsigNetwork {
             networkResponse.data = JSON.parse(text);
           }
 
-          if (endpointName === StatsigEndpoint.Initialize) {
-            Diagnostics.mark.intialize.networkRequest.end({
-              success: true,
-              statusCode: networkResponse?.status,
-              sdkRegion: networkResponse?.headers?.get('x-statsig-region'),
-              isDelta: networkResponse?.data?.is_delta === true,
-            });
-          }
           return Promise.resolve(networkResponse);
         }
         if (!this.retryCodes[res.status]) {
           retries = 0;
         }
         const errorText = await res.text();
+        threwError = true;
         return Promise.reject(new Error(`${res.status}: ${errorText}`));
       })
       .catch((e) => {
@@ -336,19 +330,21 @@ export default class StatsigNetwork {
             }, backoff);
           });
         }
-
-        if (endpointName === StatsigEndpoint.Initialize) {
+        threwError = true;
+        return Promise.reject(e);
+      })
+      .finally(() => {
+        this.leakyBucket[url] = Math.max(this.leakyBucket[url] - 1, 0);
+        const isSuccessful = res && !threwError;
+        const exhaustedRetries = retries === 0;
+        if (endpointName === StatsigEndpoint.Initialize && (isSuccessful || exhaustedRetries)) {
           Diagnostics.mark.intialize.networkRequest.end({
-            success: false,
+            success: res?.ok === true,
             statusCode: res?.status,
             sdkRegion: res?.headers?.get('x-statsig-region'),
             isDelta: (res as NetworkResponse)?.data?.is_delta === true,
           });
         }
-        return Promise.reject(e);
-      })
-      .finally(() => {
-        this.leakyBucket[url] = Math.max(this.leakyBucket[url] - 1, 0);
       });
   }
 
