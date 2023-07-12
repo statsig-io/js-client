@@ -132,14 +132,6 @@ export default class StatsigNetwork {
     )
       .then((localRes) => {
         res = localRes;
-        if (endpointName === StatsigEndpoint.Initialize) {
-          Diagnostics.mark.intialize.networkRequest.end({
-            success: true,
-            statusCode: res?.status,
-            sdkRegion: res?.headers?.get('x-statsig-region'),
-            isDelta: res?.data?.is_delta === true,
-          });
-        }
         if (!res.ok) {
           return Promise.reject(
             new Error(
@@ -194,15 +186,6 @@ export default class StatsigNetwork {
         );
       })
       .catch((e) => {
-        if (endpointName === StatsigEndpoint.Initialize) {
-          Diagnostics.mark.intialize.networkRequest.end({
-            success: false,
-            statusCode: res?.status,
-            sdkRegion: res?.headers?.get('x-statsig-region'),
-            isDelta: res?.data?.is_delta === true,
-          });
-        }
-
         return Promise.reject(e);
       });
 
@@ -308,8 +291,10 @@ export default class StatsigNetwork {
       params.keepalive = true;
     }
 
+    let res: Response;
     return fetch(url, params)
-      .then(async (res) => {
+      .then(async (localRes) => {
+        res = localRes;
         if (res.ok) {
           const networkResponse = res as NetworkResponse;
           if (res.status === NO_CONTENT) {
@@ -317,6 +302,15 @@ export default class StatsigNetwork {
           } else {
             const text = await res.text();
             networkResponse.data = JSON.parse(text);
+          }
+
+          if (endpointName === StatsigEndpoint.Initialize) {
+            Diagnostics.mark.intialize.networkRequest.end({
+              success: true,
+              statusCode: networkResponse?.status,
+              sdkRegion: networkResponse?.headers?.get('x-statsig-region'),
+              isDelta: networkResponse?.data?.is_delta === true,
+            });
           }
           return Promise.resolve(networkResponse);
         }
@@ -341,6 +335,15 @@ export default class StatsigNetwork {
                 .then(resolve)
                 .catch(reject);
             }, backoff);
+          });
+        }
+
+        if (endpointName === StatsigEndpoint.Initialize) {
+          Diagnostics.mark.intialize.networkRequest.end({
+            success: false,
+            statusCode: res?.status,
+            sdkRegion: res?.headers?.get('x-statsig-region'),
+            isDelta: (res as NetworkResponse)?.data?.is_delta === true,
           });
         }
         return Promise.reject(e);

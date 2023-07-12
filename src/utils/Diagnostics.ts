@@ -233,7 +233,7 @@ interface InitializeDataType extends RequiredMarkerTags {
     start: Record<string, never>;
     end: {
       success: boolean;
-      isDelta: boolean;
+      isDelta?: boolean;
       sdkRegion?: string | null;
       statusCode?: number;
     };
