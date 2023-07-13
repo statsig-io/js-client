@@ -388,10 +388,13 @@ export default class StatsigLogger {
         {
           events: oldQueue,
           statsigMetadata: this.sdkInternal.getStatsigMetadata(),
-        },
-        3 /* retries */,
-        1000 /* backoff */,
-        isClosing /* useKeepalive */,
+        }, {
+          retryOptions: {
+            retryLimit: 3,
+            backoff: 1000,
+          },
+          useKeepalive: isClosing,
+        }
       )
       .then((response) => {
         if (!response.ok) {

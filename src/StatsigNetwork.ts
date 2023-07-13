@@ -78,18 +78,31 @@ export default class StatsigNetwork {
     return this.postWithTimeout(
       StatsigEndpoint.Initialize,
       input,
-      timeout, // timeout for early returns
-      3, // retries
+      {
+        timeout, 
+        retries: 3, 
+        diagnostics: Diagnostics.mark.intialize.networkRequest,
+      }
     );
   }
 
   private postWithTimeout<T>(
     endpointName: StatsigEndpoint,
     body: object,
-    timeout = 0,
-    retries = 0,
-    backoff = 1000,
+    options?: {
+      timeout?: number;
+      retries?: number;
+      backoff?: number;
+      diagnostics?: typeof Diagnostics.mark.intialize.networkRequest | null;
+    }
   ): PromiseWithTimeout<T> {
+    const {
+      timeout = 0,
+      retries = 0,
+      backoff = 1000,
+      diagnostics = null,
+    } = options ?? {};
+
     let hasTimedOut = false;
     let timer = null;
     let cachedReturnValue: T | null = null;
@@ -118,16 +131,17 @@ export default class StatsigNetwork {
         }, timeout);
       });
     }
-
-    if (endpointName === StatsigEndpoint.Initialize ) {
-      Diagnostics.mark.intialize.networkRequest.start({});
-    }
     let res: NetworkResponse;
     const fetchPromise = this.postToEndpoint(
       endpointName,
       body,
-      retries,
-      backoff,
+      {
+        retryOptions: {
+          retryLimit: retries,
+          backoff,
+        },
+        diagnostics
+      }
     )
       .then((localRes) => {
         res = localRes;
@@ -218,10 +232,26 @@ export default class StatsigNetwork {
   public async postToEndpoint(
     endpointName: StatsigEndpoint,
     body: object,
-    retries = 0,
-    backoff = 1000,
-    useKeepalive = false,
+    options?: {
+      retryOptions?: {
+        retryLimit?: number;
+        retryAttempt?: number;
+        backoff?: number;
+      };
+      useKeepalive?: boolean;
+      diagnostics?: typeof Diagnostics.mark.intialize.networkRequest | null;
+    }
   ): Promise<NetworkResponse> {
+    const {
+      useKeepalive = false,
+      diagnostics = null,
+    } = options ?? {};
+    const {
+      retryLimit = 0,
+      retryAttempt = 0,
+      backoff = 1000,
+    } = options?.retryOptions ?? {};
+
     if (this.sdkInternal.getOptions().getLocalModeEnabled()) {
       return Promise.reject('no network requests in localMode');
     }
@@ -290,8 +320,9 @@ export default class StatsigNetwork {
       params.keepalive = true;
     }
 
+    diagnostics?.start({ retryAttempt: retryAttempt })
     let res: Response;
-    let threwError = false;
+    let isRetryCode = true;
     return fetch(url, params)
       .then(async (localRes) => {
         res = localRes;
@@ -303,53 +334,68 @@ export default class StatsigNetwork {
             const text = await res.text();
             networkResponse.data = JSON.parse(text);
           }
-
+          diagnostics?.end(this.getDiagnosticsData(res, retryLimit, retryAttempt));
           return Promise.resolve(networkResponse);
         }
         if (!this.retryCodes[res.status]) {
-          retries = 0;
+          isRetryCode = false;
         }
         const errorText = await res.text();
-        threwError = true;
         return Promise.reject(new Error(`${res.status}: ${errorText}`));
       })
       .catch((e) => {
-        if (retries > 0) {
+        diagnostics?.end(this.getDiagnosticsData(res, retryLimit, retryAttempt));
+        if (retryAttempt < retryLimit && isRetryCode) {
           return new Promise<NetworkResponse>((resolve, reject) => {
             setTimeout(() => {
               this.leakyBucket[url] = Math.max(this.leakyBucket[url] - 1, 0);
               this.postToEndpoint(
                 endpointName,
                 body,
-                retries - 1,
-                backoff * 2,
-                useKeepalive,
+                {
+                  retryOptions: {
+                    retryLimit,
+                    retryAttempt: retryAttempt + 1,
+                    backoff: backoff * 2,
+                  },
+                  useKeepalive,
+                  diagnostics,
+                }
               )
                 .then(resolve)
                 .catch(reject);
             }, backoff);
           });
         }
-        threwError = true;
         return Promise.reject(e);
       })
       .finally(() => {
         this.leakyBucket[url] = Math.max(this.leakyBucket[url] - 1, 0);
-        const isSuccessful = res && !threwError;
-        const exhaustedRetries = retries === 0;
-        if (endpointName === StatsigEndpoint.Initialize && (isSuccessful || exhaustedRetries)) {
-          Diagnostics.mark.intialize.networkRequest.end({
-            success: res?.ok === true,
-            statusCode: res?.status,
-            sdkRegion: res?.headers?.get('x-statsig-region'),
-            isDelta: (res as NetworkResponse)?.data?.is_delta === true,
-          });
-        }
       });
   }
 
   public supportsKeepalive(): boolean {
     return this.canUseKeepalive;
+  }
+
+  private getDiagnosticsData(res: NetworkResponse, retryLimit: number, retryAttempt: number): {
+    success: boolean;
+    isDelta?: boolean;
+    sdkRegion?: string | null;
+    statusCode?: number;
+    retryLimit: number;
+    retryAttempt: number;
+    isRetry: boolean;
+  } {
+    return {
+      success: res?.ok === true,
+      statusCode: res?.status,
+      sdkRegion: res?.headers?.get('x-statsig-region'),
+      isDelta: res?.data?.is_delta === true,
+      retryAttempt,
+      retryLimit,
+      isRetry: retryAttempt > 0,
+    }
   }
 
   private async getErrorData(

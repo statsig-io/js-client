@@ -30,6 +30,9 @@ export interface Marker {
   reason?: 'timeout';
   sdkRegion?: string | null;
   markerID?: string;
+  retryAttempt?: number;
+  retryLimit?: number;
+  isRetry?: boolean;
 }
 
 type DiagnosticsMarkers = {
@@ -230,9 +233,13 @@ interface InitializeDataType extends RequiredMarkerTags {
     };
   };
   networkRequest: {
-    start: Record<string, never>;
+    start: {
+      retryAttempt: number;
+    };
     end: {
       success: boolean;
+      retryAttempt: number;
+      retryLimit: number;
       isDelta?: boolean;
       sdkRegion?: string | null;
       statusCode?: number;
