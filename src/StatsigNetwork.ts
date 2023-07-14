@@ -385,7 +385,6 @@ export default class StatsigNetwork {
     statusCode?: number;
     retryLimit: number;
     retryAttempt: number;
-    isRetry: boolean;
   } {
     return {
       success: res?.ok === true,
@@ -394,7 +393,6 @@ export default class StatsigNetwork {
       isDelta: res?.data?.is_delta === true,
       retryAttempt,
       retryLimit,
-      isRetry: retryAttempt > 0,
     }
   }
 

@@ -256,7 +256,6 @@ describe('Verify behavior of StatsigLogger', () => {
           isDelta: false,
           sdkRegion: 'us-west-1',
           success: true,
-          isRetry: false,
           retryAttempt: 0,
           retryLimit: 3,
         },
