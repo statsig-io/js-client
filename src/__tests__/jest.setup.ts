@@ -52,6 +52,20 @@ expect.extend({
           )} to match: ${JSON.stringify(expected.getValue())}`,
       };
     }
+    if (received.getGroupName() !== expected.getGroupName()) {
+      return {
+        pass: false,
+        message: () =>
+          `Expected group name of DynamicConfig: ${received.getGroupName()} to match: ${expected.getGroupName()}`,
+      };
+    }
+    if (received.getIDType() !== expected.getIDType()) {
+      return {
+        pass: false,
+        message: () =>
+          `Expected id type of DynamicConfig: ${received.getIDType()} to match: ${expected.getIDType()}`,
+      };
+    }
 
     return {
       pass: true,
