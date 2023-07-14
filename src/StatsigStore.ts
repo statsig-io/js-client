@@ -35,7 +35,7 @@ type APIFeatureGate = {
   name: string;
   value: boolean;
   rule_id: string;
-  group?: string;
+  group_name?: string;
   id_type?: string;
   secondary_exposures: [];
 };
@@ -49,7 +49,7 @@ type APIDynamicConfig = {
   name: string;
   value: { [key: string]: unknown };
   rule_id: string;
-  group?: string;
+  group_name?: string;
   id_type?: string;
   secondary_exposures: [];
   is_device_based?: boolean;
@@ -621,7 +621,7 @@ export default class StatsigStore {
       finalValue?.undelegated_secondary_exposures,
       finalValue?.allocated_experiment_name ?? '',
       finalValue?.explicit_parameters,
-      finalValue?.group,
+      finalValue?.group_name,
     );
   }
 
@@ -770,7 +770,7 @@ export default class StatsigStore {
       apiConfig?.secondary_exposures,
       apiConfig?.allocated_experiment_name ?? '',
       this.makeOnConfigDefaultValueFallback(this.sdkInternal.getCurrentUser()),
-      apiConfig?.group,
+      apiConfig?.group_name,
       apiConfig?.id_type,
     );
   }
