@@ -132,7 +132,8 @@ describe('ErrorBoundary', () => {
     expect(request[0].params['headers']).toEqual(
       expect.objectContaining({
         'STATSIG-API-KEY': 'client-key',
-        'Content-Type': 'application/json; charset=UTF-8',
+        'Content-Type': 'application/json',
+        'Content-Length': expect.any(String),
       }),
     );
   });
