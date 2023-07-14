@@ -35,6 +35,8 @@ type APIFeatureGate = {
   name: string;
   value: boolean;
   rule_id: string;
+  group?: string;
+  id_type?: string;
   secondary_exposures: [];
 };
 
@@ -47,6 +49,8 @@ type APIDynamicConfig = {
   name: string;
   value: { [key: string]: unknown };
   rule_id: string;
+  group?: string;
+  id_type?: string;
   secondary_exposures: [];
   is_device_based?: boolean;
   is_user_in_experiment?: boolean;
@@ -507,10 +511,7 @@ export default class StatsigStore {
     return { evaluationDetails: details, gate: gateValue };
   }
 
-  public getConfig(
-    configName: string,
-    ignoreOverrides = false,
-  ): DynamicConfig {
+  public getConfig(configName: string, ignoreOverrides = false): DynamicConfig {
     const configNameHash = this.getHashedSpecName(configName);
     let configValue: DynamicConfig;
     let details: EvaluationDetails;
@@ -620,6 +621,7 @@ export default class StatsigStore {
       finalValue?.undelegated_secondary_exposures,
       finalValue?.allocated_experiment_name ?? '',
       finalValue?.explicit_parameters,
+      finalValue?.group,
     );
   }
 
@@ -768,6 +770,8 @@ export default class StatsigStore {
       apiConfig?.secondary_exposures,
       apiConfig?.allocated_experiment_name ?? '',
       this.makeOnConfigDefaultValueFallback(this.sdkInternal.getCurrentUser()),
+      apiConfig?.group,
+      apiConfig?.id_type,
     );
   }
 

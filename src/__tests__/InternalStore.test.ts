@@ -25,6 +25,8 @@ function generateTestConfigs(
       '3XqUbegKv0F5cDYzW+YL8gfzJixkKfSZMAXZHxdOzwc=': {
         value: { key: value },
         rule_id: 'default',
+        group: 'default',
+        id_type: 'userID',
         secondary_exposures: [],
         is_device_based: false,
         is_user_in_experiment: inExperiment,
@@ -34,6 +36,8 @@ function generateTestConfigs(
       'vqQndBwrJ/a5gabQIvVPSGUkBBqeS7P1yd1N8t6wgyo=': {
         value: { key: value },
         rule_id: 'default',
+        group: 'default',
+        id_type: 'userID',
         secondary_exposures: [],
         is_device_based: true,
         is_user_in_experiment: inExperiment,
@@ -42,6 +46,8 @@ function generateTestConfigs(
       'N6IGtkiVKCPr/boHFfHvQtf+XD4hvozdzOpGJ4XSWAs=': {
         value: { key: value },
         rule_id: 'default',
+        group: 'default',
+        id_type: 'userID',
         secondary_exposures: [],
         is_device_based: false,
         is_user_in_experiment: inExperiment,
@@ -58,6 +64,8 @@ describe('Verify behavior of InternalStore', () => {
     'AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=': {
       value: true,
       rule_id: 'ruleID12',
+      group: 'Rule 12',
+      id_type: 'userID',
       secondary_exposures: [
         {
           gate: 'dependent_gate_1',
@@ -71,6 +79,8 @@ describe('Verify behavior of InternalStore', () => {
     'RMv0YJlLOBe7cY7HgZ3Jox34R0Wrk7jLv3DZyBETA7I=': {
       value: { bool: true },
       rule_id: 'default',
+      group: 'default',
+      id_type: 'userID',
       secondary_exposures: [
         {
           gate: 'dependent_gate_1',
@@ -95,6 +105,8 @@ describe('Verify behavior of InternalStore', () => {
     ],
     '',
     onConfigDefaultValueFallback,
+    'default',
+    'userID',
   );
 
   const localStorage = new LocalStorageMock();

@@ -24,6 +24,12 @@ describe('Verify behavior of Layer', () => {
       reason: EvaluationReason.Uninitialized,
       time: Date.now(),
     },
+    null,
+    [],
+    [],
+    '',
+    [],
+    'default',
   );
 
   beforeEach(() => {
@@ -31,11 +37,8 @@ describe('Verify behavior of Layer', () => {
   });
 
   test('constructor', () => {
-    const layer = Layer._create('name', { test: 123 }, 'default', {
-      reason: EvaluationReason.Network,
-      time: Date.now(),
-    });
-    expect(layer.getRuleID()).toStrictEqual('default');
+    expect(testLayer.getRuleID()).toStrictEqual('default');
+    expect(testLayer.getGroupName()).toStrictEqual('default');
   });
 
   test('nonexistent keys', () => {

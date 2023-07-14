@@ -10,6 +10,7 @@ export default class Layer {
   private name: string;
   private value: Record<string, unknown>;
   private ruleID: string;
+  private groupName: string | null;
   private secondaryExposures: Record<string, string>[];
   private undelegatedSecondaryExposures: Record<string, string>[];
   private allocatedExperimentName: string;
@@ -26,6 +27,7 @@ export default class Layer {
     undelegatedSecondaryExposures: Record<string, string>[] = [],
     allocatedExperimentName = '',
     explicitParameters: string[] = [],
+    groupName: string | null = null,
   ) {
     this.logParameterFunction = logParameterFunction;
     this.name = name;
@@ -36,6 +38,7 @@ export default class Layer {
     this.undelegatedSecondaryExposures = undelegatedSecondaryExposures;
     this.allocatedExperimentName = allocatedExperimentName;
     this.explicitParameters = explicitParameters;
+    this.groupName = groupName;
   }
 
   public static _create(
@@ -48,6 +51,7 @@ export default class Layer {
     undelegatedSecondaryExposures: Record<string, string>[] = [],
     allocatedExperimentName = '',
     explicitParameters: string[] = [],
+    groupName: string | null = null,
   ): Layer {
     return new Layer(
       name,
@@ -59,6 +63,7 @@ export default class Layer {
       undelegatedSecondaryExposures,
       allocatedExperimentName,
       explicitParameters,
+      groupName,
     );
   }
 
@@ -111,6 +116,10 @@ export default class Layer {
 
   public getRuleID(): string {
     return this.ruleID;
+  }
+
+  public getGroupName(): string | null {
+    return this.groupName;
   }
 
   public getName(): string {

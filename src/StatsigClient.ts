@@ -680,8 +680,6 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     values: Record<string, unknown>,
   ): boolean {
     // eslint-disable-next-line statsig-linter/public-methods-error-boundary
-    const updateStartTime = Date.now();
-    // eslint-disable-next-line statsig-linter/public-methods-error-boundary
     let fireCompletionCallback: (
       success: boolean,
       error: string | null,
@@ -690,6 +688,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     return this.errorBoundary.capture(
       'updateUserWithValues',
       () => {
+        const updateStartTime = Date.now();
         if (!this.initializeCalled()) {
           throw new StatsigUninitializedError('Call initialize() first.');
         }
@@ -716,8 +715,6 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
 
   public async updateUser(user: StatsigUser | null): Promise<boolean> {
     // eslint-disable-next-line statsig-linter/public-methods-error-boundary
-    const updateStartTime = Date.now();  
-    // eslint-disable-next-line statsig-linter/public-methods-error-boundary
     let fireCompletionCallback: ( 
       success: boolean,
       error: string | null,
@@ -726,6 +723,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     return this.errorBoundary.capture(
       'updateUser',
       async () => {
+        const updateStartTime = Date.now();  
         if (!this.initializeCalled()) {
           throw new StatsigUninitializedError('Call initialize() first.');
         }
