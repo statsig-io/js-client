@@ -12,8 +12,7 @@ describe('ErrorBoundaryDiagnostics', () => {
     Diagnostics.initialize({
       options: new StatsigSDKOptions(),
     });
-    // @ts-ignore
-    diagnosticsImpl = Diagnostics.instance;
+    diagnosticsImpl = (Diagnostics as any).instance;
   }
 
   describe('marker capture on success', () => {
