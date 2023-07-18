@@ -260,7 +260,8 @@ export default class StatsigNetwork {
     const api = [StatsigEndpoint.Initialize].includes(endpointName)
       ? this.sdkInternal.getOptions().getApi()
       : this.sdkInternal.getOptions().getEventLoggingApi();
-    const url = api + endpointName;
+    const fullUrl = new URL(api + endpointName);
+    const url = fullUrl.toString();
     const counter = this.leakyBucket[url];
     if (counter != null && counter >= 30) {
       return Promise.reject(
@@ -276,32 +277,16 @@ export default class StatsigNetwork {
       this.leakyBucket[url] = counter + 1;
     }
 
-    let shouldEncode =
-      endpointName === StatsigEndpoint.Initialize &&
-      StatsigRuntime.encodeInitializeCall &&
-      typeof window !== 'undefined' &&
-      typeof window?.btoa === 'function';
-
-    let postBody = JSON.stringify(body);
-    if (shouldEncode) {
-      try {
-        const encoded = window.btoa(postBody).split('').reverse().join('');
-        postBody = encoded;
-      } catch (_e) {
-        shouldEncode = false;
-      }
-    }
+    fullUrl.searchParams.append('k', this.sdkInternal.getSDKKey());
+    fullUrl.searchParams.append('t', Date.now() + '');
+    fullUrl.searchParams.append('st', this.sdkInternal.getSDKType());
+    fullUrl.searchParams.append('sv', this.sdkInternal.getSDKVersion());
 
     const params: RequestInit = {
       method: 'POST',
-      body: postBody,
+      body: JSON.stringify(body),
       headers: {
-        'Content-type': 'application/json; charset=UTF-8',
-        'STATSIG-API-KEY': this.sdkInternal.getSDKKey(),
-        'STATSIG-CLIENT-TIME': Date.now() + '',
-        'STATSIG-SDK-TYPE': this.sdkInternal.getSDKType(),
-        'STATSIG-SDK-VERSION': this.sdkInternal.getSDKVersion(),
-        'STATSIG-ENCODED': shouldEncode ? '1' : '0',
+        'Content-Type': 'text/plain',
       },
     };
 

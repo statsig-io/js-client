@@ -35,6 +35,8 @@ describe('Verify behavior of StatsigClient', () => {
     events: Record<string, any>[];
     statsigMetadata: Record<string, any>;
   } | null;
+
+  let headers: HeadersInit | null = null;
   // @ts-ignore
   global.fetch = jest.fn((url, params) => {
     if (
@@ -47,6 +49,7 @@ describe('Verify behavior of StatsigClient', () => {
     }
 
     parsedRequestBody = JSON.parse(params?.body as string);
+    headers = params?.headers ?? null;
     return Promise.resolve({
       ok: true,
       text: () => Promise.resolve(JSON.stringify(respObject)),
@@ -60,9 +63,10 @@ describe('Verify behavior of StatsigClient', () => {
   });
 
   beforeEach(() => {
-    const respObject = baseInitResponse;
+    respObject = baseInitResponse;
     jest.resetModules();
     parsedRequestBody = null;
+    headers = null;
 
     Statsig.encodeIntializeCall = false;
     window.localStorage.clear();
@@ -260,6 +264,16 @@ describe('Verify behavior of StatsigClient', () => {
     expect(statsig.getOptions().getEventLoggingApi()).toEqual(
       'https://logging.jkw.com/v1/',
     );
+  });
+
+  test('that the correct headers are set on the initialize request', async () => {
+    expect.assertions(1);
+
+    const statsig = new StatsigClient(sdkKey);
+    await statsig.initializeAsync();
+
+    // No custom headers set to avoid CORS preflight
+    expect(headers).toEqual({"Content-Type": "text/plain"});
   });
 
   test('that overrideStableID works for local storage and gets set correctly in request', async () => {
