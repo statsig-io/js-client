@@ -1,74 +1,269 @@
-import { now } from './Timing';
+import StatsigSDKOptions from '../StatsigSDKOptions';
 
-export enum DiagnosticsEvent {
-  START = 'start',
-  END = 'end',
+export type ContextType =
+  | 'initialize'
+  | 'config_sync'
+  | 'event_logging'
+  | 'error_boundary';
+
+export type KeyType =
+  | 'initialize'
+  | 'bootstrap'
+  | 'overall'
+  // Error boundary keys
+  | 'check_gate'
+  | 'get_config'
+  | 'get_experiment'
+  | 'get_layer';
+
+export type StepType = 'process' | 'network_request';
+export type ActionType = 'start' | 'end';
+export interface Marker {
+  key: KeyType;
+  action: ActionType;
+  timestamp: number;
+  step?: StepType;
+  statusCode?: number;
+  success?: boolean;
+  url?: string;
+  idListCount?: number;
+  reason?: 'timeout';
+  sdkRegion?: string | null;
+  markerID?: string;
+  attempt?: number;
+  retryLimit?: number;
+  isRetry?: boolean;
 }
 
-export enum DiagnosticsKey {
-  OVERALL = 'overall',
-  INITIALIZE = 'initialize',
-  INITIALIZE_WITH_DELTA = 'initialize_with_delta',
-  CHECK_GATE = 'check_gate',
-  GET_CONFIG = 'get_config',
-  GET_EXPERIMENT = 'get_experiment',
-  GET_LAYER = 'get_layer',
-}
-
-export type Primitive = string | number | boolean | null | undefined;
-export type PrimitiveRecords = Record<string, Primitive>;
-
-export type DiagnosticsMarkers = {
-  context: string;
-  markers: PrimitiveRecords[];
-  metadata: PrimitiveRecords;
+type DiagnosticsMarkers = {
+  initialize: Marker[];
+  config_sync: Marker[];
+  event_logging: Marker[];
+  error_boundary: Marker[];
 };
 
-export default class Diagnostics {
-  private markers: PrimitiveRecords[] = [];
-  private metadata: PrimitiveRecords = {};
+type DiagnosticsMaxMarkers = {
+  [K in ContextType]: number;
+};
 
-  public constructor(private context: string, private capacity?: number) {}
+export class DiagnosticsImpl {
+  readonly mark = {
+    overall: this.selectAction<OverrallDataType>('overall'),
+    intialize: this.selectStep<InitializeDataType>('initialize'),
+    bootstrap: this.selectStep<BootstrapDataType>('bootstrap'),
+    error_boundary: (tag: string) => {
+      switch (tag) {
+        case 'getConfig':
+          return this.selectAction<ErrorBoundaryDataType>('get_config');
+        case 'getExperiment':
+          return this.selectAction<ErrorBoundaryDataType>('get_experiment');
+        case 'checkGate':
+          return this.selectAction<ErrorBoundaryDataType>('check_gate');
+        case 'getLayer':
+          return this.selectAction<ErrorBoundaryDataType>('get_layer');
+      }
+      return null;
+    },
+  };
 
-  public reset() {
-    this.markers = [];
-    this.metadata = {};
+  markers: DiagnosticsMarkers;
+
+  disabled: boolean;
+  context: ContextType = 'initialize';
+  defaultMaxMarkers = 30;
+  maxMarkers: DiagnosticsMaxMarkers = {
+    initialize: this.defaultMaxMarkers,
+    config_sync: this.defaultMaxMarkers,
+    event_logging: this.defaultMaxMarkers,
+    error_boundary: this.defaultMaxMarkers,
+  };
+
+  constructor(args: {
+    options: StatsigSDKOptions;
+    markers?: DiagnosticsMarkers;
+  }) {
+    this.markers = args.markers ?? {
+      initialize: [],
+      config_sync: [],
+      event_logging: [],
+      error_boundary: [],
+    };
+    this.disabled = args.options?.getDisableDiagnosticsLogging() ?? false;
   }
 
-  public getCount() {
-    return this.markers.length;
+  setContext(context: ContextType) {
+    this.context = context;
   }
 
-  public getMarkers(): DiagnosticsMarkers {
+  selectAction<ActionType extends RequiredStepTags>(
+    key: KeyType,
+    step?: StepType,
+  ) {
+    type StartType = ActionType['start'];
+    type EndType = ActionType['end'];
+
     return {
-      context: this.context,
-      markers: this.markers,
-      metadata: this.metadata,
+      start: (data: StartType, context?: ContextType): boolean => {
+        return this.addMarker(
+          {
+            key,
+            step,
+            action: 'start',
+            timestamp: Date.now(),
+            ...(data ?? {}),
+          },
+          context,
+        );
+      },
+      end: (data: EndType, context?: ContextType): boolean => {
+        return this.addMarker(
+          {
+            key,
+            step,
+            action: 'end',
+            timestamp: Date.now(),
+            ...(data ?? {}),
+          },
+          context,
+        );
+      },
     };
   }
 
-  public addMetadata(key: string, value: Primitive) {
-    this.metadata[key] = value;
+  selectStep<StepType extends RequiredMarkerTags>(key: KeyType) {
+    type ProcessStepType = StepType['process'];
+    type NetworkRequestStepType = StepType['networkRequest'];
+
+    return {
+      process: this.selectAction<ProcessStepType>(key, 'process'),
+      networkRequest: this.selectAction<NetworkRequestStepType>(
+        key,
+        'network_request',
+      ),
+    };
   }
 
-  public mark(
-    key: DiagnosticsKey,
-    action: DiagnosticsEvent,
-    step: string | null = null,
-    value: Primitive = null,
-  ): boolean {
-    if (this.capacity && this.markers.length >= this.capacity) {
+  addMarker(marker: Marker, overrideContext?: ContextType) {
+    if (this.disabled) {
       return false;
     }
-
-    this.markers.push({
-      key,
-      step,
-      action,
-      value,
-      timestamp: now(),
-    });
-
+    const context = overrideContext ?? this.context;
+    if (
+      this.maxMarkers[context] !== undefined &&
+      this.markers[context].length >=
+        (this.maxMarkers[context] ?? this.defaultMaxMarkers)
+    ) {
+      return false;
+    }
+    this.markers[context].push(marker);
     return true;
   }
+
+  getMarkers(context: ContextType) {
+    return this.markers[context];
+  }
+
+  setMaxMarkers(context: ContextType, max: number) {
+    this.maxMarkers[context] = max;
+  }
+  getMarkerCount(context: ContextType) {
+    return this.markers[context].length;
+  }
+
+  clearContext(context: ContextType) {
+    this.markers[context] = [];
+  }
+}
+
+export default abstract class Diagnostics {
+  private static instance: DiagnosticsImpl;
+
+  public static mark: DiagnosticsImpl['mark'];
+  public static disabled: DiagnosticsImpl['disabled'];
+  public static getMarkers: DiagnosticsImpl['getMarkers'];
+  public static getMarkerCount: DiagnosticsImpl['getMarkerCount'];
+  public static setMaxMarkers: DiagnosticsImpl['setMaxMarkers'];
+  public static setContext: DiagnosticsImpl['setContext'];
+  public static clearContext: DiagnosticsImpl['clearContext'];
+
+  static initialize(args: {
+    options: StatsigSDKOptions;
+    markers?: DiagnosticsMarkers;
+  }) {
+    this.instance = new DiagnosticsImpl(args);
+    this.mark = this.instance.mark;
+    this.disabled = this.instance.disabled;
+    this.getMarkers = this.instance.getMarkers.bind(this.instance);
+    this.getMarkerCount = this.instance.getMarkerCount.bind(this.instance);
+    this.setMaxMarkers = this.instance.setMaxMarkers.bind(this.instance);
+    this.setContext = this.instance.setContext.bind(this.instance);
+    this.clearContext = this.instance.clearContext.bind(this.instance);
+  }
+}
+
+type RequiredActionTags = {
+  [K in keyof Marker]?: Marker[K];
+};
+
+interface RequiredStepTags {
+  start: RequiredActionTags;
+  end: RequiredActionTags;
+}
+
+interface RequiredMarkerTags {
+  process: RequiredStepTags;
+  networkRequest: RequiredStepTags;
+}
+
+interface OverrallDataType extends RequiredStepTags {
+  overall: {
+    start: Record<string, never>;
+    end: {
+      success: boolean;
+      reason?: 'timeout';
+    };
+  };
+}
+
+interface InitializeDataType extends RequiredMarkerTags {
+  process: {
+    start: Record<string, never>;
+    end: {
+      success: boolean;
+    };
+  };
+  networkRequest: {
+    start: {
+      attempt: number;
+    };
+    end: {
+      success: boolean;
+      attempt: number;
+      retryLimit: number;
+      isDelta?: boolean;
+      sdkRegion?: string | null;
+      statusCode?: number;
+    };
+  };
+}
+
+interface BootstrapDataType extends RequiredMarkerTags {
+  process: {
+    start: Record<string, never>;
+    end: {
+      success: boolean;
+    };
+  };
+}
+
+interface ErrorBoundaryDataType extends RequiredStepTags {
+  errorBoundary: {
+    start: {
+      markerID: string;
+    };
+    end: {
+      markerID: string;
+      success: boolean;
+    };
+  };
 }

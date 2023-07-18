@@ -3,6 +3,8 @@ import {
   StatsigInvalidArgumentError,
   StatsigUninitializedError,
 } from '../Errors';
+import StatsigSDKOptions from '../StatsigSDKOptions';
+import Diagnostics from '../utils/Diagnostics';
 
 type ErrorBoundaryRequest = {
   url: string;
@@ -24,6 +26,9 @@ describe('ErrorBoundary', () => {
   ];
 
   beforeEach(() => {
+    Diagnostics.initialize({
+      options: new StatsigSDKOptions(),
+    });
     boundary = new ErrorBoundary('client-key');
     request = [];
 

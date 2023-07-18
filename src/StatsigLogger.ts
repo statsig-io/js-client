@@ -4,7 +4,7 @@ import { StatsigEndpoint } from './StatsigNetwork';
 import { EvaluationDetails } from './StatsigStore';
 import { StatsigUser } from './StatsigUser';
 import { STATSIG_LOCAL_STORAGE_LOGGING_REQUEST_KEY } from './utils/Constants';
-import Diagnostics from './utils/Diagnostics';
+import Diagnostics, { ContextType, Marker } from './utils/Diagnostics';
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
 
@@ -290,8 +290,16 @@ export default class StatsigLogger {
     this.loggedErrors.add(trimmedMessage);
   }
 
-  public logDiagnostics(user: StatsigUser | null, diagnostics: Diagnostics) {
-    const event = this.makeDiagnosticsEvent(user, diagnostics);
+  public logDiagnostics(user: StatsigUser | null, context: ContextType) {
+    if (Diagnostics.disabled) {
+      return;
+    }
+    const markers = Diagnostics.getMarkers(context);
+    Diagnostics.clearContext(context);
+    const event = this.makeDiagnosticsEvent(user, {
+      markers,
+      context,
+    });
     this.log(event);
   }
 
@@ -380,10 +388,13 @@ export default class StatsigLogger {
         {
           events: oldQueue,
           statsigMetadata: this.sdkInternal.getStatsigMetadata(),
-        },
-        3 /* retries */,
-        1000 /* backoff */,
-        isClosing /* useKeepalive */,
+        }, {
+          retryOptions: {
+            retryLimit: 3,
+            backoff: 1000,
+          },
+          useKeepalive: isClosing,
+        }
       )
       .then((response) => {
         if (!response.ok) {
@@ -556,25 +567,27 @@ export default class StatsigLogger {
 
   private makeDiagnosticsEvent(
     user: StatsigUser | null,
-    diagnostics: Diagnostics,
+    data: { context: ContextType; markers: Marker[] },
   ) {
     const latencyEvent = new LogEvent(DIAGNOSTICS_EVENT);
     latencyEvent.setUser(user);
-    latencyEvent.setMetadata(diagnostics.getMarkers());
+    latencyEvent.setMetadata(data);
     return latencyEvent;
   }
 
   private addErrorBoundaryDiagnostics() {
-    const diagnostics = this.sdkInternal.getErrorBoundary().getDiagnostics();
-    if (!diagnostics || diagnostics.getCount() === 0) {
+    if (Diagnostics.getMarkerCount('error_boundary') === 0) {
       return;
     }
 
     const diagEvent = this.makeDiagnosticsEvent(
       this.sdkInternal.getCurrentUser(),
-      diagnostics,
+      {
+        context: 'error_boundary',
+        markers: Diagnostics.getMarkers('error_boundary'),
+      },
     );
     this.queue.push(diagEvent);
-    diagnostics.reset();
+    Diagnostics.clearContext('error_boundary');
   }
 }
