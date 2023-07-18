@@ -25,6 +25,7 @@ describe('ErrorBoundaryDiagnostics', () => {
         'checkGate',
         () => {},
         () => {},
+        { configName: 'the_config_name'}
       );
 
       markers = diagnosticsImpl.markers.error_boundary;
@@ -43,6 +44,7 @@ describe('ErrorBoundaryDiagnostics', () => {
       expect(marker?.key).toEqual('check_gate');
       expect(marker?.markerID).toEqual('checkGate_0');
       expect(marker?.success).toBe(true);
+      expect(marker?.configName).toBe('the_config_name')
     });
 
     it('only captured start and end', () => {
@@ -62,6 +64,7 @@ describe('ErrorBoundaryDiagnostics', () => {
           throw new Error('Bad stuff');
         },
         () => {},
+        { configName: 'the_config_name' },
       );
 
       markers = diagnosticsImpl.getMarkers('error_boundary');
@@ -80,6 +83,7 @@ describe('ErrorBoundaryDiagnostics', () => {
       expect(marker?.key).toEqual('get_config');
       expect(marker?.markerID).toEqual('getConfig_0');
       expect(marker?.success).toBe(false);
+      expect(marker?.configName).toEqual('the_config_name');
     });
 
     it('only captured start and end', () => {

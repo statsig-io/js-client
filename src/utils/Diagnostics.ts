@@ -33,6 +33,7 @@ export interface Marker {
   attempt?: number;
   retryLimit?: number;
   isRetry?: boolean;
+  configName?: string;
 }
 
 type DiagnosticsMarkers = {
@@ -264,6 +265,7 @@ interface ErrorBoundaryDataType extends RequiredStepTags {
     end: {
       markerID: string;
       success: boolean;
+      configName: string;
     };
   };
 }
