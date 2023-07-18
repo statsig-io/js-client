@@ -7,9 +7,10 @@ export const ExceptionEndpoint = 'https://statsigapi.net/v1/sdk_exception';
 
 type ExtraDataExtractor = () => Promise<Record<string, unknown>>;
 
-type CaptureOptions = {
-  getExtraData?: ExtraDataExtractor;
-};
+type CaptureOptions = Partial<{
+  getExtraData: ExtraDataExtractor;
+  configName: string;
+}>;
 
 const MAX_DIAGNOSTICS_MARKERS = 30;
 const SAMPLING_RATE = 10_000;
@@ -42,7 +43,7 @@ export default class ErrorBoundary {
     tag: string,
     task: () => T,
     recover: () => T,
-    { getExtraData }: CaptureOptions = {},
+    { getExtraData, configName }: CaptureOptions = {},
   ): T {
     let markerID: string | null = null;
     try {
@@ -62,10 +63,10 @@ export default class ErrorBoundary {
           }) as unknown as T;
       }
 
-      this.endMarker(tag, true, markerID);
+      this.endMarker(tag, true, markerID, configName);
       return result;
     } catch (error) {
-      this.endMarker(tag, false, markerID);
+      this.endMarker(tag, false, markerID, configName);
       return this.onCaught(tag, error, recover, getExtraData);
     }
   }
@@ -138,6 +139,7 @@ export default class ErrorBoundary {
     tag: string,
     wasSuccessful: boolean,
     markerID: string | null,
+    configName?: string,
   ): void {
     const diagnostics = Diagnostics.mark.error_boundary(tag);
     if (!markerID || !diagnostics) {
@@ -147,6 +149,7 @@ export default class ErrorBoundary {
       {
         markerID,
         success: wasSuccessful,
+        configName,
       },
       'error_boundary',
     );

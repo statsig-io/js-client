@@ -449,6 +449,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         return result.gate.value === true;
       },
       () => false,
+      { configName: gateName }
     );
   }
 
@@ -494,6 +495,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         return result;
       },
       () => this.getEmptyConfig(configName),
+      { configName }
     );
   }
 
@@ -541,6 +543,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         return result;
       },
       () => this.getEmptyConfig(experimentName),
+      { configName: experimentName }
     );
   }
 
@@ -583,6 +586,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       },
       () =>
         Layer._create(layerName, {}, '', this.getEvalutionDetailsForError()),
+      { configName: layerName }
     );
   }
 
