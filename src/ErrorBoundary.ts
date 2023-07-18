@@ -11,17 +11,16 @@ type CaptureOptions = {
   getExtraData?: ExtraDataExtractor;
 };
 
+const MAX_DIAGNOSTICS_MARKERS = 30;
+const SAMPLING_RATE = 10_000;
+
 export default class ErrorBoundary {
   private statsigMetadata?: Record<string, string | number>;
   private seen = new Set<string>();
 
   constructor(private sdkKey: string) {
-    const sampling = Math.floor(Math.random() * 10_000);
-    if (sampling === 0) {
-      Diagnostics.setMaxMarkers('error_boundary', 30);
-    } else {
-      Diagnostics.setMaxMarkers('error_boundary', 0);
-    }
+    const sampling = Math.floor(Math.random() * SAMPLING_RATE);
+    this.setupDiagnostics(sampling === 0 ? MAX_DIAGNOSTICS_MARKERS : 0);
   }
 
   setStatsigMetadata(statsigMetadata: Record<string, string | number>) {
@@ -113,6 +112,10 @@ export default class ErrorBoundary {
     })().catch(() => {
       /*noop*/
     });
+  }
+
+  private setupDiagnostics(maxMarkers: number) {
+    Diagnostics.setMaxMarkers('error_boundary', maxMarkers);
   }
 
   private beginMarker(tag: string): string | null {
