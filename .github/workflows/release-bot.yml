@@ -9,10 +9,10 @@ on:
 
 jobs:
   run:
-    if: startsWith(github.head_ref, 'releases/')
+    if: startsWith(github.head_ref, 'releases/') || github.event_name == 'release'
     runs-on: ubuntu-latest
     steps:
       - uses: statsig-io/statsig-publish-sdk-action@main
         with:
           kong-private-key: ${{ secrets.KONG_GH_APP_PRIVATE_KEY }}
-          npm-token: ${{ secrets.NPM_TOKEN }}
+          npm-token: ${{ secrets.NPM_AUTOMATION_KEY }}
