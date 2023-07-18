@@ -30,7 +30,7 @@ export interface Marker {
   reason?: 'timeout';
   sdkRegion?: string | null;
   markerID?: string;
-  retryAttempt?: number;
+  attempt?: number;
   retryLimit?: number;
   isRetry?: boolean;
 }
@@ -234,11 +234,11 @@ interface InitializeDataType extends RequiredMarkerTags {
   };
   networkRequest: {
     start: {
-      retryAttempt: number;
+      attempt: number;
     };
     end: {
       success: boolean;
-      retryAttempt: number;
+      attempt: number;
       retryLimit: number;
       isDelta?: boolean;
       sdkRegion?: string | null;

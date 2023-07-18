@@ -244,7 +244,7 @@ describe('Verify behavior of StatsigLogger', () => {
           action: 'start',
           key: 'initialize',
           step: 'network_request',
-          retryAttempt: 0,
+          attempt: 1,
           timestamp: expect.any(Number),
         },
         {
@@ -256,7 +256,7 @@ describe('Verify behavior of StatsigLogger', () => {
           isDelta: false,
           sdkRegion: 'us-west-1',
           success: true,
-          retryAttempt: 0,
+          attempt: 1,
           retryLimit: 3,
         },
         {

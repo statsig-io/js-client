@@ -235,7 +235,7 @@ export default class StatsigNetwork {
     options?: {
       retryOptions?: {
         retryLimit?: number;
-        retryAttempt?: number;
+        attempt?: number;
         backoff?: number;
       };
       useKeepalive?: boolean;
@@ -248,7 +248,7 @@ export default class StatsigNetwork {
     } = options ?? {};
     const {
       retryLimit = 0,
-      retryAttempt = 0,
+      attempt = 1,
       backoff = 1000,
     } = options?.retryOptions ?? {};
 
@@ -320,7 +320,7 @@ export default class StatsigNetwork {
       params.keepalive = true;
     }
 
-    diagnostics?.start({ retryAttempt: retryAttempt })
+    diagnostics?.start({ attempt: attempt })
     let res: Response;
     let isRetryCode = true;
     return fetch(url, params)
@@ -334,7 +334,7 @@ export default class StatsigNetwork {
             const text = await res.text();
             networkResponse.data = JSON.parse(text);
           }
-          diagnostics?.end(this.getDiagnosticsData(res, retryLimit, retryAttempt));
+          diagnostics?.end(this.getDiagnosticsData(res, retryLimit, attempt));
           return Promise.resolve(networkResponse);
         }
         if (!this.retryCodes[res.status]) {
@@ -344,8 +344,8 @@ export default class StatsigNetwork {
         return Promise.reject(new Error(`${res.status}: ${errorText}`));
       })
       .catch((e) => {
-        diagnostics?.end(this.getDiagnosticsData(res, retryLimit, retryAttempt));
-        if (retryAttempt < retryLimit && isRetryCode) {
+        diagnostics?.end(this.getDiagnosticsData(res, retryLimit, attempt));
+        if (attempt < retryLimit && isRetryCode) {
           return new Promise<NetworkResponse>((resolve, reject) => {
             setTimeout(() => {
               this.leakyBucket[url] = Math.max(this.leakyBucket[url] - 1, 0);
@@ -355,7 +355,7 @@ export default class StatsigNetwork {
                 {
                   retryOptions: {
                     retryLimit,
-                    retryAttempt: retryAttempt + 1,
+                    attempt: attempt + 1,
                     backoff: backoff * 2,
                   },
                   useKeepalive,
@@ -378,20 +378,20 @@ export default class StatsigNetwork {
     return this.canUseKeepalive;
   }
 
-  private getDiagnosticsData(res: NetworkResponse, retryLimit: number, retryAttempt: number): {
+  private getDiagnosticsData(res: NetworkResponse, retryLimit: number, attempt: number): {
     success: boolean;
     isDelta?: boolean;
     sdkRegion?: string | null;
     statusCode?: number;
     retryLimit: number;
-    retryAttempt: number;
+    attempt: number;
   } {
     return {
       success: res?.ok === true,
       statusCode: res?.status,
       sdkRegion: res?.headers?.get('x-statsig-region'),
       isDelta: res?.data?.is_delta === true,
-      retryAttempt,
+      attempt,
       retryLimit,
     }
   }
