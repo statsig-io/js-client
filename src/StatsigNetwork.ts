@@ -297,7 +297,7 @@ export default class StatsigNetwork {
     diagnostics?.start({ attempt: attempt });
     let res: Response;
     let isRetryCode = true;
-    return fetch(url, params)
+    return fetch(fullUrl.toString(), params)
       .then(async (localRes) => {
         res = localRes;
         if (res.ok) {
