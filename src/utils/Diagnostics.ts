@@ -1,4 +1,5 @@
 import StatsigSDKOptions from '../StatsigSDKOptions';
+import { now } from './Timing';
 
 export type ContextType =
   | 'initialize'
@@ -110,7 +111,7 @@ export class DiagnosticsImpl {
             key,
             step,
             action: 'start',
-            timestamp: Date.now(),
+            timestamp: now({ withPrecision: true }),
             ...(data ?? {}),
           },
           context,
@@ -122,7 +123,7 @@ export class DiagnosticsImpl {
             key,
             step,
             action: 'end',
-            timestamp: Date.now(),
+            timestamp: now({ withPrecision: true }),
             ...(data ?? {}),
           },
           context,

@@ -1,8 +1,13 @@
-export function now(): number {
+export function now(opts = { withPrecision: false }): number {
   if (typeof performance === 'undefined' || !performance) {
     return Date.now();
   }
-  return performance.now() | 0;
+
+  if (!opts.withPrecision) {
+    return performance.now() | 0;
+  }
+
+  return performance.now();
 }
 
 export function difference(time: number): number {

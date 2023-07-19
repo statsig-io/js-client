@@ -25,7 +25,7 @@ describe('ErrorBoundaryDiagnostics', () => {
         'checkGate',
         () => {},
         () => {},
-        { configName: 'the_config_name'}
+        { configName: 'the_config_name' },
       );
 
       markers = diagnosticsImpl.markers.error_boundary;
@@ -33,18 +33,22 @@ describe('ErrorBoundaryDiagnostics', () => {
 
     it('captures start', () => {
       const marker = markers[0];
-      expect(marker?.action).toEqual('start');
-      expect(marker?.key).toEqual('check_gate');
-      expect(marker?.markerID).toEqual('checkGate_0');
+      expect(marker).toMatchObject({
+        action: 'start',
+        key: 'check_gate',
+        markerID: 'checkGate_0',
+      });
     });
 
     it('captures end', () => {
       const marker = markers[1];
-      expect(marker?.action).toEqual('end');
-      expect(marker?.key).toEqual('check_gate');
-      expect(marker?.markerID).toEqual('checkGate_0');
-      expect(marker?.success).toBe(true);
-      expect(marker?.configName).toBe('the_config_name')
+      expect(marker).toMatchObject({
+        action: 'end',
+        key: 'check_gate',
+        markerID: 'checkGate_0',
+        success: true,
+        configName: 'the_config_name',
+      });
     });
 
     it('only captured start and end', () => {
@@ -72,18 +76,22 @@ describe('ErrorBoundaryDiagnostics', () => {
 
     it('captures start', () => {
       const marker = markers[0];
-      expect(marker?.action).toEqual('start');
-      expect(marker?.key).toEqual('get_config');
-      expect(marker?.markerID).toEqual('getConfig_0');
+      expect(marker).toMatchObject({
+        action: 'start',
+        key: 'get_config',
+        markerID: 'getConfig_0',
+      });
     });
 
     it('captures end', () => {
       const marker = markers[1];
-      expect(marker?.action).toEqual('end');
-      expect(marker?.key).toEqual('get_config');
-      expect(marker?.markerID).toEqual('getConfig_0');
-      expect(marker?.success).toBe(false);
-      expect(marker?.configName).toEqual('the_config_name');
+      expect(marker).toMatchObject({
+        action: 'end',
+        key: 'get_config',
+        markerID: 'getConfig_0',
+        success: false,
+        configName: 'the_config_name',
+      });
     });
 
     it('only captured start and end', () => {
