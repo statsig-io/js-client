@@ -4,7 +4,7 @@ import { Base64 } from './Base64';
 
 const hashLookupTable: Record<string, string> = {};
 
-function fasthash(value: string): number {
+export function fasthash(value: string): number {
   let hash = 0;
   for (let i = 0; i < value.length; i++) {
     const character = value.charCodeAt(i);
@@ -14,10 +14,22 @@ function fasthash(value: string): number {
   return hash;
 }
 
+export type UserCacheKey = {
+  v1: string;
+  v2: string;
+};
+
 // Keeping this around to prevent busting existing caches
 // This is just the same as djb2Hash but it can have negative values
-export function userCacheKeyHash(value: string): string {
-  return String(fasthash(value));
+export function memoizedUserCacheKeyHash(value: string): string {
+  const seen = hashLookupTable[value];
+  if (seen) {
+    return seen;
+  }
+
+  const hash = String(fasthash(value));
+  hashLookupTable[value] = hash;
+  return hash;
 }
 
 export function djb2Hash(value: string): string {
@@ -36,22 +48,26 @@ export function sha256Hash(value: string): string {
   return hash;
 }
 
-export function getUserCacheKey(user: StatsigUser | null): string {
-  let key = `userID:${String(user?.userID ?? '')}`;
+export function getUserCacheKey(
+  stableID: string,
+  user: StatsigUser | null,
+): UserCacheKey {
+  const parts = [`userID:${String(user?.userID ?? '')}`];
 
   const customIDs = user?.customIDs;
   if (customIDs != null) {
     for (const [type, value] of Object.entries(customIDs)) {
-      key += `;${type}:${value}`;
+      parts.push(`${type}:${value}`);
     }
   }
 
-  const seen = hashLookupTable[key];
-  if (seen) {
-    return seen;
-  }
+  const v2 = memoizedUserCacheKeyHash(parts.join(';'));
 
-  const hash = userCacheKeyHash(key);
-  hashLookupTable[key] = hash;
-  return hash;
+  parts.splice(1, 0, `stableID:${stableID}`);
+  const v1 = memoizedUserCacheKeyHash(parts.join(';'));
+
+  return {
+    v1,
+    v2,
+  };
 }

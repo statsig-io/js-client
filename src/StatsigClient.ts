@@ -23,7 +23,7 @@ import StatsigStore, {
   StoreGateFetchResult,
 } from './StatsigStore';
 import { StatsigUser } from './StatsigUser';
-import { getUserCacheKey } from './utils/Hashing';
+import { UserCacheKey, getUserCacheKey } from './utils/Hashing';
 import type { AsyncStorage } from './utils/StatsigAsyncStorage';
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
@@ -97,13 +97,14 @@ export interface IHasStatsigInternal {
   getLogger(): StatsigLogger;
   getOptions(): StatsigSDKOptions;
   getCurrentUser(): StatsigUser | null;
-  getCurrentUserCacheKey(): string;
+  getCurrentUserCacheKey(): UserCacheKey;
   getSDKKey(): string;
   getStatsigMetadata(): Record<string, string | number>;
   getErrorBoundary(): ErrorBoundary;
   getSDKType(): string;
   getSDKVersion(): string;
   getConsoleLogger(): ConsoleLogger;
+  getStableID(): string;
 }
 
 export type StatsigOverrides = {
@@ -170,11 +171,11 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       () => null,
     );
   }
-  public getCurrentUserCacheKey(): string {
+  public getCurrentUserCacheKey(): UserCacheKey {
     return this.errorBoundary.capture(
       'getCurrentUserCacheKey',
-      () => getUserCacheKey(this.getCurrentUser()),
-      () => `userID:''`,
+      () => getUserCacheKey(this.getStableID(), this.getCurrentUser()),
+      () => ({ v1: '', v2: '' }),
     );
   }
 
@@ -449,7 +450,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         return result.gate.value === true;
       },
       () => false,
-      { configName: gateName }
+      { configName: gateName },
     );
   }
 
@@ -495,7 +496,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         return result;
       },
       () => this.getEmptyConfig(configName),
-      { configName }
+      { configName },
     );
   }
 
@@ -543,7 +544,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         return result;
       },
       () => this.getEmptyConfig(experimentName),
-      { configName: experimentName }
+      { configName: experimentName },
     );
   }
 
@@ -586,7 +587,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       },
       () =>
         Layer._create(layerName, {}, '', this.getEvalutionDetailsForError()),
-      { configName: layerName }
+      { configName: layerName },
     );
   }
 
@@ -701,7 +702,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
 
   public async updateUser(user: StatsigUser | null): Promise<boolean> {
     // eslint-disable-next-line statsig-linter/public-methods-error-boundary
-    let fireCompletionCallback: ( 
+    let fireCompletionCallback: (
       success: boolean,
       error: string | null,
     ) => void | null;
@@ -709,7 +710,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     return this.errorBoundary.capture(
       'updateUser',
       async () => {
-        const updateStartTime = Date.now();  
+        const updateStartTime = Date.now();
         if (!this.initializeCalled()) {
           throw new StatsigUninitializedError('Call initialize() first.');
         }
@@ -723,7 +724,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
 
         const userCacheKey = this.getCurrentUserCacheKey();
         const isUserPrefetched = Boolean(
-          this.prefetchedUsersByCacheKey[userCacheKey],
+          this.prefetchedUsersByCacheKey[userCacheKey.v2],
         );
         const cachedTime = this.store.updateUser(isUserPrefetched);
 
@@ -1167,7 +1168,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     const keyedPrefetchUsers = this.normalizePrefetchUsers(prefetchUsers)
       .slice(0, 5)
       .reduce((acc, curr) => {
-        acc[getUserCacheKey(curr)] = curr;
+        acc[getUserCacheKey(this.getStableID(), curr).v2] = curr;
         return acc;
       }, {} as Record<string, StatsigUser>);
 

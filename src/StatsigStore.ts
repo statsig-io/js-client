@@ -8,7 +8,12 @@ import {
   OVERRIDES_STORE_KEY,
   STICKY_DEVICE_EXPERIMENTS_KEY,
 } from './utils/Constants';
-import { djb2Hash, sha256Hash, getUserCacheKey } from './utils/Hashing';
+import {
+  djb2Hash,
+  sha256Hash,
+  getUserCacheKey,
+  UserCacheKey,
+} from './utils/Hashing';
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
 
@@ -106,7 +111,7 @@ export default class StatsigStore {
   private values: Record<string, UserCacheValues | undefined>;
   private userValues: UserCacheValues;
   private stickyDeviceExperiments: Record<string, APIDynamicConfig>;
-  private userCacheKey: string;
+  private userCacheKey: UserCacheKey;
   private reason: EvaluationReason;
 
   public constructor(
@@ -174,7 +179,7 @@ export default class StatsigStore {
       this.userValues.evaluation_time = Date.now();
       this.userValues.time = Date.now();
       this.userValues.hash_used = values.hash_used;
-      this.values[key] = this.userValues;
+      this.values[key.v2] = this.userValues;
       this.reason = reason;
       this.loadOverrides();
     } catch (_e) {
@@ -231,8 +236,12 @@ export default class StatsigStore {
     this.loadOverrides();
   }
 
+  private getUserValues(key: UserCacheKey) {
+    return this.values[key.v2] ?? this.values[key.v1];
+  }
+
   private setUserValueFromCache(isUserPrefetched = false): number | null {
-    const cachedValues = this.values[this.userCacheKey];
+    const cachedValues = this.getUserValues(this.userCacheKey);
     if (cachedValues == null) {
       this.resetUserValues();
       this.reason = EvaluationReason.Uninitialized;
@@ -276,7 +285,7 @@ export default class StatsigStore {
     user: StatsigUser | null,
     jsonConfigs: Record<string, unknown>,
   ): Promise<void> {
-    const requestedUserCacheKey = getUserCacheKey(user);
+    const requestedUserCacheKey = getUserCacheKey(this.getStableID(), user);
     const initResponse = jsonConfigs as APIInitializeDataWithDeltas;
 
     if (initResponse.is_delta) {
@@ -291,11 +300,11 @@ export default class StatsigStore {
       (userValues) => userValues,
     );
 
-    const userValues = this.values[requestedUserCacheKey];
+    const userValues = this.getUserValues(requestedUserCacheKey);
     if (
       userValues &&
       requestedUserCacheKey &&
-      requestedUserCacheKey == this.userCacheKey
+      requestedUserCacheKey.v2 === this.userCacheKey.v2
     ) {
       this.userValues = userValues;
       this.reason = EvaluationReason.Network;
@@ -311,7 +320,7 @@ export default class StatsigStore {
     user: StatsigUser | null,
     jsonConfigs: Record<string, unknown>,
   ): Promise<void> {
-    const requestedUserCacheKey = getUserCacheKey(user);
+    const requestedUserCacheKey = getUserCacheKey(this.getStableID(), user);
     const initResponse =
       jsonConfigs as APIInitializeDataWithDeltasWithPrefetchedUsers;
     const copiedValues: Record<string, UserCacheValues | undefined> =
@@ -332,7 +341,7 @@ export default class StatsigStore {
     user: StatsigUser | null,
     jsonConfigs: Record<string, unknown>,
   ): Promise<void> {
-    const requestedUserCacheKey = getUserCacheKey(user);
+    const requestedUserCacheKey = getUserCacheKey(this.getStableID(), user);
     const initResponse =
       jsonConfigs as APIInitializeDataWithDeltasWithPrefetchedUsers;
 
@@ -356,8 +365,8 @@ export default class StatsigStore {
       }
     });
 
-    const userValues = this.values[requestedUserCacheKey];
-    if (userValues && requestedUserCacheKey == this.userCacheKey) {
+    const userValues = this.getUserValues(requestedUserCacheKey);
+    if (userValues && requestedUserCacheKey.v2 === this.userCacheKey.v2) {
       removeDeletedKeysFromUserValues(initResponse, userValues);
 
       this.userValues = userValues;
@@ -367,13 +376,17 @@ export default class StatsigStore {
     this.values = await this.writeValuesToStorage(this.values);
   }
 
+  private getStableID(): string {
+    return this.sdkInternal.getStableID();
+  }
+
   /**
    * Merges the provided init configs into the provided config map, according to the provided merge function
    */
   private mergeInitializeResponseIntoUserMap(
     data: APIInitializeDataWithPrefetchedUsers,
     configMap: Record<string, UserCacheValues | undefined>,
-    requestedUserCacheKey: string,
+    requestedUserCacheKey: UserCacheKey,
     user: StatsigUser | null,
     mergeFn: (user: UserCacheValues, key: string) => UserCacheValues,
   ) {
@@ -391,16 +404,16 @@ export default class StatsigStore {
     if (requestedUserCacheKey) {
       const requestedUserValues = this.convertAPIDataToCacheValues(
         data,
-        requestedUserCacheKey,
+        requestedUserCacheKey.v2,
       );
       if (data.has_updates && data.time) {
         const userHash = sha256Hash(JSON.stringify(user));
         requestedUserValues.user_hash = userHash;
       }
 
-      configMap[requestedUserCacheKey] = mergeFn(
+      configMap[requestedUserCacheKey.v2] = mergeFn(
         requestedUserValues,
-        requestedUserCacheKey,
+        requestedUserCacheKey.v2,
       );
     }
   }
@@ -447,6 +460,11 @@ export default class StatsigStore {
   private async writeValuesToStorage(
     valuesToWrite: Record<string, UserCacheValues | undefined>,
   ): Promise<Record<string, UserCacheValues | undefined>> {
+    // delete the older version of cache
+    if (valuesToWrite[this.userCacheKey.v2]) {
+      delete valuesToWrite[this.userCacheKey.v1];
+    }
+
     // trim values to only have the max allowed
     const filteredValues = Object.entries(valuesToWrite)
       .sort(({ 1: a }, { 1: b }) => {
@@ -820,7 +838,7 @@ export default class StatsigStore {
   }
 
   private saveStickyValuesToStorage() {
-    this.values[this.userCacheKey] = this.userValues;
+    this.values[this.userCacheKey.v2] = this.userValues;
     this.setItemToStorage(INTERNAL_STORE_KEY, JSON.stringify(this.values));
     this.setItemToStorage(
       STICKY_DEVICE_EXPERIMENTS_KEY,

@@ -83,7 +83,7 @@ describe('Verify behavior of StatsigClient with sinceTime', () => {
     await statsig.initializeAsync();
     expect(spy).toHaveBeenCalledWith(user, null, expect.anything(), undefined);
 
-    const key = getUserCacheKey(user);
+    const key = getUserCacheKey(stableID, user).v2;
     const userHash = sha256Hash(JSON.stringify(user));
     const storeObject = JSON.parse(
       localStorage.getItem(INTERNAL_STORE_KEY) ?? '',

@@ -4,7 +4,7 @@
 
 import Statsig from '..';
 import StatsigClient from '../StatsigClient';
-import { djb2Hash, userCacheKeyHash } from '../utils/Hashing';
+import { djb2Hash, fasthash } from '../utils/Hashing';
 
 const aConfigHash = djb2Hash('a_config');
 
@@ -71,7 +71,7 @@ describe('Prefetch Users', () => {
 
     if (body.prefetchUsers) {
       response['prefetched_user_values'] = {
-        [userCacheKeyHash('userID:b-user;GroupID:group_1')]: {
+        [String(fasthash('userID:b-user;GroupID:group_1'))]: {
           feature_gates: {},
           dynamic_configs: {
             [aConfigHash]: makeConfigDef({ key: 'b_user_value' }),
@@ -80,7 +80,7 @@ describe('Prefetch Users', () => {
           has_updates: true,
           hash_used: 'djb2',
         },
-        [userCacheKeyHash('userID:c-user;GroupID:group_2')]: {
+        [String(fasthash('userID:c-user;GroupID:group_2'))]: {
           feature_gates: {},
           dynamic_configs: {
             [aConfigHash]: makeConfigDef({ key: 'c_user_value' }),
