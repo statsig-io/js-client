@@ -30,6 +30,12 @@ export type GateEvaluationCallback = (
   }
 ) => void;
 
+export interface StickyBucketingStorageAdapter {
+  get(key: string): string
+  set(key: string, value: string): void
+  remove(key: string): void
+}
+
 export type StatsigOptions = {
   api?: string;
   disableCurrentPageLogging?: boolean;
@@ -54,6 +60,7 @@ export type StatsigOptions = {
   fetchMode?: FetchMode;
   disableLocalOverrides?: boolean;
   gateEvaluationCallback?: GateEvaluationCallback;
+  stickyBucketingStorageAdapter?: StickyBucketingStorageAdapter;
 };
 
 export enum LogLevel {
@@ -94,6 +101,7 @@ export default class StatsigSDKOptions {
   private fetchMode: FetchMode;
   private disableLocalOverrides: boolean;
   private gateEvaluationCallback: GateEvaluationCallback | null;
+  private stickyBucketingStorageAdapter: StickyBucketingStorageAdapter | null;
 
   constructor(options?: StatsigOptions | null) {
     if (options == null) {
@@ -146,6 +154,7 @@ export default class StatsigSDKOptions {
     this.fetchMode = options.fetchMode ?? 'network-only';
     this.disableLocalOverrides = options?.disableLocalOverrides ?? false;
     this.gateEvaluationCallback = options?.gateEvaluationCallback ?? null;
+    this.stickyBucketingStorageAdapter = options?.stickyBucketingStorageAdapter ?? null;
   }
 
   getApi(): string {
@@ -238,6 +247,10 @@ export default class StatsigSDKOptions {
 
   getGateEvaluationCallback(): GateEvaluationCallback | null {
     return this.gateEvaluationCallback;
+  }
+
+  getStickyBucketingStorageAdapter(): StickyBucketingStorageAdapter | null {
+    return this.stickyBucketingStorageAdapter;
   }
 
   private normalizeNumberInput(

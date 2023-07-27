@@ -18,6 +18,7 @@ export default class DynamicConfig {
   private allocatedExperimentName: string;
   private evaluationDetails: EvaluationDetails;
   private onDefaultValueFallback: OnDefaultValueFallback | null = null;
+  private isExperimentActive: boolean | null;
 
   public constructor(
     configName: string,
@@ -29,6 +30,7 @@ export default class DynamicConfig {
     onDefaultValueFallback: OnDefaultValueFallback | null = null,
     groupName: string | null = null,
     idType: string | null = null,
+    isExperimentActive: boolean | null = null,
   ) {
     this.name = configName;
     this.value = JSON.parse(JSON.stringify(configValue ?? {}));
@@ -39,6 +41,7 @@ export default class DynamicConfig {
     this.onDefaultValueFallback = onDefaultValueFallback;
     this.groupName = groupName;
     this.idType = idType;
+    this.isExperimentActive = isExperimentActive;
   }
 
   public get<T>(
@@ -113,5 +116,9 @@ export default class DynamicConfig {
 
   public _getAllocatedExperimentName(): string {
     return this.allocatedExperimentName;
+  }
+
+  public getIsExperimentActive(): boolean | null {
+    return this.isExperimentActive;
   }
 }
