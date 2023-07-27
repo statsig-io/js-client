@@ -16,6 +16,7 @@ import {
 } from './utils/Hashing';
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
+import { StickyBucketingStorageAdapter } from './StatsigSDKOptions';
 
 export enum EvaluationReason {
   Network = 'Network',
@@ -113,6 +114,7 @@ export default class StatsigStore {
   private stickyDeviceExperiments: Record<string, APIDynamicConfig>;
   private userCacheKey: UserCacheKey;
   private reason: EvaluationReason;
+  private stickyAdapater: StickyBucketingStorageAdapter | null;
 
   public constructor(
     sdkInternal: IHasStatsigInternal,
@@ -133,6 +135,7 @@ export default class StatsigStore {
     this.stickyDeviceExperiments = {};
     this.loaded = false;
     this.reason = EvaluationReason.Uninitialized;
+    this.stickyAdapater = this.sdkInternal.getOptions().getStickyBucketingStorageAdapter();
 
     if (initializeValues) {
       this.bootstrap(initializeValues);
@@ -737,16 +740,23 @@ export default class StatsigStore {
     isLayer: boolean,
     details: EvaluationDetails,
   ): APIDynamicConfig | undefined {
+    let key = this.getHashedSpecName(name);
+    if (!latestValue?.is_device_based) {
+      const idType = latestValue?.id_type ?? '';
+      const unitID = this.sdkInternal.getCurrentUserUnitID(idType);
+      key = this.getHashedSpecName(`${name}:${idType}:${unitID}`);
+    }
+
     // We don't want sticky behavior. Clear any sticky values and return latest.
     if (!keepDeviceValue) {
-      this.removeStickyValue(name);
+      this.removeStickyValue(key);
       return latestValue;
     }
 
     // If there is no sticky value, save latest as sticky and return latest.
-    const stickyValue = this.getStickyValue(name);
+    const stickyValue = this.getStickyValue(key)
     if (!stickyValue) {
-      this.attemptToSaveStickyValue(name, latestValue);
+      this.attemptToSaveStickyValue(key, latestValue);
       return latestValue;
     }
 
@@ -767,9 +777,9 @@ export default class StatsigStore {
     }
 
     if (latestValue?.is_experiment_active == true) {
-      this.attemptToSaveStickyValue(name, latestValue);
+      this.attemptToSaveStickyValue(key, latestValue);
     } else {
-      this.removeStickyValue(name);
+      this.removeStickyValue(key);
     }
 
     return latestValue;
@@ -790,11 +800,19 @@ export default class StatsigStore {
       this.makeOnConfigDefaultValueFallback(this.sdkInternal.getCurrentUser()),
       apiConfig?.group_name,
       apiConfig?.id_type,
+      apiConfig?.is_experiment_active,
     );
   }
 
-  private getStickyValue(name: string) {
-    const key = this.getHashedSpecName(name);
+  private getStickyValue(key: string) {
+    if (this.stickyAdapater) {
+      const stickyValue = this.stickyAdapater.get(key);
+      if (stickyValue) {
+        return JSON.parse(stickyValue) as APIDynamicConfig;
+      } else {
+        return null;
+      }
+    }
 
     return (
       this.userValues?.sticky_experiments[key] ??
@@ -802,7 +820,7 @@ export default class StatsigStore {
     );
   }
 
-  private attemptToSaveStickyValue(name: string, config?: APIDynamicConfig) {
+  private attemptToSaveStickyValue(key: string, config?: APIDynamicConfig) {
     if (
       !config ||
       !config.is_user_in_experiment ||
@@ -811,7 +829,9 @@ export default class StatsigStore {
       return;
     }
 
-    const key = this.getHashedSpecName(name);
+    if (this.stickyAdapater) {
+      this.stickyAdapater.set(key, JSON.stringify(config));
+    }
     if (config.is_device_based === true) {
       // save sticky values in memory
       this.stickyDeviceExperiments[key] = config;
@@ -822,7 +842,7 @@ export default class StatsigStore {
     this.saveStickyValuesToStorage();
   }
 
-  private removeStickyValue(name: string) {
+  private removeStickyValue(key: string) {
     if (
       Object.keys(this.userValues?.sticky_experiments ?? {}).length === 0 &&
       Object.keys(this.stickyDeviceExperiments ?? {}).length === 0
@@ -830,8 +850,9 @@ export default class StatsigStore {
       return;
     }
 
-    const key = this.getHashedSpecName(name);
-
+    if (this.stickyAdapater) {
+      this.stickyAdapater.remove(key);
+    }
     delete this.userValues?.sticky_experiments[key];
     delete this.stickyDeviceExperiments[key];
     this.saveStickyValuesToStorage();
