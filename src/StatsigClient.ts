@@ -98,7 +98,7 @@ export interface IHasStatsigInternal {
   getOptions(): StatsigSDKOptions;
   getCurrentUser(): StatsigUser | null;
   getCurrentUserCacheKey(): UserCacheKey;
-  getCurrentUserUnitID(idType: string): string;
+  getCurrentUserUnitID(idType: string): string | null;
   getSDKKey(): string;
   getStatsigMetadata(): Record<string, string | number>;
   getErrorBoundary(): ErrorBoundary;
@@ -179,24 +179,24 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       () => ({ v1: '', v2: '' }),
     );
   }
-  public getCurrentUserUnitID(idType: string): string {
+  public getCurrentUserUnitID(idType: string): string | null {
     return this.errorBoundary.capture(
       'getCurrentUserUnitID',
       () => this.getUnitID(this.getCurrentUser(), idType),
       () => '',
     );
   }
-  private getUnitID(user: StatsigUser | null, idType: string): string {
+  private getUnitID(user: StatsigUser | null, idType: string): string | null {
     if (!user) {
-      return '';
+      return null;
     }
     if (idType.toLowerCase() === 'userid') {
-      return user.userID?.toString() ?? '';
+      return user.userID?.toString() ?? null;
     }
     if (user.customIDs) {
       user.customIDs[idType] ?? user.customIDs[idType.toLowerCase()]
     }
-    return '';
+    return null;
   }
 
   public getStatsigMetadata(): Record<string, string | number> {

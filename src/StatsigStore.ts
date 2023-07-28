@@ -17,6 +17,7 @@ import {
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
 import { StickyBucketingStorageAdapter } from './StatsigSDKOptions';
+import { jsonSafeParse } from './utils/json';
 
 export enum EvaluationReason {
   Network = 'Network',
@@ -135,7 +136,9 @@ export default class StatsigStore {
     this.stickyDeviceExperiments = {};
     this.loaded = false;
     this.reason = EvaluationReason.Uninitialized;
-    this.stickyAdapater = this.sdkInternal.getOptions().getStickyBucketingStorageAdapter();
+    this.stickyAdapater = this.sdkInternal
+      .getOptions()
+      .getStickyBucketingStorageAdapter();
 
     if (initializeValues) {
       this.bootstrap(initializeValues);
@@ -740,12 +743,13 @@ export default class StatsigStore {
     isLayer: boolean,
     details: EvaluationDetails,
   ): APIDynamicConfig | undefined {
-    let key = this.getHashedSpecName(name);
-    if (!latestValue?.is_device_based) {
-      const idType = latestValue?.id_type ?? '';
-      const unitID = this.sdkInternal.getCurrentUserUnitID(idType);
-      key = this.getHashedSpecName(`${name}:${idType}:${unitID}`);
-    }
+    const idType = latestValue?.id_type ?? '';
+    const unitID = this.sdkInternal.getCurrentUserUnitID(idType);
+    const stableID = this.sdkInternal.getStableID();
+    let key = latestValue?.is_device_based
+      ? `${name}:${idType}:${stableID}`
+      : `${name}:${idType}:${unitID}`;
+    key = this.getHashedSpecName(key);
 
     // We don't want sticky behavior. Clear any sticky values and return latest.
     if (!keepDeviceValue) {
@@ -754,7 +758,7 @@ export default class StatsigStore {
     }
 
     // If there is no sticky value, save latest as sticky and return latest.
-    const stickyValue = this.getStickyValue(key)
+    const stickyValue = this.getStickyValue(key);
     if (!stickyValue) {
       this.attemptToSaveStickyValue(key, latestValue);
       return latestValue;
@@ -804,11 +808,11 @@ export default class StatsigStore {
     );
   }
 
-  private getStickyValue(key: string) {
+  private getStickyValue(key: string): APIDynamicConfig | null {
     if (this.stickyAdapater) {
       const stickyValue = this.stickyAdapater.get(key);
       if (stickyValue) {
-        return JSON.parse(stickyValue) as APIDynamicConfig;
+        return jsonSafeParse<APIDynamicConfig>(stickyValue);
       } else {
         return null;
       }
@@ -821,6 +825,11 @@ export default class StatsigStore {
   }
 
   private attemptToSaveStickyValue(key: string, config?: APIDynamicConfig) {
+    if (this.stickyAdapater) {
+      this.stickyAdapater.set(key, JSON.stringify(config));
+      return;
+    }
+
     if (
       !config ||
       !config.is_user_in_experiment ||
@@ -829,9 +838,6 @@ export default class StatsigStore {
       return;
     }
 
-    if (this.stickyAdapater) {
-      this.stickyAdapater.set(key, JSON.stringify(config));
-    }
     if (config.is_device_based === true) {
       // save sticky values in memory
       this.stickyDeviceExperiments[key] = config;
@@ -843,6 +849,11 @@ export default class StatsigStore {
   }
 
   private removeStickyValue(key: string) {
+    if (this.stickyAdapater) {
+      this.stickyAdapater.remove(key);
+      return;
+    }
+
     if (
       Object.keys(this.userValues?.sticky_experiments ?? {}).length === 0 &&
       Object.keys(this.stickyDeviceExperiments ?? {}).length === 0
@@ -850,9 +861,6 @@ export default class StatsigStore {
       return;
     }
 
-    if (this.stickyAdapater) {
-      this.stickyAdapater.remove(key);
-    }
     delete this.userValues?.sticky_experiments[key];
     delete this.stickyDeviceExperiments[key];
     this.saveStickyValuesToStorage();
