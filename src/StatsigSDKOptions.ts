@@ -30,10 +30,13 @@ export type GateEvaluationCallback = (
   }
 ) => void;
 
-export interface StickyBucketingStorageAdapter {
-  get(key: string): string
-  set(key: string, value: string): void
-  remove(key: string): void
+export type UserPersistentStorageData = {
+  experiments: Record<string, unknown>,
+}
+
+export interface UserPersistentStorageInterface {
+  load(userID: string): UserPersistentStorageData
+  save(userID: string, data: UserPersistentStorageData): void
 }
 
 export type StatsigOptions = {
@@ -60,7 +63,7 @@ export type StatsigOptions = {
   fetchMode?: FetchMode;
   disableLocalOverrides?: boolean;
   gateEvaluationCallback?: GateEvaluationCallback;
-  stickyBucketingStorageAdapter?: StickyBucketingStorageAdapter;
+  userPersistentStorage?: UserPersistentStorageInterface;
 };
 
 export enum LogLevel {
@@ -101,7 +104,7 @@ export default class StatsigSDKOptions {
   private fetchMode: FetchMode;
   private disableLocalOverrides: boolean;
   private gateEvaluationCallback: GateEvaluationCallback | null;
-  private stickyBucketingStorageAdapter: StickyBucketingStorageAdapter | null;
+  private userPersistentStorage: UserPersistentStorageInterface | null;
 
   constructor(options?: StatsigOptions | null) {
     if (options == null) {
@@ -154,7 +157,7 @@ export default class StatsigSDKOptions {
     this.fetchMode = options.fetchMode ?? 'network-only';
     this.disableLocalOverrides = options?.disableLocalOverrides ?? false;
     this.gateEvaluationCallback = options?.gateEvaluationCallback ?? null;
-    this.stickyBucketingStorageAdapter = options?.stickyBucketingStorageAdapter ?? null;
+    this.userPersistentStorage = options?.userPersistentStorage ?? null;
   }
 
   getApi(): string {
@@ -249,8 +252,8 @@ export default class StatsigSDKOptions {
     return this.gateEvaluationCallback;
   }
 
-  getStickyBucketingStorageAdapter(): StickyBucketingStorageAdapter | null {
-    return this.stickyBucketingStorageAdapter;
+  getUserPersistentStorage(): UserPersistentStorageInterface | null {
+    return this.userPersistentStorage;
   }
 
   private normalizeNumberInput(

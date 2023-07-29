@@ -99,6 +99,7 @@ export interface IHasStatsigInternal {
   getCurrentUser(): StatsigUser | null;
   getCurrentUserCacheKey(): UserCacheKey;
   getCurrentUserUnitID(idType: string): string | null;
+  getCurrentUserID(): string | null;
   getSDKKey(): string;
   getStatsigMetadata(): Record<string, string | number>;
   getErrorBoundary(): ErrorBoundary;
@@ -183,6 +184,13 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     return this.errorBoundary.capture(
       'getCurrentUserUnitID',
       () => this.getUnitID(this.getCurrentUser(), idType),
+      () => '',
+    );
+  }
+  public getCurrentUserID(): string | null {
+    return this.errorBoundary.capture(
+      'getCurrentUserID',
+      () => this.getUnitID(this.getCurrentUser(), 'userid'),
       () => '',
     );
   }
@@ -352,7 +360,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         this.initCalled = true;
         if (StatsigAsyncStorage.asyncStorage) {
           await this.identity.initAsync();
-          await this.store.loadFromAsyncStorage();
+          await this.store.loadAsync();
         }
 
         this.onCacheLoadedForReact?.();

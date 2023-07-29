@@ -6,7 +6,7 @@ import DynamicConfig from '../DynamicConfig';
 import StatsigClient from '../StatsigClient';
 import { EvaluationReason } from '../StatsigStore';
 import LocalStorageMock from './LocalStorageMock';
-import StickyBucketingAdapterExample from './StickyBucketingAdapterExample';
+import UserPersistentStorageExample from './UserPersistentStorageExample';
 
 type InitializeResponse = {
   feature_gates: Record<string, Record<string, any>>;
@@ -518,11 +518,11 @@ describe('Verify behavior of InternalStore', () => {
   });
 
   test('experiment sticky bucketing behavior with custom storage', async () => {
-    const stickyStore = new StickyBucketingAdapterExample();
+    const stickyStore = new UserPersistentStorageExample();
     const statsig = new StatsigClient(
       sdkKey,
       { userID: '123' },
-      { stickyBucketingStorageAdapter: stickyStore },
+      { userPersistentStorage: stickyStore },
     );
     await statsig.initializeAsync();
     const store = statsig.getStore();
@@ -554,7 +554,8 @@ describe('Verify behavior of InternalStore', () => {
     exp = store.getExperiment('exp', true);
     deviceExp = store.getExperiment('device_exp', true);
     expNonSticky = store.getExperiment('exp_non_stick', false);
-    expect(Object.keys(stickyStore.store).length).toEqual(2);
+    // device based sticky doesn't work with user persistent storage
+    expect(Object.keys(stickyStore.store).length).toEqual(1);
     expect(exp.get('key', '')).toEqual('v1');
     expect(exp.getEvaluationDetails()).toEqual({
       reason: EvaluationReason.Network,
@@ -576,7 +577,7 @@ describe('Verify behavior of InternalStore', () => {
     exp = store.getExperiment('exp', true);
     deviceExp = store.getExperiment('device_exp', true);
     expNonSticky = store.getExperiment('exp_non_stick', false);
-    expect(Object.keys(stickyStore.store).length).toEqual(2);
+    expect(Object.keys(stickyStore.store).length).toEqual(1);
     expect(exp.get('key', '')).toEqual('v1');
     expect(exp.getEvaluationDetails()).toEqual({
       reason: EvaluationReason.Sticky,
@@ -598,7 +599,7 @@ describe('Verify behavior of InternalStore', () => {
     exp = store.getExperiment('exp', true);
     deviceExp = store.getExperiment('device_exp', true);
     expNonSticky = store.getExperiment('exp_non_stick', false);
-    expect(Object.keys(stickyStore.store).length).toEqual(2);
+    expect(Object.keys(stickyStore.store).length).toEqual(1);
     expect(exp.get('key', '')).toEqual('v1');
     expect(exp.getEvaluationDetails()).toEqual({
       reason: EvaluationReason.Sticky,
