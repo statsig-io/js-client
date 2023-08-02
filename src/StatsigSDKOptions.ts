@@ -30,13 +30,9 @@ export type GateEvaluationCallback = (
   }
 ) => void;
 
-export type UserPersistentStorageData = {
-  experiments: Record<string, unknown>,
-}
-
 export interface UserPersistentStorageInterface {
-  load(userID: string): UserPersistentStorageData
-  save(userID: string, data: UserPersistentStorageData): void
+  load(userID: string): string
+  save(userID: string, data: string): void
 }
 
 export type StatsigOptions = {
