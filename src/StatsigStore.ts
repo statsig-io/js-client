@@ -16,10 +16,7 @@ import {
 } from './utils/Hashing';
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
-import {
-  UserPersistentStorageData,
-  UserPersistentStorageInterface,
-} from './StatsigSDKOptions';
+import { UserPersistentStorageInterface } from './StatsigSDKOptions';
 
 export enum EvaluationReason {
   Network = 'Network',
@@ -98,6 +95,10 @@ type UserCacheValues = APIInitializeDataWithPrefetchedUsers & {
   sticky_experiments: Record<string, APIDynamicConfig | undefined>;
   evaluation_time?: number;
   user_hash?: string;
+};
+
+type UserPersistentStorageData = {
+  experiments: Record<string, unknown>;
 };
 
 const MAX_USER_VALUE_CACHED = 10;
@@ -226,8 +227,9 @@ export default class StatsigStore {
       const userID = this.sdkInternal.getCurrentUserID();
       if (userID) {
         try {
-          this.userPersistentStorageData =
-            this.userPersistentStorageAdapter.load(userID);
+          this.userPersistentStorageData = JSON.parse(
+            this.userPersistentStorageAdapter.load(userID),
+          ) as UserPersistentStorageData;
         } catch (e) {
           console.warn('Failed to load from user persistent storage.', e);
         }
@@ -246,7 +248,7 @@ export default class StatsigStore {
           experiments: this.userValues.sticky_experiments,
         };
         try {
-          this.userPersistentStorageAdapter.save(userID, data);
+          this.userPersistentStorageAdapter.save(userID, JSON.stringify(data));
         } catch (e) {
           console.warn(
             'Failed to save user experiment values to persistent storage.',
