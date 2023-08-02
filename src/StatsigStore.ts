@@ -895,13 +895,16 @@ export default class StatsigStore {
   }
 
   private saveStickyValuesToStorage() {
-    this.values[this.userCacheKey.v2] = this.userValues;
-    this.setItemToStorage(INTERNAL_STORE_KEY, JSON.stringify(this.values));
-    this.setItemToStorage(
-      STICKY_DEVICE_EXPERIMENTS_KEY,
-      JSON.stringify(this.stickyDeviceExperiments),
-    );
-    this.saveStickyExperimentsToPersistentStorageAdapter();
+    if (this.userPersistentStorageAdapter) {
+      this.saveStickyExperimentsToPersistentStorageAdapter();
+    } else {
+      this.values[this.userCacheKey.v2] = this.userValues;
+      this.setItemToStorage(INTERNAL_STORE_KEY, JSON.stringify(this.values));
+      this.setItemToStorage(
+        STICKY_DEVICE_EXPERIMENTS_KEY,
+        JSON.stringify(this.stickyDeviceExperiments),
+      );
+    }
   }
 
   public getGlobalEvaluationDetails(): EvaluationDetails {
