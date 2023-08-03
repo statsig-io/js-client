@@ -257,7 +257,6 @@ describe('Verify behavior of StatsigLogger', () => {
           sdkRegion: 'us-west-1',
           success: true,
           attempt: 1,
-          retryLimit: 3,
         },
         {
           action: 'start',
