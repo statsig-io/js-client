@@ -32,7 +32,6 @@ export interface Marker {
   sdkRegion?: string | null;
   markerID?: string;
   attempt?: number;
-  retryLimit?: number;
   isRetry?: boolean;
   configName?: string;
 }
@@ -241,7 +240,6 @@ interface InitializeDataType extends RequiredMarkerTags {
     end: {
       success: boolean;
       attempt: number;
-      retryLimit: number;
       isDelta?: boolean;
       sdkRegion?: string | null;
       statusCode?: number;

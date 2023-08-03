@@ -75,15 +75,11 @@ export default class StatsigNetwork {
       hash: 'djb2',
     };
 
-    return this.postWithTimeout(
-      StatsigEndpoint.Initialize,
-      input,
-      {
-        timeout, 
-        retries: 3, 
-        diagnostics: Diagnostics.mark.intialize.networkRequest,
-      }
-    );
+    return this.postWithTimeout(StatsigEndpoint.Initialize, input, {
+      timeout,
+      retries: 3,
+      diagnostics: Diagnostics.mark.intialize.networkRequest,
+    });
   }
 
   private postWithTimeout<T>(
@@ -94,7 +90,7 @@ export default class StatsigNetwork {
       retries?: number;
       backoff?: number;
       diagnostics?: typeof Diagnostics.mark.intialize.networkRequest | null;
-    }
+    },
   ): PromiseWithTimeout<T> {
     const {
       timeout = 0,
@@ -132,17 +128,13 @@ export default class StatsigNetwork {
       });
     }
     let res: NetworkResponse;
-    const fetchPromise = this.postToEndpoint(
-      endpointName,
-      body,
-      {
-        retryOptions: {
-          retryLimit: retries,
-          backoff,
-        },
-        diagnostics
-      }
-    )
+    const fetchPromise = this.postToEndpoint(endpointName, body, {
+      retryOptions: {
+        retryLimit: retries,
+        backoff,
+      },
+      diagnostics,
+    })
       .then((localRes) => {
         res = localRes;
         if (!res.ok) {
@@ -240,12 +232,9 @@ export default class StatsigNetwork {
       };
       useKeepalive?: boolean;
       diagnostics?: typeof Diagnostics.mark.intialize.networkRequest | null;
-    }
+    },
   ): Promise<NetworkResponse> {
-    const {
-      useKeepalive = false,
-      diagnostics = null,
-    } = options ?? {};
+    const { useKeepalive = false, diagnostics = null } = options ?? {};
     const {
       retryLimit = 0,
       attempt = 1,
@@ -320,7 +309,7 @@ export default class StatsigNetwork {
       params.keepalive = true;
     }
 
-    diagnostics?.start({ attempt: attempt })
+    diagnostics?.start({ attempt: attempt });
     let res: Response;
     let isRetryCode = true;
     return fetch(url, params)
@@ -334,7 +323,7 @@ export default class StatsigNetwork {
             const text = await res.text();
             networkResponse.data = JSON.parse(text);
           }
-          diagnostics?.end(this.getDiagnosticsData(res, retryLimit, attempt));
+          diagnostics?.end(this.getDiagnosticsData(res, attempt));
           return Promise.resolve(networkResponse);
         }
         if (!this.retryCodes[res.status]) {
@@ -344,24 +333,20 @@ export default class StatsigNetwork {
         return Promise.reject(new Error(`${res.status}: ${errorText}`));
       })
       .catch((e) => {
-        diagnostics?.end(this.getDiagnosticsData(res, retryLimit, attempt));
+        diagnostics?.end(this.getDiagnosticsData(res, attempt));
         if (attempt < retryLimit && isRetryCode) {
           return new Promise<NetworkResponse>((resolve, reject) => {
             setTimeout(() => {
               this.leakyBucket[url] = Math.max(this.leakyBucket[url] - 1, 0);
-              this.postToEndpoint(
-                endpointName,
-                body,
-                {
-                  retryOptions: {
-                    retryLimit,
-                    attempt: attempt + 1,
-                    backoff: backoff * 2,
-                  },
-                  useKeepalive,
-                  diagnostics,
-                }
-              )
+              this.postToEndpoint(endpointName, body, {
+                retryOptions: {
+                  retryLimit,
+                  attempt: attempt + 1,
+                  backoff: backoff * 2,
+                },
+                useKeepalive,
+                diagnostics,
+              })
                 .then(resolve)
                 .catch(reject);
             }, backoff);
@@ -378,12 +363,14 @@ export default class StatsigNetwork {
     return this.canUseKeepalive;
   }
 
-  private getDiagnosticsData(res: NetworkResponse, retryLimit: number, attempt: number): {
+  private getDiagnosticsData(
+    res: NetworkResponse,
+    attempt: number,
+  ): {
     success: boolean;
     isDelta?: boolean;
     sdkRegion?: string | null;
     statusCode?: number;
-    retryLimit: number;
     attempt: number;
   } {
     return {
@@ -392,8 +379,7 @@ export default class StatsigNetwork {
       sdkRegion: res?.headers?.get('x-statsig-region'),
       isDelta: res?.data?.is_delta === true,
       attempt,
-      retryLimit,
-    }
+    };
   }
 
   private async getErrorData(
