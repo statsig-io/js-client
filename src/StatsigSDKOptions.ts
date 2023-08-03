@@ -30,6 +30,11 @@ export type GateEvaluationCallback = (
   }
 ) => void;
 
+export interface UserPersistentStorageInterface {
+  load(userID: string): string
+  save(userID: string, data: string): void
+}
+
 export type StatsigOptions = {
   api?: string;
   disableCurrentPageLogging?: boolean;
@@ -54,6 +59,7 @@ export type StatsigOptions = {
   fetchMode?: FetchMode;
   disableLocalOverrides?: boolean;
   gateEvaluationCallback?: GateEvaluationCallback;
+  userPersistentStorage?: UserPersistentStorageInterface;
 };
 
 export enum LogLevel {
@@ -94,6 +100,7 @@ export default class StatsigSDKOptions {
   private fetchMode: FetchMode;
   private disableLocalOverrides: boolean;
   private gateEvaluationCallback: GateEvaluationCallback | null;
+  private userPersistentStorage: UserPersistentStorageInterface | null;
 
   constructor(options?: StatsigOptions | null) {
     if (options == null) {
@@ -146,6 +153,7 @@ export default class StatsigSDKOptions {
     this.fetchMode = options.fetchMode ?? 'network-only';
     this.disableLocalOverrides = options?.disableLocalOverrides ?? false;
     this.gateEvaluationCallback = options?.gateEvaluationCallback ?? null;
+    this.userPersistentStorage = options?.userPersistentStorage ?? null;
   }
 
   getApi(): string {
@@ -238,6 +246,10 @@ export default class StatsigSDKOptions {
 
   getGateEvaluationCallback(): GateEvaluationCallback | null {
     return this.gateEvaluationCallback;
+  }
+
+  getUserPersistentStorage(): UserPersistentStorageInterface | null {
+    return this.userPersistentStorage;
   }
 
   private normalizeNumberInput(

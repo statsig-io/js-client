@@ -16,6 +16,7 @@ import {
 } from './utils/Hashing';
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
+import { UserPersistentStorageInterface } from './StatsigSDKOptions';
 
 export enum EvaluationReason {
   Network = 'Network',
@@ -96,6 +97,10 @@ type UserCacheValues = APIInitializeDataWithPrefetchedUsers & {
   user_hash?: string;
 };
 
+type UserPersistentStorageData = {
+  experiments: Record<string, unknown>;
+};
+
 const MAX_USER_VALUE_CACHED = 10;
 
 export default class StatsigStore {
@@ -113,6 +118,8 @@ export default class StatsigStore {
   private stickyDeviceExperiments: Record<string, APIDynamicConfig>;
   private userCacheKey: UserCacheKey;
   private reason: EvaluationReason;
+  private userPersistentStorageAdapter: UserPersistentStorageInterface | null;
+  private userPersistentStorageData: UserPersistentStorageData;
 
   public constructor(
     sdkInternal: IHasStatsigInternal,
@@ -133,20 +140,36 @@ export default class StatsigStore {
     this.stickyDeviceExperiments = {};
     this.loaded = false;
     this.reason = EvaluationReason.Uninitialized;
+    this.userPersistentStorageAdapter = this.sdkInternal
+      .getOptions()
+      .getUserPersistentStorage();
+    this.userPersistentStorageData = { experiments: {} };
 
     if (initializeValues) {
       this.bootstrap(initializeValues);
     } else {
-      this.loadFromLocalStorage();
+      this.load();
     }
+  }
+
+  public load(): void {
+    this.loadFromLocalStorage();
+    this.partialLoadFromPersistentStorageAdapter();
+  }
+
+  public async loadAsync(): Promise<void> {
+    await this.loadFromAsyncStorage();
+    this.partialLoadFromPersistentStorageAdapter();
   }
 
   public updateUser(isUserPrefetched: boolean): number | null {
     this.userCacheKey = this.sdkInternal.getCurrentUserCacheKey();
-    return this.setUserValueFromCache(isUserPrefetched);
+    const evaluationTime = this.setUserValueFromCache(isUserPrefetched);
+    this.partialLoadFromPersistentStorageAdapter();
+    return evaluationTime;
   }
 
-  public async loadFromAsyncStorage(): Promise<void> {
+  private async loadFromAsyncStorage(): Promise<void> {
     this.parseCachedValues(
       await StatsigAsyncStorage.getItemAsync(INTERNAL_STORE_KEY),
       await StatsigAsyncStorage.getItemAsync(STICKY_DEVICE_EXPERIMENTS_KEY),
@@ -196,6 +219,44 @@ export default class StatsigStore {
       StatsigLocalStorage.getItem(STICKY_DEVICE_EXPERIMENTS_KEY),
     );
     this.loaded = true;
+  }
+
+  // Currently only loads experiments, cannot rely on storage adapter for all user values.
+  private partialLoadFromPersistentStorageAdapter(): void {
+    if (this.userPersistentStorageAdapter) {
+      const userID = this.sdkInternal.getCurrentUserID();
+      if (userID) {
+        try {
+          this.userPersistentStorageData = JSON.parse(
+            this.userPersistentStorageAdapter.load(userID),
+          ) as UserPersistentStorageData;
+        } catch (e) {
+          console.warn('Failed to load from user persistent storage.', e);
+        }
+        this.userValues.sticky_experiments = this.userPersistentStorageData
+          .experiments as Record<string, APIDynamicConfig>;
+      }
+    }
+  }
+
+  private saveStickyExperimentsToPersistentStorageAdapter(): void {
+    if (this.userPersistentStorageAdapter) {
+      const userID = this.sdkInternal.getCurrentUserID();
+      if (userID) {
+        const data: UserPersistentStorageData = {
+          ...this.userPersistentStorageData,
+          experiments: this.userValues.sticky_experiments,
+        };
+        try {
+          this.userPersistentStorageAdapter.save(userID, JSON.stringify(data));
+        } catch (e) {
+          console.warn(
+            'Failed to save user experiment values to persistent storage.',
+            e,
+          );
+        }
+      }
+    }
   }
 
   public isLoaded(): boolean {
@@ -737,16 +798,18 @@ export default class StatsigStore {
     isLayer: boolean,
     details: EvaluationDetails,
   ): APIDynamicConfig | undefined {
+    const key = this.getHashedSpecName(name);
+
     // We don't want sticky behavior. Clear any sticky values and return latest.
     if (!keepDeviceValue) {
-      this.removeStickyValue(name);
+      this.removeStickyValue(key);
       return latestValue;
     }
 
     // If there is no sticky value, save latest as sticky and return latest.
-    const stickyValue = this.getStickyValue(name);
+    const stickyValue = this.getStickyValue(key);
     if (!stickyValue) {
-      this.attemptToSaveStickyValue(name, latestValue);
+      this.attemptToSaveStickyValue(key, latestValue);
       return latestValue;
     }
 
@@ -767,9 +830,9 @@ export default class StatsigStore {
     }
 
     if (latestValue?.is_experiment_active == true) {
-      this.attemptToSaveStickyValue(name, latestValue);
+      this.attemptToSaveStickyValue(key, latestValue);
     } else {
-      this.removeStickyValue(name);
+      this.removeStickyValue(key);
     }
 
     return latestValue;
@@ -790,19 +853,18 @@ export default class StatsigStore {
       this.makeOnConfigDefaultValueFallback(this.sdkInternal.getCurrentUser()),
       apiConfig?.group_name,
       apiConfig?.id_type,
+      apiConfig?.is_experiment_active,
     );
   }
 
-  private getStickyValue(name: string) {
-    const key = this.getHashedSpecName(name);
-
+  private getStickyValue(key: string): APIDynamicConfig | null {
     return (
       this.userValues?.sticky_experiments[key] ??
       this.stickyDeviceExperiments[key]
     );
   }
 
-  private attemptToSaveStickyValue(name: string, config?: APIDynamicConfig) {
+  private attemptToSaveStickyValue(key: string, config?: APIDynamicConfig) {
     if (
       !config ||
       !config.is_user_in_experiment ||
@@ -811,7 +873,6 @@ export default class StatsigStore {
       return;
     }
 
-    const key = this.getHashedSpecName(name);
     if (config.is_device_based === true) {
       // save sticky values in memory
       this.stickyDeviceExperiments[key] = config;
@@ -822,7 +883,7 @@ export default class StatsigStore {
     this.saveStickyValuesToStorage();
   }
 
-  private removeStickyValue(name: string) {
+  private removeStickyValue(key: string) {
     if (
       Object.keys(this.userValues?.sticky_experiments ?? {}).length === 0 &&
       Object.keys(this.stickyDeviceExperiments ?? {}).length === 0
@@ -830,20 +891,22 @@ export default class StatsigStore {
       return;
     }
 
-    const key = this.getHashedSpecName(name);
-
     delete this.userValues?.sticky_experiments[key];
     delete this.stickyDeviceExperiments[key];
     this.saveStickyValuesToStorage();
   }
 
   private saveStickyValuesToStorage() {
-    this.values[this.userCacheKey.v2] = this.userValues;
-    this.setItemToStorage(INTERNAL_STORE_KEY, JSON.stringify(this.values));
-    this.setItemToStorage(
-      STICKY_DEVICE_EXPERIMENTS_KEY,
-      JSON.stringify(this.stickyDeviceExperiments),
-    );
+    if (this.userPersistentStorageAdapter) {
+      this.saveStickyExperimentsToPersistentStorageAdapter();
+    } else {
+      this.values[this.userCacheKey.v2] = this.userValues;
+      this.setItemToStorage(INTERNAL_STORE_KEY, JSON.stringify(this.values));
+      this.setItemToStorage(
+        STICKY_DEVICE_EXPERIMENTS_KEY,
+        JSON.stringify(this.stickyDeviceExperiments),
+      );
+    }
   }
 
   public getGlobalEvaluationDetails(): EvaluationDetails {

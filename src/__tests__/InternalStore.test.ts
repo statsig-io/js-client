@@ -6,6 +6,7 @@ import DynamicConfig from '../DynamicConfig';
 import StatsigClient from '../StatsigClient';
 import { EvaluationReason } from '../StatsigStore';
 import LocalStorageMock from './LocalStorageMock';
+import UserPersistentStorageExample from './UserPersistentStorageExample';
 
 type InitializeResponse = {
   feature_gates: Record<string, Record<string, any>>;
@@ -499,6 +500,128 @@ describe('Verify behavior of InternalStore', () => {
     exp = store.getExperiment('exp', true);
     deviceExp = store.getExperiment('device_exp', true);
     expNonSticky = store.getExperiment('exp_non_stick', false);
+    expect(exp.get('key', '')).toEqual('v4');
+    expect(exp.getEvaluationDetails()).toEqual({
+      reason: EvaluationReason.Network,
+      time: now,
+    });
+    expect(deviceExp.get('key', '')).toEqual('v4');
+    expect(deviceExp.getEvaluationDetails()).toEqual({
+      reason: EvaluationReason.Network,
+      time: now,
+    });
+    expect(expNonSticky.get('key', '')).toEqual('v4');
+    expect(expNonSticky.getEvaluationDetails()).toEqual({
+      reason: EvaluationReason.Network,
+      time: now,
+    });
+  });
+
+  test('experiment sticky bucketing behavior with custom storage', async () => {
+    const stickyStore = new UserPersistentStorageExample();
+    const statsig = new StatsigClient(
+      sdkKey,
+      { userID: '123' },
+      { userPersistentStorage: stickyStore },
+    );
+    await statsig.initializeAsync();
+    const store = statsig.getStore();
+
+    // getting values with flag set to false, should get latest values
+    store.save({ userID: '123' }, generateTestConfigs('v0', true, true));
+    let exp = store.getExperiment('exp', false);
+    let deviceExp = store.getExperiment('device_exp', false);
+    let expNonSticky = store.getExperiment('exp_non_stick', false);
+    expect(Object.keys(stickyStore.store).length).toEqual(0);
+    expect(exp.get('key', '')).toEqual('v0');
+    expect(exp.getEvaluationDetails()).toEqual({
+      reason: EvaluationReason.Network,
+      time: now,
+    });
+    expect(deviceExp.get('key', '')).toEqual('v0');
+    expect(deviceExp.getEvaluationDetails()).toEqual({
+      reason: EvaluationReason.Network,
+      time: now,
+    });
+    expect(expNonSticky.get('key', '')).toEqual('v0');
+    expect(expNonSticky.getEvaluationDetails()).toEqual({
+      reason: EvaluationReason.Network,
+      time: now,
+    });
+
+    // update values, and then get with flag set to true. All values should update
+    store.save({ userID: '123' }, generateTestConfigs('v1', true, true));
+    exp = store.getExperiment('exp', true);
+    deviceExp = store.getExperiment('device_exp', true);
+    expNonSticky = store.getExperiment('exp_non_stick', false);
+    // device based sticky doesn't work with user persistent storage
+    expect(Object.keys(stickyStore.store).length).toEqual(1);
+    expect(exp.get('key', '')).toEqual('v1');
+    expect(exp.getEvaluationDetails()).toEqual({
+      reason: EvaluationReason.Network,
+      time: now,
+    });
+    expect(deviceExp.get('key', '')).toEqual('v1');
+    expect(deviceExp.getEvaluationDetails()).toEqual({
+      reason: EvaluationReason.Network,
+      time: now,
+    });
+    expect(expNonSticky.get('key', '')).toEqual('v1');
+    expect(expNonSticky.getEvaluationDetails()).toEqual({
+      reason: EvaluationReason.Network,
+      time: now,
+    });
+
+    // update values again. Now some values should be sticky except the non-sticky ones
+    store.save({ userID: '123' }, generateTestConfigs('v2', true, true));
+    exp = store.getExperiment('exp', true);
+    deviceExp = store.getExperiment('device_exp', true);
+    expNonSticky = store.getExperiment('exp_non_stick', false);
+    expect(Object.keys(stickyStore.store).length).toEqual(1);
+    expect(exp.get('key', '')).toEqual('v1');
+    expect(exp.getEvaluationDetails()).toEqual({
+      reason: EvaluationReason.Sticky,
+      time: now,
+    });
+    expect(deviceExp.get('key', '')).toEqual('v1');
+    expect(deviceExp.getEvaluationDetails()).toEqual({
+      reason: EvaluationReason.Sticky,
+      time: now,
+    });
+    expect(expNonSticky.get('key', '')).toEqual('v2');
+    expect(expNonSticky.getEvaluationDetails()).toEqual({
+      reason: EvaluationReason.Network,
+      time: now,
+    });
+
+    // update the experiments so that the user is no longer in experiments, should still be sticky for the right ones
+    store.save({ userID: '123' }, generateTestConfigs('v3', false, true));
+    exp = store.getExperiment('exp', true);
+    deviceExp = store.getExperiment('device_exp', true);
+    expNonSticky = store.getExperiment('exp_non_stick', false);
+    expect(Object.keys(stickyStore.store).length).toEqual(1);
+    expect(exp.get('key', '')).toEqual('v1');
+    expect(exp.getEvaluationDetails()).toEqual({
+      reason: EvaluationReason.Sticky,
+      time: now,
+    });
+    expect(deviceExp.get('key', '')).toEqual('v1');
+    expect(deviceExp.getEvaluationDetails()).toEqual({
+      reason: EvaluationReason.Sticky,
+      time: now,
+    });
+    expect(expNonSticky.get('key', '')).toEqual('v3');
+    expect(expNonSticky.getEvaluationDetails()).toEqual({
+      reason: EvaluationReason.Network,
+      time: now,
+    });
+
+    // update the experiments to no longer be active, values should update NOW
+    store.save({ userID: '123' }, generateTestConfigs('v4', false, false));
+    exp = store.getExperiment('exp', true);
+    deviceExp = store.getExperiment('device_exp', true);
+    expNonSticky = store.getExperiment('exp_non_stick', false);
+    expect(Object.keys(stickyStore.store).length).toEqual(0);
     expect(exp.get('key', '')).toEqual('v4');
     expect(exp.getEvaluationDetails()).toEqual({
       reason: EvaluationReason.Network,

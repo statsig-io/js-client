@@ -98,6 +98,8 @@ export interface IHasStatsigInternal {
   getOptions(): StatsigSDKOptions;
   getCurrentUser(): StatsigUser | null;
   getCurrentUserCacheKey(): UserCacheKey;
+  getCurrentUserUnitID(idType: string): string | null;
+  getCurrentUserID(): string | null;
   getSDKKey(): string;
   getStatsigMetadata(): Record<string, string | number>;
   getErrorBoundary(): ErrorBoundary;
@@ -177,6 +179,32 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       () => getUserCacheKey(this.getStableID(), this.getCurrentUser()),
       () => ({ v1: '', v2: '' }),
     );
+  }
+  public getCurrentUserUnitID(idType: string): string | null {
+    return this.errorBoundary.capture(
+      'getCurrentUserUnitID',
+      () => this.getUnitID(this.getCurrentUser(), idType),
+      () => '',
+    );
+  }
+  public getCurrentUserID(): string | null {
+    return this.errorBoundary.capture(
+      'getCurrentUserID',
+      () => this.getUnitID(this.getCurrentUser(), 'userid'),
+      () => '',
+    );
+  }
+  private getUnitID(user: StatsigUser | null, idType: string): string | null {
+    if (!user) {
+      return null;
+    }
+    if (idType.toLowerCase() === 'userid') {
+      return user.userID?.toString() ?? null;
+    }
+    if (user.customIDs) {
+      user.customIDs[idType] ?? user.customIDs[idType.toLowerCase()]
+    }
+    return null;
   }
 
   public getStatsigMetadata(): Record<string, string | number> {
@@ -332,7 +360,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         this.initCalled = true;
         if (StatsigAsyncStorage.asyncStorage) {
           await this.identity.initAsync();
-          await this.store.loadFromAsyncStorage();
+          await this.store.loadAsync();
         }
 
         this.onCacheLoadedForReact?.();
