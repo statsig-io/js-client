@@ -222,6 +222,7 @@ interface OverrallDataType extends RequiredStepTags {
     end: {
       success: boolean;
       reason?: 'timeout';
+      message?: null;
     };
   };
 }
