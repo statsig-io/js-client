@@ -311,7 +311,7 @@ export default class StatsigNetwork {
 
     diagnostics?.start({ attempt: attempt });
     let res: Response;
-    let isRetryCode = true;
+    let isRetryCode = false;
     return fetch(url, params)
       .then(async (localRes) => {
         res = localRes;
@@ -326,9 +326,8 @@ export default class StatsigNetwork {
           diagnostics?.end(this.getDiagnosticsData(res, attempt));
           return Promise.resolve(networkResponse);
         }
-        if (!this.retryCodes[res.status]) {
-          isRetryCode = false;
-        }
+        isRetryCode = this.retryCodes[res.status] ?? false;
+
         const errorText = await res.text();
         return Promise.reject(new Error(`${res.status}: ${errorText}`));
       })
