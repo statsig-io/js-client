@@ -34,6 +34,7 @@ export interface Marker {
   attempt?: number;
   isRetry?: boolean;
   configName?: string;
+  message?: string | null;
 }
 
 type DiagnosticsMarkers = {
@@ -222,7 +223,6 @@ interface OverrallDataType extends RequiredStepTags {
     end: {
       success: boolean;
       reason?: 'timeout';
-      message?: null;
     };
   };
 }
