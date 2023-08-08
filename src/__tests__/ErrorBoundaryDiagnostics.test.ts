@@ -23,12 +23,12 @@ describe('ErrorBoundaryDiagnostics', () => {
       boundary = new ErrorBoundary('client-key');
       boundary.capture(
         'checkGate',
-        () => {},
-        () => {},
+        () => { },
+        () => { },
         { configName: 'the_config_name' },
       );
 
-      markers = diagnosticsImpl.markers.error_boundary;
+      markers = diagnosticsImpl.markers.api_call;
     });
 
     it('captures start', () => {
@@ -67,11 +67,11 @@ describe('ErrorBoundaryDiagnostics', () => {
         () => {
           throw new Error('Bad stuff');
         },
-        () => {},
+        () => { },
         { configName: 'the_config_name' },
       );
 
-      markers = diagnosticsImpl.getMarkers('error_boundary');
+      markers = diagnosticsImpl.getMarkers('api_call');
     });
 
     it('captures start', () => {
@@ -106,13 +106,13 @@ describe('ErrorBoundaryDiagnostics', () => {
     it('disables markers if not 1/10000', () => {
       jest.spyOn(Math, 'random').mockReturnValue(0.1);
       new ErrorBoundary('client-key');
-      expect(diagnosticsImpl?.maxMarkers?.error_boundary).toBe(0);
+      expect(diagnosticsImpl?.maxMarkers?.api_call).toBe(0);
     });
 
     it('enables markers if 1/10000', () => {
       jest.spyOn(Math, 'random').mockReturnValue(0.0000001);
       new ErrorBoundary('client-key');
-      expect(diagnosticsImpl?.maxMarkers?.error_boundary).toBe(30);
+      expect(diagnosticsImpl?.maxMarkers?.api_call).toBe(30);
     });
   });
 
@@ -125,14 +125,14 @@ describe('ErrorBoundaryDiagnostics', () => {
       for (let i = 0; i < 100; i++) {
         boundary.capture(
           'checkGate',
-          () => {},
-          () => {},
+          () => { },
+          () => { },
         );
       }
     });
 
     it('limits to 30 markers', () => {
-      expect(Diagnostics.getMarkerCount('error_boundary')).toBe(30);
+      expect(Diagnostics.getMarkerCount('api_call')).toBe(30);
     });
   });
 });

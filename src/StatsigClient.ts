@@ -664,8 +664,8 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       if (this.shouldTrimParam(eventName, MAX_VALUE_SIZE)) {
         this.consoleLogger.info(
           'eventName is too long, trimming to ' +
-            MAX_VALUE_SIZE +
-            ' characters.',
+          MAX_VALUE_SIZE +
+          ' characters.',
         );
         eventName = eventName.substring(0, MAX_VALUE_SIZE);
       }
@@ -756,7 +756,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         );
         const cachedTime = this.store.updateUser(isUserPrefetched);
 
-        Diagnostics.clearContext('error_boundary');
+        Diagnostics.clearContext('api_call');
         this.logger.resetDedupeKeys();
 
         if (

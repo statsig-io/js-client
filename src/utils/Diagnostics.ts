@@ -5,7 +5,7 @@ export type ContextType =
   | 'initialize'
   | 'config_sync'
   | 'event_logging'
-  | 'error_boundary';
+  | 'api_call';
 
 export type KeyType =
   | 'initialize'
@@ -40,7 +40,7 @@ type DiagnosticsMarkers = {
   initialize: Marker[];
   config_sync: Marker[];
   event_logging: Marker[];
-  error_boundary: Marker[];
+  api_call: Marker[];
 };
 
 type DiagnosticsMaxMarkers = {
@@ -52,7 +52,7 @@ export class DiagnosticsImpl {
     overall: this.selectAction<OverrallDataType>('overall'),
     intialize: this.selectStep<InitializeDataType>('initialize'),
     bootstrap: this.selectStep<BootstrapDataType>('bootstrap'),
-    error_boundary: (tag: string) => {
+    api_call: (tag: string) => {
       switch (tag) {
         case 'getConfig':
           return this.selectAction<ErrorBoundaryDataType>('get_config');
@@ -76,7 +76,7 @@ export class DiagnosticsImpl {
     initialize: this.defaultMaxMarkers,
     config_sync: this.defaultMaxMarkers,
     event_logging: this.defaultMaxMarkers,
-    error_boundary: this.defaultMaxMarkers,
+    api_call: this.defaultMaxMarkers,
   };
 
   constructor(args: {
@@ -87,7 +87,7 @@ export class DiagnosticsImpl {
       initialize: [],
       config_sync: [],
       event_logging: [],
-      error_boundary: [],
+      api_call: [],
     };
     this.disabled = args.options?.getDisableDiagnosticsLogging() ?? false;
   }
@@ -152,7 +152,7 @@ export class DiagnosticsImpl {
     if (
       this.maxMarkers[context] !== undefined &&
       this.markers[context].length >=
-        (this.maxMarkers[context] ?? this.defaultMaxMarkers)
+      (this.maxMarkers[context] ?? this.defaultMaxMarkers)
     ) {
       return false;
     }
