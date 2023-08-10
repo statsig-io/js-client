@@ -34,6 +34,7 @@ export interface Marker {
   attempt?: number;
   isRetry?: boolean;
   configName?: string;
+  message?: string | null;
 }
 
 type DiagnosticsMarkers = {
