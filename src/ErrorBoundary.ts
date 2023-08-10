@@ -116,21 +116,21 @@ export default class ErrorBoundary {
   }
 
   private setupDiagnostics(maxMarkers: number) {
-    Diagnostics.setMaxMarkers('error_boundary', maxMarkers);
+    Diagnostics.setMaxMarkers('api_call', maxMarkers);
   }
 
   private beginMarker(tag: string): string | null {
-    const diagnostics = Diagnostics.mark.error_boundary(tag);
+    const diagnostics = Diagnostics.mark.api_call(tag);
     if (!diagnostics) {
       return null;
     }
-    const count = Diagnostics.getMarkerCount('error_boundary');
+    const count = Diagnostics.getMarkerCount('api_call');
     const markerID = `${tag}_${count}`;
     const wasAdded = diagnostics.start(
       {
         markerID,
       },
-      'error_boundary',
+      'api_call',
     );
     return wasAdded ? markerID : null;
   }
@@ -141,7 +141,7 @@ export default class ErrorBoundary {
     markerID: string | null,
     configName?: string,
   ): void {
-    const diagnostics = Diagnostics.mark.error_boundary(tag);
+    const diagnostics = Diagnostics.mark.api_call(tag);
     if (!markerID || !diagnostics) {
       return;
     }
@@ -151,7 +151,7 @@ export default class ErrorBoundary {
         success: wasSuccessful,
         configName,
       },
-      'error_boundary',
+      'api_call',
     );
   }
 
