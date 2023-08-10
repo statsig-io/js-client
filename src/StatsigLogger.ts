@@ -389,12 +389,12 @@ export default class StatsigLogger {
           events: oldQueue,
           statsigMetadata: this.sdkInternal.getStatsigMetadata(),
         }, {
-          retryOptions: {
-            retryLimit: 3,
-            backoff: 1000,
-          },
-          useKeepalive: isClosing,
-        }
+        retryOptions: {
+          retryLimit: 3,
+          backoff: 1000,
+        },
+        useKeepalive: isClosing,
+      }
       )
       .then((response) => {
         if (!response.ok) {
@@ -576,18 +576,18 @@ export default class StatsigLogger {
   }
 
   private addErrorBoundaryDiagnostics() {
-    if (Diagnostics.getMarkerCount('error_boundary') === 0) {
+    if (Diagnostics.getMarkerCount('api_call') === 0) {
       return;
     }
 
     const diagEvent = this.makeDiagnosticsEvent(
       this.sdkInternal.getCurrentUser(),
       {
-        context: 'error_boundary',
-        markers: Diagnostics.getMarkers('error_boundary'),
+        context: 'api_call',
+        markers: Diagnostics.getMarkers('api_call'),
       },
     );
     this.queue.push(diagEvent);
-    Diagnostics.clearContext('error_boundary');
+    Diagnostics.clearContext('api_call');
   }
 }
