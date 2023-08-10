@@ -11,7 +11,7 @@ export type KeyType =
   | 'initialize'
   | 'bootstrap'
   | 'overall'
-  // Error boundary keys
+  // api_call keys
   | 'check_gate'
   | 'get_config'
   | 'get_experiment'
