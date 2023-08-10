@@ -396,7 +396,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
               'initializeAsync:fetchAndSaveValues',
               e,
             );
-            Diagnostics.mark.overall.end({ success: false });
+            Diagnostics.mark.overall.end({ success: false, message: e.message });
             return { success: false, message: e.message };
           })
           .then(({ success, message }) => {
