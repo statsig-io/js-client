@@ -11,3 +11,10 @@ export class StatsigInvalidArgumentError extends Error {
     Object.setPrototypeOf(this, StatsigInvalidArgumentError.prototype);
   }
 }
+
+export class StatsigSDKNetworkTimeoutError extends Error {
+  constructor(message?: string) {
+    super(message);
+    Object.setPrototypeOf(this, StatsigSDKNetworkTimeoutError.prototype);
+  }
+}

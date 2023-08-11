@@ -2,6 +2,7 @@ import { IHasStatsigInternal } from './StatsigClient';
 import StatsigRuntime from './StatsigRuntime';
 import { StatsigUser } from './StatsigUser';
 import Diagnostics from './utils/Diagnostics';
+import { StatsigSDKNetworkTimeoutError } from './Errors';
 
 export enum StatsigEndpoint {
   Initialize = 'initialize',
@@ -75,11 +76,15 @@ export default class StatsigNetwork {
       hash: 'djb2',
     };
 
-    return this.postWithTimeout(StatsigEndpoint.Initialize, input, {
-      timeout,
-      retries: 3,
-      diagnostics: Diagnostics.mark.intialize.networkRequest,
-    });
+    return this.postWithTimeout(
+      StatsigEndpoint.Initialize,
+      input,
+      {
+        timeout,
+        retries: 3,
+        diagnostics: Diagnostics.mark.intialize.networkRequest,
+      }
+    );
   }
 
   private postWithTimeout<T>(
@@ -120,7 +125,7 @@ export default class StatsigNetwork {
         setTimeout(() => {
           hasTimedOut = true;
           reject(
-            new Error(
+            new StatsigSDKNetworkTimeoutError(
               `The initialization timeout of ${timeout}ms has been hit before the network request has completed.`,
             ),
           );
@@ -208,7 +213,7 @@ export default class StatsigNetwork {
     }
     const url = new URL(
       this.sdkInternal.getOptions().getEventLoggingApi() +
-        StatsigEndpoint.LogEventBeacon,
+      StatsigEndpoint.LogEventBeacon,
     );
     url.searchParams.append('k', this.sdkInternal.getSDKKey());
     payload.clientTime = Date.now() + '';
