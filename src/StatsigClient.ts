@@ -30,6 +30,7 @@ import StatsigLocalStorage from './utils/StatsigLocalStorage';
 import Diagnostics from './utils/Diagnostics';
 import ConsoleLogger from './utils/ConsoleLogger';
 import { now } from './utils/Timing';
+import parseError from './utils/parseError';
 
 const MAX_VALUE_SIZE = 64;
 const MAX_OBJ_SIZE = 2048;
@@ -202,7 +203,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       return user.userID?.toString() ?? null;
     }
     if (user.customIDs) {
-      user.customIDs[idType] ?? user.customIDs[idType.toLowerCase()]
+      user.customIDs[idType] ?? user.customIDs[idType.toLowerCase()];
     }
     return null;
   }
@@ -396,8 +397,9 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
               'initializeAsync:fetchAndSaveValues',
               e,
             );
-            Diagnostics.mark.overall.end({ success: false, message: e.message });
-            return { success: false, message: e.message };
+            const { message } = parseError(e);
+            Diagnostics.mark.overall.end({ success: false, message: message });
+            return { success: false, message: message ?? null };
           })
           .then(({ success, message }) => {
             const cb = this.options.getInitCompletionCallback();
@@ -664,8 +666,8 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       if (this.shouldTrimParam(eventName, MAX_VALUE_SIZE)) {
         this.consoleLogger.info(
           'eventName is too long, trimming to ' +
-          MAX_VALUE_SIZE +
-          ' characters.',
+            MAX_VALUE_SIZE +
+            ' characters.',
         );
         eventName = eventName.substring(0, MAX_VALUE_SIZE);
       }
