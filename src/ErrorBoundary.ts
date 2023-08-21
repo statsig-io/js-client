@@ -3,6 +3,7 @@ import {
   StatsigInvalidArgumentError,
 } from './Errors';
 import Diagnostics from './utils/Diagnostics';
+import parseError from './utils/parseError';
 export const ExceptionEndpoint = 'https://statsigapi.net/v1/sdk_exception';
 
 type ExtraDataExtractor = () => Promise<Record<string, unknown>>;
@@ -80,15 +81,11 @@ export default class ErrorBoundary {
       try {
         const extra =
           typeof getExtraData === 'function' ? await getExtraData() : null;
-        const unwrapped = (error ??
-          Error('[Statsig] Error was empty')) as unknown;
-        const isError = unwrapped instanceof Error;
-        const name = isError ? unwrapped.name : 'No Name';
+        const { name, trace: info } = parseError(error);
 
         if (this.seen.has(name)) return;
         this.seen.add(name);
 
-        const info = isError ? unwrapped.stack : this.getDescription(unwrapped);
         const metadata = this.statsigMetadata ?? {};
         const body = JSON.stringify({
           tag,
@@ -173,13 +170,5 @@ export default class ErrorBoundary {
     this.logError(tag, error, getExtraData);
 
     return recover();
-  }
-
-  private getDescription(obj: unknown): string {
-    try {
-      return JSON.stringify(obj);
-    } catch {
-      return '[Statsig] Failed to get string for error.';
-    }
   }
 }
