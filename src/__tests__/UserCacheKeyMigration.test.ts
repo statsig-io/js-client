@@ -27,7 +27,7 @@ describe('UserCacheKey Migration', () => {
         body: JSON.parse(params?.body?.toString() ?? '{}'),
       });
 
-      if (url.toString().endsWith('/initialize')) {
+      if (url.toString().includes('/initialize')) {
         return Promise.resolve({
           ok: true,
           text: () =>
