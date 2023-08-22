@@ -14,7 +14,7 @@ describe('Verify behavior of StatsigClient when 204 returned from initialize', (
       url &&
       typeof url === 'string' &&
       url.includes('initialize') &&
-      url !== 'https://featuregates.org/v1/initialize'
+      !url.includes('https://featuregates.org/v1/initialize')
     ) {
       return Promise.reject(new Error('invalid initialize endpoint'));
     }

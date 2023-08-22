@@ -277,10 +277,8 @@ export default class StatsigNetwork {
       this.leakyBucket[url] = counter + 1;
     }
 
-    fullUrl.searchParams.append('k', this.sdkInternal.getSDKKey());
-    fullUrl.searchParams.append('t', Date.now() + '');
-    fullUrl.searchParams.append('st', this.sdkInternal.getSDKType());
-    fullUrl.searchParams.append('sv', this.sdkInternal.getSDKVersion());
+
+    
 
     let shouldEncode =
       endpointName === StatsigEndpoint.Initialize &&
@@ -293,18 +291,39 @@ export default class StatsigNetwork {
       try {
         const encoded = window.btoa(postBody).split('').reverse().join('');
         postBody = encoded;
-        fullUrl.searchParams.append('se', '1');
+        
       } catch (_e) {
         shouldEncode = false;
+      }
+    }
+
+    let headers = {};
+    if (this.sdkInternal.getOptions().getDisableCORSBypass()) {
+      headers = {
+        'Content-type': 'application/json; charset=UTF-8',
+        'STATSIG-API-KEY': this.sdkInternal.getSDKKey(),
+        'STATSIG-CLIENT-TIME': Date.now() + '',
+        'STATSIG-SDK-TYPE': this.sdkInternal.getSDKType(),
+        'STATSIG-SDK-VERSION': this.sdkInternal.getSDKVersion(),
+        'STATSIG-ENCODED': shouldEncode ? '1' : '0',
+      };
+    } else {
+      headers = {
+        'Content-Type': 'text/plain',
+      };
+      fullUrl.searchParams.append('k', this.sdkInternal.getSDKKey());
+      fullUrl.searchParams.append('t', Date.now() + '');
+      fullUrl.searchParams.append('st', this.sdkInternal.getSDKType());
+      fullUrl.searchParams.append('sv', this.sdkInternal.getSDKVersion());
+      if (shouldEncode) {
+        fullUrl.searchParams.append('se', '1');
       }
     }
 
     const params: RequestInit = {
       method: 'POST',
       body: postBody,
-      headers: {
-        'Content-Type': 'text/plain',
-      },
+      headers,
     };
 
     if (this.canUseKeepalive && useKeepalive) {

@@ -39,11 +39,12 @@ describe('Verify behavior of StatsigClient', () => {
   let headers: HeadersInit | null = null;
   // @ts-ignore
   global.fetch = jest.fn((url, params) => {
+    const fullUrl = new URL(url.toString());
     if (
       ![
         'https://featuregates.org/v1/initialize',
         'https://featuregates.org/v1/initialize_with_deltas',
-      ].includes(url.toString())
+      ].includes(fullUrl.href)
     ) {
       return Promise.reject(new Error('invalid initialize endpoint'));
     }
@@ -270,6 +271,16 @@ describe('Verify behavior of StatsigClient', () => {
     expect.assertions(1);
 
     const statsig = new StatsigClient(sdkKey);
+    await statsig.initializeAsync();
+
+    // No custom headers set to avoid CORS preflight
+    expect(headers).toEqual({"Content-Type": "text/plain"});
+  });
+
+  test('that the correct headers are set on the initialize request', async () => {
+    expect.assertions(1);
+
+    const statsig = new StatsigClient(sdkKey, null, {disableCORSBypass: true});
     await statsig.initializeAsync();
 
     // No custom headers set to avoid CORS preflight

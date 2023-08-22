@@ -60,6 +60,7 @@ export type StatsigOptions = {
   disableLocalOverrides?: boolean;
   gateEvaluationCallback?: GateEvaluationCallback;
   userPersistentStorage?: UserPersistentStorageInterface;
+  disableCORSBypass?: boolean;
 };
 
 export enum LogLevel {
@@ -101,6 +102,7 @@ export default class StatsigSDKOptions {
   private disableLocalOverrides: boolean;
   private gateEvaluationCallback: GateEvaluationCallback | null;
   private userPersistentStorage: UserPersistentStorageInterface | null;
+  private disableCORSBypass: boolean;
 
   constructor(options?: StatsigOptions | null) {
     if (options == null) {
@@ -154,6 +156,7 @@ export default class StatsigSDKOptions {
     this.disableLocalOverrides = options?.disableLocalOverrides ?? false;
     this.gateEvaluationCallback = options?.gateEvaluationCallback ?? null;
     this.userPersistentStorage = options?.userPersistentStorage ?? null;
+    this.disableCORSBypass = options?.disableCORSBypass ?? false;
   }
 
   getApi(): string {
@@ -250,6 +253,10 @@ export default class StatsigSDKOptions {
 
   getUserPersistentStorage(): UserPersistentStorageInterface | null {
     return this.userPersistentStorage;
+  }
+
+  getDisableCORSBypass(): boolean {
+    return this.disableCORSBypass;
   }
 
   private normalizeNumberInput(
