@@ -282,9 +282,26 @@ export default class StatsigNetwork {
     fullUrl.searchParams.append('st', this.sdkInternal.getSDKType());
     fullUrl.searchParams.append('sv', this.sdkInternal.getSDKVersion());
 
+    let shouldEncode =
+      endpointName === StatsigEndpoint.Initialize &&
+      StatsigRuntime.encodeInitializeCall &&
+      typeof window !== 'undefined' &&
+      typeof window?.btoa === 'function';
+
+    let postBody = JSON.stringify(body);
+    if (shouldEncode) {
+      try {
+        const encoded = window.btoa(postBody).split('').reverse().join('');
+        postBody = encoded;
+        fullUrl.searchParams.append('se', '1');
+      } catch (_e) {
+        shouldEncode = false;
+      }
+    }
+
     const params: RequestInit = {
       method: 'POST',
-      body: JSON.stringify(body),
+      body: postBody,
       headers: {
         'Content-Type': 'text/plain',
       },
