@@ -208,7 +208,7 @@ export default class StatsigNetwork {
     }
     const url = new URL(
       this.sdkInternal.getOptions().getEventLoggingApi() +
-        StatsigEndpoint.LogEventBeacon,
+      StatsigEndpoint.LogEventBeacon,
     );
     url.searchParams.append('k', this.sdkInternal.getSDKKey());
     payload.clientTime = Date.now() + '';
@@ -278,7 +278,7 @@ export default class StatsigNetwork {
     }
 
 
-    
+
 
     let shouldEncode =
       endpointName === StatsigEndpoint.Initialize &&
@@ -291,23 +291,14 @@ export default class StatsigNetwork {
       try {
         const encoded = window.btoa(postBody).split('').reverse().join('');
         postBody = encoded;
-        
+
       } catch (_e) {
         shouldEncode = false;
       }
     }
 
     let headers = {};
-    if (this.sdkInternal.getOptions().getDisableCORSBypass()) {
-      headers = {
-        'Content-type': 'application/json; charset=UTF-8',
-        'STATSIG-API-KEY': this.sdkInternal.getSDKKey(),
-        'STATSIG-CLIENT-TIME': Date.now() + '',
-        'STATSIG-SDK-TYPE': this.sdkInternal.getSDKType(),
-        'STATSIG-SDK-VERSION': this.sdkInternal.getSDKVersion(),
-        'STATSIG-ENCODED': shouldEncode ? '1' : '0',
-      };
-    } else {
+    if (this.sdkInternal.getOptions().getEnableCORSBypass()) {
       headers = {
         'Content-Type': 'text/plain',
       };
@@ -318,6 +309,15 @@ export default class StatsigNetwork {
       if (shouldEncode) {
         fullUrl.searchParams.append('se', '1');
       }
+    } else {
+      headers = {
+        'Content-type': 'application/json; charset=UTF-8',
+        'STATSIG-API-KEY': this.sdkInternal.getSDKKey(),
+        'STATSIG-CLIENT-TIME': Date.now() + '',
+        'STATSIG-SDK-TYPE': this.sdkInternal.getSDKType(),
+        'STATSIG-SDK-VERSION': this.sdkInternal.getSDKVersion(),
+        'STATSIG-ENCODED': shouldEncode ? '1' : '0',
+      };
     }
 
     const params: RequestInit = {

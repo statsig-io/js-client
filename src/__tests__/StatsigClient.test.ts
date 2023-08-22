@@ -274,17 +274,17 @@ describe('Verify behavior of StatsigClient', () => {
     await statsig.initializeAsync();
 
     // No custom headers set to avoid CORS preflight
-    expect(headers).toEqual({"Content-Type": "text/plain"});
+    expect(headers).toEqual({ "Content-Type": "text/plain" });
   });
 
   test('that the correct headers are set on the initialize request', async () => {
     expect.assertions(1);
 
-    const statsig = new StatsigClient(sdkKey, null, {disableCORSBypass: true});
+    const statsig = new StatsigClient(sdkKey, null, { enableCORSBypass: true });
     await statsig.initializeAsync();
 
     // No custom headers set to avoid CORS preflight
-    expect(headers).toEqual({"Content-Type": "text/plain"});
+    expect(headers).toEqual({ "Content-Type": "text/plain" });
   });
 
   test('that overrideStableID works for local storage and gets set correctly in request', async () => {

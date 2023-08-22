@@ -34,7 +34,7 @@ describe('StatsigEncoded', () => {
   });
 
   beforeEach(() => {
-    client = new StatsigClient('client-key', USER, {disableCORSBypass: true});
+    client = new StatsigClient('client-key', USER, { enableCORSBypass: true });
     client.getStatsigMetadata = () => MOCK_METADATA;
     body = null;
   });
@@ -64,7 +64,7 @@ describe('StatsigEncoded', () => {
 
   it('does not encode bodies with non latin characters', async () => {
     Statsig.encodeIntializeCall = true;
-    const local = new StatsigClient('client-key', { userID: '大' }, {disableCORSBypass: true});
+    const local = new StatsigClient('client-key', { userID: '大' }, { enableCORSBypass: true });
     local.getStatsigMetadata = () => MOCK_METADATA;
     await local.initializeAsync();
     expect(body).toEqual(
