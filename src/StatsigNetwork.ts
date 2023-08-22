@@ -277,9 +277,6 @@ export default class StatsigNetwork {
       this.leakyBucket[url] = counter + 1;
     }
 
-
-
-
     let shouldEncode =
       endpointName === StatsigEndpoint.Initialize &&
       StatsigRuntime.encodeInitializeCall &&
