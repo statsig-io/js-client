@@ -7,7 +7,7 @@ import { INTERNAL_STORE_KEY } from '../utils/Constants';
 import Statsig from '..';
 import LocalStorageMock from './LocalStorageMock';
 import * as TestData from './initialize_response.json';
-import { sha256Hash, getUserCacheKey } from '../utils/Hashing';
+import { djb2Hash, getSortedObject, getUserCacheKey } from '../utils/Hashing';
 
 describe('Verify behavior of StatsigClient with sinceTime', () => {
   const sdkKey = 'client-clienttestkey';
@@ -84,7 +84,7 @@ describe('Verify behavior of StatsigClient with sinceTime', () => {
     expect(spy).toHaveBeenCalledWith(user, null, expect.anything(), undefined);
 
     const key = getUserCacheKey(stableID, user).v2;
-    const userHash = sha256Hash(JSON.stringify(user));
+    const userHash = djb2Hash(JSON.stringify(getSortedObject(user)));
     const storeObject = JSON.parse(
       localStorage.getItem(INTERNAL_STORE_KEY) ?? '',
     );

@@ -13,6 +13,7 @@ import {
   sha256Hash,
   getUserCacheKey,
   UserCacheKey,
+  getSortedObject,
 } from './utils/Hashing';
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
@@ -264,7 +265,7 @@ export default class StatsigStore {
   }
 
   public getLastUpdateTime(user: StatsigUser | null): number | null {
-    const userHash = this.getSortedHash(user);
+    const userHash = djb2Hash(JSON.stringify(getSortedObject(user)));
     if (this.userValues.user_hash == userHash) {
       return this.userValues.time;
     }
@@ -468,7 +469,7 @@ export default class StatsigStore {
         requestedUserCacheKey.v2,
       );
       if (data.has_updates && data.time) {
-        const userHash = this.getSortedHash(user);
+        const userHash = djb2Hash(JSON.stringify(getSortedObject(user)));
         requestedUserValues.user_hash = userHash;
       }
 
@@ -477,28 +478,6 @@ export default class StatsigStore {
         requestedUserCacheKey.v2,
       );
     }
-  }
-
-  private getSortedHash(object: Record<string, unknown> | null): string {
-    if (object == null) {
-      return djb2Hash(JSON.stringify(object));
-    }
-    const keys = Object.keys(object).sort();
-    const sortedObject: Record<string, unknown> = {};
-    keys.forEach((key) => {
-      let value = object[key];
-      if (value instanceof Object) {
-        const subKeys = Object.keys(value).sort();
-        const sortedSubObject: Record<string, unknown> = {};
-        subKeys.forEach((subKey) => {
-          sortedSubObject[subKey] = (value as Record<string, unknown>)[subKey];
-        });
-        value = sortedSubObject;
-      }
-
-      sortedObject[key] = value;
-    });
-    return djb2Hash(JSON.stringify(sortedObject));
   }
 
   private getDefaultUserCacheValues(): UserCacheValues {
