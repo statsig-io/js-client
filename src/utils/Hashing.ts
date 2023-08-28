@@ -81,8 +81,8 @@ export function getUserCacheKey(
 
   const customIDs = user?.customIDs;
   if (customIDs != null) {
-    for (const type of Object.keys(customIDs).sort()) {
-      parts.push(`${type}:${customIDs[type]}`);
+    for (const [type, value] of Object.entries(customIDs)) {
+      parts.push(`${type}:${value}`);
     }
   }
 
