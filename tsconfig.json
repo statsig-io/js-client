@@ -11,6 +11,7 @@
     "skipLibCheck": true,
     "moduleResolution": "node",
     "resolveJsonModule": true,
+    "allowJs": true,
     "types": ["@types/webpack-env", "node", "jest"]
   },
   "include": ["src/**/*", "src/utils/*"],
