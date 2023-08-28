@@ -1207,12 +1207,15 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       sinceTime = this.store.getLastUpdateTime(user);
     }
 
+    const previousDerivedFields = this.store.getPreviousDerivedFields(user);
+
     return this.network
       .fetchValues(
         user,
         sinceTime,
         timeout,
         prefetchUsers.length > 0 ? keyedPrefetchUsers : undefined,
+        previousDerivedFields,
       )
       .eventually((json) => {
         if (json?.has_updates) {

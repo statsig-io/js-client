@@ -74,6 +74,7 @@ type APIInitializeData = {
   has_updates?: boolean;
   time: number;
   hash_used?: 'djb2' | 'sha256' | 'none';
+  derived_fields?: Record<string, string>;
 };
 
 type APIInitializeDataWithDeltas = APIInitializeData & {
@@ -137,6 +138,7 @@ export default class StatsigStore {
       has_updates: false,
       time: 0,
       evaluation_time: 0,
+      derived_fields: {},
     };
     this.stickyDeviceExperiments = {};
     this.loaded = false;
@@ -270,6 +272,16 @@ export default class StatsigStore {
       return this.userValues.time;
     }
     return null;
+  }
+
+  public getPreviousDerivedFields(
+    user: StatsigUser | null,
+  ): Record<string, string> | undefined {
+    const userHash = djb2Hash(JSON.stringify(getSortedObject(user)));
+    if (this.userValues.user_hash == userHash) {
+      return this.userValues.derived_fields;
+    }
+    return undefined;
   }
 
   private parseCachedValues(
@@ -488,6 +500,7 @@ export default class StatsigStore {
       sticky_experiments: {},
       time: 0,
       evaluation_time: 0,
+      derived_fields: {},
     };
   }
 
@@ -511,6 +524,7 @@ export default class StatsigStore {
       sticky_experiments: baseValues.sticky_experiments,
       time: valuesToMerge.time,
       evaluation_time: valuesToMerge.evaluation_time,
+      derived_fields: valuesToMerge.derived_fields,
     };
   }
 
@@ -946,6 +960,7 @@ export default class StatsigStore {
       layer_configs: {},
       time: 0,
       evaluation_time: 0,
+      derived_fields: {},
     };
   }
 
@@ -973,6 +988,7 @@ export default class StatsigStore {
       time: data.time == null || isNaN(data.time) ? 0 : data.time,
       evaluation_time: Date.now(),
       hash_used: data.hash_used,
+      derived_fields: data.derived_fields,
     };
   }
 

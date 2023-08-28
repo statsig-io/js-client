@@ -65,6 +65,7 @@ export default class StatsigNetwork {
     sinceTime: number | null,
     timeout: number,
     prefetchUsers?: Record<string, StatsigUser>,
+    previousDerivedFields?: Record<string, string>,
   ): PromiseWithTimeout<Record<string, unknown>> {
     const input = {
       user,
@@ -73,6 +74,7 @@ export default class StatsigNetwork {
       sinceTime: sinceTime ?? undefined,
       acceptsDeltas: true,
       hash: 'djb2',
+      previousDerivedFields: previousDerivedFields,
     };
 
     return this.postWithTimeout(StatsigEndpoint.Initialize, input, {
