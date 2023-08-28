@@ -486,7 +486,17 @@ export default class StatsigStore {
     const keys = Object.keys(object).sort();
     const sortedObject: Record<string, unknown> = {};
     keys.forEach((key) => {
-      sortedObject[key] = object[key];
+      let value = object[key];
+      if (value instanceof Object) {
+        const subKeys = Object.keys(value).sort();
+        const sortedSubObject: Record<string, unknown> = {};
+        subKeys.forEach((subKey) => {
+          sortedSubObject[subKey] = (value as Record<string, unknown>)[subKey];
+        });
+        value = sortedSubObject;
+      }
+
+      sortedObject[key] = value;
     });
     return djb2Hash(JSON.stringify(sortedObject));
   }
