@@ -7,7 +7,7 @@ import { INTERNAL_STORE_KEY } from '../utils/Constants';
 import Statsig from '..';
 import LocalStorageMock from './LocalStorageMock';
 import * as TestData from './initialize_response.json';
-import { sha256Hash, getUserCacheKey } from '../utils/Hashing';
+import { djb2HashForObject, getUserCacheKey } from '../utils/Hashing';
 
 describe('Verify behavior of StatsigClient with sinceTime', () => {
   const sdkKey = 'client-clienttestkey';
@@ -81,10 +81,16 @@ describe('Verify behavior of StatsigClient with sinceTime', () => {
     // @ts-ignore
     const spy = jest.spyOn(statsig.getNetwork(), 'fetchValues');
     await statsig.initializeAsync();
-    expect(spy).toHaveBeenCalledWith(user, null, expect.anything(), undefined);
+    expect(spy).toHaveBeenCalledWith(
+      user,
+      null,
+      expect.anything(),
+      undefined,
+      undefined,
+    );
 
     const key = getUserCacheKey(stableID, user).v2;
-    const userHash = sha256Hash(JSON.stringify(user));
+    const userHash = djb2HashForObject(user);
     const storeObject = JSON.parse(
       localStorage.getItem(INTERNAL_STORE_KEY) ?? '',
     );
@@ -97,6 +103,7 @@ describe('Verify behavior of StatsigClient with sinceTime', () => {
       user,
       1646026677490,
       expect.anything(),
+      undefined,
       undefined,
     );
   });
