@@ -1,6 +1,6 @@
 {
   "name": "statsig-js",
-  "version": "4.28.1",
+  "version": "4.28.2",
   "description": "Statsig JavaScript client SDK for single user environments.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -54,7 +54,6 @@
     "webpack-cli": "^4.7.2"
   },
   "dependencies": {
-    "js-sha256": "^0.9.0",
     "uuid": "^8.3.2",
     "whatwg-fetch": "^3.6.2"
   },
