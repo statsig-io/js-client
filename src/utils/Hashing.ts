@@ -1,6 +1,6 @@
-import { sha256 } from 'js-sha256';
 import { StatsigUser } from '../StatsigUser';
 import { Base64 } from './Base64';
+import { sha256create } from './js-sha256';
 
 export function SimpleHash(value: string): string {
   var hash = 0;
@@ -13,7 +13,7 @@ export function SimpleHash(value: string): string {
 }
 
 export function getHashValue(value: string): string {
-  let buffer = sha256.create().update(value).arrayBuffer();
+  let buffer = sha256create().update(value).arrayBuffer();
   return Base64.encodeArrayBuffer(buffer);
 }
 
