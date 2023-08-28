@@ -104,6 +104,7 @@ describe('Verify behavior of StatsigClient with sinceTime', () => {
       1646026677490,
       expect.anything(),
       undefined,
+      undefined,
     );
   });
 });
