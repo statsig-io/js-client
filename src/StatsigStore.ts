@@ -481,14 +481,14 @@ export default class StatsigStore {
 
   private getSortedHash(object: Record<string, unknown> | null): string {
     if (object == null) {
-      return sha256Hash(JSON.stringify(object));
+      return djb2Hash(JSON.stringify(object));
     }
     const keys = Object.keys(object).sort();
     const sortedObject: Record<string, unknown> = {};
     keys.forEach((key) => {
       sortedObject[key] = object[key];
     });
-    return sha256Hash(JSON.stringify(sortedObject));
+    return djb2Hash(JSON.stringify(sortedObject));
   }
 
   private getDefaultUserCacheValues(): UserCacheValues {
