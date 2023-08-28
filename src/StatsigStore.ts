@@ -13,7 +13,7 @@ import {
   sha256Hash,
   getUserCacheKey,
   UserCacheKey,
-  getSortedObject,
+  djb2HashForObject,
 } from './utils/Hashing';
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
@@ -267,7 +267,7 @@ export default class StatsigStore {
   }
 
   public getLastUpdateTime(user: StatsigUser | null): number | null {
-    const userHash = djb2Hash(JSON.stringify(getSortedObject(user)));
+    const userHash = djb2HashForObject(user);
     if (this.userValues.user_hash == userHash) {
       return this.userValues.time;
     }
@@ -277,7 +277,7 @@ export default class StatsigStore {
   public getPreviousDerivedFields(
     user: StatsigUser | null,
   ): Record<string, string> | undefined {
-    const userHash = djb2Hash(JSON.stringify(getSortedObject(user)));
+    const userHash = djb2HashForObject(user);
     if (this.userValues.user_hash == userHash) {
       return this.userValues.derived_fields;
     }
@@ -481,7 +481,7 @@ export default class StatsigStore {
         requestedUserCacheKey.v2,
       );
       if (data.has_updates && data.time) {
-        const userHash = djb2Hash(JSON.stringify(getSortedObject(user)));
+        const userHash = djb2HashForObject(user);
         requestedUserValues.user_hash = userHash;
       }
 

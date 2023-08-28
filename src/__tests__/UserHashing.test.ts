@@ -3,7 +3,7 @@
  */
 
 import { StatsigUser } from '..';
-import { djb2Hash, getSortedObject } from '../utils/Hashing';
+import { djb2Hash, djb2HashForObject, getSortedObject } from '../utils/Hashing';
 
 describe('Verify User Object Hash Works', () => {
   const userA: StatsigUser = {
@@ -62,8 +62,8 @@ describe('Verify User Object Hash Works', () => {
     { user1: userA2, user2: userB, isSame: false },
     { user1: userA3, user2: userB, isSame: false },
   ])('hash works as expected', async (data) => {
-    const hash1 = djb2Hash(JSON.stringify(getSortedObject(data.user1)));
-    const hash2 = djb2Hash(JSON.stringify(getSortedObject(data.user2)));
+    const hash1 = djb2HashForObject(data.user1);
+    const hash2 = djb2HashForObject(data.user2);
     expect(hash1 === hash2).toEqual(data.isSame);
   });
 });

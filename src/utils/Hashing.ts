@@ -48,6 +48,12 @@ export function sha256Hash(value: string): string {
   return hash;
 }
 
+export function djb2HashForObject(
+  object: Record<string, unknown> | null,
+): string {
+  return djb2Hash(JSON.stringify(getSortedObject(object)));
+}
+
 export function getSortedObject(
   object: Record<string, unknown> | null,
 ): Record<string, unknown> | null {
