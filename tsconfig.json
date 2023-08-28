@@ -9,7 +9,8 @@
     "declaration": true,
     "skipLibCheck": true,
     "moduleResolution": "node",
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "allowJs": true,
   },
   "include": ["src/**/*", "src/utils/*"],
   "exclude": [
