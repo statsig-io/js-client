@@ -264,7 +264,7 @@ export default class StatsigStore {
   }
 
   public getLastUpdateTime(user: StatsigUser | null): number | null {
-    const userHash = sha256Hash(JSON.stringify(user));
+    const userHash = this.getSortedHash(user);
     if (this.userValues.user_hash == userHash) {
       return this.userValues.time;
     }
@@ -468,7 +468,7 @@ export default class StatsigStore {
         requestedUserCacheKey.v2,
       );
       if (data.has_updates && data.time) {
-        const userHash = sha256Hash(JSON.stringify(user));
+        const userHash = this.getSortedHash(user);
         requestedUserValues.user_hash = userHash;
       }
 
@@ -477,6 +477,18 @@ export default class StatsigStore {
         requestedUserCacheKey.v2,
       );
     }
+  }
+
+  private getSortedHash(object: Record<string, unknown> | null): string {
+    if (object == null) {
+      return sha256Hash(JSON.stringify(object));
+    }
+    const keys = Object.keys(object).sort();
+    const sortedObject: Record<string, unknown> = {};
+    keys.forEach((key) => {
+      sortedObject[key] = object[key];
+    });
+    return sha256Hash(JSON.stringify(sortedObject));
   }
 
   private getDefaultUserCacheValues(): UserCacheValues {
