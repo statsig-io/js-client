@@ -35,6 +35,7 @@ export interface Marker {
   isRetry?: boolean;
   configName?: string;
   message?: string | null;
+  error?: Record<string, unknown>;
 }
 
 type DiagnosticsMarkers = {
@@ -200,6 +201,23 @@ export default abstract class Diagnostics {
     this.setMaxMarkers = this.instance.setMaxMarkers.bind(this.instance);
     this.setContext = this.instance.setContext.bind(this.instance);
     this.clearContext = this.instance.clearContext.bind(this.instance);
+  }
+
+  static formatNetworkError(e: unknown): Record<string, unknown> | undefined {
+    if (!(e && typeof e === 'object')) {
+      return;
+    }
+    return {
+      code: this.safeGetField(e, 'code'),
+      name: this.safeGetField(e, 'name'),
+      message: this.safeGetField(e, 'message'),
+    };
+  }  
+  private static safeGetField(data: object, field: string): unknown | undefined {
+    if (field in data) {
+      return (data as Record<string, unknown>)[field];
+    }
+    return undefined;
   }
 }
 

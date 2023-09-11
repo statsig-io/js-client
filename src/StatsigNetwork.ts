@@ -335,7 +335,7 @@ export default class StatsigNetwork {
         return Promise.reject(new Error(`${res.status}: ${errorText}`));
       })
       .catch((e) => {
-        diagnostics?.end(this.getDiagnosticsData(res, attempt));
+        diagnostics?.end(this.getDiagnosticsData(res, attempt, e));
         if (attempt < retryLimit && isRetryCode) {
           return new Promise<NetworkResponse>((resolve, reject) => {
             setTimeout(() => {
@@ -368,12 +368,14 @@ export default class StatsigNetwork {
   private getDiagnosticsData(
     res: NetworkResponse,
     attempt: number,
+    e?: unknown,
   ): {
     success: boolean;
     isDelta?: boolean;
     sdkRegion?: string | null;
     statusCode?: number;
     attempt: number;
+    error?: Record<string, unknown>;
   } {
     return {
       success: res?.ok === true,
@@ -381,6 +383,7 @@ export default class StatsigNetwork {
       sdkRegion: res?.headers?.get('x-statsig-region'),
       isDelta: res?.data?.is_delta === true,
       attempt,
+      error: Diagnostics.formatNetworkError(e),
     };
   }
 
