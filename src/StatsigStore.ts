@@ -521,6 +521,7 @@ export default class StatsigStore {
         false,
         prefetchUsers,
         previousDerivedFields,
+        true,
       )
       .then((json) => {
         if (json?.has_updates) {
