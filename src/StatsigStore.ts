@@ -481,7 +481,12 @@ export default class StatsigStore {
 
     if (hasBadHash) {
       // retry 
-      this.refetchAndSaveValues(user, prefetchUsers);
+      this.refetchAndSaveValues(user, prefetchUsers).catch((reason) =>
+        this.sdkInternal.getErrorBoundary().logError(
+          'refetchAndSaveValues',
+          reason,
+        ),
+      );
       return;
     }
 
@@ -528,11 +533,11 @@ export default class StatsigStore {
             );
         }
       }).catch((reason) =>
-      this.sdkInternal.getErrorBoundary().logError(
-        'refetchAndSaveValues',
-        reason,
-      ),
-    );
+        this.sdkInternal.getErrorBoundary().logError(
+          'refetchAndSaveValues',
+          reason,
+        ),
+      );
   }
 
   private getStableID(): string {
