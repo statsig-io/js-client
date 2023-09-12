@@ -54,6 +54,7 @@ describe('StatsigEncoded', () => {
         user: USER,
         statsigMetadata: MOCK_METADATA,
         acceptsDeltas: true,
+        canAcceptDeltas: true,
         hash: 'djb2',
       }),
     );
@@ -70,6 +71,7 @@ describe('StatsigEncoded', () => {
         user: { userID: '大' },
         statsigMetadata: MOCK_METADATA,
         acceptsDeltas: true,
+        canAcceptDeltas: true,
         hash: 'djb2',
       }),
     );
