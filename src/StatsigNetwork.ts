@@ -64,6 +64,7 @@ export default class StatsigNetwork {
     user: StatsigUser | null,
     sinceTime: number | null,
     timeout: number,
+    useDeltas: boolean,
     prefetchUsers?: Record<string, StatsigUser>,
     previousDerivedFields?: Record<string, string>,
   ): PromiseWithTimeout<Record<string, unknown>> {
@@ -72,7 +73,8 @@ export default class StatsigNetwork {
       prefetchUsers,
       statsigMetadata: this.sdkInternal.getStatsigMetadata(),
       sinceTime: sinceTime ?? undefined,
-      acceptsDeltas: true,
+      acceptsDeltas: useDeltas,
+      canAcceptDeltas: useDeltas,
       hash: 'djb2',
       previousDerivedFields: previousDerivedFields,
     };
