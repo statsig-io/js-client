@@ -359,13 +359,13 @@ export default class StatsigStore {
   public async save(
     user: StatsigUser | null,
     response: Record<string, unknown>,
-    prefetchUsers: Record<string, StatsigUser>,
+    prefetchUsers?: Record<string, StatsigUser>,
   ): Promise<void> {
     const requestedUserCacheKey = getUserCacheKey(this.getStableID(), user);
     const initResponse = response as APIInitializeDataWithDeltas;
 
     if (initResponse.is_delta) {
-      return this.saveInitDeltas(user, response, prefetchUsers, true);
+      return this.saveInitDeltas(user, response, true, prefetchUsers);
     }
 
     this.mergeInitializeResponseIntoUserMap(
@@ -373,8 +373,8 @@ export default class StatsigStore {
       this.values,
       requestedUserCacheKey,
       user,
-      prefetchUsers,
       (userValues) => userValues,
+      prefetchUsers,
     );
 
     const userValues = this.getUserValues(requestedUserCacheKey);
@@ -396,13 +396,13 @@ export default class StatsigStore {
   public async saveWithoutUpdatingClientState(
     user: StatsigUser | null,
     response: Record<string, unknown>,
-    prefetchUsers: Record<string, StatsigUser>,
+    prefetchUsers?: Record<string, StatsigUser>,
   ): Promise<void> {
     const requestedUserCacheKey = getUserCacheKey(this.getStableID(), user);
     const initResponse = response as APIInitializeDataWithDeltasWithPrefetchedUsers;
 
     if (initResponse.is_delta) {
-      return this.saveInitDeltas(user, response, prefetchUsers, false);
+      return this.saveInitDeltas(user, response, false, prefetchUsers);
     }
     const copiedValues: Record<string, UserCacheValues | undefined> =
       JSON.parse(JSON.stringify(this.values));
@@ -412,8 +412,9 @@ export default class StatsigStore {
       copiedValues,
       requestedUserCacheKey,
       user,
-      prefetchUsers,
+
       (userValues) => userValues,
+      prefetchUsers,
     );
 
     await this.writeValuesToStorage(copiedValues);
@@ -422,8 +423,8 @@ export default class StatsigStore {
   public async saveInitDeltas(
     user: StatsigUser | null,
     response: Record<string, unknown>,
-    prefetchUsers: Record<string, StatsigUser>,
     updateState: boolean,
+    prefetchUsers?: Record<string, StatsigUser>,
   ): Promise<void> {
     const requestedUserCacheKey = getUserCacheKey(this.getStableID(), user);
     const initResponse =
@@ -438,12 +439,12 @@ export default class StatsigStore {
       mergedValues,
       requestedUserCacheKey,
       user,
-      prefetchUsers,
       (deltas, key) => {
         const baseValues = mergedValues[key] ?? this.getDefaultUserCacheValues();
 
         return this.mergeUserCacheValues(baseValues, deltas);
       },
+      prefetchUsers,
     );
     let hasBadHash = false;
 
@@ -504,7 +505,7 @@ export default class StatsigStore {
 
   private async refetchAndSaveValues(
     user: StatsigUser | null,
-    prefetchUsers: Record<string, StatsigUser>,
+    prefetchUsers?: Record<string, StatsigUser>,
     timeout: number = this.sdkInternal.getOptions().getInitTimeoutMs(),
   ): Promise<void> {
 
@@ -552,8 +553,8 @@ export default class StatsigStore {
     configMap: Record<string, UserCacheValues | undefined>,
     requestedUserCacheKey: UserCacheKey,
     user: StatsigUser | null,
-    prefetchUsers: Record<string, StatsigUser>,
     mergeFn: (user: UserCacheValues, key: string) => UserCacheValues,
+    prefetchUsers?: Record<string, StatsigUser>,
   ) {
     if (data.prefetched_user_values) {
       const cacheKeys = Object.keys(data.prefetched_user_values);
@@ -563,7 +564,7 @@ export default class StatsigStore {
           this.convertAPIDataToCacheValues(prefetched, key),
           key,
         );
-        if (data.has_updates && data.time) {
+        if (data.has_updates && data.time && prefetchUsers) {
           const userHash = djb2HashForObject(prefetchUsers[key]);
           values.user_hash = userHash;
         }

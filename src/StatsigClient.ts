@@ -1223,7 +1223,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       .eventually((json) => {
         if (json?.has_updates) {
           this.store
-            .saveWithoutUpdatingClientState(user, json, keyedPrefetchUsers)
+            .saveWithoutUpdatingClientState(user, json, prefetchUsers.length > 0 ? keyedPrefetchUsers : undefined)
             .catch((reason) =>
               this.errorBoundary.logError(
                 'fetchAndSaveValues:eventually',
@@ -1236,7 +1236,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         return this.errorBoundary.swallow('fetchAndSaveValues', async () => {
           Diagnostics.mark.intialize.process.start({});
           if (json?.has_updates) {
-            await this.store.save(user, json, keyedPrefetchUsers);
+            await this.store.save(user, json, prefetchUsers.length > 0 ? keyedPrefetchUsers : undefined);
           } else if (json?.is_no_content) {
             this.store.setEvaluationReason(EvaluationReason.NetworkNotModified);
           }
