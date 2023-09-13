@@ -399,7 +399,8 @@ export default class StatsigStore {
     prefetchUsers?: Record<string, StatsigUser>,
   ): Promise<void> {
     const requestedUserCacheKey = getUserCacheKey(this.getStableID(), user);
-    const initResponse = response as APIInitializeDataWithDeltasWithPrefetchedUsers;
+    const initResponse =
+      response as APIInitializeDataWithDeltasWithPrefetchedUsers;
 
     if (initResponse.is_delta) {
       return this.saveInitDeltas(user, response, false, prefetchUsers);
@@ -430,7 +431,6 @@ export default class StatsigStore {
     const initResponse =
       response as APIInitializeDataWithDeltasWithPrefetchedUsers;
 
-
     const mergedValues = JSON.parse(JSON.stringify(this.values));
 
     // Merge delta values into the previous values
@@ -440,7 +440,8 @@ export default class StatsigStore {
       requestedUserCacheKey,
       user,
       (deltas, key) => {
-        const baseValues = mergedValues[key] ?? this.getDefaultUserCacheValues();
+        const baseValues =
+          mergedValues[key] ?? this.getDefaultUserCacheValues();
 
         return this.mergeUserCacheValues(baseValues, deltas);
       },
@@ -457,7 +458,7 @@ export default class StatsigStore {
         removeDeletedKeysFromUserValues(reponseForUser, user);
         const expectedFullHash = reponseForUser.expected_full_hash;
         const currentFullHash = djb2HashForObject({
-          feature_gate: mergedValues[userKey].feature_gates,
+          feature_gates: mergedValues[userKey].feature_gates,
           dynamic_configs: mergedValues[userKey].dynamic_configs,
           layer_configs: mergedValues[userKey].layer_configs,
         });
@@ -468,11 +469,13 @@ export default class StatsigStore {
     });
 
     // Delete any deleted configs for primary user and check hash
-    const userValues = mergedValues[requestedUserCacheKey.v2] ?? mergedValues[requestedUserCacheKey.v1];
+    const userValues =
+      mergedValues[requestedUserCacheKey.v2] ??
+      mergedValues[requestedUserCacheKey.v1];
     removeDeletedKeysFromUserValues(initResponse, userValues);
     const expectedFullHash = initResponse.expected_full_hash;
     const currentFullHash = djb2HashForObject({
-      feature_gate: userValues.feature_gates,
+      feature_gates: userValues.feature_gates,
       dynamic_configs: userValues.dynamic_configs,
       layer_configs: userValues.layer_configs,
     });
@@ -481,12 +484,11 @@ export default class StatsigStore {
     }
 
     if (hasBadHash) {
-      // retry 
+      // retry
       this.refetchAndSaveValues(user, prefetchUsers).catch((reason) =>
-        this.sdkInternal.getErrorBoundary().logError(
-          'refetchAndSaveValues',
-          reason,
-        ),
+        this.sdkInternal
+          .getErrorBoundary()
+          .logError('refetchAndSaveValues', reason),
       );
       return;
     }
@@ -508,12 +510,11 @@ export default class StatsigStore {
     prefetchUsers?: Record<string, StatsigUser>,
     timeout: number = this.sdkInternal.getOptions().getInitTimeoutMs(),
   ): Promise<void> {
-
     const sinceTime = this.getLastUpdateTime(user);
-
     const previousDerivedFields = this.getPreviousDerivedFields(user);
 
-    return this.sdkInternal.getNetwork()
+    return this.sdkInternal
+      .getNetwork()
       .fetchValues(
         user,
         sinceTime,
@@ -525,20 +526,18 @@ export default class StatsigStore {
       )
       .then((json) => {
         if (json?.has_updates) {
-          this
-            .saveWithoutUpdatingClientState(user, json, prefetchUsers)
-            .catch((reason) =>
-              this.sdkInternal.getErrorBoundary().logError(
-                'refetchAndSaveValues:then',
-                reason,
-              ),
-            );
+          this.saveWithoutUpdatingClientState(user, json, prefetchUsers).catch(
+            (reason) =>
+              this.sdkInternal
+                .getErrorBoundary()
+                .logError('refetchAndSaveValues:then', reason),
+          );
         }
-      }).catch((reason) =>
-        this.sdkInternal.getErrorBoundary().logError(
-          'refetchAndSaveValues',
-          reason,
-        ),
+      })
+      .catch((reason) =>
+        this.sdkInternal
+          .getErrorBoundary()
+          .logError('refetchAndSaveValues', reason),
       );
   }
 
@@ -561,7 +560,7 @@ export default class StatsigStore {
       const cacheKeys = Object.keys(data.prefetched_user_values);
       for (const key of cacheKeys) {
         const prefetched = data.prefetched_user_values[key];
-        const values =  mergeFn(
+        const values = mergeFn(
           this.convertAPIDataToCacheValues(prefetched, key),
           key,
         );
