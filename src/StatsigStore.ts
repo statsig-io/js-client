@@ -448,6 +448,7 @@ export default class StatsigStore {
       prefetchUsers,
     );
     let hasBadHash = false;
+    let badChecksum = undefined;
 
     // Delete any deleted configs for prefetch users and check hash
     const cacheKeys = Object.keys(initResponse.prefetched_user_values ?? {});
@@ -464,6 +465,7 @@ export default class StatsigStore {
         });
         if (expectedFullHash && expectedFullHash !== currentFullHash) {
           hasBadHash = true;
+          badChecksum = currentFullHash;
         }
       }
     });
@@ -481,11 +483,17 @@ export default class StatsigStore {
     });
     if (expectedFullHash && expectedFullHash !== currentFullHash) {
       hasBadHash = true;
+      badChecksum = currentFullHash;
     }
 
     if (hasBadHash) {
       // retry
-      this.refetchAndSaveValues(user, prefetchUsers).catch((reason) =>
+      this.refetchAndSaveValues(
+        user,
+        prefetchUsers,
+        undefined,
+        badChecksum,
+      ).catch((reason) =>
         this.sdkInternal
           .getErrorBoundary()
           .logError('refetchAndSaveValues', reason),
@@ -509,6 +517,7 @@ export default class StatsigStore {
     user: StatsigUser | null,
     prefetchUsers?: Record<string, StatsigUser>,
     timeout: number = this.sdkInternal.getOptions().getInitTimeoutMs(),
+    badChecksum?: string,
   ): Promise<void> {
     const sinceTime = this.getLastUpdateTime(user);
     const previousDerivedFields = this.getPreviousDerivedFields(user);
@@ -523,6 +532,7 @@ export default class StatsigStore {
         prefetchUsers,
         previousDerivedFields,
         true,
+        badChecksum,
       )
       .then((json) => {
         if (json?.has_updates) {

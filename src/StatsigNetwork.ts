@@ -68,17 +68,18 @@ export default class StatsigNetwork {
     prefetchUsers?: Record<string, StatsigUser>,
     previousDerivedFields?: Record<string, string>,
     hadBadDeltaChecksum?: boolean,
+    badChecksum?: string,
   ): PromiseWithTimeout<Record<string, unknown>> {
     const input = {
       user,
       prefetchUsers,
       statsigMetadata: this.sdkInternal.getStatsigMetadata(),
       sinceTime: sinceTime ?? undefined,
-      acceptsDeltas: useDeltas,
       canAcceptDeltas: useDeltas,
       hash: 'djb2',
       previousDerivedFields: previousDerivedFields,
       hadBadDeltaChecksum: hadBadDeltaChecksum,
+      badChecksum: badChecksum,
     };
 
     return this.postWithTimeout(StatsigEndpoint.Initialize, input, {
