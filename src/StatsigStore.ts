@@ -82,7 +82,7 @@ type APIInitializeDataWithDeltas = APIInitializeData & {
   deleted_gates?: string[];
   deleted_layers?: string[];
   is_delta?: boolean;
-  expected_full_hash?: string;
+  checksum?: string;
 };
 
 type APIInitializeDataWithPrefetchedUsers = APIInitializeData & {
@@ -457,7 +457,7 @@ export default class StatsigStore {
       const reponseForUser = initResponse.prefetched_user_values?.[userKey];
       if (user && reponseForUser) {
         removeDeletedKeysFromUserValues(reponseForUser, user);
-        const expectedFullHash = reponseForUser.expected_full_hash;
+        const expectedFullHash = reponseForUser.checksum;
         const currentFullHash = djb2HashForObject({
           feature_gates: mergedValues[userKey].feature_gates,
           dynamic_configs: mergedValues[userKey].dynamic_configs,
@@ -475,7 +475,7 @@ export default class StatsigStore {
       mergedValues[requestedUserCacheKey.v2] ??
       mergedValues[requestedUserCacheKey.v1];
     removeDeletedKeysFromUserValues(initResponse, userValues);
-    const expectedFullHash = initResponse.expected_full_hash;
+    const expectedFullHash = initResponse.checksum;
     const currentFullHash = djb2HashForObject({
       feature_gates: userValues.feature_gates,
       dynamic_configs: userValues.dynamic_configs,
