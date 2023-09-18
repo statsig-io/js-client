@@ -82,6 +82,7 @@ type APIInitializeDataWithDeltas = APIInitializeData & {
   deleted_gates?: string[];
   deleted_layers?: string[];
   is_delta?: boolean;
+  checksum?: string;
 };
 
 type APIInitializeDataWithPrefetchedUsers = APIInitializeData & {
@@ -357,13 +358,14 @@ export default class StatsigStore {
 
   public async save(
     user: StatsigUser | null,
-    jsonConfigs: Record<string, unknown>,
+    response: Record<string, unknown>,
+    prefetchUsers?: Record<string, StatsigUser>,
   ): Promise<void> {
     const requestedUserCacheKey = getUserCacheKey(this.getStableID(), user);
-    const initResponse = jsonConfigs as APIInitializeDataWithDeltas;
+    const initResponse = response as APIInitializeDataWithDeltas;
 
     if (initResponse.is_delta) {
-      return this.saveInitDeltas(user, jsonConfigs);
+      return this.saveInitDeltas(user, response, true, prefetchUsers);
     }
 
     this.mergeInitializeResponseIntoUserMap(
@@ -372,6 +374,7 @@ export default class StatsigStore {
       requestedUserCacheKey,
       user,
       (userValues) => userValues,
+      prefetchUsers,
     );
 
     const userValues = this.getUserValues(requestedUserCacheKey);
@@ -392,11 +395,16 @@ export default class StatsigStore {
    */
   public async saveWithoutUpdatingClientState(
     user: StatsigUser | null,
-    jsonConfigs: Record<string, unknown>,
+    response: Record<string, unknown>,
+    prefetchUsers?: Record<string, StatsigUser>,
   ): Promise<void> {
     const requestedUserCacheKey = getUserCacheKey(this.getStableID(), user);
     const initResponse =
-      jsonConfigs as APIInitializeDataWithDeltasWithPrefetchedUsers;
+      response as APIInitializeDataWithDeltasWithPrefetchedUsers;
+
+    if (initResponse.is_delta) {
+      return this.saveInitDeltas(user, response, false, prefetchUsers);
+    }
     const copiedValues: Record<string, UserCacheValues | undefined> =
       JSON.parse(JSON.stringify(this.values));
 
@@ -405,7 +413,9 @@ export default class StatsigStore {
       copiedValues,
       requestedUserCacheKey,
       user,
+
       (userValues) => userValues,
+      prefetchUsers,
     );
 
     await this.writeValuesToStorage(copiedValues);
@@ -413,41 +423,132 @@ export default class StatsigStore {
 
   public async saveInitDeltas(
     user: StatsigUser | null,
-    jsonConfigs: Record<string, unknown>,
+    response: Record<string, unknown>,
+    updateState: boolean,
+    prefetchUsers?: Record<string, StatsigUser>,
   ): Promise<void> {
     const requestedUserCacheKey = getUserCacheKey(this.getStableID(), user);
     const initResponse =
-      jsonConfigs as APIInitializeDataWithDeltasWithPrefetchedUsers;
+      response as APIInitializeDataWithDeltasWithPrefetchedUsers;
 
+    const mergedValues = JSON.parse(JSON.stringify(this.values));
+
+    // Merge delta values into the previous values
     this.mergeInitializeResponseIntoUserMap(
       initResponse,
-      this.values,
+      mergedValues,
       requestedUserCacheKey,
       user,
       (deltas, key) => {
-        const baseValues = this.values[key] ?? this.getDefaultUserCacheValues();
+        const baseValues =
+          mergedValues[key] ?? this.getDefaultUserCacheValues();
 
         return this.mergeUserCacheValues(baseValues, deltas);
       },
+      prefetchUsers,
     );
+    let hasBadHash = false;
+    let badChecksum = undefined;
 
+    // Delete any deleted configs for prefetch users and check hash
     const cacheKeys = Object.keys(initResponse.prefetched_user_values ?? {});
     cacheKeys.forEach((userKey) => {
-      const user = this.values[userKey];
-      if (user) {
-        removeDeletedKeysFromUserValues(initResponse, user);
+      const user = mergedValues[userKey];
+      const reponseForUser = initResponse.prefetched_user_values?.[userKey];
+      if (user && reponseForUser) {
+        removeDeletedKeysFromUserValues(reponseForUser, user);
+        const expectedFullHash = reponseForUser.checksum;
+        const currentFullHash = djb2HashForObject({
+          feature_gates: mergedValues[userKey].feature_gates,
+          dynamic_configs: mergedValues[userKey].dynamic_configs,
+          layer_configs: mergedValues[userKey].layer_configs,
+        });
+        if (expectedFullHash && expectedFullHash !== currentFullHash) {
+          hasBadHash = true;
+          badChecksum = currentFullHash;
+        }
       }
     });
 
-    const userValues = this.getUserValues(requestedUserCacheKey);
-    if (userValues && requestedUserCacheKey.v2 === this.userCacheKey.v2) {
-      removeDeletedKeysFromUserValues(initResponse, userValues);
-
-      this.userValues = userValues;
-      this.reason = EvaluationReason.Network;
+    // Delete any deleted configs for primary user and check hash
+    const userValues =
+      mergedValues[requestedUserCacheKey.v2] ??
+      mergedValues[requestedUserCacheKey.v1];
+    removeDeletedKeysFromUserValues(initResponse, userValues);
+    const expectedFullHash = initResponse.checksum;
+    const currentFullHash = djb2HashForObject({
+      feature_gates: userValues.feature_gates,
+      dynamic_configs: userValues.dynamic_configs,
+      layer_configs: userValues.layer_configs,
+    });
+    if (expectedFullHash && expectedFullHash !== currentFullHash) {
+      hasBadHash = true;
+      badChecksum = currentFullHash;
     }
 
-    this.values = await this.writeValuesToStorage(this.values);
+    if (hasBadHash) {
+      // retry
+      this.refetchAndSaveValues(
+        user,
+        prefetchUsers,
+        undefined,
+        badChecksum,
+      ).catch((reason) =>
+        this.sdkInternal
+          .getErrorBoundary()
+          .logError('refetchAndSaveValues', reason),
+      );
+      return;
+    }
+
+    if (updateState) {
+      if (userValues && requestedUserCacheKey.v2 === this.userCacheKey.v2) {
+        this.userValues = userValues;
+        this.reason = EvaluationReason.Network;
+      }
+
+      this.values = await this.writeValuesToStorage(mergedValues);
+    } else {
+      await this.writeValuesToStorage(mergedValues);
+    }
+  }
+
+  private async refetchAndSaveValues(
+    user: StatsigUser | null,
+    prefetchUsers?: Record<string, StatsigUser>,
+    timeout: number = this.sdkInternal.getOptions().getInitTimeoutMs(),
+    badChecksum?: string,
+  ): Promise<void> {
+    const sinceTime = this.getLastUpdateTime(user);
+    const previousDerivedFields = this.getPreviousDerivedFields(user);
+
+    return this.sdkInternal
+      .getNetwork()
+      .fetchValues({
+        user,
+        sinceTime,
+        timeout,
+        useDeltas: false,
+        prefetchUsers,
+        previousDerivedFields,
+        hadBadDeltaChecksum: true,
+        badChecksum,
+      })
+      .then((json) => {
+        if (json?.has_updates) {
+          this.saveWithoutUpdatingClientState(user, json, prefetchUsers).catch(
+            (reason) =>
+              this.sdkInternal
+                .getErrorBoundary()
+                .logError('refetchAndSaveValues:then', reason),
+          );
+        }
+      })
+      .catch((reason) =>
+        this.sdkInternal
+          .getErrorBoundary()
+          .logError('refetchAndSaveValues', reason),
+      );
   }
 
   private getStableID(): string {
@@ -463,15 +564,21 @@ export default class StatsigStore {
     requestedUserCacheKey: UserCacheKey,
     user: StatsigUser | null,
     mergeFn: (user: UserCacheValues, key: string) => UserCacheValues,
+    prefetchUsers?: Record<string, StatsigUser>,
   ) {
     if (data.prefetched_user_values) {
       const cacheKeys = Object.keys(data.prefetched_user_values);
       for (const key of cacheKeys) {
         const prefetched = data.prefetched_user_values[key];
-        configMap[key] = mergeFn(
+        const values = mergeFn(
           this.convertAPIDataToCacheValues(prefetched, key),
           key,
         );
+        if (data.has_updates && data.time && prefetchUsers) {
+          const userHash = djb2HashForObject(prefetchUsers[key]);
+          values.user_hash = userHash;
+        }
+        configMap[key] = values;
       }
     }
 

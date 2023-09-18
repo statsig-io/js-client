@@ -81,13 +81,14 @@ describe('Verify behavior of StatsigClient with sinceTime', () => {
     // @ts-ignore
     const spy = jest.spyOn(statsig.getNetwork(), 'fetchValues');
     await statsig.initializeAsync();
-    expect(spy).toHaveBeenCalledWith(
+    expect(spy).toHaveBeenCalledWith({
       user,
-      null,
-      expect.anything(),
-      undefined,
-      undefined,
-    );
+      sinceTime: null,
+      timeout: expect.anything(),
+      useDeltas: true,
+      hadBadDeltaChecksum: undefined,
+      badChecksum: undefined,
+    });
 
     const key = getUserCacheKey(stableID, user).v2;
     const userHash = djb2HashForObject(user);
@@ -99,12 +100,13 @@ describe('Verify behavior of StatsigClient with sinceTime', () => {
     expect(storeObject[key].time).toEqual(1646026677490);
 
     await statsig.updateUser(user);
-    expect(spy).toHaveBeenCalledWith(
+    expect(spy).toHaveBeenCalledWith({
       user,
-      1646026677490,
-      expect.anything(),
-      undefined,
-      undefined,
-    );
+      sinceTime: 1646026677490,
+      timeout: expect.anything(),
+      useDeltas: true,
+      hadBadDeltaChecksum: undefined,
+      badChecksum: undefined,
+    });
   });
 });
