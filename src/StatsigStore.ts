@@ -524,16 +524,16 @@ export default class StatsigStore {
 
     return this.sdkInternal
       .getNetwork()
-      .fetchValues(
+      .fetchValues({
         user,
         sinceTime,
         timeout,
-        false,
+        useDeltas: false,
         prefetchUsers,
         previousDerivedFields,
-        true,
+        hadBadDeltaChecksum: true,
         badChecksum,
-      )
+      })
       .then((json) => {
         if (json?.has_updates) {
           this.saveWithoutUpdatingClientState(user, json, prefetchUsers).catch(

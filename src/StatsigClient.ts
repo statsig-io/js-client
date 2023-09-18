@@ -383,12 +383,11 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         }
 
         const user = this.identity.getUser();
-        this.pendingInitPromise = this.fetchAndSaveValues(
+        this.pendingInitPromise = this.fetchAndSaveValues({
           user,
-          this.options.getPrefetchUsers(),
-          this.options.getInitTimeoutMs(),
-          true,
-        )
+          prefetchUsers: this.options.getPrefetchUsers(),
+          timeout: this.options.getInitTimeoutMs(),
+        })
           .then(() => {
             Diagnostics.mark.overall.end({ success: true });
             return { success: true, message: null };
@@ -436,7 +435,11 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
           return;
         }
 
-        return this.fetchAndSaveValues(null, users, 0, true);
+        return this.fetchAndSaveValues({
+          user: null,
+          prefetchUsers: users,
+          timeout: 0,
+        });
       },
       () => {
         return Promise.resolve();
@@ -780,11 +783,13 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         }
 
         const currentUser = this.identity.getUser();
-        this.pendingInitPromise = this.fetchAndSaveValues(currentUser, undefined, undefined, true).finally(
-          () => {
-            this.pendingInitPromise = null;
-          },
-        );
+        this.pendingInitPromise = this.fetchAndSaveValues({
+          user: currentUser,
+          prefetchUsers: [],
+          timeout: undefined,
+        }).finally(() => {
+          this.pendingInitPromise = null;
+        });
 
         return this.pendingInitPromise
           .then(() => {
@@ -1187,22 +1192,27 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     };
   }
 
-  private async fetchAndSaveValues(
-    user: StatsigUser | null,
-    prefetchUsers: StatsigUser[] = [],
-    timeout: number = this.options.getInitTimeoutMs(),
-    useDeltas: boolean,
-  ): Promise<void> {
+  private async fetchAndSaveValues(args: {
+    user: StatsigUser | null;
+    prefetchUsers?: StatsigUser[];
+    timeout?: number;
+  }): Promise<void> {
+    const { user } = args;
+    const prefetchUsers = args.prefetchUsers ?? [];
+    const timeout = args.timeout ?? this.options.getInitTimeoutMs();
     if (prefetchUsers.length > 5) {
       this.consoleLogger.info('Cannot prefetch more than 5 users.');
     }
 
     const keyedPrefetchUsers = this.normalizePrefetchUsers(prefetchUsers)
       .slice(0, 5)
-      .reduce((acc, curr) => {
-        acc[getUserCacheKey(this.getStableID(), curr).v2] = curr;
-        return acc;
-      }, {} as Record<string, StatsigUser>);
+      .reduce(
+        (acc, curr) => {
+          acc[getUserCacheKey(this.getStableID(), curr).v2] = curr;
+          return acc;
+        },
+        {} as Record<string, StatsigUser>,
+      );
 
     let sinceTime: number | null = null;
     if (prefetchUsers.length === 0) {
@@ -1212,18 +1222,23 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     const previousDerivedFields = this.store.getPreviousDerivedFields(user);
 
     return this.network
-      .fetchValues(
+      .fetchValues({
         user,
         sinceTime,
         timeout,
-        useDeltas,
-        prefetchUsers.length > 0 ? keyedPrefetchUsers : undefined,
+        useDeltas: true,
+        prefetchUsers:
+          prefetchUsers.length > 0 ? keyedPrefetchUsers : undefined,
         previousDerivedFields,
-      )
+      })
       .eventually((json) => {
         if (json?.has_updates) {
           this.store
-            .saveWithoutUpdatingClientState(user, json, prefetchUsers.length > 0 ? keyedPrefetchUsers : undefined)
+            .saveWithoutUpdatingClientState(
+              user,
+              json,
+              prefetchUsers.length > 0 ? keyedPrefetchUsers : undefined,
+            )
             .catch((reason) =>
               this.errorBoundary.logError(
                 'fetchAndSaveValues:eventually',
@@ -1236,7 +1251,11 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         return this.errorBoundary.swallow('fetchAndSaveValues', async () => {
           Diagnostics.mark.intialize.process.start({});
           if (json?.has_updates) {
-            await this.store.save(user, json, prefetchUsers.length > 0 ? keyedPrefetchUsers : undefined);
+            await this.store.save(
+              user,
+              json,
+              prefetchUsers.length > 0 ? keyedPrefetchUsers : undefined,
+            );
           } else if (json?.is_no_content) {
             this.store.setEvaluationReason(EvaluationReason.NetworkNotModified);
           }

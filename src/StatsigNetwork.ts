@@ -60,16 +60,26 @@ export default class StatsigNetwork {
     }
   }
 
-  public fetchValues(
-    user: StatsigUser | null,
-    sinceTime: number | null,
-    timeout: number,
-    useDeltas: boolean,
-    prefetchUsers?: Record<string, StatsigUser>,
-    previousDerivedFields?: Record<string, string>,
-    hadBadDeltaChecksum?: boolean,
-    badChecksum?: string,
-  ): PromiseWithTimeout<Record<string, unknown>> {
+  public fetchValues(args: {
+    user: StatsigUser | null;
+    sinceTime: number | null;
+    timeout: number;
+    useDeltas: boolean;
+    prefetchUsers?: Record<string, StatsigUser>;
+    previousDerivedFields?: Record<string, string>;
+    hadBadDeltaChecksum?: boolean;
+    badChecksum?: string;
+  }): PromiseWithTimeout<Record<string, unknown>> {
+    const {
+      user,
+      sinceTime,
+      timeout,
+      useDeltas,
+      prefetchUsers,
+      previousDerivedFields,
+      hadBadDeltaChecksum,
+      badChecksum,
+    } = args;
     const input = {
       user,
       prefetchUsers,
