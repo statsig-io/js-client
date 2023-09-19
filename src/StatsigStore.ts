@@ -158,7 +158,7 @@ export default class StatsigStore {
 
   public load(): void {
     this.loadFromLocalStorage();
-    this.partialLoadFromPersistentStorageAdapter();
+    this.partialLoadFromPersistentStorageAdapter(); 
   }
 
   public async loadAsync(): Promise<void> {

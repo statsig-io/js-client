@@ -389,7 +389,10 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
           timeout: this.options.getInitTimeoutMs(),
         })
           .then(() => {
-            Diagnostics.mark.overall.end({ success: true });
+            Diagnostics.mark.overall.end({
+              success: true,
+              evaluationDetails: this.store.getGlobalEvaluationDetails(),
+            });
             return { success: true, message: null };
           })
           .catch((e) => {
@@ -398,7 +401,11 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
               e,
             );
             const { message } = parseError(e);
-            Diagnostics.mark.overall.end({ success: false, message: message });
+            Diagnostics.mark.overall.end({
+              success: false,
+              message: message,
+              evaluationDetails: this.store.getGlobalEvaluationDetails(),
+            });
             return { success: false, message: message ?? null };
           })
           .then(({ success, message }) => {

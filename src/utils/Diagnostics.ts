@@ -1,4 +1,5 @@
 import StatsigSDKOptions from '../StatsigSDKOptions';
+import { EvaluationDetails } from '../StatsigStore';
 import { now } from './Timing';
 
 export type ContextType =
@@ -28,13 +29,13 @@ export interface Marker {
   success?: boolean;
   url?: string;
   idListCount?: number;
-  reason?: 'timeout';
   sdkRegion?: string | null;
   markerID?: string;
   attempt?: number;
   isRetry?: boolean;
   configName?: string;
   message?: string | null;
+  evaluationDetails?: EvaluationDetails;
   error?: Record<string, unknown>;
 }
 
@@ -240,7 +241,7 @@ interface OverrallDataType extends RequiredStepTags {
     start: Record<string, never>;
     end: {
       success: boolean;
-      reason?: 'timeout';
+      evaluationDetails?: EvaluationDetails;
     };
   };
 }

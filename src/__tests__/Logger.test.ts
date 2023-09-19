@@ -275,6 +275,10 @@ describe('Verify behavior of StatsigLogger', () => {
           action: 'end',
           key: 'overall',
           timestamp: expect.any(Number),
+          evaluationDetails: {
+            reason: 'Uninitialized',
+            time: 0,
+          },
           success: true,
         },
       ],
