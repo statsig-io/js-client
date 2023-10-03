@@ -400,13 +400,12 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
               'initializeAsync:fetchAndSaveValues',
               e,
             );
-            const { message } = parseError(e);
             Diagnostics.mark.overall.end({
               success: false,
-              message: message,
+              error: Diagnostics.formatError(e),
               evaluationDetails: this.store.getGlobalEvaluationDetails(),
             });
-            return { success: false, message: message ?? null };
+            return { success: false, message: e.message ?? null };
           })
           .then(({ success, message }) => {
             const cb = this.options.getInitCompletionCallback();
