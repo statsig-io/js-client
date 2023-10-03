@@ -30,7 +30,6 @@ import StatsigLocalStorage from './utils/StatsigLocalStorage';
 import Diagnostics from './utils/Diagnostics';
 import ConsoleLogger from './utils/ConsoleLogger';
 import { now } from './utils/Timing';
-import parseError from './utils/parseError';
 
 const MAX_VALUE_SIZE = 64;
 const MAX_OBJ_SIZE = 2048;
