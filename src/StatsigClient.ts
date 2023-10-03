@@ -30,7 +30,6 @@ import StatsigLocalStorage from './utils/StatsigLocalStorage';
 import Diagnostics from './utils/Diagnostics';
 import ConsoleLogger from './utils/ConsoleLogger';
 import { now } from './utils/Timing';
-import parseError from './utils/parseError';
 
 const MAX_VALUE_SIZE = 64;
 const MAX_OBJ_SIZE = 2048;
@@ -400,13 +399,12 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
               'initializeAsync:fetchAndSaveValues',
               e,
             );
-            const { message } = parseError(e);
             Diagnostics.mark.overall.end({
               success: false,
-              message: message,
+              error: Diagnostics.formatError(e),
               evaluationDetails: this.store.getGlobalEvaluationDetails(),
             });
-            return { success: false, message: message ?? null };
+            return { success: false, message: e.message ?? null };
           })
           .then(({ success, message }) => {
             const cb = this.options.getInitCompletionCallback();
