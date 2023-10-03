@@ -158,7 +158,7 @@ export default class StatsigStore {
 
   public load(): void {
     this.loadFromLocalStorage();
-    this.partialLoadFromPersistentStorageAdapter(); 
+    this.partialLoadFromPersistentStorageAdapter();
   }
 
   public async loadAsync(): Promise<void> {
@@ -449,6 +449,7 @@ export default class StatsigStore {
     );
     let hasBadHash = false;
     let badChecksum = undefined;
+    let hashChanged = false;
 
     // Delete any deleted configs for prefetch users and check hash
     const cacheKeys = Object.keys(initResponse.prefetched_user_values ?? {});
@@ -466,6 +467,9 @@ export default class StatsigStore {
         if (expectedFullHash && expectedFullHash !== currentFullHash) {
           hasBadHash = true;
           badChecksum = currentFullHash;
+        }
+        if (userValues.hash_used !== initResponse.hash_used) {
+          hashChanged = true;
         }
       }
     });
@@ -486,13 +490,18 @@ export default class StatsigStore {
       badChecksum = currentFullHash;
     }
 
-    if (hasBadHash) {
+    if (userValues.hash_used !== initResponse.hash_used) {
+      hashChanged = true;
+    }
+
+    if (hasBadHash || hashChanged) {
       // retry
       this.refetchAndSaveValues(
         user,
         prefetchUsers,
         undefined,
         badChecksum,
+        hasBadHash,
       ).catch((reason) =>
         this.sdkInternal
           .getErrorBoundary()
@@ -518,6 +527,7 @@ export default class StatsigStore {
     prefetchUsers?: Record<string, StatsigUser>,
     timeout: number = this.sdkInternal.getOptions().getInitTimeoutMs(),
     badChecksum?: string,
+    hadBadChecksum?: boolean,
   ): Promise<void> {
     const sinceTime = this.getLastUpdateTime(user);
     const previousDerivedFields = this.getPreviousDerivedFields(user);
@@ -531,7 +541,7 @@ export default class StatsigStore {
         useDeltas: false,
         prefetchUsers,
         previousDerivedFields,
-        hadBadDeltaChecksum: true,
+        hadBadDeltaChecksum: hadBadChecksum,
         badChecksum,
       })
       .then((json) => {
@@ -632,6 +642,7 @@ export default class StatsigStore {
       time: valuesToMerge.time,
       evaluation_time: valuesToMerge.evaluation_time,
       derived_fields: valuesToMerge.derived_fields,
+      hash_used: valuesToMerge.hash_used,
     };
   }
 
