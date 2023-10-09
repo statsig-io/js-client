@@ -204,7 +204,7 @@ export default abstract class Diagnostics {
     this.clearContext = this.instance.clearContext.bind(this.instance);
   }
 
-  static formatNetworkError(e: unknown): Record<string, unknown> | undefined {
+  static formatError(e: unknown): Record<string, unknown> | undefined {
     if (!(e && typeof e === 'object')) {
       return;
     }

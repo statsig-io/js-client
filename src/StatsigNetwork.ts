@@ -398,7 +398,7 @@ export default class StatsigNetwork {
       sdkRegion: res?.headers?.get('x-statsig-region'),
       isDelta: res?.data?.is_delta === true,
       attempt,
-      error: Diagnostics.formatNetworkError(e),
+      error: Diagnostics.formatError(e),
     };
   }
 
