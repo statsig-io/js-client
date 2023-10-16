@@ -5,7 +5,7 @@
 import Statsig from '..';
 import LogEvent from '../LogEvent';
 import StatsigClient from '../StatsigClient';
-import { EvaluationReason } from '../StatsigStore';
+import { EvaluationReason } from '../utils/BootstrapValidator';
 import * as TestData from './basic_initialize_response.json';
 let statsig: typeof Statsig;
 

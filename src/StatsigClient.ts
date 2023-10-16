@@ -19,9 +19,9 @@ import StatsigNetwork from './StatsigNetwork';
 import StatsigSDKOptions, { StatsigOptions } from './StatsigSDKOptions';
 import StatsigStore, {
   EvaluationDetails,
-  EvaluationReason,
   StoreGateFetchResult,
 } from './StatsigStore';
+import { EvaluationReason } from './utils/BootstrapValidator';
 import { StatsigUser } from './StatsigUser';
 import { UserCacheKey, getUserCacheKey } from './utils/Hashing';
 import type { AsyncStorage } from './utils/StatsigAsyncStorage';

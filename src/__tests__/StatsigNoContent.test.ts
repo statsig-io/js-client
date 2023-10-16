@@ -3,7 +3,8 @@
  */
 
 import StatsigClient from '../StatsigClient';
-import Statsig, { EvaluationReason } from '..';
+import Statsig from '..';
+import { EvaluationReason } from '../utils/BootstrapValidator';
 
 describe('Verify behavior of StatsigClient when 204 returned from initialize', () => {
   const sdkKey = 'client-clienttestkey';

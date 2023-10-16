@@ -1,7 +1,9 @@
 import DynamicConfig, { OnDefaultValueFallback } from './DynamicConfig';
 import Layer, { LogParameterFunction } from './Layer';
 import { IHasStatsigInternal, StatsigOverrides } from './StatsigClient';
-import BootstrapValidator from './utils/BootstrapValidator';
+import BootstrapValidator, {
+  EvaluationReason,
+} from './utils/BootstrapValidator';
 import { StatsigUser } from './StatsigUser';
 import {
   INTERNAL_STORE_KEY,
@@ -18,20 +20,6 @@ import {
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
 import { UserPersistentStorageInterface } from './StatsigSDKOptions';
-
-export enum EvaluationReason {
-  Network = 'Network',
-  Bootstrap = 'Bootstrap',
-  InvalidBootstrap = 'InvalidBootstrap',
-  Cache = 'Cache',
-  Prefetch = 'Prefetch',
-  Sticky = 'Sticky',
-  LocalOverride = 'LocalOverride',
-  Unrecognized = 'Unrecognized',
-  Uninitialized = 'Uninitialized',
-  Error = 'Error',
-  NetworkNotModified = 'NetworkNotModified',
-}
 
 export type EvaluationDetails = {
   time: number;
@@ -188,9 +176,13 @@ export default class StatsigStore {
     const key = this.sdkInternal.getCurrentUserCacheKey();
     const user = this.sdkInternal.getCurrentUser();
 
-    const reason = BootstrapValidator.isValid(user, initializeValues)
-      ? EvaluationReason.Bootstrap
-      : EvaluationReason.InvalidBootstrap;
+    const reason = BootstrapValidator.isValid(
+      user,
+      initializeValues,
+      user?.customIDs?.stableID ??
+        this.sdkInternal.getStatsigMetadata().stableID ??
+        null,
+    );
 
     // clients are going to assume that the SDK is bootstraped after this method runs
     // if we fail to parse, we will fall back to defaults, but we dont want to throw

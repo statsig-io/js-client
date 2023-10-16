@@ -1,5 +1,5 @@
 import DynamicConfig from '../DynamicConfig';
-import { EvaluationReason } from '../StatsigStore';
+import { EvaluationReason } from '../utils/BootstrapValidator';
 
 describe('Verify behavior of DynamicConfig', () => {
   let fallback: {

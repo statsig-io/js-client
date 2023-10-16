@@ -4,7 +4,7 @@
 
 import DynamicConfig from '../DynamicConfig';
 import StatsigClient from '../StatsigClient';
-import { EvaluationReason } from '../StatsigStore';
+import { EvaluationReason } from '../utils/BootstrapValidator';
 import LocalStorageMock from './LocalStorageMock';
 import UserPersistentStorageExample from './UserPersistentStorageExample';
 

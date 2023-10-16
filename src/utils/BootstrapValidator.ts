@@ -1,30 +1,60 @@
-import { StatsigUser } from '../StatsigUser';
+import { StatsigUser, getUserHashWithoutStableID } from '../StatsigUser';
+
+export enum EvaluationReason {
+  Network = 'Network',
+  Bootstrap = 'Bootstrap',
+  InvalidBootstrap = 'InvalidBootstrap',
+  Cache = 'Cache',
+  Prefetch = 'Prefetch',
+  Sticky = 'Sticky',
+  LocalOverride = 'LocalOverride',
+  Unrecognized = 'Unrecognized',
+  Uninitialized = 'Uninitialized',
+  Error = 'Error',
+  NetworkNotModified = 'NetworkNotModified',
+  BootstrapStableIDMismatch = 'BootstrapStableIDMismatch',
+}
 
 export default abstract class BootstrapValidator {
   static isValid(
     user: StatsigUser | null,
     values: Record<string, unknown>,
-  ): boolean {
+    stableID: string | number | null,
+  ): EvaluationReason {
+    let isValid = true;
+    let stableIDMistmatch = false;
     try {
       const evaluatedKeys = values['evaluated_keys'];
-      if (!evaluatedKeys || typeof evaluatedKeys !== 'object') {
-        return true;
+      if (evaluatedKeys && typeof evaluatedKeys === 'object') {
+        const evaluatedKeysRecord = this.copyObject(
+          evaluatedKeys as Record<string, unknown>,
+        );
+
+        const userToCompare = user == null ? null : this.copyObject(user);
+
+        isValid =
+          isValid &&
+          BootstrapValidator.validate(evaluatedKeysRecord, userToCompare) &&
+          BootstrapValidator.validate(userToCompare, evaluatedKeysRecord);
+        const customIDs = (evaluatedKeys as Record<string, unknown>)
+          .customIDs as Record<string, unknown> | null;
+        if (stableID != customIDs?.stableID) {
+          stableIDMistmatch = true;
+        }
       }
-      const evaluatedKeysRecord = this.copyObject(
-        evaluatedKeys as Record<string, unknown>,
-      );
-
-      const userToCompare = user == null ? null : this.copyObject(user);
-
-      return (
-        BootstrapValidator.validate(evaluatedKeysRecord, userToCompare) &&
-        BootstrapValidator.validate(userToCompare, evaluatedKeysRecord)
-      );
+      const userHash = values['user_hash'];
+      if (userHash && typeof userHash === 'string' && user != null) {
+        isValid = isValid && userHash === getUserHashWithoutStableID(user);
+      }
     } catch (error) {
       // This is best-effort. If we fail, return true.
     }
 
-    return true;
+    return !isValid
+      ? EvaluationReason.InvalidBootstrap
+      : stableIDMistmatch
+      ? EvaluationReason.BootstrapStableIDMismatch
+      : EvaluationReason.Bootstrap;
   }
 
   private static validate(
