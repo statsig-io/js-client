@@ -1,13 +1,16 @@
 import BootstrapValidator from '../BootstrapValidator';
+import { EvaluationReason } from '../EvaluationReason';
 
 describe('BootstrapValidator', () => {
   it('returns true when no keys are provided', () => {
-    expect(BootstrapValidator.isValid({}, {})).toBe(true);
+    expect(
+      BootstrapValidator.getEvaluationReasonForBootstrap({}, {}, null),
+    ).toBe(EvaluationReason.Bootstrap);
   });
 
   it('returns true when stable id is present', () => {
     expect(
-      BootstrapValidator.isValid(
+      BootstrapValidator.getEvaluationReasonForBootstrap(
         {},
         {
           evaluated_keys: {
@@ -17,12 +20,13 @@ describe('BootstrapValidator', () => {
             },
           },
         },
+        'a-stable-id',
       ),
-    ).toBe(true);
+    ).toBe(EvaluationReason.Bootstrap);
   });
 
   it('returns true when user matched evaluted_keys', () => {
-    const result = BootstrapValidator.isValid(
+    const result = BootstrapValidator.getEvaluationReasonForBootstrap(
       { userID: 'a-user-id', customIDs: { workID: 'a-work-id' } },
       {
         evaluated_keys: {
@@ -33,70 +37,64 @@ describe('BootstrapValidator', () => {
           },
         },
       },
+      'a-stable-id',
     );
 
-    expect(result).toBe(true);
+    expect(result).toBe(EvaluationReason.Bootstrap);
   });
 
   it('returns false when userid doesnt match empty evaluted_keys', () => {
-    const result = BootstrapValidator.isValid(
+    const result = BootstrapValidator.getEvaluationReasonForBootstrap(
       { userID: 'a-user-id' },
       {
         evaluated_keys: {},
       },
+      null,
     );
 
-    expect(result).toBe(false);
+    expect(result).toBe(EvaluationReason.InvalidBootstrap);
   });
 
   it('returns false when customid doesnt match empty evaluted_keys', () => {
-    const result = BootstrapValidator.isValid(
+    const result = BootstrapValidator.getEvaluationReasonForBootstrap(
       { customIDs: { workID: 'a-work-id' } },
       {
         evaluated_keys: {},
       },
+      null,
     );
 
-    expect(result).toBe(false);
-  });
-
-  it('returns false when userid doesnt match empty evaluted_keys', () => {
-    const result = BootstrapValidator.isValid(
-      { userID: 'a-user-id' },
-      {
-        evaluated_keys: {},
-      },
-    );
-
-    expect(result).toBe(false);
+    expect(result).toBe(EvaluationReason.InvalidBootstrap);
   });
 
   it('returns false when customid doesnt match empty user', () => {
-    const result = BootstrapValidator.isValid(
+    const result = BootstrapValidator.getEvaluationReasonForBootstrap(
       {},
       {
         evaluated_keys: {
           customIDs: { workID: 'a-work-id' },
         },
       },
+      null,
     );
 
-    expect(result).toBe(false);
+    expect(result).toBe(EvaluationReason.InvalidBootstrap);
   });
 
   it('returns false when userid doesnt match empty user', () => {
-    const result = BootstrapValidator.isValid(
+    const result = BootstrapValidator.getEvaluationReasonForBootstrap(
       {},
       {
         evaluated_keys: { userID: 'a-user-id' },
       },
+      null,
     );
 
-    expect(false).toBe(result);
+    expect(result).toBe(EvaluationReason.InvalidBootstrap);
   });
 
   it('returns false when userID does not match', () => {
-    const result = BootstrapValidator.isValid(
+    const result = BootstrapValidator.getEvaluationReasonForBootstrap(
       { userID: 'a-user-id', customIDs: { workID: 'a-work-id' } },
       {
         evaluated_keys: {
@@ -107,24 +105,26 @@ describe('BootstrapValidator', () => {
           },
         },
       },
+      'a-stable-id',
     );
-    expect(result).toBe(false);
+    expect(result).toBe(EvaluationReason.InvalidBootstrap);
   });
 
   it('returns true by ignoring stableID', () => {
-    const result = BootstrapValidator.isValid(
+    const result = BootstrapValidator.getEvaluationReasonForBootstrap(
       { userID: 'a-user-id', customIDs: { workID: 'a-work-id' } },
       {
         evaluated_keys: {
           userID: 'a-user-id',
-          stableID: 'an-invalid-stable-id',
           customIDs: {
             workID: 'a-work-id',
+            stableID: 'an-invalid-stable-id',
           },
         },
       },
+      null,
     );
-    expect(result).toBe(true);
+    expect(result).toBe(EvaluationReason.BootstrapStableIDMismatch);
   });
 
   it('returns true by ignoring stableID from user', () => {
@@ -132,19 +132,23 @@ describe('BootstrapValidator', () => {
       userID: 'a-user-id',
       customIDs: { workID: 'a-work-id', stableID: 'a-stable-id' },
     };
-    const result = BootstrapValidator.isValid(user, {
-      evaluated_keys: {
-        userID: 'a-user-id',
-        customIDs: {
-          workID: 'a-work-id',
+    const result = BootstrapValidator.getEvaluationReasonForBootstrap(
+      user,
+      {
+        evaluated_keys: {
+          userID: 'a-user-id',
+          customIDs: {
+            workID: 'a-work-id',
+          },
         },
       },
-    });
-    expect(result).toBe(true);
+      'a-stable-id',
+    );
+    expect(result).toBe(EvaluationReason.BootstrapStableIDMismatch);
   });
 
   it('returns false when customIDs do not match', () => {
-    const result = BootstrapValidator.isValid(
+    const result = BootstrapValidator.getEvaluationReasonForBootstrap(
       { userID: 'a-user-id', customIDs: { workID: 'a-work-id' } },
       {
         evaluated_keys: {
@@ -155,12 +159,13 @@ describe('BootstrapValidator', () => {
           },
         },
       },
+      null,
     );
-    expect(result).toBe(false);
+    expect(result).toBe(EvaluationReason.InvalidBootstrap);
   });
 
   it('returns false when customIDs contains more values', () => {
-    const result = BootstrapValidator.isValid(
+    const result = BootstrapValidator.getEvaluationReasonForBootstrap(
       {
         userID: 'a-user-id',
         customIDs: { workID: 'a-work-id', groupID: 'a-group-id' },
@@ -174,7 +179,8 @@ describe('BootstrapValidator', () => {
           },
         },
       },
+      null,
     );
-    expect(result).toBe(false);
+    expect(result).toBe(EvaluationReason.InvalidBootstrap);
   });
 });

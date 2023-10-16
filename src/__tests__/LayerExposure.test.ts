@@ -3,7 +3,7 @@
  */
 
 import Statsig from '../index';
-import { EvaluationReason } from '../utils/BootstrapValidator';
+import { EvaluationReason } from '../utils/EvaluationReason';
 import { sha256Hash } from '../utils/Hashing';
 import { StatsigInitializeResponse } from './index.test';
 

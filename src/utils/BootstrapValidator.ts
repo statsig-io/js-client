@@ -1,22 +1,8 @@
 import { StatsigUser, getUserHashWithoutStableID } from '../StatsigUser';
-
-export enum EvaluationReason {
-  Network = 'Network',
-  Bootstrap = 'Bootstrap',
-  InvalidBootstrap = 'InvalidBootstrap',
-  Cache = 'Cache',
-  Prefetch = 'Prefetch',
-  Sticky = 'Sticky',
-  LocalOverride = 'LocalOverride',
-  Unrecognized = 'Unrecognized',
-  Uninitialized = 'Uninitialized',
-  Error = 'Error',
-  NetworkNotModified = 'NetworkNotModified',
-  BootstrapStableIDMismatch = 'BootstrapStableIDMismatch',
-}
+import { EvaluationReason } from './EvaluationReason';
 
 export default abstract class BootstrapValidator {
-  static isValid(
+  static getEvaluationReasonForBootstrap(
     user: StatsigUser | null,
     values: Record<string, unknown>,
     stableID: string | number | null,

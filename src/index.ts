@@ -36,7 +36,7 @@ export type {
   InitCompletionCallback,
   UpdateUserCompletionCallback,
 } from './StatsigSDKOptions';
-import { EvaluationReason } from './utils/BootstrapValidator';
+import { EvaluationReason } from './utils/EvaluationReason';
 export type { EvaluationDetails } from './StatsigStore';
 export { StatsigUser } from './StatsigUser';
 export { default as StatsigAsyncStorage } from './utils/StatsigAsyncStorage';

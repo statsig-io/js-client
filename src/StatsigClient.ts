@@ -21,7 +21,7 @@ import StatsigStore, {
   EvaluationDetails,
   StoreGateFetchResult,
 } from './StatsigStore';
-import { EvaluationReason } from './utils/BootstrapValidator';
+import { EvaluationReason } from './utils/EvaluationReason';
 import { StatsigUser } from './StatsigUser';
 import { UserCacheKey, getUserCacheKey } from './utils/Hashing';
 import type { AsyncStorage } from './utils/StatsigAsyncStorage';

@@ -1,5 +1,5 @@
 import Layer from '../Layer';
-import { EvaluationReason } from '../utils/BootstrapValidator';
+import { EvaluationReason } from '../utils/EvaluationReason';
 
 describe('Verify behavior of Layer', () => {
   const testLayer = Layer._create(

@@ -1,9 +1,7 @@
 import DynamicConfig, { OnDefaultValueFallback } from './DynamicConfig';
 import Layer, { LogParameterFunction } from './Layer';
 import { IHasStatsigInternal, StatsigOverrides } from './StatsigClient';
-import BootstrapValidator, {
-  EvaluationReason,
-} from './utils/BootstrapValidator';
+import BootstrapValidator from './utils/BootstrapValidator';
 import { StatsigUser } from './StatsigUser';
 import {
   INTERNAL_STORE_KEY,
@@ -20,6 +18,7 @@ import {
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
 import { UserPersistentStorageInterface } from './StatsigSDKOptions';
+import { EvaluationReason } from './utils/EvaluationReason';
 
 export type EvaluationDetails = {
   time: number;
@@ -175,13 +174,14 @@ export default class StatsigStore {
   public bootstrap(initializeValues: Record<string, unknown>): void {
     const key = this.sdkInternal.getCurrentUserCacheKey();
     const user = this.sdkInternal.getCurrentUser();
-
-    const reason = BootstrapValidator.isValid(
+    const stableID =
+      user?.customIDs?.stableID ??
+      this.sdkInternal.getStatsigMetadata().stableID ??
+      null;
+    const reason = BootstrapValidator.getEvaluationReasonForBootstrap(
       user,
       initializeValues,
-      user?.customIDs?.stableID ??
-        this.sdkInternal.getStatsigMetadata().stableID ??
-        null,
+      stableID,
     );
 
     // clients are going to assume that the SDK is bootstraped after this method runs

@@ -3,7 +3,7 @@
  */
 
 import StatsigClient from '../StatsigClient';
-import { EvaluationReason } from '../utils/BootstrapValidator';
+import { EvaluationReason } from '../utils/EvaluationReason';
 import * as TestData from './initialize_response.json';
 
 describe('Verify behavior of StatsigClient outside of browser environment', () => {
