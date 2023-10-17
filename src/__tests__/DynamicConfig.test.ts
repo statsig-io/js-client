@@ -1,5 +1,5 @@
 import DynamicConfig from '../DynamicConfig';
-import { EvaluationReason } from '../StatsigStore';
+import { EvaluationReason } from '../utils/EvaluationReason';
 
 describe('Verify behavior of DynamicConfig', () => {
   const testConfig = new DynamicConfig(

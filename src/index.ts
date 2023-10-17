@@ -4,7 +4,7 @@ import Layer from './Layer';
 import StatsigClient, { StatsigOverrides } from './StatsigClient';
 import StatsigRuntime from './StatsigRuntime';
 import { StatsigOptions } from './StatsigSDKOptions';
-import { EvaluationDetails, EvaluationReason } from './StatsigStore';
+import { EvaluationDetails } from './StatsigStore';
 import { StatsigUser } from './StatsigUser';
 import { default as PolyfillObjectEntries } from './utils/Object.entries';
 import { default as PolyfillObjectFromEntries } from './utils/Object.fromEntries';
@@ -36,7 +36,7 @@ export type {
   InitCompletionCallback,
   UpdateUserCompletionCallback,
 } from './StatsigSDKOptions';
-export { EvaluationReason } from './StatsigStore';
+import { EvaluationReason } from './utils/EvaluationReason';
 export type { EvaluationDetails } from './StatsigStore';
 export { StatsigUser } from './StatsigUser';
 export { default as StatsigAsyncStorage } from './utils/StatsigAsyncStorage';
