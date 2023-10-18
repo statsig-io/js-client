@@ -9,6 +9,7 @@ import { StatsigUser } from './StatsigUser';
 import { default as PolyfillObjectEntries } from './utils/Object.entries';
 import { default as PolyfillObjectFromEntries } from './utils/Object.fromEntries';
 import { default as PolyfillPromiseFinally } from './utils/Promise.finally';
+import { EvaluationReason } from './utils/EvaluationReason';
 
 export { default as DynamicConfig } from './DynamicConfig';
 export { default as Layer } from './Layer';
@@ -36,7 +37,7 @@ export type {
   InitCompletionCallback,
   UpdateUserCompletionCallback,
 } from './StatsigSDKOptions';
-import { EvaluationReason } from './utils/EvaluationReason';
+export { EvaluationReason } from './utils/EvaluationReason';
 export type { EvaluationDetails } from './StatsigStore';
 export { StatsigUser } from './StatsigUser';
 export { default as StatsigAsyncStorage } from './utils/StatsigAsyncStorage';
