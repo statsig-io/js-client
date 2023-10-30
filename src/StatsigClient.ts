@@ -1231,7 +1231,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         user,
         sinceTime,
         timeout,
-        useDeltas: true,
+        useDeltas: sinceTime != null,
         prefetchUsers:
           prefetchUsers.length > 0 ? keyedPrefetchUsers : undefined,
         previousDerivedFields,
