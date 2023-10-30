@@ -53,7 +53,7 @@ describe('StatsigEncoded', () => {
       JSON.stringify({
         user: USER,
         statsigMetadata: MOCK_METADATA,
-        canAcceptDeltas: true,
+        canProcessDeltas: true,
         hash: 'djb2',
       }),
     );
@@ -69,7 +69,7 @@ describe('StatsigEncoded', () => {
       JSON.stringify({
         user: { userID: '大' },
         statsigMetadata: MOCK_METADATA,
-        canAcceptDeltas: true,
+        canProcessDeltas: true,
         hash: 'djb2',
       }),
     );

@@ -635,6 +635,7 @@ export default class StatsigStore {
       evaluation_time: valuesToMerge.evaluation_time,
       derived_fields: valuesToMerge.derived_fields,
       hash_used: valuesToMerge.hash_used,
+      user_hash: valuesToMerge.user_hash,
     };
   }
 
