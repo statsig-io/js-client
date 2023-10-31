@@ -85,7 +85,7 @@ describe('Verify behavior of StatsigClient with sinceTime', () => {
       user,
       sinceTime: null,
       timeout: expect.anything(),
-      useDeltas: true,
+      useDeltas: false,
       hadBadDeltaChecksum: undefined,
       badChecksum: undefined,
     });
