@@ -18,6 +18,10 @@ const APP_METRICS_PAGE_LOAD_EVENT =
   INTERNAL_EVENT_PREFIX + 'app_metrics::page_load_time';
 const APP_METRICS_DOM_INTERACTIVE_EVENT =
   INTERNAL_EVENT_PREFIX + 'app_metrics::dom_interactive_time';
+const APP_METRICS_SCROLL_DEPTH_EVENT =
+  INTERNAL_EVENT_PREFIX + 'app_metrics::scroll_depth';
+const APP_METRICS_SESSION_LENGTH_EVENT =
+  INTERNAL_EVENT_PREFIX + 'app_metrics::time_on_page_ms';
 const DIAGNOSTICS_EVENT = INTERNAL_EVENT_PREFIX + 'diagnostics';
 const DEFAULT_VALUE_WARNING =
   INTERNAL_EVENT_PREFIX + 'default_value_type_mismatch';
@@ -260,11 +264,7 @@ export default class StatsigLogger {
     message: string,
     metadata: object,
   ): void {
-    const defaultValueEvent = new LogEvent(DEFAULT_VALUE_WARNING);
-    defaultValueEvent.setUser(user);
-    defaultValueEvent.setValue(message);
-    defaultValueEvent.setMetadata(metadata);
-    this.log(defaultValueEvent);
+    this.logGenericEvent(DEFAULT_VALUE_WARNING, user, message, metadata);
     this.loggedErrors.add(message);
     this.sdkInternal.getConsoleLogger().error(message);
   }
@@ -282,11 +282,7 @@ export default class StatsigLogger {
       return;
     }
 
-    const errorEvent = new LogEvent(APP_ERROR_EVENT);
-    errorEvent.setUser(user);
-    errorEvent.setValue(trimmedMessage);
-    errorEvent.setMetadata(metadata);
-    this.log(errorEvent);
+    this.logGenericEvent(APP_ERROR_EVENT, user, trimmedMessage, metadata);
     this.loggedErrors.add(trimmedMessage);
   }
 
@@ -314,28 +310,67 @@ export default class StatsigLogger {
 
     const navEntry = entries[0];
     const metadata = {
-      statsig_dimensions: {
-        url: navEntry.name,
-      },
+      url: navEntry.name,
     };
 
-    const latencyEvent = new LogEvent(APP_METRICS_PAGE_LOAD_EVENT);
-    latencyEvent.setUser(user);
-    latencyEvent.setValue(navEntry.duration);
-    latencyEvent.setMetadata(metadata);
-    this.log(latencyEvent);
-
     if (navEntry instanceof PerformanceNavigationTiming) {
-      const domInteractiveEvent = new LogEvent(
+      this.logGenericEvent(
+        APP_METRICS_PAGE_LOAD_EVENT,
+        user,
+        navEntry.duration,
+        metadata,
+      );
+      
+      this.logGenericEvent(
         APP_METRICS_DOM_INTERACTIVE_EVENT,
-      );
-      domInteractiveEvent.setUser(user);
-      domInteractiveEvent.setValue(
+        user,
         navEntry.domInteractive - navEntry.startTime,
+        metadata,
       );
-      domInteractiveEvent.setMetadata(metadata);
-      this.log(domInteractiveEvent);
     }
+
+    if (typeof window?.addEventListener === 'function' && document?.body) {
+      let deepestScroll = 0;
+      window.addEventListener('scroll', () => {
+        const scrollHeight = document.body.scrollHeight || 1;
+        const scrollDepth = Math.min(
+          100,
+          Math.round((window.scrollY + window.innerHeight) / scrollHeight * 100),
+        );
+        if (scrollDepth > deepestScroll) {
+          deepestScroll = scrollDepth;
+        }
+      });
+
+      window.addEventListener('beforeunload', () => {
+        this.logGenericEvent(
+          APP_METRICS_SCROLL_DEPTH_EVENT,
+          user,
+          deepestScroll,
+          metadata,
+        );
+        this.logGenericEvent(
+          APP_METRICS_SESSION_LENGTH_EVENT,
+          user,
+          window.performance.now(),
+          metadata,
+        );
+      });
+    }
+  }
+
+  private logGenericEvent(
+    eventName: string,
+    user: StatsigUser | null,
+    value: string | number,
+    metadata: object,
+  ): LogEvent {
+    const evt = new LogEvent(eventName);
+    evt.setUser(user);
+    evt.setValue(value);
+    evt.setMetadata(metadata);
+    this.log(evt);
+    return evt;
   }
 
   public shutdown(): void {
