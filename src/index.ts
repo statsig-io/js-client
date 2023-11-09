@@ -301,11 +301,25 @@ export default class Statsig {
   }
 
   /**
-   *
    * @returns true if initialize has already been called, false otherwise
    */
   public static initializeCalled(): boolean {
     return Statsig.instance != null && Statsig.instance.initializeCalled();
+  }
+
+  /**
+   * Send any currently queued events to Statsig
+   */
+  public static flushEvents(): void {
+    Statsig.getClientX().flushEvents();
+  }
+
+  /**
+   * Intended to be used in conjunction with StatsigOptions.disableAllLogging.
+   * This will set StatsigOptions.disableAllLogging to false, thereby enabling logs to function normally.
+   */
+  public static reenableAllLogging(): void {
+    Statsig.getClientX().reenableAllLogging();
   }
 
   private static getClientX(): StatsigClient {

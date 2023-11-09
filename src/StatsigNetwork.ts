@@ -220,12 +220,14 @@ export default class StatsigNetwork {
   }
 
   public sendLogBeacon(payload: Record<string, unknown>): boolean {
-    if (this.sdkInternal.getOptions().getLocalModeEnabled()) {
+    const statsigOpts = this.sdkInternal.getOptions();
+
+    if (statsigOpts.getLocalModeEnabled()) {
       return true;
     }
+
     const url = new URL(
-      this.sdkInternal.getOptions().getEventLoggingApi() +
-        StatsigEndpoint.LogEventBeacon,
+      statsigOpts.getEventLoggingApi() + StatsigEndpoint.LogEventBeacon,
     );
     url.searchParams.append('k', this.sdkInternal.getSDKKey());
     payload.clientTime = Date.now() + '';
@@ -258,9 +260,12 @@ export default class StatsigNetwork {
       backoff = 1000,
     } = options?.retryOptions ?? {};
 
-    if (this.sdkInternal.getOptions().getLocalModeEnabled()) {
+    const statsigOpts = this.sdkInternal.getOptions();
+
+    if (statsigOpts.getLocalModeEnabled()) {
       return Promise.reject('no network requests in localMode');
     }
+
     if (typeof fetch !== 'function') {
       // fetch is not defined in this environment, short circuit
       return Promise.reject('fetch is not defined');
@@ -268,15 +273,15 @@ export default class StatsigNetwork {
 
     if (
       typeof window === 'undefined' &&
-      !this.sdkInternal.getOptions().getIgnoreWindowUndefined()
+      !statsigOpts.getIgnoreWindowUndefined()
     ) {
       // by default, dont issue requests from the server
       return Promise.reject('window is not defined');
     }
 
     const api = [StatsigEndpoint.Initialize].includes(endpointName)
-      ? this.sdkInternal.getOptions().getApi()
-      : this.sdkInternal.getOptions().getEventLoggingApi();
+      ? statsigOpts.getApi()
+      : statsigOpts.getEventLoggingApi();
     const url = api + endpointName;
     const counter = this.leakyBucket[url];
     if (counter != null && counter >= 30) {

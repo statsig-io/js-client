@@ -104,6 +104,10 @@ export default class StatsigLogger {
   }
 
   public log(event: LogEvent): void {
+    if (this.sdkInternal.getOptions().isAllLoggingDisabled()) {
+      return;
+    }
+
     try {
       if (
         !this.sdkInternal.getOptions().getDisableCurrentPageLogging() &&
@@ -423,13 +427,14 @@ export default class StatsigLogger {
         {
           events: oldQueue,
           statsigMetadata: this.sdkInternal.getStatsigMetadata(),
-        }, {
-        retryOptions: {
-          retryLimit: 3,
-          backoff: 1000,
         },
-        useKeepalive: isClosing,
-      }
+        {
+          retryOptions: {
+            retryLimit: 3,
+            backoff: 1000,
+          },
+          useKeepalive: isClosing,
+        },
       )
       .then((response) => {
         if (!response.ok) {

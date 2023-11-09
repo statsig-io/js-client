@@ -26,39 +26,40 @@ export type GateEvaluationCallback = (
   key: string,
   value: boolean,
   details: {
-    withExposureLoggingDisabled: boolean,
-  }
+    withExposureLoggingDisabled: boolean;
+  },
 ) => void;
 
 export interface UserPersistentStorageInterface {
-  load(userID: string): string
-  save(userID: string, data: string): void
+  load(userID: string): string;
+  save(userID: string, data: string): void;
 }
 
 export type StatsigOptions = {
   api?: string;
-  disableCurrentPageLogging?: boolean;
-  environment?: StatsigEnvironment;
-  loggingIntervalMillis?: number;
-  loggingBufferMaxSize?: number;
-  disableNetworkKeepalive?: boolean;
-  overrideStableID?: string;
-  localMode?: boolean;
-  initTimeoutMs?: number;
-  disableErrorLogging?: boolean;
+  disableAllLogging?: boolean;
   disableAutoMetricsLogging?: boolean;
-  initializeValues?: Record<string, unknown> | null;
-  eventLoggingApi?: string;
-  prefetchUsers?: StatsigUser[];
-  disableLocalStorage?: boolean;
-  initCompletionCallback?: InitCompletionCallback | null;
-  updateUserCompletionCallback?: UpdateUserCompletionCallback | null;
+  disableCurrentPageLogging?: boolean;
   disableDiagnosticsLogging?: boolean;
-  logLevel?: LogLevel | null;
-  ignoreWindowUndefined?: boolean;
-  fetchMode?: FetchMode;
+  disableErrorLogging?: boolean;
   disableLocalOverrides?: boolean;
+  disableLocalStorage?: boolean;
+  disableNetworkKeepalive?: boolean;
+  environment?: StatsigEnvironment;
+  eventLoggingApi?: string;
+  fetchMode?: FetchMode;
   gateEvaluationCallback?: GateEvaluationCallback;
+  ignoreWindowUndefined?: boolean;
+  initCompletionCallback?: InitCompletionCallback | null;
+  initializeValues?: Record<string, unknown> | null;
+  initTimeoutMs?: number;
+  localMode?: boolean;
+  loggingBufferMaxSize?: number;
+  loggingIntervalMillis?: number;
+  logLevel?: LogLevel | null;
+  overrideStableID?: string;
+  prefetchUsers?: StatsigUser[];
+  updateUserCompletionCallback?: UpdateUserCompletionCallback | null;
   userPersistentStorage?: UserPersistentStorageInterface;
 };
 
@@ -78,28 +79,29 @@ type BoundedNumberInput = {
 
 export default class StatsigSDKOptions {
   private api: string;
-  private disableCurrentPageLogging: boolean;
-  private environment: StatsigEnvironment | null;
-  private loggingIntervalMillis: number;
-  private loggingBufferMaxSize: number;
-  private disableNetworkKeepalive: boolean;
-  private overrideStableID: string | null;
-  private localMode: boolean;
-  private initTimeoutMs: number;
-  private disableErrorLogging: boolean;
+  private disableAllLogging: boolean;
   private disableAutoMetricsLogging: boolean;
-  private initializeValues: Record<string, unknown> | null;
-  private eventLoggingApi: string;
-  private prefetchUsers: StatsigUser[];
-  private disableLocalStorage: boolean;
-  private initCompletionCallback: InitCompletionCallback | null;
-  private updateCompletionCallback: UpdateUserCompletionCallback | null;
+  private disableCurrentPageLogging: boolean;
   private disableDiagnosticsLogging: boolean;
-  private logLevel: LogLevel;
-  private ignoreWindowUndefined: boolean;
-  private fetchMode: FetchMode;
+  private disableErrorLogging: boolean;
   private disableLocalOverrides: boolean;
+  private disableLocalStorage: boolean;
+  private disableNetworkKeepalive: boolean;
+  private environment: StatsigEnvironment | null;
+  private eventLoggingApi: string;
+  private fetchMode: FetchMode;
   private gateEvaluationCallback: GateEvaluationCallback | null;
+  private ignoreWindowUndefined: boolean;
+  private initCompletionCallback: InitCompletionCallback | null;
+  private initializeValues: Record<string, unknown> | null;
+  private initTimeoutMs: number;
+  private localMode: boolean;
+  private loggingBufferMaxSize: number;
+  private loggingIntervalMillis: number;
+  private logLevel: LogLevel;
+  private overrideStableID: string | null;
+  private prefetchUsers: StatsigUser[];
+  private updateCompletionCallback: UpdateUserCompletionCallback | null;
   private userPersistentStorage: UserPersistentStorageInterface | null;
 
   constructor(options?: StatsigOptions | null) {
@@ -154,6 +156,7 @@ export default class StatsigSDKOptions {
     this.disableLocalOverrides = options?.disableLocalOverrides ?? false;
     this.gateEvaluationCallback = options?.gateEvaluationCallback ?? null;
     this.userPersistentStorage = options?.userPersistentStorage ?? null;
+    this.disableAllLogging = options.disableAllLogging ?? false;
   }
 
   getApi(): string {
@@ -250,6 +253,14 @@ export default class StatsigSDKOptions {
 
   getUserPersistentStorage(): UserPersistentStorageInterface | null {
     return this.userPersistentStorage;
+  }
+
+  isAllLoggingDisabled(): boolean {
+    return this.disableAllLogging;
+  }
+
+  reenableAllLogging(): void {
+    this.disableAllLogging = false;
   }
 
   private normalizeNumberInput(

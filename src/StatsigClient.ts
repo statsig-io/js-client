@@ -1024,6 +1024,14 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     }
   }
 
+  public flushEvents(): void {
+    this.logger.flush();
+  }
+
+  public reenableAllLogging(): void {
+    this.getOptions().reenableAllLogging();
+  }
+
   private isCacheValidForFetchMode(cachedTime: number): boolean {
     if (this.options.getFetchMode() !== 'cache-or-network') {
       return false;
