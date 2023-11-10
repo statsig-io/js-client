@@ -220,11 +220,12 @@ export default class StatsigStore {
   // Currently only loads experiments, cannot rely on storage adapter for all user values.
   private partialLoadFromPersistentStorageAdapter(): void {
     if (this.userPersistentStorageAdapter) {
-      const userID = this.sdkInternal.getCurrentUserID();
-      if (userID) {
+      const idType = this.userPersistentStorageAdapter.userIDType ?? 'userID';
+      const unitID = this.sdkInternal.getCurrentUserUnitID(idType);
+      if (unitID) {
         try {
           this.userPersistentStorageData = JSON.parse(
-            this.userPersistentStorageAdapter.load(userID),
+            this.userPersistentStorageAdapter.load(`${unitID}:${idType}`),
           ) as UserPersistentStorageData;
         } catch (e) {
           console.warn('Failed to load from user persistent storage.', e);
@@ -237,14 +238,18 @@ export default class StatsigStore {
 
   private saveStickyExperimentsToPersistentStorageAdapter(): void {
     if (this.userPersistentStorageAdapter) {
-      const userID = this.sdkInternal.getCurrentUserID();
-      if (userID) {
+      const idType = this.userPersistentStorageAdapter.userIDType ?? 'userID';
+      const unitID = this.sdkInternal.getCurrentUserUnitID(idType);
+      if (unitID) {
         const data: UserPersistentStorageData = {
           ...this.userPersistentStorageData,
           experiments: this.userValues.sticky_experiments,
         };
         try {
-          this.userPersistentStorageAdapter.save(userID, JSON.stringify(data));
+          this.userPersistentStorageAdapter.save(
+            `${unitID}:${idType}`,
+            JSON.stringify(data),
+          );
         } catch (e) {
           console.warn(
             'Failed to save user experiment values to persistent storage.',

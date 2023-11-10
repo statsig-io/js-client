@@ -31,8 +31,9 @@ export type GateEvaluationCallback = (
 ) => void;
 
 export interface UserPersistentStorageInterface {
-  load(userID: string): string;
-  save(userID: string, data: string): void;
+  load(key: string): string;
+  save(key: string, data: string): void;
+  userIDType: string | undefined; // Defaults to userID if not provided
 }
 
 export type StatsigOptions = {

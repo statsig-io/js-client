@@ -4,8 +4,9 @@ export default class UserPersistentStorageExample
   implements UserPersistentStorageInterface
 {
   public store: Record<string, string>;
-  public constructor() {
+  public constructor(userIDType?: string) {
     this.store = {};
+    this.userIDType = userIDType
   }
   load(userID: string): string {
     return this.store[userID];
@@ -20,4 +21,5 @@ export default class UserPersistentStorageExample
       this.store[userID] = data;
     }
   }
+  userIDType: string | undefined;
 }
