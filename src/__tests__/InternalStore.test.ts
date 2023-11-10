@@ -4,6 +4,7 @@
 
 import DynamicConfig from '../DynamicConfig';
 import StatsigClient from '../StatsigClient';
+import { StatsigUser } from '../StatsigUser';
 import { EvaluationReason } from '../utils/EvaluationReason';
 import LocalStorageMock from './LocalStorageMock';
 import UserPersistentStorageExample from './UserPersistentStorageExample';
@@ -518,17 +519,18 @@ describe('Verify behavior of InternalStore', () => {
   });
 
   test('experiment sticky bucketing behavior with custom storage', async () => {
-    const stickyStore = new UserPersistentStorageExample();
+    const user: StatsigUser = { customIDs: { testID: '123' } };
+    const stickyStore = new UserPersistentStorageExample('testID');
     const statsig = new StatsigClient(
       sdkKey,
-      { userID: '123' },
+      user,
       { userPersistentStorage: stickyStore },
     );
     await statsig.initializeAsync();
     const store = statsig.getStore();
 
     // getting values with flag set to false, should get latest values
-    store.save({ userID: '123' }, generateTestConfigs('v0', true, true));
+    store.save(user, generateTestConfigs('v0', true, true));
     let exp = store.getExperiment('exp', false);
     let deviceExp = store.getExperiment('device_exp', false);
     let expNonSticky = store.getExperiment('exp_non_stick', false);
@@ -550,7 +552,7 @@ describe('Verify behavior of InternalStore', () => {
     });
 
     // update values, and then get with flag set to true. All values should update
-    store.save({ userID: '123' }, generateTestConfigs('v1', true, true));
+    store.save(user, generateTestConfigs('v1', true, true));
     exp = store.getExperiment('exp', true);
     deviceExp = store.getExperiment('device_exp', true);
     expNonSticky = store.getExperiment('exp_non_stick', false);
@@ -573,7 +575,7 @@ describe('Verify behavior of InternalStore', () => {
     });
 
     // update values again. Now some values should be sticky except the non-sticky ones
-    store.save({ userID: '123' }, generateTestConfigs('v2', true, true));
+    store.save(user, generateTestConfigs('v2', true, true));
     exp = store.getExperiment('exp', true);
     deviceExp = store.getExperiment('device_exp', true);
     expNonSticky = store.getExperiment('exp_non_stick', false);
@@ -595,7 +597,7 @@ describe('Verify behavior of InternalStore', () => {
     });
 
     // update the experiments so that the user is no longer in experiments, should still be sticky for the right ones
-    store.save({ userID: '123' }, generateTestConfigs('v3', false, true));
+    store.save(user, generateTestConfigs('v3', false, true));
     exp = store.getExperiment('exp', true);
     deviceExp = store.getExperiment('device_exp', true);
     expNonSticky = store.getExperiment('exp_non_stick', false);
@@ -617,7 +619,7 @@ describe('Verify behavior of InternalStore', () => {
     });
 
     // update the experiments to no longer be active, values should update NOW
-    store.save({ userID: '123' }, generateTestConfigs('v4', false, false));
+    store.save(user, generateTestConfigs('v4', false, false));
     exp = store.getExperiment('exp', true);
     deviceExp = store.getExperiment('device_exp', true);
     expNonSticky = store.getExperiment('exp_non_stick', false);

@@ -202,7 +202,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       return user.userID?.toString() ?? null;
     }
     if (user.customIDs) {
-      user.customIDs[idType] ?? user.customIDs[idType.toLowerCase()];
+      return user.customIDs[idType] ?? user.customIDs[idType.toLowerCase()];
     }
     return null;
   }
