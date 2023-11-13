@@ -36,6 +36,7 @@ export { StatsigEnvironment, StatsigOptions } from './StatsigSDKOptions';
 export type {
   InitCompletionCallback,
   UpdateUserCompletionCallback,
+  GateEvaluationCallback,
 } from './StatsigSDKOptions';
 export { EvaluationReason } from './utils/EvaluationReason';
 export type { EvaluationDetails } from './StatsigStore';
