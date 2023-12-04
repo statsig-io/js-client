@@ -2,6 +2,7 @@ import DynamicConfig from './DynamicConfig';
 import ErrorBoundary from './ErrorBoundary';
 import {
   StatsigInvalidArgumentError,
+  StatsigSDKKeyMismatchError,
   StatsigUninitializedError,
 } from './Errors';
 import Layer, { LogParameterFunction } from './Layer';
@@ -23,13 +24,14 @@ import StatsigStore, {
 } from './StatsigStore';
 import { EvaluationReason } from './utils/EvaluationReason';
 import { StatsigUser } from './StatsigUser';
-import { UserCacheKey, getUserCacheKey } from './utils/Hashing';
+import { UserCacheKey, djb2Hash, getUserCacheKey } from './utils/Hashing';
 import type { AsyncStorage } from './utils/StatsigAsyncStorage';
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
 import Diagnostics from './utils/Diagnostics';
 import ConsoleLogger from './utils/ConsoleLogger';
 import { now } from './utils/Timing';
+import { verifySDKKeyUsed } from './utils/ResponseVerification';
 
 const MAX_VALUE_SIZE = 64;
 const MAX_OBJ_SIZE = 2048;
@@ -1205,6 +1207,26 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     };
   }
 
+  private verifySDKKeyUsed(
+    json: Record<string, unknown>,
+    sdkKey: string,
+  ): boolean {
+    const hashedSDKKeyUsed = json?.hashed_sdk_key_used;
+    if (
+      hashedSDKKeyUsed != null &&
+      hashedSDKKeyUsed !== djb2Hash(sdkKey ?? '')
+    ) {
+      this.errorBoundary.logError(
+        'fetchAndSaveValues:eventually',
+        new StatsigSDKKeyMismatchError(
+          'The SDK key provided does not match the one used to generate values.',
+        ),
+      );
+      return false;
+    }
+    return true;
+  }
+
   private async fetchAndSaveValues(args: {
     user: StatsigUser | null;
     prefetchUsers?: StatsigUser[];
@@ -1245,6 +1267,9 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         previousDerivedFields,
       })
       .eventually((json) => {
+        if (!verifySDKKeyUsed(json, this.sdkKey ?? '', this.errorBoundary)) {
+          return;
+        }
         if (json?.has_updates) {
           this.store
             .saveWithoutUpdatingClientState(
@@ -1263,6 +1288,9 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       .then(async (json: Record<string, unknown>) => {
         return this.errorBoundary.swallow('fetchAndSaveValues', async () => {
           Diagnostics.mark.intialize.process.start({});
+          if (!verifySDKKeyUsed(json, this.sdkKey ?? '', this.errorBoundary)) {
+            return;
+          }
           if (json?.has_updates) {
             await this.store.save(
               user,
