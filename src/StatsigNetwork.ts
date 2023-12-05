@@ -69,6 +69,8 @@ export default class StatsigNetwork {
     previousDerivedFields?: Record<string, string>;
     hadBadDeltaChecksum?: boolean;
     badChecksum?: string;
+    badMergedConfigs?: Record<string, unknown>;
+    badFullResponse?: Record<string, unknown>;
   }): PromiseWithTimeout<Record<string, unknown>> {
     const {
       user,
@@ -79,6 +81,8 @@ export default class StatsigNetwork {
       previousDerivedFields,
       hadBadDeltaChecksum,
       badChecksum,
+      badMergedConfigs,
+      badFullResponse,
     } = args;
     const input = {
       user,
@@ -90,6 +94,8 @@ export default class StatsigNetwork {
       previousDerivedFields: previousDerivedFields,
       hadBadDeltaChecksum: hadBadDeltaChecksum,
       badChecksum: badChecksum,
+      badMergedConfigs: badMergedConfigs,
+      badFullResponse: badFullResponse,
     };
 
     return this.postWithTimeout(StatsigEndpoint.Initialize, input, {

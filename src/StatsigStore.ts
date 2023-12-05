@@ -70,6 +70,11 @@ type APIInitializeDataWithDeltas = APIInitializeData & {
   deleted_layers?: string[];
   is_delta?: boolean;
   checksum?: string;
+  deltas_full_response?: {
+    dynamic_configs: Record<string, APIDynamicConfig | undefined>;
+    feature_gates: Record<string, APIFeatureGate | undefined>;
+    layer_configs: Record<string, APIDynamicConfig | undefined>;
+  };
 };
 
 type APIInitializeDataWithPrefetchedUsers = APIInitializeData & {
@@ -477,11 +482,12 @@ export default class StatsigStore {
       mergedValues[requestedUserCacheKey.v1];
     removeDeletedKeysFromUserValues(initResponse, userValues);
     const expectedFullHash = initResponse.checksum;
-    const currentFullHash = djb2HashForObject({
+    const mergedConfigs = {
       feature_gates: userValues.feature_gates,
       dynamic_configs: userValues.dynamic_configs,
       layer_configs: userValues.layer_configs,
-    });
+    };
+    const currentFullHash = djb2HashForObject(mergedConfigs);
     if (expectedFullHash && expectedFullHash !== currentFullHash) {
       hasBadHash = true;
       badChecksum = currentFullHash;
@@ -492,6 +498,23 @@ export default class StatsigStore {
     }
 
     if (hasBadHash || hashChanged) {
+      if (initResponse.deltas_full_response != null) {
+        // retry
+        this.refetchAndSaveValues(
+          user,
+          prefetchUsers,
+          undefined,
+          badChecksum,
+          hasBadHash,
+          mergedConfigs,
+          initResponse.deltas_full_response,
+        ).catch((reason) =>
+          this.sdkInternal
+            .getErrorBoundary()
+            .logError('refetchAndSaveValues', reason),
+        );
+        return;
+      }
       // retry
       this.refetchAndSaveValues(
         user,
@@ -525,6 +548,8 @@ export default class StatsigStore {
     timeout: number = this.sdkInternal.getOptions().getInitTimeoutMs(),
     badChecksum?: string,
     hadBadChecksum?: boolean,
+    badMergedConfigs?: Record<string, unknown>,
+    badFullResponse?: Record<string, unknown>,
   ): Promise<void> {
     const sinceTime = this.getLastUpdateTime(user);
     const previousDerivedFields = this.getPreviousDerivedFields(user);
@@ -540,6 +565,8 @@ export default class StatsigStore {
         previousDerivedFields,
         hadBadDeltaChecksum: hadBadChecksum,
         badChecksum,
+        badMergedConfigs,
+        badFullResponse,
       })
       .then((json) => {
         if (json?.has_updates) {
