@@ -111,12 +111,13 @@ export default class Identity {
       stableID = await StatsigAsyncStorage.getItemAsync(STATSIG_STABLE_ID_KEY);
       stableID = stableID ?? this.getUUID();
     }
+    this.statsigMetadata.stableID = stableID;
+
     StatsigAsyncStorage.setItemAsync(STATSIG_STABLE_ID_KEY, stableID).catch(
       () => {
         //noop
       },
     );
-    this.statsigMetadata.stableID = stableID;
     return this;
   }
 

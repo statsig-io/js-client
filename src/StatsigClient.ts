@@ -357,11 +357,11 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         }
         Diagnostics.mark.overall.start({});
 
-        this.initCalled = true;
         if (StatsigAsyncStorage.asyncStorage) {
           await this.identity.initAsync();
           await this.store.loadAsync();
         }
+        this.initCalled = true;
 
         this.onCacheLoadedForReact?.();
 
