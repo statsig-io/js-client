@@ -30,20 +30,23 @@ jest.mock('../utils/StatsigAsyncStorage', () => {
  * Tests a very specific bug where Statsig.updateUser would call /initialize with an empty StableID.
  */
 describe('AsyncStorage StableID BugFix', () => {
-  let called = false;
+  let requests: { url: string; body: Record<string, unknown> }[] = [];
 
   (global as any).fetch = jest.fn((url, params) => {
-    called = true;
+    requests.push({ url, body: JSON.parse(params.body) });
     return Promise.reject();
   });
 
-  it('does not hit initialize', async () => {
-    Statsig.initialize('client-key');
+  it('hits initialize with a stableID', async () => {
+    Statsig.initialize('client-key'); // blocked waiting for stableID
+    Statsig.updateUser({ userID: 'a-user' }); // issue /initialize request
 
-    expect(async () => {
-      await Statsig.updateUser({ userID: 'a-user' });
-    }).rejects.toThrow(StatsigUninitializedError);
+    resolvers.forEach((entry) => entry.resolve('a-stable-id'));
 
-    expect(called).toBe(false);
+    await new Promise((r) => setTimeout(r, 1));
+
+    expect(requests[0].body.statsigMetadata).toMatchObject({
+      stableID: expect.any(String),
+    });
   });
 });

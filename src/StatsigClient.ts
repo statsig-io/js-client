@@ -357,11 +357,12 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         }
         Diagnostics.mark.overall.start({});
 
+        this.initCalled = true;
+
         if (StatsigAsyncStorage.asyncStorage) {
           await this.identity.initAsync();
           await this.store.loadAsync();
         }
-        this.initCalled = true;
 
         this.onCacheLoadedForReact?.();
 
@@ -758,6 +759,13 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
           const cb = this.options.getUpdateUserCompletionCallback();
           cb?.(Date.now() - updateStartTime, success, error);
         };
+
+        if (
+          StatsigAsyncStorage.asyncStorage &&
+          (this.identity.getStatsigMetadata().stableID ?? '') == ''
+        ) {
+          await this.identity.initAsync();
+        }
 
         this.identity.updateUser(this.normalizeUser(user));
 
