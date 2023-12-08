@@ -269,8 +269,11 @@ export default class StatsigStore {
     return this.loaded;
   }
 
-  public getLastUpdateTime(user: StatsigUser | null): number | null {
-    const userHash = djb2HashForObject(user);
+  public getLastUpdateTime(
+    user: StatsigUser | null,
+    stableID: string,
+  ): number | null {
+    const userHash = djb2HashForObject({ ...user, stableID });
     if (this.userValues.user_hash == userHash) {
       return this.userValues.time;
     }
@@ -279,8 +282,9 @@ export default class StatsigStore {
 
   public getPreviousDerivedFields(
     user: StatsigUser | null,
+    stableID: string,
   ): Record<string, string> | undefined {
-    const userHash = djb2HashForObject(user);
+    const userHash = djb2HashForObject({ ...user, stableID });
     if (this.userValues.user_hash == userHash) {
       return this.userValues.derived_fields;
     }
@@ -551,8 +555,14 @@ export default class StatsigStore {
     badMergedConfigs?: Record<string, unknown>,
     badFullResponse?: Record<string, unknown>,
   ): Promise<void> {
-    const sinceTime = this.getLastUpdateTime(user);
-    const previousDerivedFields = this.getPreviousDerivedFields(user);
+    const sinceTime = this.getLastUpdateTime(
+      user,
+      String(this.sdkInternal.getStatsigMetadata()?.stableID ?? ''),
+    );
+    const previousDerivedFields = this.getPreviousDerivedFields(
+      user,
+      String(this.sdkInternal.getStatsigMetadata()?.stableID ?? ''),
+    );
 
     return this.sdkInternal
       .getNetwork()
@@ -622,7 +632,12 @@ export default class StatsigStore {
         requestedUserCacheKey.v2,
       );
       if (data.has_updates && data.time) {
-        const userHash = djb2HashForObject(user);
+        const userHash = djb2HashForObject({
+          ...user,
+          stableID: String(
+            this.sdkInternal.getStatsigMetadata()?.stableID ?? '',
+          ),
+        });
         requestedUserValues.user_hash = userHash;
       }
 

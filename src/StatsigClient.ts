@@ -1237,10 +1237,16 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
 
     let sinceTime: number | null = null;
     if (prefetchUsers.length === 0) {
-      sinceTime = this.store.getLastUpdateTime(user);
+      sinceTime = this.store.getLastUpdateTime(
+        user,
+        String(this.getStatsigMetadata()?.stableID ?? ''),
+      );
     }
 
-    const previousDerivedFields = this.store.getPreviousDerivedFields(user);
+    const previousDerivedFields = this.store.getPreviousDerivedFields(
+      user,
+      String(this.getStatsigMetadata()?.stableID ?? ''),
+    );
 
     return this.network
       .fetchValues({
