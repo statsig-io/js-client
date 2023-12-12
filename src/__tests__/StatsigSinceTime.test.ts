@@ -91,7 +91,7 @@ describe('Verify behavior of StatsigClient with sinceTime', () => {
     });
 
     const key = getUserCacheKey(stableID, user).v2;
-    const userHash = djb2HashForObject(user);
+    const userHash = djb2HashForObject({ ...user, stableID: stableID });
     const storeObject = JSON.parse(
       localStorage.getItem(INTERNAL_STORE_KEY) ?? '',
     );

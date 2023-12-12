@@ -69,6 +69,8 @@ export default class StatsigNetwork {
     previousDerivedFields?: Record<string, string>;
     hadBadDeltaChecksum?: boolean;
     badChecksum?: string;
+    badMergedConfigs?: Record<string, unknown>;
+    badFullResponse?: Record<string, unknown>;
   }): PromiseWithTimeout<Record<string, unknown>> {
     const {
       user,
@@ -79,17 +81,21 @@ export default class StatsigNetwork {
       previousDerivedFields,
       hadBadDeltaChecksum,
       badChecksum,
+      badMergedConfigs,
+      badFullResponse,
     } = args;
     const input = {
       user,
       prefetchUsers,
       statsigMetadata: this.sdkInternal.getStatsigMetadata(),
       sinceTime: sinceTime ?? undefined,
-      canProcessDeltas: useDeltas,
+      deltasResponseRequested: useDeltas,
       hash: 'djb2',
       previousDerivedFields: previousDerivedFields,
       hadBadDeltaChecksum: hadBadDeltaChecksum,
       badChecksum: badChecksum,
+      badMergedConfigs: badMergedConfigs,
+      badFullResponse: badFullResponse,
     };
 
     return this.postWithTimeout(StatsigEndpoint.Initialize, input, {
