@@ -1207,26 +1207,6 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     };
   }
 
-  private verifySDKKeyUsed(
-    json: Record<string, unknown>,
-    sdkKey: string,
-  ): boolean {
-    const hashedSDKKeyUsed = json?.hashed_sdk_key_used;
-    if (
-      hashedSDKKeyUsed != null &&
-      hashedSDKKeyUsed !== djb2Hash(sdkKey ?? '')
-    ) {
-      this.errorBoundary.logError(
-        'fetchAndSaveValues:eventually',
-        new StatsigSDKKeyMismatchError(
-          'The SDK key provided does not match the one used to generate values.',
-        ),
-      );
-      return false;
-    }
-    return true;
-  }
-
   private async fetchAndSaveValues(args: {
     user: StatsigUser | null;
     prefetchUsers?: StatsigUser[];
@@ -1289,6 +1269,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         return this.errorBoundary.swallow('fetchAndSaveValues', async () => {
           Diagnostics.mark.intialize.process.start({});
           if (!verifySDKKeyUsed(json, this.sdkKey ?? '', this.errorBoundary)) {
+            Diagnostics.mark.intialize.process.end({ success: false });
             return;
           }
           if (json?.has_updates) {
