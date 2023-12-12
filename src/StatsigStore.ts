@@ -19,6 +19,7 @@ import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
 import { UserPersistentStorageInterface } from './StatsigSDKOptions';
 import { EvaluationReason } from './utils/EvaluationReason';
+import { verifySDKKeyUsed } from './utils/ResponseVerification';
 
 export type EvaluationDetails = {
   time: number;
@@ -579,6 +580,15 @@ export default class StatsigStore {
         badFullResponse,
       })
       .then((json) => {
+        if (
+          !verifySDKKeyUsed(
+            json,
+            this.sdkInternal.getSDKKey(),
+            this.sdkInternal.getErrorBoundary(),
+          )
+        ) {
+          return;
+        }
         if (json?.has_updates) {
           this.saveWithoutUpdatingClientState(user, json, prefetchUsers).catch(
             (reason) =>

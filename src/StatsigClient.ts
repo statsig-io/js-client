@@ -30,6 +30,7 @@ import StatsigLocalStorage from './utils/StatsigLocalStorage';
 import Diagnostics from './utils/Diagnostics';
 import ConsoleLogger from './utils/ConsoleLogger';
 import { now } from './utils/Timing';
+import { verifySDKKeyUsed } from './utils/ResponseVerification';
 
 const MAX_VALUE_SIZE = 64;
 const MAX_OBJ_SIZE = 2048;
@@ -1259,6 +1260,9 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         previousDerivedFields,
       })
       .eventually((json) => {
+        if (!verifySDKKeyUsed(json, this.sdkKey ?? '', this.errorBoundary)) {
+          return;
+        }
         if (json?.has_updates) {
           this.store
             .saveWithoutUpdatingClientState(
@@ -1277,6 +1281,10 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       .then(async (json: Record<string, unknown>) => {
         return this.errorBoundary.swallow('fetchAndSaveValues', async () => {
           Diagnostics.mark.intialize.process.start({});
+          if (!verifySDKKeyUsed(json, this.sdkKey ?? '', this.errorBoundary)) {
+            Diagnostics.mark.intialize.process.end({ success: false });
+            return;
+          }
           if (json?.has_updates) {
             await this.store.save(
               user,

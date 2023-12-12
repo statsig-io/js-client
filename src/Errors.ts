@@ -11,3 +11,11 @@ export class StatsigInvalidArgumentError extends Error {
     Object.setPrototypeOf(this, StatsigInvalidArgumentError.prototype);
   }
 }
+
+export class StatsigSDKKeyMismatchError extends Error {
+  constructor(message?: string) {
+    super(message);
+
+    Object.setPrototypeOf(this, StatsigSDKKeyMismatchError.prototype);
+  }
+}
