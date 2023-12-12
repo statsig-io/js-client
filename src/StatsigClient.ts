@@ -2,7 +2,6 @@ import DynamicConfig from './DynamicConfig';
 import ErrorBoundary from './ErrorBoundary';
 import {
   StatsigInvalidArgumentError,
-  StatsigSDKKeyMismatchError,
   StatsigUninitializedError,
 } from './Errors';
 import Layer, { LogParameterFunction } from './Layer';
@@ -24,7 +23,7 @@ import StatsigStore, {
 } from './StatsigStore';
 import { EvaluationReason } from './utils/EvaluationReason';
 import { StatsigUser } from './StatsigUser';
-import { UserCacheKey, djb2Hash, getUserCacheKey } from './utils/Hashing';
+import { UserCacheKey, getUserCacheKey } from './utils/Hashing';
 import type { AsyncStorage } from './utils/StatsigAsyncStorage';
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
