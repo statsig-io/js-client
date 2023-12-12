@@ -10,8 +10,9 @@ const MOCK_METADATA = {
   sdkType: 'js-client',
   sdkVersion: '4.2.0',
 };
+
 const ENCODED_INIT_BODY =
-  '==QfiIjYqRmI6ICazFGaiwSZzxWYmpjIzFGdsVGRzNXZj9mcQ5WYjJCL9JCMuIjL0IiOi42bpNnclZ1akNnIsICduVWasNWLzpmI6ISZwlHVrR2ciwiIklWLu9WazNXZz1SYiojIuV2avRlbvl2czV2cisnOiEGdhRWY0VWTnl2c0FGdzJCL9JiclNXdtEmI6ICRJJXZzVnI7pjIyV2c1Jye';
+  '=0nIyImakJiOig2chhmIsU2csFmZ6ICZlR3clVXclJVZz52bwNXZSNXY0xWZkJCL9JCMuIjL0IiOi42bpNnclZ1akNnIsICduVWasNWLzpmI6ISZwlHVrR2ciwiIklWLu9WazNXZz1SYiojIuV2avRlbvl2czV2cisnOiEGdhRWY0VWTnl2c0FGdzJCL9JiclNXdtEmI6ICRJJXZzVnI7pjIyV2c1Jye';
 
 const USER = {
   userID: 'a-user',
@@ -53,7 +54,7 @@ describe('StatsigEncoded', () => {
       JSON.stringify({
         user: USER,
         statsigMetadata: MOCK_METADATA,
-        canProcessDeltas: false,
+        deltasResponseRequested: false,
         hash: 'djb2',
       }),
     );
@@ -69,7 +70,7 @@ describe('StatsigEncoded', () => {
       JSON.stringify({
         user: { userID: '大' },
         statsigMetadata: MOCK_METADATA,
-        canProcessDeltas: false,
+        deltasResponseRequested: false,
         hash: 'djb2',
       }),
     );
