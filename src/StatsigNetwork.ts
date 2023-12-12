@@ -89,7 +89,7 @@ export default class StatsigNetwork {
       prefetchUsers,
       statsigMetadata: this.sdkInternal.getStatsigMetadata(),
       sinceTime: sinceTime ?? undefined,
-      canProcessDeltas: useDeltas,
+      deltasResponseRequested: useDeltas,
       hash: 'djb2',
       previousDerivedFields: previousDerivedFields,
       hadBadDeltaChecksum: hadBadDeltaChecksum,
