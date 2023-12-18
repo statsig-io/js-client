@@ -91,6 +91,7 @@ type UserCacheValues = APIInitializeDataWithPrefetchedUsers & {
   sticky_experiments: Record<string, APIDynamicConfig | undefined>;
   evaluation_time?: number;
   user_hash?: string;
+  stableIDUsed?: string;
 };
 
 type UserPersistentStorageData = {
@@ -328,6 +329,22 @@ export default class StatsigStore {
       this.resetUserValues();
       this.reason = EvaluationReason.Uninitialized;
       return null;
+    }
+
+    if (
+      cachedValues.stableIDUsed != null &&
+      cachedValues.stableIDUsed !== this.getStableID()
+    ) {
+      this.sdkInternal
+        .getErrorBoundary()
+        .logError(
+          'stableIDChanged',
+          new Error(
+            `StableID changed from ${
+              cachedValues.stableIDUsed
+            } to ${this.getStableID()}`,
+          ),
+        );
     }
 
     this.userValues = cachedValues;
@@ -631,6 +648,7 @@ export default class StatsigStore {
         if (data.has_updates && data.time && prefetchUsers) {
           const userHash = djb2HashForObject(prefetchUsers[key]);
           values.user_hash = userHash;
+          values.stableIDUsed = this.getStableID();
         }
         configMap[key] = values;
       }
@@ -644,11 +662,10 @@ export default class StatsigStore {
       if (data.has_updates && data.time) {
         const userHash = djb2HashForObject({
           ...user,
-          stableID: String(
-            this.sdkInternal.getStatsigMetadata()?.stableID ?? '',
-          ),
+          stableID: String(this.getStableID() ?? ''),
         });
         requestedUserValues.user_hash = userHash;
+        requestedUserValues.stableIDUsed = this.getStableID();
       }
 
       configMap[requestedUserCacheKey.v2] = mergeFn(
@@ -693,6 +710,7 @@ export default class StatsigStore {
       derived_fields: valuesToMerge.derived_fields,
       hash_used: valuesToMerge.hash_used,
       user_hash: valuesToMerge.user_hash,
+      stableIDUsed: valuesToMerge.stableIDUsed,
     };
   }
 
