@@ -1,3 +1,4 @@
+import { StatsigInitializationTimeoutError } from './Errors';
 import { IHasStatsigInternal } from './StatsigClient';
 import StatsigRuntime from './StatsigRuntime';
 import { StatsigUser } from './StatsigUser';
@@ -139,14 +140,10 @@ export default class StatsigNetwork {
       };
 
     if (timeout != 0) {
-      timer = new Promise<void>((resolve, reject) => {
+      timer = new Promise<void>((_, reject) => {
         setTimeout(() => {
           hasTimedOut = true;
-          reject(
-            new Error(
-              `The initialization timeout of ${timeout}ms has been hit before the network request has completed.`,
-            ),
-          );
+          reject(new StatsigInitializationTimeoutError(timeout));
         }, timeout);
       });
     }

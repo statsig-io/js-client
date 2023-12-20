@@ -19,3 +19,13 @@ export class StatsigSDKKeyMismatchError extends Error {
     Object.setPrototypeOf(this, StatsigSDKKeyMismatchError.prototype);
   }
 }
+
+export class StatsigInitializationTimeoutError extends Error {
+  constructor(timeoutMs: number) {
+    super(
+      `The initialization timeout of ${timeoutMs}ms has been hit before the network request has completed.`,
+    );
+
+    Object.setPrototypeOf(this, StatsigInitializationTimeoutError.prototype);
+  }
+}

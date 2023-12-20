@@ -1,6 +1,7 @@
 import {
   StatsigUninitializedError,
   StatsigInvalidArgumentError,
+  StatsigInitializationTimeoutError,
 } from './Errors';
 import Diagnostics from './utils/Diagnostics';
 import parseError from './utils/parseError';
@@ -163,6 +164,11 @@ export default class ErrorBoundary {
       error instanceof StatsigInvalidArgumentError
     ) {
       throw error; // Don't catch these
+    }
+
+    if (error instanceof StatsigInitializationTimeoutError) {
+      console.error('[Statsig] Timeout occured.', error);
+      return recover();
     }
 
     console.error('[Statsig] An unexpected exception occurred.', error);

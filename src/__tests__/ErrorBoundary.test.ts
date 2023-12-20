@@ -1,5 +1,6 @@
 import ErrorBoundary, { ExceptionEndpoint } from '../ErrorBoundary';
 import {
+  StatsigInitializationTimeoutError,
   StatsigInvalidArgumentError,
   StatsigUninitializedError,
 } from '../Errors';
@@ -190,5 +191,13 @@ describe('ErrorBoundary', () => {
         throw new StatsigInvalidArgumentError('bad arg');
       });
     }).toThrow('bad arg');
+  });
+
+  it('does not log init timeout to sdk_exception', () => {
+    boundary.swallow('', () => {
+      throw new StatsigInitializationTimeoutError(123);
+    });
+
+    expect(request.length).toEqual(0);
   });
 });
