@@ -258,7 +258,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     Diagnostics.initialize({
       options: this.options,
     });
-    this.errorBoundary = new ErrorBoundary(sdkKey);
+    this.errorBoundary = new ErrorBoundary(sdkKey, this.options);
     this.ready = false;
     this.sdkKey = sdkKey;
     this.consoleLogger = new ConsoleLogger(this.options.getLogLevel());

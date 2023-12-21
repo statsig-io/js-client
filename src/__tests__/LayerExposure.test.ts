@@ -29,6 +29,10 @@ describe('Layer Exposure Logging', () => {
     global.fetch = jest.fn((url, params) => {
       if (url.toString().includes('rgstr')) {
         logs = JSON.parse(params?.body as string);
+        logs.events = logs['events'].filter(log => log.eventName !== 'statsig::diagnostics')
+        if(logs.events.length === 0) {
+          logs = {events:[]}
+        }
         return Promise.resolve({ ok: true, text: () => Promise.resolve('{}') });
       }
 

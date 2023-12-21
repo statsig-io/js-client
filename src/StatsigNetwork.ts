@@ -171,7 +171,7 @@ export default class StatsigNetwork {
           );
           this.sdkInternal
             .getErrorBoundary()
-            .logError('postWithTimeoutInvalidRes', error, async () => {
+            .logError('postWithTimeoutInvalidRes', error, {getExtraData: async () => {
               return this.getErrorData(
                 endpointName,
                 body,
@@ -179,7 +179,7 @@ export default class StatsigNetwork {
                 backoff,
                 res,
               );
-            });
+            }});
           return Promise.reject(error);
         }
 

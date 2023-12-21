@@ -401,7 +401,7 @@ describe('Verify behavior of top level index functions', () => {
   });
 
   test('shutdown does flush logs and they are correct', async () => {
-    expect.assertions(8);
+    expect.assertions(9);
     await statsig.initialize(
       'client-key',
       {
@@ -432,8 +432,28 @@ describe('Verify behavior of top level index functions', () => {
     });
     statsig.logEvent('test_event', 'value', { key: 'value' });
     statsig.shutdown();
-    expect(postedLogs['events'].length).toEqual(3);
-    expect(postedLogs['events'][0]).toEqual(
+    expect(postedLogs['events'].length).toEqual(4);
+    expect(postedLogs['events'][0]).toMatchObject(
+      expect.objectContaining({
+        eventName: 'statsig::diagnostics',
+        metadata: {
+          markers: expect.any(Array),
+          context: 'initialize',
+          statsigOptions: {
+            disableDiagnosticsLogging: true
+          }
+        },
+        user: {
+          userID: '12345',
+          country: 'US',
+          custom: { key: 'value' },
+        },
+        statsigMetadata: expect.any(Object),
+        time: expect.any(Number),
+        value: null
+      }),
+    )
+    expect(postedLogs['events'][1]).toEqual(
       expect.objectContaining({
         eventName: 'statsig::gate_exposure',
         metadata: {
@@ -457,7 +477,7 @@ describe('Verify behavior of top level index functions', () => {
         value: null,
       }),
     );
-    expect(postedLogs['events'][1]).toEqual(
+    expect(postedLogs['events'][2]).toEqual(
       expect.objectContaining({
         eventName: 'statsig::config_exposure',
         metadata: {
@@ -477,7 +497,7 @@ describe('Verify behavior of top level index functions', () => {
         value: null,
       }),
     );
-    expect(postedLogs['events'][2]).toEqual(
+    expect(postedLogs['events'][3]).toEqual(
       expect.objectContaining({
         eventName: 'test_event',
         metadata: {
@@ -493,7 +513,7 @@ describe('Verify behavior of top level index functions', () => {
         value: 'value',
       }),
     );
-    expect(postedLogs['events'][2]).toEqual(
+    expect(postedLogs['events'][3]).toEqual(
       expect.not.objectContaining({ secondaryExposures: expect.anything() }),
     );
 

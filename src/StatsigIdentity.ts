@@ -54,6 +54,7 @@ type StatsigMetadata = {
   sdkType: string;
   sdkVersion: string;
   stableID?: string;
+  sessionID?: string;
   locale?: string;
   appVersion?: string;
   systemVersion?: string;

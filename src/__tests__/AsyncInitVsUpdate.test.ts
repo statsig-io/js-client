@@ -184,6 +184,15 @@ describe('Race conditions between initializeAsync and updateUser', () => {
             user: { userID: 'user-b', customIDs: { workID: 'employee-b' } },
           }),
           expect.objectContaining({
+            eventName: 'statsig::diagnostics',
+            metadata: {
+              markers: expect.any(Array),
+              context: 'initialize',
+              statsigOptions: expect.any(Object),
+            },
+            user: { userID: 'user-a', customIDs: { workID: 'employee-a' } },
+          }),
+          expect.objectContaining({
             eventName: 'statsig::config_exposure',
             metadata: {
               config: 'a_config',

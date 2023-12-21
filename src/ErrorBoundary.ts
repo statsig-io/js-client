@@ -1,8 +1,10 @@
+import { v4 as uuidv4 } from 'uuid';
 import {
   StatsigUninitializedError,
   StatsigInvalidArgumentError,
   StatsigInitializationTimeoutError,
 } from './Errors';
+import StatsigSDKOptions from './StatsigSDKOptions';
 import Diagnostics from './utils/Diagnostics';
 import parseError from './utils/parseError';
 export const ExceptionEndpoint = 'https://statsigapi.net/v1/sdk_exception';
@@ -21,7 +23,7 @@ export default class ErrorBoundary {
   private statsigMetadata?: Record<string, string | number>;
   private seen = new Set<string>();
 
-  constructor(private sdkKey: string) {
+  constructor(private sdkKey: string, private sdkOptions: StatsigSDKOptions ) {
     const sampling = Math.floor(Math.random() * SAMPLING_RATE);
     this.setupDiagnostics(sampling === 0 ? MAX_DIAGNOSTICS_MARKERS : 0);
   }
@@ -45,7 +47,7 @@ export default class ErrorBoundary {
     tag: string,
     task: () => T,
     recover: () => T,
-    { getExtraData, configName }: CaptureOptions = {},
+    captureOptions: CaptureOptions = {},
   ): T {
     let markerID: string | null = null;
     try {
@@ -57,7 +59,7 @@ export default class ErrorBoundary {
         return result
           .catch((e: unknown) => {
             wasSuccessful = false;
-            return this.onCaught(tag, e, recover, getExtraData);
+            return this.onCaught(tag, e, recover, captureOptions);
           })
           .then((possiblyRecoveredResult) => {
             this.endMarker(tag, wasSuccessful, markerID);
@@ -65,35 +67,39 @@ export default class ErrorBoundary {
           }) as unknown as T;
       }
 
-      this.endMarker(tag, true, markerID, configName);
+      this.endMarker(tag, true, markerID, captureOptions.configName);
       return result;
     } catch (error) {
-      this.endMarker(tag, false, markerID, configName);
-      return this.onCaught(tag, error, recover, getExtraData);
+      this.endMarker(tag, false, markerID, captureOptions.configName);
+      return this.onCaught(tag, error, recover, captureOptions);
     }
   }
 
   public logError(
     tag: string,
     error: unknown,
-    getExtraData?: ExtraDataExtractor,
+    { getExtraData, configName }: CaptureOptions = {}
   ): void {
     (async () => {
       try {
         const extra =
-          typeof getExtraData === 'function' ? await getExtraData() : null;
+          typeof getExtraData === 'function' ? await getExtraData() : {};
         const { name, trace: info } = parseError(error);
-
+        extra["configName"] = configName
         if (this.seen.has(name)) return;
         this.seen.add(name);
 
         const metadata = this.statsigMetadata ?? {};
+        if(metadata.sessionID == null) {
+          metadata.sessionID = uuidv4()
+        }
         const body = JSON.stringify({
           tag,
           exception: name,
           info,
           statsigMetadata: metadata,
-          extra: extra ?? {},
+          statsigOptions: this.sdkOptions.getLoggingCopy(),
+          extra: extra 
         });
         return fetch(ExceptionEndpoint, {
           method: 'POST',
@@ -157,7 +163,7 @@ export default class ErrorBoundary {
     tag: string,
     error: unknown,
     recover: () => T,
-    getExtraData?: ExtraDataExtractor,
+    captureOptions: CaptureOptions = {}
   ): T {
     if (
       error instanceof StatsigUninitializedError ||
@@ -172,8 +178,7 @@ export default class ErrorBoundary {
     }
 
     console.error('[Statsig] An unexpected exception occurred.', error);
-
-    this.logError(tag, error, getExtraData);
+    this.logError(tag, error, captureOptions);
 
     return recover();
   }

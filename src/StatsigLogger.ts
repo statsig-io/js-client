@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from 'uuid';
 import LogEvent from './LogEvent';
 import { IHasStatsigInternal } from './StatsigClient';
 import { StatsigEndpoint } from './StatsigNetwork';
@@ -291,14 +292,15 @@ export default class StatsigLogger {
   }
 
   public logDiagnostics(user: StatsigUser | null, context: ContextType) {
-    if (Diagnostics.disabled) {
-      return;
-    }
     const markers = Diagnostics.getMarkers(context);
+    if (markers.length <= 0) {
+      return
+    }
     Diagnostics.clearContext(context);
     const event = this.makeDiagnosticsEvent(user, {
       markers,
       context,
+      statsigOptions: this.sdkInternal.getOptions().getLoggingCopy()
     });
     this.log(event);
   }
@@ -392,7 +394,10 @@ export default class StatsigLogger {
     if (this.queue.length === 0) {
       return;
     }
-
+    const statsigMetadata = this.sdkInternal.getStatsigMetadata()
+    if(statsigMetadata.sessionID == null) {
+      statsigMetadata.sessionID = uuidv4()
+    }
     const oldQueue = this.queue;
     this.queue = [];
     if (
@@ -446,22 +451,22 @@ export default class StatsigLogger {
           error.text().then((errorText: string) => {
             this.sdkInternal
               .getErrorBoundary()
-              .logError(LOG_FAILURE_EVENT, error, async () => {
+              .logError(LOG_FAILURE_EVENT, error, {getExtraData:async () => {
                 return {
                   eventCount: oldQueue.length,
                   error: errorText,
-                };
+                };}
               });
           });
         } else {
           this.sdkInternal
             .getErrorBoundary()
-            .logError(LOG_FAILURE_EVENT, error, async () => {
+            .logError(LOG_FAILURE_EVENT, error, {getExtraData: async () => {
               return {
                 eventCount: oldQueue.length,
                 error: error.message,
               };
-            });
+            }});
         }
         this.newFailedRequest(LOG_FAILURE_EVENT, oldQueue);
       })
@@ -607,7 +612,7 @@ export default class StatsigLogger {
 
   private makeDiagnosticsEvent(
     user: StatsigUser | null,
-    data: { context: ContextType; markers: Marker[] },
+    data: { context: ContextType; markers: Marker[], statsigOptions?: Record<string, unknown> },
   ) {
     const latencyEvent = new LogEvent(DIAGNOSTICS_EVENT);
     latencyEvent.setUser(user);

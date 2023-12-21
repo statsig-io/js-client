@@ -18,7 +18,11 @@ describe('ExposureLogging', () => {
         const newEvents: typeof events = JSON.parse(params?.body as string)[
           'events'
         ];
-        events.push(...newEvents);
+        newEvents.forEach(newEvent => {
+          if(newEvent.eventName !== "statsig::diagnostics") {
+            events.push(newEvent)
+          }
+        })
       }
 
       return Promise.resolve({

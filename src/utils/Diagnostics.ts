@@ -148,10 +148,10 @@ export class DiagnosticsImpl {
   }
 
   addMarker(marker: Marker, overrideContext?: ContextType) {
-    if (this.disabled) {
+    const context = overrideContext ?? this.context;
+    if (this.disabled && context === 'api_call' ) {
       return false;
     }
-    const context = overrideContext ?? this.context;
     if (
       this.maxMarkers[context] !== undefined &&
       this.markers[context].length >=

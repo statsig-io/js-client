@@ -87,23 +87,23 @@ describe('Verify behavior of StatsigLogger', () => {
       client.getExperiment('test_config');
       client.getExperiment('test_config');
       client.getExperiment('test_config');
-      expect(spyOnLog).toHaveBeenCalledTimes(6);
+      expect(spyOnLog).toHaveBeenCalledTimes(7);
       client.getExperiment('test_config');
       for (let i = 0; i < 95; i++) {
         logger.log(new LogEvent('event'));
       }
       expect(spyOnFlush).toHaveBeenCalledTimes(1);
-      expect(spyOnLog).toHaveBeenCalledTimes(101);
+      expect(spyOnLog).toHaveBeenCalledTimes(102);
       await waitAllPromises();
       // posting logs network request fails, causing a log event failure
       expect(spyOnErrorBoundary).toHaveBeenCalledTimes(1);
-      expect(spyOnLog).toHaveBeenCalledTimes(101);
+      expect(spyOnLog).toHaveBeenCalledTimes(102);
       expect(spyOnFailureLog).toHaveBeenCalledTimes(1);
       // manually flush again, failing again
       logger.flush();
       await waitAllPromises();
       // we dont log to the logger, but we do log to error boundary
-      expect(spyOnLog).toHaveBeenCalledTimes(101);
+      expect(spyOnLog).toHaveBeenCalledTimes(102);
       expect(spyOnErrorBoundary).toHaveBeenCalledTimes(2);
 
       const elevenminslater = Date.now() + 11 * 60 * 1000;
@@ -113,14 +113,14 @@ describe('Verify behavior of StatsigLogger', () => {
       client.checkGate('test_gate');
       client.getExperiment('test_config');
       client.getExperiment('test_config');
-      expect(spyOnLog).toHaveBeenCalledTimes(103);
+      expect(spyOnLog).toHaveBeenCalledTimes(104);
 
       client.updateUser({});
       client.checkGate('test_gate');
       client.checkGate('test_gate');
       client.getExperiment('test_config');
       client.getExperiment('test_config');
-      expect(spyOnLog).toHaveBeenCalledTimes(105);
+      expect(spyOnLog).toHaveBeenCalledTimes(106);
     });
   });
 
@@ -234,6 +234,9 @@ describe('Verify behavior of StatsigLogger', () => {
     const event = new LogEvent('statsig::diagnostics');
     event.setMetadata({
       context: 'initialize',
+      statsigOptions: {
+        "disableCurrentPageLogging": true,
+      },
       markers: [
         {
           action: 'start',

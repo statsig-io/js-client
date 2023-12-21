@@ -104,6 +104,8 @@ export default class StatsigSDKOptions {
   private prefetchUsers: StatsigUser[];
   private updateCompletionCallback: UpdateUserCompletionCallback | null;
   private userPersistentStorage: UserPersistentStorageInterface | null;
+  
+  private loggingCopy: Record<string, unknown> | undefined;
 
   constructor(options?: StatsigOptions | null) {
     if (options == null) {
@@ -158,6 +160,49 @@ export default class StatsigSDKOptions {
     this.gateEvaluationCallback = options?.gateEvaluationCallback ?? null;
     this.userPersistentStorage = options?.userPersistentStorage ?? null;
     this.disableAllLogging = options.disableAllLogging ?? false;
+    this.setLoggingCopy(options)
+  }
+
+  setLoggingCopy(options: StatsigOptions | null) {
+    if(options == null || this.loggingCopy != null) {
+      return
+    }
+    const loggingCopy: Record<string, unknown> = {}
+    Object.entries(options).forEach(([option,value]) => {
+      const valueType = typeof value
+      switch (valueType) {
+        case "number":
+        case "bigint":
+        case "boolean":
+          loggingCopy[String(option)] = value
+          break
+        case "string":
+          if((value as string).length < 50) {
+            loggingCopy[String(option)] = value
+          } else {
+            loggingCopy[String(option)] = "set"
+          }
+          break
+        case "object":
+          if(option === "environment") {
+            loggingCopy["environment"] = value
+          } else if (option === "prefetchUsers") {
+            loggingCopy["prefetchUsers"] = (options.prefetchUsers?.length ?? 0) > 0 
+          } else {
+            loggingCopy[String(option)] = (value != null) ? "set" : "unset"
+          }
+          break
+        case "function":
+          if(option === "userPersistentStorage") {
+            loggingCopy["userPersistentStorage"] = (value != null) ? "set" : "unset" 
+          }
+      }
+    })
+    this.loggingCopy = loggingCopy
+  }
+
+  getLoggingCopy(): Record<string, unknown>  | undefined{
+    return this.loggingCopy
   }
 
   getApi(): string {
@@ -273,4 +318,5 @@ export default class StatsigSDKOptions {
     }
     return Math.max(Math.min(input, bounds.max), bounds.min);
   }
+
 }

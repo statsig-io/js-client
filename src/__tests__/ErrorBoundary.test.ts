@@ -4,7 +4,9 @@ import {
   StatsigInvalidArgumentError,
   StatsigUninitializedError,
 } from '../Errors';
-import StatsigSDKOptions from '../StatsigSDKOptions';
+import StatsigSDKOptions, {
+  UserPersistentStorageInterface,
+} from '../StatsigSDKOptions';
 import Diagnostics from '../utils/Diagnostics';
 
 type ErrorBoundaryRequest = {
@@ -15,8 +17,19 @@ type ErrorBoundaryRequest = {
   };
 };
 
+class FakeUserPersistentStorage implements UserPersistentStorageInterface {
+  userIDType: string | undefined;
+  load(key: string): string {
+    return '';
+  }
+  save(key: string, data: string) {
+    // no-op
+  }
+}
+
 describe('ErrorBoundary', () => {
   let boundary: ErrorBoundary;
+  let options: StatsigSDKOptions;
   let request: ErrorBoundaryRequest[] = [
     {
       url: '',
@@ -27,10 +40,16 @@ describe('ErrorBoundary', () => {
   ];
 
   beforeEach(() => {
-    Diagnostics.initialize({
-      options: new StatsigSDKOptions(),
+    options = new StatsigSDKOptions({
+      api: 'www.google.com',
+      disableAllLogging: true,
+      loggingBufferMaxSize: 2046,
+      initializeValues: { feature_gates: [] },
+      userPersistentStorage: new FakeUserPersistentStorage(),
+      initCompletionCallback: () => {},
     });
-    boundary = new ErrorBoundary('client-key');
+    Diagnostics.initialize({ options });
+    boundary = new ErrorBoundary('client-key', options);
     request = [];
 
     // @ts-ignore
@@ -88,9 +107,15 @@ describe('ErrorBoundary', () => {
 
   it('logs errors correctly', () => {
     const err = new URIError();
-    boundary.swallow('', () => {
-      throw err;
-    });
+    boundary.swallow(
+      '',
+      () => {
+        throw err;
+      },
+      {
+        configName: 'fake_gate',
+      },
+    );
 
     expect(request[0].url).toEqual(ExceptionEndpoint);
 
@@ -98,6 +123,16 @@ describe('ErrorBoundary', () => {
       expect.objectContaining({
         exception: 'URIError',
         info: err.stack,
+        statsigOptions: {
+          api: 'www.google.com',
+          disableAllLogging: true,
+          loggingBufferMaxSize: 2046,
+          initializeValues: "set",
+          userPersistentStorage: "set",
+        },
+        extra: {
+          configName: 'fake_gate',
+        },
       }),
     );
   });

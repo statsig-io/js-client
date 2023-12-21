@@ -6,11 +6,12 @@ describe('ErrorBoundaryDiagnostics', () => {
   let boundary: ErrorBoundary;
   let requests: Record<string, unknown>[] = [];
   let markers: Marker[] = [];
+  let statsigOption = new StatsigSDKOptions({disableLocalStorage: true})
 
   let diagnosticsImpl: DiagnosticsImpl;
-  function setup() {
+  function setup(disable: boolean = false) {
     Diagnostics.initialize({
-      options: new StatsigSDKOptions(),
+      options: new StatsigSDKOptions({disableDiagnosticsLogging: disable}),
     });
     diagnosticsImpl = (Diagnostics as any).instance;
   }
@@ -20,7 +21,7 @@ describe('ErrorBoundaryDiagnostics', () => {
       setup();
       jest.spyOn(Math, 'random').mockReturnValue(0.0000001);
 
-      boundary = new ErrorBoundary('client-key');
+      boundary = new ErrorBoundary('client-key', statsigOption);
       boundary.capture(
         'checkGate',
         () => { },
@@ -61,7 +62,7 @@ describe('ErrorBoundaryDiagnostics', () => {
       setup();
       jest.spyOn(Math, 'random').mockReturnValue(0.0000001);
 
-      const boundary = new ErrorBoundary('client-key');
+      const boundary = new ErrorBoundary('client-key', statsigOption);
       boundary.capture(
         'getConfig',
         () => {
@@ -105,13 +106,13 @@ describe('ErrorBoundaryDiagnostics', () => {
     });
     it('disables markers if not 1/10000', () => {
       jest.spyOn(Math, 'random').mockReturnValue(0.1);
-      new ErrorBoundary('client-key');
+      new ErrorBoundary('client-key', statsigOption);
       expect(diagnosticsImpl?.maxMarkers?.api_call).toBe(0);
     });
 
     it('enables markers if 1/10000', () => {
       jest.spyOn(Math, 'random').mockReturnValue(0.0000001);
-      new ErrorBoundary('client-key');
+      new ErrorBoundary('client-key', statsigOption);
       expect(diagnosticsImpl?.maxMarkers?.api_call).toBe(30);
     });
   });
@@ -121,7 +122,7 @@ describe('ErrorBoundaryDiagnostics', () => {
       setup();
       jest.spyOn(Math, 'random').mockReturnValue(0.0000001);
 
-      boundary = new ErrorBoundary('client-key');
+      boundary = new ErrorBoundary('client-key',statsigOption);
       for (let i = 0; i < 100; i++) {
         boundary.capture(
           'checkGate',
@@ -135,4 +136,25 @@ describe('ErrorBoundaryDiagnostics', () => {
       expect(Diagnostics.getMarkerCount('api_call')).toBe(30);
     });
   });
+
+  describe('Disable diagnostics', () => {
+    beforeAll(() => {
+      setup(true);
+      jest.spyOn(Math, 'random').mockReturnValue(0.0000001);
+
+      boundary = new ErrorBoundary('client-key', statsigOption);
+      boundary.capture(
+        'checkGate',
+        () => { },
+        () => { },
+        { configName: 'the_config_name' },
+      );
+
+      markers = diagnosticsImpl.markers.api_call;
+    });
+    it('Should not log', () => {
+      expect(markers.length).toBe(0)
+    }) 
+  })
+
 });
