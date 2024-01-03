@@ -1280,9 +1280,9 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       })
       .then(async (json: Record<string, unknown>) => {
         return this.errorBoundary.swallow('fetchAndSaveValues', async () => {
-          Diagnostics.mark.intialize.process.start({});
+          Diagnostics.mark.initialize.process.start({});
           if (!verifySDKKeyUsed(json, this.sdkKey ?? '', this.errorBoundary)) {
-            Diagnostics.mark.intialize.process.end({ success: false });
+            Diagnostics.mark.initialize.process.end({ success: false });
             return;
           }
           if (json?.has_updates) {
@@ -1299,7 +1299,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
             ...this.prefetchedUsersByCacheKey,
             ...keyedPrefetchUsers,
           };
-          Diagnostics.mark.intialize.process.end({ success: true });
+          Diagnostics.mark.initialize.process.end({ success: true });
         });
       });
   }

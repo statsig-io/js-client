@@ -53,7 +53,7 @@ type DiagnosticsMaxMarkers = {
 export class DiagnosticsImpl {
   readonly mark = {
     overall: this.selectAction<OverrallDataType>('overall'),
-    intialize: this.selectStep<InitializeDataType>('initialize'),
+    initialize: this.selectStep<InitializeDataType>('initialize'),
     bootstrap: this.selectStep<BootstrapDataType>('bootstrap'),
     api_call: (tag: string) => {
       switch (tag) {

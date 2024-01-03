@@ -102,7 +102,7 @@ export default class StatsigNetwork {
     return this.postWithTimeout(StatsigEndpoint.Initialize, input, {
       timeout,
       retries: 3,
-      diagnostics: Diagnostics.mark.intialize.networkRequest,
+      diagnostics: Diagnostics.mark.initialize.networkRequest,
     });
   }
 
@@ -113,7 +113,7 @@ export default class StatsigNetwork {
       timeout?: number;
       retries?: number;
       backoff?: number;
-      diagnostics?: typeof Diagnostics.mark.intialize.networkRequest | null;
+      diagnostics?: typeof Diagnostics.mark.initialize.networkRequest | null;
     },
   ): PromiseWithTimeout<T> {
     const {
@@ -253,7 +253,7 @@ export default class StatsigNetwork {
         backoff?: number;
       };
       useKeepalive?: boolean;
-      diagnostics?: typeof Diagnostics.mark.intialize.networkRequest | null;
+      diagnostics?: typeof Diagnostics.mark.initialize.networkRequest | null;
     },
   ): Promise<NetworkResponse> {
     const { useKeepalive = false, diagnostics = null } = options ?? {};
