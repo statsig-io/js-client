@@ -90,7 +90,7 @@ describe('Verify behavior of StatsigClient with sinceTime', () => {
       badChecksum: undefined,
     });
 
-    const key = getUserCacheKey(stableID, user).v2;
+    const key = getUserCacheKey(stableID, user, 'client-clienttestkey').v3;
     const userHash = djb2HashForObject({ ...user, stableID: stableID });
     const storeObject = JSON.parse(
       localStorage.getItem(INTERNAL_STORE_KEY) ?? '',

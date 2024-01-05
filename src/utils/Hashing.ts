@@ -17,6 +17,7 @@ export function fasthash(value: string): number {
 export type UserCacheKey = {
   v1: string;
   v2: string;
+  v3: string;
 };
 
 // Keeping this around to prevent busting existing caches
@@ -76,6 +77,7 @@ export function getSortedObject(
 export function getUserCacheKey(
   stableID: string,
   user: StatsigUser | null,
+  sdkKey: string,
 ): UserCacheKey {
   const parts = [`userID:${String(user?.userID ?? '')}`];
 
@@ -87,6 +89,7 @@ export function getUserCacheKey(
   }
 
   const v2 = memoizedUserCacheKeyHash(parts.join(';'));
+  const v3 = memoizedUserCacheKeyHash(parts.join(';') + `;sdkKey:${sdkKey}`);
 
   parts.splice(1, 0, `stableID:${stableID}`);
   const v1 = memoizedUserCacheKeyHash(parts.join(';'));
@@ -94,5 +97,6 @@ export function getUserCacheKey(
   return {
     v1,
     v2,
+    v3,
   };
 }

@@ -48,21 +48,23 @@ describe('UserCacheKey Migration', () => {
   });
 
   describe.each([
-    { v1Cache: true, v2Cache: false, expected: 'v1_value' },
-    { v1Cache: false, v2Cache: true, expected: 'v2_value' },
-    { v1Cache: true, v2Cache: true, expected: 'v2_value' },
-  ])('With Cache Settings: %s', ({ v1Cache, v2Cache, expected }) => {
+    { v1Cache: true, v2Cache: false, v3Cache: false, expected: 'v1_value' },
+    { v1Cache: false, v2Cache: true, v3Cache: false, expected: 'v2_value' },
+    { v1Cache: true, v2Cache: true, v3Cache: false, expected: 'v2_value' },
+    { v1Cache: true, v2Cache: true, v3Cache: true, expected: 'v3_value' },
+  ])('With Cache Settings: %s', ({ v1Cache, v2Cache, v3Cache, expected }) => {
     let initPromise: Promise<void>;
     let config: DynamicConfig;
 
     beforeAll(async () => {
-      const keys = getUserCacheKey('stable_id', user);
+      const keys = getUserCacheKey('stable_id', user, 'client-key');
 
       localStorage.setItem(
         INTERNAL_STORE_KEY,
         JSON.stringify({
           [keys.v1]: v1Cache ? makeResponse('v1_value') : undefined,
           [keys.v2]: v2Cache ? makeResponse('v2_value') : undefined,
+          [keys.v3]: v3Cache ? makeResponse('v3_value') : undefined,
         }),
       );
 
@@ -80,13 +82,22 @@ describe('UserCacheKey Migration', () => {
       expect(config.getValue('a_string')).toEqual(expected);
     });
 
-    it('writes updated values with mock time to cache as v2', () => {
+    it('writes updated values with mock time to cache as v3', () => {
       const storage = JSON.parse(
         localStorage.getItem(INTERNAL_STORE_KEY) ?? '{}',
       );
 
-      const key = getUserCacheKey('stable_id', user).v2;
+      const key = getUserCacheKey('stable_id', user, 'client-key').v3;
       expect(storage[key].time).toEqual(MOCK_TIME_VALUE);
+    });
+
+    it('deletes all reference to v2', () => {
+      const storage = JSON.parse(
+        localStorage.getItem(INTERNAL_STORE_KEY) ?? '{}',
+      );
+
+      const key = getUserCacheKey('stable_id', user, 'client-key').v2;
+      expect(storage[key]).toBeUndefined();
     });
 
     it('deletes all reference to v1', () => {
@@ -94,7 +105,7 @@ describe('UserCacheKey Migration', () => {
         localStorage.getItem(INTERNAL_STORE_KEY) ?? '{}',
       );
 
-      const key = getUserCacheKey('stable_id', user).v1;
+      const key = getUserCacheKey('stable_id', user, 'client-key').v1;
       expect(storage[key]).toBeUndefined();
     });
 

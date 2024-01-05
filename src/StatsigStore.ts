@@ -205,7 +205,7 @@ export default class StatsigStore {
       this.userValues.evaluation_time = Date.now();
       this.userValues.time = Date.now();
       this.userValues.hash_used = values.hash_used;
-      this.values[key.v2] = this.userValues;
+      this.values[key.v3] = this.userValues;
       this.reason = reason;
       this.loadOverrides();
     } catch (_e) {
@@ -320,7 +320,7 @@ export default class StatsigStore {
   }
 
   private getUserValues(key: UserCacheKey) {
-    return this.values[key.v2] ?? this.values[key.v1];
+    return this.values[key.v3] ?? this.values[key.v2] ?? this.values[key.v1];
   }
 
   private setUserValueFromCache(isUserPrefetched = false): number | null {
@@ -385,7 +385,11 @@ export default class StatsigStore {
     response: Record<string, unknown>,
     prefetchUsers?: Record<string, StatsigUser>,
   ): Promise<void> {
-    const requestedUserCacheKey = getUserCacheKey(this.getStableID(), user);
+    const requestedUserCacheKey = getUserCacheKey(
+      this.getStableID(),
+      user,
+      this.sdkInternal.getSDKKey(),
+    );
     const initResponse = response as APIInitializeDataWithDeltas;
 
     if (initResponse.is_delta) {
@@ -405,7 +409,7 @@ export default class StatsigStore {
     if (
       userValues &&
       requestedUserCacheKey &&
-      requestedUserCacheKey.v2 === this.userCacheKey.v2
+      requestedUserCacheKey.v3 === this.userCacheKey.v3
     ) {
       this.userValues = userValues;
       this.reason = EvaluationReason.Network;
@@ -422,7 +426,11 @@ export default class StatsigStore {
     response: Record<string, unknown>,
     prefetchUsers?: Record<string, StatsigUser>,
   ): Promise<void> {
-    const requestedUserCacheKey = getUserCacheKey(this.getStableID(), user);
+    const requestedUserCacheKey = getUserCacheKey(
+      this.getStableID(),
+      user,
+      this.sdkInternal.getSDKKey(),
+    );
     const initResponse =
       response as APIInitializeDataWithDeltasWithPrefetchedUsers;
 
@@ -451,7 +459,11 @@ export default class StatsigStore {
     updateState: boolean,
     prefetchUsers?: Record<string, StatsigUser>,
   ): Promise<void> {
-    const requestedUserCacheKey = getUserCacheKey(this.getStableID(), user);
+    const requestedUserCacheKey = getUserCacheKey(
+      this.getStableID(),
+      user,
+      this.sdkInternal.getSDKKey(),
+    );
     const initResponse =
       response as APIInitializeDataWithDeltasWithPrefetchedUsers;
 
@@ -500,6 +512,7 @@ export default class StatsigStore {
 
     // Delete any deleted configs for primary user and check hash
     const userValues =
+      mergedValues[requestedUserCacheKey.v3] ??
       mergedValues[requestedUserCacheKey.v2] ??
       mergedValues[requestedUserCacheKey.v1];
     removeDeletedKeysFromUserValues(initResponse, userValues);
@@ -553,7 +566,7 @@ export default class StatsigStore {
     }
 
     if (updateState) {
-      if (userValues && requestedUserCacheKey.v2 === this.userCacheKey.v2) {
+      if (userValues && requestedUserCacheKey.v3 === this.userCacheKey.v3) {
         this.userValues = userValues;
         this.reason = EvaluationReason.Network;
       }
@@ -645,7 +658,7 @@ export default class StatsigStore {
           this.convertAPIDataToCacheValues(prefetched, key),
           key,
         );
-        if (data.has_updates && data.time && prefetchUsers) {
+        if (prefetchUsers) {
           const userHash = djb2HashForObject(prefetchUsers[key]);
           values.user_hash = userHash;
           values.stableIDUsed = this.getStableID();
@@ -657,20 +670,18 @@ export default class StatsigStore {
     if (requestedUserCacheKey) {
       const requestedUserValues = this.convertAPIDataToCacheValues(
         data,
-        requestedUserCacheKey.v2,
+        requestedUserCacheKey.v3,
       );
-      if (data.has_updates && data.time) {
-        const userHash = djb2HashForObject({
-          ...user,
-          stableID: String(this.getStableID() ?? ''),
-        });
-        requestedUserValues.user_hash = userHash;
-        requestedUserValues.stableIDUsed = this.getStableID();
-      }
+      const userHash = djb2HashForObject({
+        ...user,
+        stableID: String(this.getStableID() ?? ''),
+      });
+      requestedUserValues.user_hash = userHash;
+      requestedUserValues.stableIDUsed = this.getStableID();
 
-      configMap[requestedUserCacheKey.v2] = mergeFn(
+      configMap[requestedUserCacheKey.v3] = mergeFn(
         requestedUserValues,
-        requestedUserCacheKey.v2,
+        requestedUserCacheKey.v3,
       );
     }
   }
@@ -723,7 +734,10 @@ export default class StatsigStore {
     valuesToWrite: Record<string, UserCacheValues | undefined>,
   ): Promise<Record<string, UserCacheValues | undefined>> {
     // delete the older version of cache
-    if (valuesToWrite[this.userCacheKey.v2]) {
+    if (valuesToWrite[this.userCacheKey.v3]) {
+      delete valuesToWrite[this.userCacheKey.v2];
+      delete valuesToWrite[this.userCacheKey.v1];
+    } else if (valuesToWrite[this.userCacheKey.v2]) {
       delete valuesToWrite[this.userCacheKey.v1];
     }
 
@@ -1101,7 +1115,7 @@ export default class StatsigStore {
     if (this.userPersistentStorageAdapter) {
       this.saveStickyExperimentsToPersistentStorageAdapter();
     } else {
-      this.values[this.userCacheKey.v2] = this.userValues;
+      this.values[this.userCacheKey.v3] = this.userValues;
       this.setItemToStorage(INTERNAL_STORE_KEY, JSON.stringify(this.values));
       this.setItemToStorage(
         STICKY_DEVICE_EXPERIMENTS_KEY,

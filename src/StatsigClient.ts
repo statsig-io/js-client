@@ -177,8 +177,13 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   public getCurrentUserCacheKey(): UserCacheKey {
     return this.errorBoundary.capture(
       'getCurrentUserCacheKey',
-      () => getUserCacheKey(this.getStableID(), this.getCurrentUser()),
-      () => ({ v1: '', v2: '' }),
+      () =>
+        getUserCacheKey(
+          this.getStableID(),
+          this.getCurrentUser(),
+          this.getSDKKey(),
+        ),
+      () => ({ v1: '', v2: '', v3: '' }),
     );
   }
   public getCurrentUserUnitID(idType: string): string | null {
@@ -772,7 +777,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
 
         const userCacheKey = this.getCurrentUserCacheKey();
         const isUserPrefetched = Boolean(
-          this.prefetchedUsersByCacheKey[userCacheKey.v2],
+          this.prefetchedUsersByCacheKey[userCacheKey.v3],
         );
         const cachedTime = this.store.updateUser(isUserPrefetched);
 
@@ -1230,7 +1235,8 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       .slice(0, 5)
       .reduce(
         (acc, curr) => {
-          acc[getUserCacheKey(this.getStableID(), curr).v2] = curr;
+          acc[getUserCacheKey(this.getStableID(), curr, this.getSDKKey()).v3] =
+            curr;
           return acc;
         },
         {} as Record<string, StatsigUser>,
