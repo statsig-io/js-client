@@ -78,7 +78,7 @@ type APIInitializeDataWithDeltas = APIInitializeData & {
   };
 };
 
-type APIInitializeDataWithPrefetchedUsers = APIInitializeData & {
+export type APIInitializeDataWithPrefetchedUsers = APIInitializeData & {
   prefetched_user_values?: Record<string, APIInitializeData>;
 };
 
@@ -87,7 +87,7 @@ type APIInitializeDataWithDeltasWithPrefetchedUsers =
     prefetched_user_values?: Record<string, APIInitializeDataWithDeltas>;
   };
 
-type UserCacheValues = APIInitializeDataWithPrefetchedUsers & {
+export type UserCacheValues = APIInitializeDataWithPrefetchedUsers & {
   sticky_experiments: Record<string, APIDynamicConfig | undefined>;
   evaluation_time?: number;
   user_hash?: string;
@@ -453,6 +453,20 @@ export default class StatsigStore {
     await this.writeValuesToStorage(copiedValues);
   }
 
+  public getDeltasMergeFunction(
+    mergedValues: Record<string, UserCacheValues>,
+  ): (user: UserCacheValues, key: UserCacheKey) => UserCacheValues {
+    return (deltas, key) => {
+      const baseValues =
+        mergedValues[key.v3] ??
+        mergedValues[key.v2] ??
+        mergedValues[key.v1] ??
+        this.getDefaultUserCacheValues();
+
+      return this.mergeUserCacheValues(baseValues, deltas);
+    };
+  }
+
   public async saveInitDeltas(
     user: StatsigUser | null,
     response: Record<string, unknown>,
@@ -475,12 +489,7 @@ export default class StatsigStore {
       mergedValues,
       requestedUserCacheKey,
       user,
-      (deltas, key) => {
-        const baseValues =
-          mergedValues[key] ?? this.getDefaultUserCacheValues();
-
-        return this.mergeUserCacheValues(baseValues, deltas);
-      },
+      this.getDeltasMergeFunction(mergedValues),
       prefetchUsers,
     );
     let hasBadHash = false;
@@ -642,12 +651,12 @@ export default class StatsigStore {
   /**
    * Merges the provided init configs into the provided config map, according to the provided merge function
    */
-  private mergeInitializeResponseIntoUserMap(
+  public mergeInitializeResponseIntoUserMap(
     data: APIInitializeDataWithPrefetchedUsers,
     configMap: Record<string, UserCacheValues | undefined>,
     requestedUserCacheKey: UserCacheKey,
     user: StatsigUser | null,
-    mergeFn: (user: UserCacheValues, key: string) => UserCacheValues,
+    mergeFn: (user: UserCacheValues, key: UserCacheKey) => UserCacheValues,
     prefetchUsers?: Record<string, StatsigUser>,
   ) {
     if (data.prefetched_user_values) {
@@ -656,7 +665,7 @@ export default class StatsigStore {
         const prefetched = data.prefetched_user_values[key];
         const values = mergeFn(
           this.convertAPIDataToCacheValues(prefetched, key),
-          key,
+          { v1: key, v2: key, v3: key },
         );
         if (prefetchUsers) {
           const userHash = djb2HashForObject(prefetchUsers[key]);
@@ -681,7 +690,7 @@ export default class StatsigStore {
 
       configMap[requestedUserCacheKey.v3] = mergeFn(
         requestedUserValues,
-        requestedUserCacheKey.v3,
+        requestedUserCacheKey,
       );
     }
   }
