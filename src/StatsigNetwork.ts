@@ -91,7 +91,7 @@ export default class StatsigNetwork {
       statsigMetadata: this.sdkInternal.getStatsigMetadata(),
       sinceTime: sinceTime ?? undefined,
       deltasResponseRequested: useDeltas,
-      hash: 'djb2',
+      hash: this.sdkInternal.getOptions().getDisableHashing() ? 'none' : 'djb2',
       previousDerivedFields: previousDerivedFields,
       hadBadDeltaChecksum: hadBadDeltaChecksum,
       badChecksum: badChecksum,
@@ -171,15 +171,17 @@ export default class StatsigNetwork {
           );
           this.sdkInternal
             .getErrorBoundary()
-            .logError('postWithTimeoutInvalidRes', error, {getExtraData: async () => {
-              return this.getErrorData(
-                endpointName,
-                body,
-                retries,
-                backoff,
-                res,
-              );
-            }});
+            .logError('postWithTimeoutInvalidRes', error, {
+              getExtraData: async () => {
+                return this.getErrorData(
+                  endpointName,
+                  body,
+                  retries,
+                  backoff,
+                  res,
+                );
+              },
+            });
           return Promise.reject(error);
         }
 

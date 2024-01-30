@@ -62,6 +62,7 @@ export type StatsigOptions = {
   prefetchUsers?: StatsigUser[];
   updateUserCompletionCallback?: UpdateUserCompletionCallback | null;
   userPersistentStorage?: UserPersistentStorageInterface;
+  disableHashing?: boolean;
 };
 
 export enum LogLevel {
@@ -104,7 +105,8 @@ export default class StatsigSDKOptions {
   private prefetchUsers: StatsigUser[];
   private updateCompletionCallback: UpdateUserCompletionCallback | null;
   private userPersistentStorage: UserPersistentStorageInterface | null;
-  
+  private disableHashing: boolean;
+
   private loggingCopy: Record<string, unknown> | undefined;
 
   constructor(options?: StatsigOptions | null) {
@@ -160,49 +162,52 @@ export default class StatsigSDKOptions {
     this.gateEvaluationCallback = options?.gateEvaluationCallback ?? null;
     this.userPersistentStorage = options?.userPersistentStorage ?? null;
     this.disableAllLogging = options.disableAllLogging ?? false;
-    this.setLoggingCopy(options)
+    this.setLoggingCopy(options);
+    this.disableHashing = options.disableHashing ?? false;
   }
 
   setLoggingCopy(options: StatsigOptions | null) {
-    if(options == null || this.loggingCopy != null) {
-      return
+    if (options == null || this.loggingCopy != null) {
+      return;
     }
-    const loggingCopy: Record<string, unknown> = {}
-    Object.entries(options).forEach(([option,value]) => {
-      const valueType = typeof value
+    const loggingCopy: Record<string, unknown> = {};
+    Object.entries(options).forEach(([option, value]) => {
+      const valueType = typeof value;
       switch (valueType) {
-        case "number":
-        case "bigint":
-        case "boolean":
-          loggingCopy[String(option)] = value
-          break
-        case "string":
-          if((value as string).length < 50) {
-            loggingCopy[String(option)] = value
+        case 'number':
+        case 'bigint':
+        case 'boolean':
+          loggingCopy[String(option)] = value;
+          break;
+        case 'string':
+          if ((value as string).length < 50) {
+            loggingCopy[String(option)] = value;
           } else {
-            loggingCopy[String(option)] = "set"
+            loggingCopy[String(option)] = 'set';
           }
-          break
-        case "object":
-          if(option === "environment") {
-            loggingCopy["environment"] = value
-          } else if (option === "prefetchUsers") {
-            loggingCopy["prefetchUsers"] = (options.prefetchUsers?.length ?? 0) > 0 
+          break;
+        case 'object':
+          if (option === 'environment') {
+            loggingCopy['environment'] = value;
+          } else if (option === 'prefetchUsers') {
+            loggingCopy['prefetchUsers'] =
+              (options.prefetchUsers?.length ?? 0) > 0;
           } else {
-            loggingCopy[String(option)] = (value != null) ? "set" : "unset"
+            loggingCopy[String(option)] = value != null ? 'set' : 'unset';
           }
-          break
-        case "function":
-          if(option === "userPersistentStorage") {
-            loggingCopy["userPersistentStorage"] = (value != null) ? "set" : "unset" 
+          break;
+        case 'function':
+          if (option === 'userPersistentStorage') {
+            loggingCopy['userPersistentStorage'] =
+              value != null ? 'set' : 'unset';
           }
       }
-    })
-    this.loggingCopy = loggingCopy
+    });
+    this.loggingCopy = loggingCopy;
   }
 
-  getLoggingCopy(): Record<string, unknown>  | undefined{
-    return this.loggingCopy
+  getLoggingCopy(): Record<string, unknown> | undefined {
+    return this.loggingCopy;
   }
 
   getApi(): string {
@@ -301,6 +306,10 @@ export default class StatsigSDKOptions {
     return this.userPersistentStorage;
   }
 
+  getDisableHashing(): boolean {
+    return this.disableHashing;
+  }
+
   isAllLoggingDisabled(): boolean {
     return this.disableAllLogging;
   }
@@ -318,5 +327,4 @@ export default class StatsigSDKOptions {
     }
     return Math.max(Math.min(input, bounds.max), bounds.min);
   }
-
 }
