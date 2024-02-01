@@ -10,7 +10,7 @@ export function verifySDKKeyUsed(
   const hashedSDKKeyUsed = json?.hashed_sdk_key_used;
   if (hashedSDKKeyUsed != null && hashedSDKKeyUsed !== djb2Hash(sdkKey ?? '')) {
     errorBoundary.logError(
-      'fetchAndSaveValues:eventually',
+      'verifySDKKeyUsed',
       new StatsigSDKKeyMismatchError(
         'The SDK key provided does not match the one used to generate values.',
       ),
