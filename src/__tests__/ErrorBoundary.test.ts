@@ -42,7 +42,6 @@ describe('ErrorBoundary', () => {
   beforeEach(() => {
     options = new StatsigSDKOptions({
       api: 'www.google.com',
-      disableAllLogging: true,
       loggingBufferMaxSize: 2046,
       initializeValues: { feature_gates: [] },
       userPersistentStorage: new FakeUserPersistentStorage(),
@@ -125,7 +124,6 @@ describe('ErrorBoundary', () => {
         info: err.stack,
         statsigOptions: {
           api: 'www.google.com',
-          disableAllLogging: true,
           loggingBufferMaxSize: 2046,
           initializeValues: "set",
           userPersistentStorage: "set",

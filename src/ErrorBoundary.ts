@@ -80,6 +80,9 @@ export default class ErrorBoundary {
     error: unknown,
     { getExtraData, configName }: CaptureOptions = {}
   ): void {
+    if (this.sdkOptions.isAllLoggingDisabled()) {
+      return;
+    }
     (async () => {
       try {
         const extra =
