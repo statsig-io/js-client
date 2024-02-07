@@ -285,6 +285,13 @@ export default class Statsig {
     );
   }
 
+  public static getInitializeResponseJson(): {
+    values: string;
+    evaluationDetails: EvaluationDetails;
+  } {
+    return Statsig.getClientX().getInitializeResponseJson();
+  }
+
   /**
    * @deprecated use removeGateOverride or removeConfigOverride
    * @param name the gate override to remove

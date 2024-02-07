@@ -852,6 +852,33 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     });
   }
 
+  public getInitializeResponseJson(): {
+    values: string;
+    evaluationDetails: EvaluationDetails;
+  } {
+    return this.errorBoundary.capture(
+      'getInitializeResponseJson',
+      () => {
+        return {
+          values: this.store.getInitializeResponseJson(),
+          evaluationDetails: this.getEvaluationDetails() ?? {
+            reason: EvaluationReason.Uninitialized,
+            time: 0,
+          },
+        };
+      },
+      () => {
+        return {
+          values: '',
+          evaluationDetails: this.getEvaluationDetails() ?? {
+            reason: EvaluationReason.Uninitialized,
+            time: 0,
+          },
+        };
+      },
+    );
+  }
+
   /**
    * Stores a local gate override
    * @param gateName the gate to override

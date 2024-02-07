@@ -167,6 +167,10 @@ export default class StatsigStore {
     return evaluationTime;
   }
 
+  public getInitializeResponseJson(): string {
+    return JSON.stringify(this.userValues);
+  }
+
   private async loadFromAsyncStorage(): Promise<void> {
     this.parseCachedValues(
       await StatsigAsyncStorage.getItemAsync(INTERNAL_STORE_KEY),
