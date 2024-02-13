@@ -169,10 +169,14 @@ describe('Verify local storage limits are enforced', () => {
     let user = { userID: 'newUser' };
     let key = getUserCacheKey('a_stable_id', user, 'client-internalstorekey');
     await client.updateUser(user);
-    store.save(user, {
-      feature_gates: gates,
-      dynamic_configs: configs,
-    });
+    store.save(
+      user,
+      {
+        feature_gates: gates,
+        dynamic_configs: configs,
+      },
+      client.getStableID(),
+    );
 
     expect(
       Object.keys(JSON.parse(localStorage.getItem(INTERNAL_STORE_KEY) ?? ''))
@@ -182,10 +186,14 @@ describe('Verify local storage limits are enforced', () => {
     user = { userID: 'newUser2' };
     key = getUserCacheKey('a_stable_id', user, 'client-internalstorekey');
     await client.updateUser(user);
-    store.save(user, {
-      feature_gates: gates,
-      dynamic_configs: configs,
-    });
+    store.save(
+      user,
+      {
+        feature_gates: gates,
+        dynamic_configs: configs,
+      },
+      client.getStableID(),
+    );
 
     expect(
       Object.keys(JSON.parse(localStorage.getItem(INTERNAL_STORE_KEY) ?? ''))
@@ -196,10 +204,14 @@ describe('Verify local storage limits are enforced', () => {
     user = { userID: '' };
     key = getUserCacheKey('a_stable_id', user, 'client-internalstorekey');
     await client.updateUser(user);
-    store.save(user, {
-      feature_gates: gates,
-      dynamic_configs: configs,
-    });
+    store.save(
+      user,
+      {
+        feature_gates: gates,
+        dynamic_configs: configs,
+      },
+      client.getStableID(),
+    );
 
     expect(
       Object.keys(JSON.parse(localStorage.getItem(INTERNAL_STORE_KEY) ?? ''))

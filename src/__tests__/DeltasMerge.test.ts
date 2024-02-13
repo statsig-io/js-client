@@ -56,6 +56,7 @@ describe('On merge deltas', () => {
         { v1: 'v1_key', v2: 'v2_key', v3: 'v3_key' },
         {},
         statsig.getStore().getDeltasMergeFunction(mergedValues),
+        statsig.getStableID(),
       );
     expect(mergedValues.v3_key.feature_gates).toEqual({
       a_gate: {

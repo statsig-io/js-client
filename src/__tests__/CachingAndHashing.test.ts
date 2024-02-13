@@ -66,7 +66,7 @@ describe('Caching and Hashing', () => {
   let store: StatsigStore;
 
   const resetStoreWithCachedValue = async (json: Record<string, any>) => {
-    await store.save(user, { ...emptyResponse, ...json });
+    await store.save(user, { ...emptyResponse, ...json }, client.getStableID());
     store = new StatsigStore(client, null);
   };
 
@@ -92,20 +92,32 @@ describe('Caching and Hashing', () => {
     });
 
     it('can switch to djb2', async () => {
-      await store.save(user, { ...emptyResponse, ...djb2GateEntry });
+      await store.save(
+        user,
+        { ...emptyResponse, ...djb2GateEntry },
+        client.getStableID(),
+      );
       expect(store.checkGate('a_gate').gate.value).toBe(true);
     });
 
     it('can switch to none', async () => {
-      await store.save(user, { ...emptyResponse, ...noneGateEntry });
+      await store.save(
+        user,
+        { ...emptyResponse, ...noneGateEntry },
+        client.getStableID(),
+      );
       expect(store.checkGate('a_gate').gate.value).toBe(true);
     });
 
     it('can switch to implicit sha256', async () => {
-      await store.save(user, {
-        ...emptyResponse,
-        ...implicitSha256GateEntry,
-      });
+      await store.save(
+        user,
+        {
+          ...emptyResponse,
+          ...implicitSha256GateEntry,
+        },
+        client.getStableID(),
+      );
       expect(store.checkGate('a_gate').gate.value).toBe(true);
     });
   });
@@ -120,20 +132,32 @@ describe('Caching and Hashing', () => {
     });
 
     it('can switch to djb2', async () => {
-      await store.save(user, { ...emptyResponse, ...djb2GateEntry });
+      await store.save(
+        user,
+        { ...emptyResponse, ...djb2GateEntry },
+        client.getStableID(),
+      );
       expect(store.checkGate('a_gate').gate.value).toBe(true);
     });
 
     it('can switch to none', async () => {
-      await store.save(user, { ...emptyResponse, ...noneGateEntry });
+      await store.save(
+        user,
+        { ...emptyResponse, ...noneGateEntry },
+        client.getStableID(),
+      );
       expect(store.checkGate('a_gate').gate.value).toBe(true);
     });
 
     it('can switch to implicit sha256', async () => {
-      await store.save(user, {
-        ...emptyResponse,
-        ...implicitSha256GateEntry,
-      });
+      await store.save(
+        user,
+        {
+          ...emptyResponse,
+          ...implicitSha256GateEntry,
+        },
+        client.getStableID(),
+      );
       expect(store.checkGate('a_gate').gate.value).toBe(true);
     });
   });

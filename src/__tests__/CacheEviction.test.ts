@@ -33,6 +33,7 @@ describe('Cache Eviction', () => {
           },
           time: 123,
         },
+        client.getStableID(),
       );
     }
 

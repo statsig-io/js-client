@@ -1268,18 +1268,15 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         },
         {} as Record<string, StatsigUser>,
       );
-
+    const stableID = String(this.getStatsigMetadata()?.stableID ?? '');
     let sinceTime: number | null = null;
     if (prefetchUsers.length === 0) {
-      sinceTime = this.store.getLastUpdateTime(
-        user,
-        String(this.getStatsigMetadata()?.stableID ?? ''),
-      );
+      sinceTime = this.store.getLastUpdateTime(user, stableID);
     }
 
     const previousDerivedFields = this.store.getPreviousDerivedFields(
       user,
-      String(this.getStatsigMetadata()?.stableID ?? ''),
+      stableID,
     );
 
     return this.network
@@ -1301,6 +1298,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
             .saveWithoutUpdatingClientState(
               user,
               json,
+              stableID,
               prefetchUsers.length > 0 ? keyedPrefetchUsers : undefined,
             )
             .catch((reason) =>
@@ -1322,6 +1320,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
             await this.store.save(
               user,
               json,
+              stableID,
               prefetchUsers.length > 0 ? keyedPrefetchUsers : undefined,
             );
           } else if (json?.is_no_content) {

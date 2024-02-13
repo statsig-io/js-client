@@ -66,7 +66,9 @@ describe('Verify behavior of StatsigClient', () => {
   test('cache used before initialize resolves, then network result used', async () => {
     expect.assertions(7);
     const statsig = new StatsigClient(sdkKey, { userID: '123' });
-    await statsig.getStore().save({ userID: '123' }, values);
+    await statsig
+      .getStore()
+      .save({ userID: '123' }, values, statsig.getStableID());
     expect(statsig.initializeCalled()).toBe(false);
     const init = statsig.initializeAsync();
 
@@ -90,7 +92,9 @@ describe('Verify behavior of StatsigClient', () => {
   test('storage is updated but cache is not when the request time exceeds the timeout', async () => {
     requestTimeoutTime = 10000;
     const statsig = new StatsigClient(sdkKey, { userID: '123' });
-    await statsig.getStore().save({ userID: '123' }, values);
+    await statsig
+      .getStore()
+      .save({ userID: '123' }, values, statsig.getStableID());
     const init = statsig.initializeAsync();
 
     expect(statsig.initializeCalled()).toBe(true);
