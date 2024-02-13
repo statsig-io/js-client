@@ -8,6 +8,7 @@ import { StatsigUser } from '../StatsigUser';
 import { EvaluationReason } from '../utils/EvaluationReason';
 import LocalStorageMock from './LocalStorageMock';
 import UserPersistentStorageExample from './UserPersistentStorageExample';
+import './jest.setup';
 
 type InitializeResponse = {
   feature_gates: Record<string, Record<string, any>>;

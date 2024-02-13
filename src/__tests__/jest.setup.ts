@@ -1,3 +1,5 @@
+import { expect } from '@jest/globals';
+
 import DynamicConfig from '../DynamicConfig';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
