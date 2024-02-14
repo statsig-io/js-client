@@ -31,29 +31,10 @@ import Diagnostics from './utils/Diagnostics';
 import ConsoleLogger from './utils/ConsoleLogger';
 import { now } from './utils/Timing';
 import { verifySDKKeyUsed } from './utils/ResponseVerification';
+import type { AppStateStatus, AppState, NativeEventSubscription } from 'react-native';
 
 const MAX_VALUE_SIZE = 64;
 const MAX_OBJ_SIZE = 2048;
-
-export type AppStateEvent = 'change' | 'memoryWarning' | 'blur' | 'focus';
-export type AppStateStatus =
-  | 'active'
-  | 'background'
-  | 'inactive'
-  | 'unknown'
-  | 'extension';
-
-export type AppState = {
-  currentState: AppStateStatus;
-  addEventListener: (
-    event: AppStateEvent,
-    handler: (newState: AppStateStatus) => void,
-  ) => void;
-  removeEventListener: (
-    event: AppStateEvent,
-    handler: (newState: AppStateStatus) => void,
-  ) => void;
-};
 
 export type _SDKPackageInfo = {
   sdkType: string;
@@ -121,6 +102,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   private static reactNativeUUID?: UUID;
   private appState: AppState | null = null;
   private currentAppState: AppStateStatus | null = null;
+  private appStateChangeSubscription: NativeEventSubscription | null = null; 
   private onCacheLoadedForReact: (() => void) | null = null;
 
   private ready: boolean;
@@ -377,10 +359,11 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
           typeof this.appState.addEventListener === 'function'
         ) {
           this.currentAppState = this.appState.currentState;
-          this.appState.addEventListener(
+          const listener = this.appState.addEventListener(
             'change',
             this.handleAppStateChange.bind(this),
           );
+          this.appStateChangeSubscription = listener;
         }
 
         if (this.options.getLocalModeEnabled()) {
@@ -837,16 +820,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     this.errorBoundary.swallow('shutdown', () => {
       this.logger.shutdown();
 
-      if (
-        this.appState &&
-        this.appState.removeEventListener &&
-        typeof this.appState.removeEventListener === 'function'
-      ) {
-        this.appState.removeEventListener(
-          'change',
-          this.handleAppStateChange.bind(this),
-        );
-      }
+      this.appStateChangeSubscription?.remove();
       StatsigLocalStorage.cleanup();
     });
   }

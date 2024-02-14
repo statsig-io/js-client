@@ -19,9 +19,6 @@ export {
   StatsigOverrides,
 } from './StatsigClient';
 export type {
-  AppState,
-  AppStateEvent,
-  AppStateStatus,
   _SDKPackageInfo as _SDKPackageInfo,
 } from './StatsigClient';
 export type {

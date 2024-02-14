@@ -421,7 +421,7 @@ export default class StatsigNetwork {
   ): Promise<Record<string, unknown>> {
     try {
       const headers: Record<string, string> = {};
-      (res.headers ?? []).forEach((value, key) => {
+      (res.headers ?? []).forEach((value: string, key: string) => {
         headers[key] = value;
       });
       return {
