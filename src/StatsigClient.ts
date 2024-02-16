@@ -31,6 +31,7 @@ import Diagnostics from './utils/Diagnostics';
 import ConsoleLogger from './utils/ConsoleLogger';
 import { now } from './utils/Timing';
 import { verifySDKKeyUsed } from './utils/ResponseVerification';
+import FeatureGate from './FeatureGate';
 import type { AppStateStatus, AppState, NativeEventSubscription } from 'react-native';
 
 const MAX_VALUE_SIZE = 64;
@@ -40,6 +41,11 @@ export type _SDKPackageInfo = {
   sdkType: string;
   sdkVersion: string;
 };
+
+export type CheckGateOptions = {
+  disableExposureLogging?: boolean,
+  ignoreOverrides?: boolean,
+}
 
 /* Should be Record<string, unknown>, but that is a breaking change for React */
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -481,6 +487,40 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       { configName: gateName },
     );
   }
+
+  /**
+   * Gets the value and metadata of a gate evaluation for the current user
+   * @param {string} gateName - the name of the gate to check
+   * @returns {FeatureGate} - metadata about the value of the gate gate for the user. Gates are "off" (value false) by default
+   * @throws Error if initialize() is not called first, or gateName is not a string
+   */
+    public getFeatureGate(gateName: string, options: CheckGateOptions | null = null): FeatureGate {
+      return this.errorBoundary.capture(
+        'getFeatureGate',
+        () => {
+          const result = this.checkGateImpl(gateName, options?.ignoreOverrides ?? false);
+          if (!options?.disableExposureLogging) {
+            this.logGateExposureImpl(gateName, result);
+          }
+          const cb = this.options.getGateEvaluationCallback();
+          if (cb) {
+            cb(gateName, result.gate.value, {
+              withExposureLoggingDisabled: options?.disableExposureLogging ?? false,
+            });
+          }
+          return new FeatureGate(
+            gateName,
+            result.gate.value,
+            result.gate.rule_id,
+            result.evaluationDetails,
+            result.gate.group_name ?? null,
+            result.gate.id_type ?? null,
+          );
+        },
+        () => new FeatureGate(gateName, false, '', {reason: EvaluationReason.Error, time: Date.now()}),
+        { configName: gateName },
+      );
+    }
 
   public checkGateWithExposureLoggingDisabled(
     gateName: string,

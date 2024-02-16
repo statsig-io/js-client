@@ -358,9 +358,8 @@ export default class StatsigStore {
           new Error(
             `StableID changed from ${
               cachedValues.stableIDUsed
-            } to ${this.getStableID()}, override stableID ${this.sdkInternal
-              .getOptions()
-              .getOverrideStableID()}`,
+            } to ${this.getStableID()},
+            override stableID ${this.sdkInternal.getOptions().getOverrideStableID()}`,
           ),
         );
     }

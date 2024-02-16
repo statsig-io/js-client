@@ -2,6 +2,7 @@ import DynamicConfig from './DynamicConfig';
 import { StatsigUninitializedError } from './Errors';
 import Layer from './Layer';
 import StatsigClient, { StatsigOverrides } from './StatsigClient';
+import type { CheckGateOptions } from './StatsigClient';
 import StatsigRuntime from './StatsigRuntime';
 import { StatsigOptions } from './StatsigSDKOptions';
 import { EvaluationDetails } from './StatsigStore';
@@ -10,7 +11,9 @@ import { default as PolyfillObjectEntries } from './utils/Object.entries';
 import { default as PolyfillObjectFromEntries } from './utils/Object.fromEntries';
 import { default as PolyfillPromiseFinally } from './utils/Promise.finally';
 import { EvaluationReason } from './utils/EvaluationReason';
+import FeatureGate from './FeatureGate';
 
+export { default as FeatureGate } from './FeatureGate';
 export { default as DynamicConfig } from './DynamicConfig';
 export { default as Layer } from './Layer';
 export {
@@ -20,6 +23,7 @@ export {
 } from './StatsigClient';
 export type {
   _SDKPackageInfo as _SDKPackageInfo,
+  CheckGateOptions,
 } from './StatsigClient';
 export type {
   DeviceInfo,
@@ -91,6 +95,13 @@ export default class Statsig {
     return Statsig.getClientX().checkGateWithExposureLoggingDisabled(
       gateName,
       ignoreOverrides,
+    );
+  }
+
+  public static getFeatureGate(gateName: string, options: CheckGateOptions | null = null): FeatureGate {
+    return Statsig.getClientX().getFeatureGate(
+      gateName,
+      options,
     );
   }
 
