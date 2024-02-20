@@ -63,7 +63,7 @@
     "webpack-cli": "^4.10.0"
   },
   "dependencies": {
-    "js-sha256": "^0.10.1",
+    "js-sha256": "^0.11.0",
     "uuid": "^8.3.2"
   },
   "importSort": {
