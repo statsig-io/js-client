@@ -529,6 +529,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     return this.errorBoundary.capture(
       'checkGateWithExposureLoggingDisabled',
       () => {
+        this.logger.addNonExposedCheck(gateName);
         const result = this.checkGateImpl(gateName, ignoreOverrides);
         const cb = this.options.getGateEvaluationCallback();
         if (cb) {
@@ -575,6 +576,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     return this.errorBoundary.capture(
       'getConfig',
       () => {
+        this.logger.addNonExposedCheck(configName);
         return this.getConfigImpl(configName, ignoreOverrides);
       },
       () => this.getEmptyConfig(configName),
@@ -624,6 +626,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     return this.errorBoundary.capture(
       'getExperimentWithExposureLoggingDisabled',
       () => {
+        this.logger.addNonExposedCheck(experimentName);
         return this.getExperimentImpl(
           experimentName,
           keepDeviceValue,
@@ -666,6 +669,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     return this.errorBoundary.capture(
       'getLayerWithExposureLoggingDisabled',
       () => {
+        this.logger.addNonExposedCheck(layerName);
         return this.getLayerImpl(null, layerName, keepDeviceValue);
       },
       () =>

@@ -26,6 +26,7 @@ const APP_METRICS_SESSION_LENGTH_EVENT =
 const DIAGNOSTICS_EVENT = INTERNAL_EVENT_PREFIX + 'diagnostics';
 const DEFAULT_VALUE_WARNING =
   INTERNAL_EVENT_PREFIX + 'default_value_type_mismatch';
+const NON_EXPOSED_CHECKS_EVENT = INTERNAL_EVENT_PREFIX + 'non_exposed_checks';
 
 type FailedLogEventBody = {
   events: object[];
@@ -44,6 +45,8 @@ export default class StatsigLogger {
 
   private queue: object[];
 
+  private nonExposedChecks: Record<string, number>;
+
   private flushInterval: ReturnType<typeof setInterval> | null;
   private loggedErrors: Set<string>;
   private failedLogEvents: FailedLogEventBody[];
@@ -54,6 +57,7 @@ export default class StatsigLogger {
     this.sdkInternal = sdkInternal;
 
     this.queue = [];
+    this.nonExposedChecks = {};
     this.flushInterval = null;
     this.loggedErrors = new Set();
 
@@ -153,6 +157,14 @@ export default class StatsigLogger {
     }
     this.exposureDedupeKeys[key] = now;
     return true;
+  }
+
+  public addNonExposedCheck(configName: string) {
+    if (this.nonExposedChecks[configName] == null) {
+      this.nonExposedChecks[configName] = 1;
+    } else {
+      this.nonExposedChecks[configName]++;
+    }
   }
 
   public logGateExposure(
@@ -294,13 +306,13 @@ export default class StatsigLogger {
   public logDiagnostics(user: StatsigUser | null, context: ContextType) {
     const markers = Diagnostics.getMarkers(context);
     if (markers.length <= 0) {
-      return
+      return;
     }
     Diagnostics.clearContext(context);
     const event = this.makeDiagnosticsEvent(user, {
       markers,
       context,
-      statsigOptions: this.sdkInternal.getOptions().getLoggingCopy()
+      statsigOptions: this.sdkInternal.getOptions().getLoggingCopy(),
     });
     this.log(event);
   }
@@ -326,7 +338,7 @@ export default class StatsigLogger {
         navEntry.duration,
         metadata,
       );
-      
+
       this.logGenericEvent(
         APP_METRICS_DOM_INTERACTIVE_EVENT,
         user,
@@ -341,7 +353,9 @@ export default class StatsigLogger {
         const scrollHeight = document.body.scrollHeight || 1;
         const scrollDepth = Math.min(
           100,
-          Math.round((window.scrollY + window.innerHeight) / scrollHeight * 100),
+          Math.round(
+            ((window.scrollY + window.innerHeight) / scrollHeight) * 100,
+          ),
         );
         if (scrollDepth > deepestScroll) {
           deepestScroll = scrollDepth;
@@ -390,13 +404,14 @@ export default class StatsigLogger {
 
   public flush(isClosing = false): void {
     this.addErrorBoundaryDiagnostics();
+    this.addNonExposedChecksEvent();
 
     if (this.queue.length === 0) {
       return;
     }
-    const statsigMetadata = this.sdkInternal.getStatsigMetadata()
-    if(statsigMetadata.sessionID == null) {
-      statsigMetadata.sessionID = uuidv4()
+    const statsigMetadata = this.sdkInternal.getStatsigMetadata();
+    if (statsigMetadata.sessionID == null) {
+      statsigMetadata.sessionID = uuidv4();
     }
     const oldQueue = this.queue;
     this.queue = [];
@@ -451,22 +466,26 @@ export default class StatsigLogger {
           error.text().then((errorText: string) => {
             this.sdkInternal
               .getErrorBoundary()
-              .logError(LOG_FAILURE_EVENT, error, {getExtraData:async () => {
-                return {
-                  eventCount: oldQueue.length,
-                  error: errorText,
-                };}
+              .logError(LOG_FAILURE_EVENT, error, {
+                getExtraData: async () => {
+                  return {
+                    eventCount: oldQueue.length,
+                    error: errorText,
+                  };
+                },
               });
           });
         } else {
           this.sdkInternal
             .getErrorBoundary()
-            .logError(LOG_FAILURE_EVENT, error, {getExtraData: async () => {
-              return {
-                eventCount: oldQueue.length,
-                error: error.message,
-              };
-            }});
+            .logError(LOG_FAILURE_EVENT, error, {
+              getExtraData: async () => {
+                return {
+                  eventCount: oldQueue.length,
+                  error: error.message,
+                };
+              },
+            });
         }
         this.newFailedRequest(LOG_FAILURE_EVENT, oldQueue);
       })
@@ -612,7 +631,11 @@ export default class StatsigLogger {
 
   private makeDiagnosticsEvent(
     user: StatsigUser | null,
-    data: { context: ContextType; markers: Marker[], statsigOptions?: Record<string, unknown> },
+    data: {
+      context: ContextType;
+      markers: Marker[];
+      statsigOptions?: Record<string, unknown>;
+    },
   ) {
     const latencyEvent = new LogEvent(DIAGNOSTICS_EVENT);
     latencyEvent.setUser(user);
@@ -634,5 +657,18 @@ export default class StatsigLogger {
     );
     this.queue.push(diagEvent);
     Diagnostics.clearContext('api_call');
+  }
+
+  private addNonExposedChecksEvent() {
+    if (Object.keys(this.nonExposedChecks).length === 0) {
+      return;
+    }
+
+    const event = new LogEvent(NON_EXPOSED_CHECKS_EVENT);
+    event.setMetadata({
+      checks: { ...this.nonExposedChecks },
+    });
+    this.queue.push(event);
+    this.nonExposedChecks = {};
   }
 }
