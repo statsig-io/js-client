@@ -32,7 +32,6 @@ import ConsoleLogger from './utils/ConsoleLogger';
 import { now } from './utils/Timing';
 import { verifySDKKeyUsed } from './utils/ResponseVerification';
 import FeatureGate from './FeatureGate';
-import type { AppStateStatus, AppState, NativeEventSubscription } from 'react-native';
 
 const MAX_VALUE_SIZE = 64;
 const MAX_OBJ_SIZE = 2048;
@@ -106,9 +105,9 @@ export type StatsigOverrides = {
 export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   // RN dependencies
   private static reactNativeUUID?: UUID;
-  private appState: AppState | null = null;
-  private currentAppState: AppStateStatus | null = null;
-  private appStateChangeSubscription: NativeEventSubscription | null = null; 
+  private appState: unknown | null = null;
+  private currentAppState: unknown | null = null;
+  private appStateChangeSubscription: unknown | null = null; 
   private onCacheLoadedForReact: (() => void) | null = null;
 
   private ready: boolean;
@@ -359,17 +358,18 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
 
         this.onCacheLoadedForReact?.();
 
-        if (
-          this.appState &&
-          this.appState.addEventListener &&
-          typeof this.appState.addEventListener === 'function'
-        ) {
-          this.currentAppState = this.appState.currentState;
-          const listener = this.appState.addEventListener(
-            'change',
-            this.handleAppStateChange.bind(this),
-          );
-          this.appStateChangeSubscription = listener;
+        if (this.appState != null) {
+          const handler = this.appState as {[key: string]: unknown};
+          if (handler.addEventListener &&
+            typeof handler.addEventListener === 'function'
+          ) {
+            this.currentAppState = handler.currentState;
+            const listener = handler.addEventListener(
+              'change',
+              this.handleAppStateChange.bind(this),
+            );
+            this.appStateChangeSubscription = listener;
+          }
         }
 
         if (this.options.getLocalModeEnabled()) {
@@ -864,7 +864,12 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     this.errorBoundary.swallow('shutdown', () => {
       this.logger.shutdown();
 
-      this.appStateChangeSubscription?.remove();
+      if (this.appStateChangeSubscription != null) {
+        const sub = this.appStateChangeSubscription as any;
+        if (typeof sub.remove === 'function') {
+          sub.remove();
+        }
+      }
       StatsigLocalStorage.cleanup();
     });
   }
@@ -1046,7 +1051,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     }
   }
 
-  public setAppState(appState?: AppState | null): void {
+  public setAppState(appState?: unknown | null): void {
     if (appState != null) {
       this.appState = appState;
     }
@@ -1162,14 +1167,15 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     this.optionalLoggingSetup = true;
   }
 
-  private handleAppStateChange(nextAppState: AppStateStatus): void {
+  private handleAppStateChange(nextAppState: string): void {
     if (
       this.currentAppState === 'active' &&
       nextAppState.match(/inactive|background/)
     ) {
       this.logger.flush(true);
     } else if (
-      this.currentAppState?.match(/inactive|background/) &&
+      this.currentAppState != null &&
+      (this.currentAppState as string).match(/inactive|background/) &&
       nextAppState === 'active'
     ) {
       this.logger

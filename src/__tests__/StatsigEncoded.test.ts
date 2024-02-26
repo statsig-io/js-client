@@ -19,7 +19,7 @@ const USER = {
 };
 
 describe('StatsigEncoded', () => {
-  let body: BodyInit | _SourceUri | string | null = null;
+  let body: BodyInit | string | null = null;
   let headers: HeadersInit | null;
   let client: StatsigClient;
 
