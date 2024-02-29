@@ -1,3 +1,6 @@
+import DynamicConfig from './DynamicConfig';
+import FeatureGate from './FeatureGate';
+import Layer from './Layer';
 import { StatsigUser } from './StatsigUser';
 
 const DEFAULT_FEATURE_GATE_API = 'https://featuregates.org/v1/';
@@ -29,6 +32,13 @@ export type GateEvaluationCallback = (
     withExposureLoggingDisabled: boolean;
   },
 ) => void;
+
+export type EvaluationCallbackParams =
+  | { type: 'gate'; gate: FeatureGate }
+  | { type: 'config' | 'experiment'; config: DynamicConfig }
+  | { type: 'layer'; layer: Layer };
+
+export type EvaluationCallback = (args: EvaluationCallbackParams) => void;
 
 export interface UserPersistentStorageInterface {
   load(key: string): string;
@@ -63,6 +73,7 @@ export type StatsigOptions = {
   updateUserCompletionCallback?: UpdateUserCompletionCallback | null;
   userPersistentStorage?: UserPersistentStorageInterface;
   disableHashing?: boolean;
+  evaluationCallback?: EvaluationCallback;
 };
 
 export enum LogLevel {
@@ -106,6 +117,7 @@ export default class StatsigSDKOptions {
   private updateCompletionCallback: UpdateUserCompletionCallback | null;
   private userPersistentStorage: UserPersistentStorageInterface | null;
   private disableHashing: boolean;
+  private evaluationCallback: EvaluationCallback | null;
 
   private loggingCopy: Record<string, unknown> | undefined;
 
@@ -164,6 +176,7 @@ export default class StatsigSDKOptions {
     this.disableAllLogging = options.disableAllLogging ?? false;
     this.setLoggingCopy(options);
     this.disableHashing = options.disableHashing ?? false;
+    this.evaluationCallback = options.evaluationCallback ?? null;
   }
 
   setLoggingCopy(options: StatsigOptions | null) {
@@ -316,6 +329,10 @@ export default class StatsigSDKOptions {
 
   reenableAllLogging(): void {
     this.disableAllLogging = false;
+  }
+
+  getEvaluationCallback(): EvaluationCallback | null {
+    return this.evaluationCallback;
   }
 
   private normalizeNumberInput(

@@ -42,9 +42,9 @@ export type _SDKPackageInfo = {
 };
 
 export type CheckGateOptions = {
-  disableExposureLogging?: boolean,
-  ignoreOverrides?: boolean,
-}
+  disableExposureLogging?: boolean;
+  ignoreOverrides?: boolean;
+};
 
 /* Should be Record<string, unknown>, but that is a breaking change for React */
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -107,7 +107,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   private static reactNativeUUID?: UUID;
   private appState: unknown | null = null;
   private currentAppState: unknown | null = null;
-  private appStateChangeSubscription: unknown | null = null; 
+  private appStateChangeSubscription: unknown | null = null;
   private onCacheLoadedForReact: (() => void) | null = null;
 
   private ready: boolean;
@@ -359,8 +359,9 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         this.onCacheLoadedForReact?.();
 
         if (this.appState != null) {
-          const handler = this.appState as {[key: string]: unknown};
-          if (handler.addEventListener &&
+          const handler = this.appState as { [key: string]: unknown };
+          if (
+            handler.addEventListener &&
             typeof handler.addEventListener === 'function'
           ) {
             this.currentAppState = handler.currentState;
@@ -481,6 +482,19 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
             withExposureLoggingDisabled: false,
           });
         }
+        const ecb = this.options.getEvaluationCallback();
+        if (ecb) {
+          const gate = new FeatureGate(
+            gateName,
+            result.gate.value,
+            result.gate.rule_id,
+            result.evaluationDetails,
+            result.gate.group_name ?? null,
+            result.gate.id_type ?? null,
+            result.gate.secondary_exposures ?? [],
+          );
+          ecb({ type: 'gate', gate });
+        }
         return result.gate.value === true;
       },
       () => false,
@@ -494,33 +508,50 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
    * @returns {FeatureGate} - metadata about the value of the gate gate for the user. Gates are "off" (value false) by default
    * @throws Error if initialize() is not called first, or gateName is not a string
    */
-    public getFeatureGate(gateName: string, options: CheckGateOptions | null = null): FeatureGate {
-      return this.errorBoundary.capture(
-        'getFeatureGate',
-        () => {
-          const result = this.checkGateImpl(gateName, options?.ignoreOverrides ?? false);
-          if (!options?.disableExposureLogging) {
-            this.logGateExposureImpl(gateName, result);
-          }
-          const cb = this.options.getGateEvaluationCallback();
-          if (cb) {
-            cb(gateName, result.gate.value, {
-              withExposureLoggingDisabled: options?.disableExposureLogging ?? false,
-            });
-          }
-          return new FeatureGate(
-            gateName,
-            result.gate.value,
-            result.gate.rule_id,
-            result.evaluationDetails,
-            result.gate.group_name ?? null,
-            result.gate.id_type ?? null,
-          );
-        },
-        () => new FeatureGate(gateName, false, '', {reason: EvaluationReason.Error, time: Date.now()}),
-        { configName: gateName },
-      );
-    }
+  public getFeatureGate(
+    gateName: string,
+    options: CheckGateOptions | null = null,
+  ): FeatureGate {
+    return this.errorBoundary.capture(
+      'getFeatureGate',
+      () => {
+        const result = this.checkGateImpl(
+          gateName,
+          options?.ignoreOverrides ?? false,
+        );
+        if (!options?.disableExposureLogging) {
+          this.logGateExposureImpl(gateName, result);
+        }
+        const cb = this.options.getGateEvaluationCallback();
+        if (cb) {
+          cb(gateName, result.gate.value, {
+            withExposureLoggingDisabled:
+              options?.disableExposureLogging ?? false,
+          });
+        }
+        const gate = new FeatureGate(
+          gateName,
+          result.gate.value,
+          result.gate.rule_id,
+          result.evaluationDetails,
+          result.gate.group_name ?? null,
+          result.gate.id_type ?? null,
+          result.gate.secondary_exposures ?? [],
+        );
+        const ecb = this.options.getEvaluationCallback();
+        if (ecb) {
+          ecb({ type: 'gate', gate });
+        }
+        return gate;
+      },
+      () =>
+        new FeatureGate(gateName, false, '', {
+          reason: EvaluationReason.Error,
+          time: Date.now(),
+        }),
+      { configName: gateName },
+    );
+  }
 
   public checkGateWithExposureLoggingDisabled(
     gateName: string,
@@ -536,6 +567,19 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
           cb(gateName, result.gate.value, {
             withExposureLoggingDisabled: true,
           });
+        }
+        const ecb = this.options.getEvaluationCallback();
+        if (ecb) {
+          const gate = new FeatureGate(
+            gateName,
+            result.gate.value,
+            result.gate.rule_id,
+            result.evaluationDetails,
+            result.gate.group_name ?? null,
+            result.gate.id_type ?? null,
+            result.gate.secondary_exposures ?? [],
+          );
+          ecb({ type: 'gate', gate });
         }
         return result.gate.value === true;
       },
@@ -562,6 +606,10 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       () => {
         const result = this.getConfigImpl(configName, ignoreOverrides);
         this.logConfigExposureImpl(configName, result);
+        const ecb = this.options.getEvaluationCallback();
+        if (ecb) {
+          ecb({ type: 'config', config: result });
+        }
         return result;
       },
       () => this.getEmptyConfig(configName),
@@ -577,7 +625,12 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       'getConfig',
       () => {
         this.logger.addNonExposedCheck(configName);
-        return this.getConfigImpl(configName, ignoreOverrides);
+        const result = this.getConfigImpl(configName, ignoreOverrides);
+        const ecb = this.options.getEvaluationCallback();
+        if (ecb) {
+          ecb({ type: 'config', config: result });
+        }
+        return result;
       },
       () => this.getEmptyConfig(configName),
     );
@@ -611,6 +664,10 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
           ignoreOverrides,
         );
         this.logExperimentExposureImpl(experimentName, keepDeviceValue, result);
+        const ecb = this.options.getEvaluationCallback();
+        if (ecb) {
+          ecb({ type: 'experiment', config: result });
+        }
         return result;
       },
       () => this.getEmptyConfig(experimentName),
@@ -627,11 +684,16 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       'getExperimentWithExposureLoggingDisabled',
       () => {
         this.logger.addNonExposedCheck(experimentName);
-        return this.getExperimentImpl(
+        const result = this.getExperimentImpl(
           experimentName,
           keepDeviceValue,
           ignoreOverrides,
         );
+        const ecb = this.options.getEvaluationCallback();
+        if (ecb) {
+          ecb({ type: 'experiment', config: result });
+        }
+        return result;
       },
       () => this.getEmptyConfig(experimentName),
     );
@@ -650,11 +712,16 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     return this.errorBoundary.capture(
       'getLayer',
       () => {
-        return this.getLayerImpl(
+        const result = this.getLayerImpl(
           this.logLayerParameterExposureForLayer,
           layerName,
           keepDeviceValue,
         );
+        const ecb = this.options.getEvaluationCallback();
+        if (ecb) {
+          ecb({ type: 'layer', layer: result });
+        }
+        return result;
       },
       () =>
         Layer._create(layerName, {}, '', this.getEvalutionDetailsForError()),
@@ -670,7 +737,12 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       'getLayerWithExposureLoggingDisabled',
       () => {
         this.logger.addNonExposedCheck(layerName);
-        return this.getLayerImpl(null, layerName, keepDeviceValue);
+        const result = this.getLayerImpl(null, layerName, keepDeviceValue);
+        const ecb = this.options.getEvaluationCallback();
+        if (ecb) {
+          ecb({ type: 'layer', layer: result });
+        }
+        return result;
       },
       () =>
         Layer._create(layerName, {}, '', this.getEvalutionDetailsForError()),

@@ -8,6 +8,7 @@ export default class FeatureGate {
   private groupName: string | null;
   private idType: string | null;
   private evaluationDetails: EvaluationDetails;
+  private secondaryExposures: Record<string, string>[];
 
   public constructor(
     gateName: string,
@@ -16,6 +17,7 @@ export default class FeatureGate {
     evaluationDetails: EvaluationDetails,
     groupName: string | null = null,
     idType: string | null = null,
+    secondaryExposures: [] = [],
   ) {
     this.name = gateName;
     this.value = value;
@@ -23,6 +25,7 @@ export default class FeatureGate {
     this.evaluationDetails = evaluationDetails;
     this.groupName = groupName;
     this.idType = idType;
+    this.secondaryExposures = secondaryExposures;
   }
 
   public getRuleID(): string {
@@ -47,5 +50,9 @@ export default class FeatureGate {
 
   public getEvaluationDetails(): EvaluationDetails {
     return this.evaluationDetails;
+  }
+
+  public getSecondaryExposures(): Record<string, string>[] {
+    return this.secondaryExposures;
   }
 }
