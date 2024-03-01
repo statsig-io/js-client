@@ -72,6 +72,7 @@ export interface IStatsig {
   removeConfigOverride(configName?: string): void;
   getAllOverrides(): StatsigOverrides;
   getStableID(): string;
+  setDebugInfo(debugInfo: Record<string, string>): void;
 
   // DEPRECATED
   removeOverride(overrideName?: string | null): void;
@@ -780,8 +781,8 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       if (this.shouldTrimParam(eventName, MAX_VALUE_SIZE)) {
         this.consoleLogger.info(
           'eventName is too long, trimming to ' +
-            MAX_VALUE_SIZE +
-            ' characters.',
+          MAX_VALUE_SIZE +
+          ' characters.',
         );
         eventName = eventName.substring(0, MAX_VALUE_SIZE);
       }
@@ -1105,6 +1106,22 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       this.identity.setSDKPackageInfo(sdkPackageInfo);
       this.errorBoundary.setStatsigMetadata(this.getStatsigMetadata());
     }
+  }
+
+  /**
+  * @params Debug information log with exposure event, and information will be living in metadata
+  */
+  public setDebugInfo(debugInfo: Record<string, string>): void {
+    this.errorBoundary.capture(
+      'setDebuggingInfo',
+      () => {
+        if (!this.initializeCalled()) {
+          throw new StatsigUninitializedError('Call initialize() first.');
+        }
+        this.logger.setDebugInfo(debugInfo)
+      },
+      () => {/* no-op */ },
+    );
   }
 
   public static setAsyncStorage(asyncStorage?: AsyncStorage | null): void {

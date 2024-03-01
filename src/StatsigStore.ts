@@ -933,7 +933,6 @@ export default class StatsigStore {
         logParameterFunction,
       );
     }
-
     const latestValue = this.getLatestValue(layerName, 'layer_configs');
     const details = this.getEvaluationDetails(latestValue != null);
     const finalValue = this.getPossiblyStickyValue(

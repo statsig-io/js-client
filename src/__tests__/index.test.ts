@@ -578,4 +578,79 @@ describe('Verify behavior of top level index functions', () => {
     await client.initializeAsync();
     expect(hasCustomID).toBeTruthy();
   });
+  test('Verify debugInfo is being logged', async () => {
+    await statsig.initialize('client-key', null, { disableCurrentPageLogging: true })
+    statsig.setDebugInfo({info1: "info1"})
+    //@ts-ignore
+     let spy = jest.spyOn(statsig.instance.logger, 'log');
+
+     const configExposure = getConfigExposure({ debugInfo:{info1: "info1"} })
+     const gateExposure = getGateExposure({ debugInfo: {info1: "info1"} })
+     const layerExposure =getLayerExposure({ debugInfo: {info1: "info1"} })
+     statsig.getConfig('test_config', undefined,)
+     statsig.checkGate('test_gate', undefined)
+     statsig.getLayer("allocated_experiment").getValue("a_key")
+     expect(spy).toHaveBeenCalledTimes(3);
+     expect(spy).toHaveBeenCalledWith(configExposure);
+     expect(spy).toHaveBeenCalledWith(gateExposure);
+     expect(spy).toHaveBeenCalledWith(layerExposure);
+     statsig.shutdown()
+ });
+
+ function getGateExposure(extraMetadata?: Record<any,any>): LogEvent {
+   const gateExposure = new LogEvent('statsig::gate_exposure');
+   gateExposure.setUser({});
+   gateExposure.setMetadata({
+     gate: 'test_gate',
+     gateValue: String(true),
+     ruleID: 'ruleID123',
+     reason: EvaluationReason.Network,
+     time: Date.now(),
+     ...extraMetadata
+   });
+   gateExposure.setSecondaryExposures([
+     {
+       gate: 'dependent_gate_1',
+       gateValue: 'true',
+       ruleID: 'rule_1',
+     },
+     {
+       gate: 'dependent_gate_2',
+       gateValue: 'false',
+       ruleID: 'default',
+     },
+   ]);
+   return gateExposure
+ }
+
+ function getConfigExposure(extraMetadata?: Record<any,any>): LogEvent {
+   const configExposure = new LogEvent('statsig::config_exposure');
+   configExposure.setUser({});
+   configExposure.setMetadata({
+     config: 'test_config',
+     ruleID: 'ruleID',
+     reason: EvaluationReason.Network,
+     time: Date.now(),
+     ...extraMetadata
+   });
+   configExposure.setSecondaryExposures([]);
+   return configExposure
+ }
+
+ function getLayerExposure(extraMetadata?: Record<any,any>): LogEvent {
+  const configExposure = new LogEvent('statsig::layer_exposure');
+   configExposure.setUser({});
+   configExposure.setMetadata({
+     config: 'allocated_experiment',
+     ruleID: 'default',
+     allocatedExperiment: '',
+     parameterName: 'a_key',
+     reason: EvaluationReason.Network,
+     time: Date.now(),
+     isExplicitParameter: 'false',
+     ...extraMetadata
+   });
+   configExposure.setSecondaryExposures([]);
+   return configExposure
+ }
 });

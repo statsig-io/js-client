@@ -41,7 +41,18 @@
       "rule_id": "ruleID"
     }
   },
-  "layer_configs": {},
+  "layer_configs": {
+    "1716512373": {
+      "name": "1716512373",
+      "rule_id": "default",
+      "value": {
+        "a_key": "a_config_value"
+      },
+      "is_user_in_experiment": true,
+      "is_experiment_active": true,
+      "allocated_experiment_name": "2902556896"
+    }
+  },
   "has_updates": true,
   "hash_used": "djb2"
 }

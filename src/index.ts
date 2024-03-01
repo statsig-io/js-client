@@ -330,6 +330,13 @@ export default class Statsig {
     Statsig.getClientX().flushEvents();
   }
 
+    /**
+    * @params Debug information log with exposure event, and information will be living in metadata
+    */
+    public static setDebugInfo(debugInfo: Record<string,string>): void {
+      Statsig.getClientX().setDebugInfo(debugInfo);
+    }
+
   /**
    * Intended to be used in conjunction with StatsigOptions.disableAllLogging.
    * This will set StatsigOptions.disableAllLogging to false, thereby enabling logs to function normally.

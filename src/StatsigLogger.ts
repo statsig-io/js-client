@@ -52,6 +52,7 @@ export default class StatsigLogger {
   private failedLogEvents: FailedLogEventBody[];
   private exposureDedupeKeys: Record<string, number>;
   private failedLogEventCount = 0;
+  private debugInfo: Record<string, string>| undefined = undefined;
 
   public constructor(sdkInternal: IHasStatsigInternal) {
     this.sdkInternal = sdkInternal;
@@ -145,6 +146,10 @@ export default class StatsigLogger {
     this.exposureDedupeKeys = {};
   }
 
+  public setDebugInfo(debugInfo: Record<string,string>) {
+    this.debugInfo = debugInfo
+  }
+
   private shouldLogExposure(key: string): boolean {
     const lastTime = this.exposureDedupeKeys[key];
     const now = Date.now();
@@ -187,6 +192,7 @@ export default class StatsigLogger {
       ruleID: ruleID,
       reason: details.reason,
       time: details.time,
+      debugInfo: this.debugInfo
     };
 
     if (isManualExposure) {
@@ -218,6 +224,7 @@ export default class StatsigLogger {
       ruleID: ruleID,
       reason: details.reason,
       time: details.time,
+      debugInfo: this.debugInfo
     };
 
     if (isManualExposure) {
@@ -263,6 +270,7 @@ export default class StatsigLogger {
       isExplicitParameter: String(isExplicitParameter),
       reason: details.reason,
       time: details.time,
+      debugInfo: this.debugInfo
     };
 
     if (isManualExposure) {
