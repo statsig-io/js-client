@@ -522,6 +522,8 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         );
         if (!options?.disableExposureLogging) {
           this.logGateExposureImpl(gateName, result);
+        } else {
+          this.logger.addNonExposedCheck(gateName);
         }
         const cb = this.options.getGateEvaluationCallback();
         if (cb) {
@@ -781,8 +783,8 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       if (this.shouldTrimParam(eventName, MAX_VALUE_SIZE)) {
         this.consoleLogger.info(
           'eventName is too long, trimming to ' +
-          MAX_VALUE_SIZE +
-          ' characters.',
+            MAX_VALUE_SIZE +
+            ' characters.',
         );
         eventName = eventName.substring(0, MAX_VALUE_SIZE);
       }
@@ -1109,8 +1111,8 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
   }
 
   /**
-  * @params Debug information log with exposure event, and information will be living in metadata
-  */
+   * @params Debug information log with exposure event, and information will be living in metadata
+   */
   public setDebugInfo(debugInfo: Record<string, string>): void {
     this.errorBoundary.capture(
       'setDebuggingInfo',
@@ -1118,9 +1120,11 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         if (!this.initializeCalled()) {
           throw new StatsigUninitializedError('Call initialize() first.');
         }
-        this.logger.setDebugInfo(debugInfo)
+        this.logger.setDebugInfo(debugInfo);
       },
-      () => {/* no-op */ },
+      () => {
+        /* no-op */
+      },
     );
   }
 
