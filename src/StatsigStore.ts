@@ -309,6 +309,19 @@ export default class StatsigStore {
     return undefined;
   }
 
+  public getPreviousHashUsed(
+    user: StatsigUser | null,
+    stableID: string,
+  ): string | undefined {
+    const requestedUserCacheKey = getUserCacheKey(
+      stableID,
+      user,
+      this.sdkInternal.getSDKKey(),
+    );
+    const userValues = this.getUserValues(requestedUserCacheKey);
+    return userValues?.hash_used;
+  }
+
   private parseCachedValues(
     allValues: string | null,
     deviceExperiments: string | null,
@@ -351,17 +364,15 @@ export default class StatsigStore {
       cachedValues.stableIDUsed != null &&
       cachedValues.stableIDUsed !== this.getStableID()
     ) {
-      this.sdkInternal
-        .getErrorBoundary()
-        .logError(
-          'stableIDChanged',
-          new Error(
-            `StableID changed from ${
-              cachedValues.stableIDUsed
-            } to ${this.getStableID()},
+      this.sdkInternal.getErrorBoundary().logError(
+        'stableIDChanged',
+        new Error(
+          `StableID changed from ${
+            cachedValues.stableIDUsed
+          } to ${this.getStableID()},
             override stableID ${this.sdkInternal.getOptions().getOverrideStableID()}`,
-          ),
-        );
+        ),
+      );
     }
 
     this.userValues = cachedValues;

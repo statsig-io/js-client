@@ -1389,6 +1389,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     if (prefetchUsers.length === 0) {
       sinceTime = this.store.getLastUpdateTime(user, stableID);
     }
+    const previousHashUsed = this.store.getPreviousHashUsed(user, stableID);
 
     const previousDerivedFields = this.store.getPreviousDerivedFields(
       user,
@@ -1400,7 +1401,10 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         user,
         sinceTime,
         timeout,
-        useDeltas: sinceTime != null,
+        useDeltas:
+          sinceTime != null &&
+          previousHashUsed ===
+            (this.getOptions().getDisableHashing() ? 'none' : 'djb2'), // only do deltas if the cached values have the correct hash
         prefetchUsers:
           prefetchUsers.length > 0 ? keyedPrefetchUsers : undefined,
         previousDerivedFields,
