@@ -125,6 +125,7 @@ export default class StatsigNetwork {
 
     let hasTimedOut = false;
     let timer = null;
+    let timerId: NodeJS.Timeout;
     let cachedReturnValue: T | null = null;
     let eventuals: ((t: T) => void)[] = [];
 
@@ -141,7 +142,7 @@ export default class StatsigNetwork {
 
     if (timeout != 0) {
       timer = new Promise<void>((_, reject) => {
-        setTimeout(() => {
+        timerId = setTimeout(() => {
           hasTimedOut = true;
           reject(new StatsigInitializationTimeoutError(timeout));
         }, timeout);
@@ -214,6 +215,9 @@ export default class StatsigNetwork {
       })
       .catch((e) => {
         return Promise.reject(e);
+      })
+      .finally(() => {
+        clearTimeout(timerId);
       });
 
     const racingPromise = (

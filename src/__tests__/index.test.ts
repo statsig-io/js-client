@@ -292,7 +292,7 @@ describe('Verify behavior of top level index functions', () => {
     expect(statsig.checkGate('test_gate')).toBe(true);
 
     // update user, but don't wait for the request to return
-    const p = statsig.updateUser({ userID: 'fail' });
+    const p = statsig.updateUser({ userID: 'fail_v2' });
     // should return the default value, false
     expect(statsig.checkGate('test_gate')).toBe(false);
 
