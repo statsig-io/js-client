@@ -53,7 +53,7 @@ export default class StatsigLogger {
   private failedLogEvents: FailedLogEventBody[];
   private exposureDedupeKeys: Record<string, number>;
   private failedLogEventCount = 0;
-  private debugInfo: Record<string, string>| undefined = undefined;
+  private debugInfo: Record<string, string> | undefined = undefined;
 
   public constructor(sdkInternal: IHasStatsigInternal) {
     this.sdkInternal = sdkInternal;
@@ -147,7 +147,7 @@ export default class StatsigLogger {
     this.exposureDedupeKeys = {};
   }
 
-  public setDebugInfo(debugInfo: Record<string,string>) {
+  public setDebugInfo(debugInfo: Record<string, string>) {
     this.debugInfo = debugInfo
   }
 
@@ -312,7 +312,7 @@ export default class StatsigLogger {
     this.loggedErrors.add(trimmedMessage);
   }
 
-  public logDiagnostics(user: StatsigUser | null, context: ContextType) {
+  public logDiagnostics(user: StatsigUser | null, context: ContextType) {  
     const markers = Diagnostics.getMarkers(context);
     if (markers.length <= 0) {
       return;
@@ -416,6 +416,9 @@ export default class StatsigLogger {
     this.addNonExposedChecksEvent();
 
     if (this.queue.length === 0) {
+      if (isClosing) {
+        this.saveFailedRequests()
+      }
       return;
     }
     const statsigMetadata = this.sdkInternal.getStatsigMetadata();
@@ -444,11 +447,10 @@ export default class StatsigLogger {
           });
           this.queue = [];
         }
-        this.saveFailedRequests();
       }
+      this.saveFailedRequests()
       return;
     }
-
     this.sdkInternal
       .getNetwork()
       .postToEndpoint(
@@ -470,48 +472,12 @@ export default class StatsigLogger {
           throw response;
         }
       })
-      .catch((error) => {
-        if (typeof error.text === 'function') {
-          error.text().then((errorText: string) => {
-            this.sdkInternal
-              .getErrorBoundary()
-              .logError(LOG_FAILURE_EVENT, error, {
-                getExtraData: async () => {
-                  return {
-                    eventCount: oldQueue.length,
-                    error: errorText,
-                  };
-                },
-              });
-          });
-        } else {
-          this.sdkInternal
-            .getErrorBoundary()
-            .logError(LOG_FAILURE_EVENT, error, {
-              getExtraData: async () => {
-                return {
-                  eventCount: oldQueue.length,
-                  error: error.message,
-                };
-              },
-            });
-        }
-        this.newFailedRequest(LOG_FAILURE_EVENT, oldQueue);
+      .catch(() => {
+        this.addFailedRequest({ events: oldQueue, statsigMetadata: this.sdkInternal.getStatsigMetadata(), time: Date.now() });
       })
       .finally(async () => {
         if (isClosing) {
-          if (this.queue.length > 0) {
-            this.addFailedRequest({
-              events: this.queue,
-              statsigMetadata: this.sdkInternal.getStatsigMetadata(),
-              time: Date.now(),
-            });
-
-            // on app background/window blur, save unsent events as a request and clean up the queue (in case app foregrounds)
-            this.queue = [];
-          }
-
-          this.saveFailedRequests();
+          this.saveFailedRequests()
         }
       });
   }
@@ -520,7 +486,7 @@ export default class StatsigLogger {
     if (this.failedLogEvents.length > 0) {
       const requestsCopy = JSON.stringify(this.failedLogEvents);
       if (requestsCopy.length > MAX_LOCAL_STORAGE_SIZE) {
-        this.clearLocalStorageRequests();
+        this.logDroppedLogEventsException(this.failedLogEventCount, 'Exceeds local storage size')
         return;
       }
 
@@ -556,7 +522,6 @@ export default class StatsigLogger {
       );
     }
     if (failedRequests == null) {
-      this.clearLocalStorageRequests();
       return;
     }
     if (failedRequests.length > MAX_LOCAL_STORAGE_SIZE) {
@@ -581,6 +546,7 @@ export default class StatsigLogger {
             })
             .catch(() => {
               if (fireAndForget) {
+                this.logDroppedLogEventsException(requestBody.events.length, 'Flush while shutting down')
                 return;
               }
               this.addFailedRequest(requestBody);
@@ -595,14 +561,18 @@ export default class StatsigLogger {
   }
 
   private addFailedRequest(requestBody: FailedLogEventBody): void {
+    const eventSize = requestBody.events.length;
     if (requestBody.time < Date.now() - MS_RETRY_LOGS_CUTOFF) {
+      this.logDroppedLogEventsException(eventSize, 'Events too old')
       return;
     }
     if (this.failedLogEvents.length > MAX_BATCHES_TO_RETRY) {
+      this.logDroppedLogEventsException(eventSize, 'Exceed max batches to retry')
       return;
     }
     const additionalEvents = requestBody.events.length;
     if (this.failedLogEventCount + additionalEvents > MAX_FAILED_EVENTS) {
+      this.logDroppedLogEventsException(eventSize, 'Exceeds max failed events')
       return;
     }
     this.failedLogEvents.push(requestBody);
@@ -621,21 +591,6 @@ export default class StatsigLogger {
     } else {
       StatsigLocalStorage.removeItem(STATSIG_LOCAL_STORAGE_LOGGING_REQUEST_KEY);
     }
-  }
-
-  private newFailedRequest(name: string, queue: object[]): void {
-    if (this.loggedErrors.has(name)) {
-      return;
-    }
-    this.loggedErrors.add(name);
-
-    this.failedLogEvents.push({
-      events: queue,
-      statsigMetadata: this.sdkInternal.getStatsigMetadata(),
-      time: Date.now(),
-    });
-
-    this.saveFailedRequests();
   }
 
   private makeDiagnosticsEvent(
@@ -679,5 +634,15 @@ export default class StatsigLogger {
     });
     this.queue.push(event);
     this.nonExposedChecks = {};
+  }
+
+  private logDroppedLogEventsException(count: number, reason?: string) {
+    this.sdkInternal.getErrorBoundary().logError(LOG_FAILURE_EVENT, new Error(reason), {
+      getExtraData: async () => {
+        return {
+          eventCount: count,
+        };
+      }
+    });
   }
 }

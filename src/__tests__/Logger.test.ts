@@ -7,6 +7,12 @@ import 'core-js';
 import LogEvent from '../LogEvent';
 import StatsigClient from '../StatsigClient';
 import StatsigLogger from '../StatsigLogger';
+import StatsigLocalStorage from '../utils/StatsigLocalStorage';
+type FailedLogEventBody = {
+  events: object[];
+  statsigMetadata: object;
+  time: number;
+};
 
 describe('Verify behavior of StatsigLogger', () => {
   const sdkKey = 'client-loggertestkey';
@@ -24,6 +30,7 @@ describe('Verify behavior of StatsigLogger', () => {
       }
       return Promise.resolve({
         ok: false,
+        status: 408,
         text: () => 'error',
       });
     }
@@ -52,76 +59,149 @@ describe('Verify behavior of StatsigLogger', () => {
         ),
     } as Response);
   });
+
+  const store: Record<string, string> = {};
+  const fakeAsyncStorage = {
+    getItem(key: string): Promise<string | null> {
+      return Promise.resolve(store[key] ?? null);
+    },
+    setItem(key: string, value: string): Promise<void> {
+      store[key] = value;
+      return Promise.resolve();
+    },
+    removeItem(key: string): Promise<void> {
+      delete store[key];
+      return Promise.resolve();
+    },
+  };
   beforeEach(() => {
     expect.hasAssertions();
   });
 
-  test('constructor', () => {
-    expect.assertions(11);
-    const client = new StatsigClient(
-      sdkKey,
-      { userID: 'user_key' },
-      { disableDiagnosticsLogging: true },
-    );
-    const logger = client.getLogger();
-    const spyOnFlush = jest.spyOn(logger, 'flush');
-    const spyOnLog = jest.spyOn(logger, 'log');
+  describe('Log Events Failure', () => {
+    let client: StatsigClient
+    let networkSpy: jest.SpyInstance<unknown>
+    let spyOnEB:jest.SpyInstance<unknown>
+    let spyOnLog: jest.SpyInstance<unknown>
+    let spyOnFlush: jest.SpyInstance<unknown>
+    let spyOnResend: jest.SpyInstance<unknown>
+    let logger: StatsigLogger
+    beforeEach(async () => {
+      client = new StatsigClient(
+        sdkKey,
+        { userID: 'user_key' },
+        { disableDiagnosticsLogging: true },
+      );
+      StatsigClient.setAsyncStorage(fakeAsyncStorage)
+      networkSpy = jest.spyOn(client.getNetwork(), 'postToEndpoint')
+      // Mock postToEndpoint directly so we bypass retry to speed up tests
+      networkSpy.mockImplementation((endpointName) => {
+        if(endpointName == 'initialize') {
+          const response = {
+            ok: true,
+            status: 200,
+            headers: requestHeaders,
+          } as Response
+          return  Promise.resolve(
+            {
+             ...response,
+              data:{
+              gates: {},
+              feature_gates: {
+                'AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=': {
+                  value: true,
+                  rule_id: 'ruleID123',
+                },
+              },
+              dynamic_configs: {
+                'RMv0YJlLOBe7cY7HgZ3Jox34R0Wrk7jLv3DZyBETA7I=': {
+                  value: { bool: true },
+                  rule_id: 'default',
+                },
+              },
+              configs: {},
+            }},
+          )
+        }
+        return Promise.reject("Sample error")
+      })
+      logger = client.getLogger()
+      spyOnFlush = jest.spyOn(logger, 'flush');
+      spyOnLog = jest.spyOn(logger, 'log');
+      spyOnResend = jest.spyOn(client.getLogger(), "sendSavedRequests")
+      spyOnEB = jest.spyOn(client.getErrorBoundary(), "logError")
+    })
 
-    // @ts-ignore access private attribute
-    expect(client.getLogger().flushInterval).not.toBeNull();
+    afterEach(() => {
+      networkSpy.mockClear()
+    })
 
-    // @ts-ignore trust me, the method exists
-    const spyOnFailureLog = jest.spyOn(logger, 'newFailedRequest');
-    const spyOnErrorBoundary = jest.spyOn(
-      client.getErrorBoundary(),
-      'logError',
-    );
-    return client.initializeAsync().then(async () => {
-      logger.log(new LogEvent('event'));
-      logger.log(new LogEvent('event'));
-      logger.log(new LogEvent('event'));
-      client.checkGate('test_gate');
-      client.checkGate('test_gate');
-      client.checkGate('test_gate');
-      logger.log(new LogEvent('event'));
-      client.getExperiment('test_config');
-      client.getExperiment('test_config');
-      client.getExperiment('test_config');
-      expect(spyOnLog).toHaveBeenCalledTimes(7);
-      client.getExperiment('test_config');
-      for (let i = 0; i < 95; i++) {
+    it('Save to cache when failure', async () => {
+
+      // @ts-ignore access private attribute
+      expect(client.getLogger().flushInterval).not.toBeNull();
+
+      await client.initializeAsync().then(async () => {
         logger.log(new LogEvent('event'));
-      }
-      expect(spyOnFlush).toHaveBeenCalledTimes(1);
-      expect(spyOnLog).toHaveBeenCalledTimes(102);
-      await waitAllPromises();
-      // posting logs network request fails, causing a log event failure
-      expect(spyOnErrorBoundary).toHaveBeenCalledTimes(1);
-      expect(spyOnLog).toHaveBeenCalledTimes(102);
-      expect(spyOnFailureLog).toHaveBeenCalledTimes(1);
-      // manually flush again, failing again
-      logger.flush();
-      await waitAllPromises();
-      // we dont log to the logger, but we do log to error boundary
-      expect(spyOnLog).toHaveBeenCalledTimes(102);
-      expect(spyOnErrorBoundary).toHaveBeenCalledTimes(2);
-
-      const elevenminslater = Date.now() + 11 * 60 * 1000;
-      jest.spyOn(global.Date, 'now').mockImplementation(() => elevenminslater);
-
-      client.checkGate('test_gate');
-      client.checkGate('test_gate');
-      client.getExperiment('test_config');
-      client.getExperiment('test_config');
-      expect(spyOnLog).toHaveBeenCalledTimes(104);
-
-      client.updateUser({});
-      client.checkGate('test_gate');
-      client.checkGate('test_gate');
-      client.getExperiment('test_config');
-      client.getExperiment('test_config');
-      expect(spyOnLog).toHaveBeenCalledTimes(106);
+        logger.log(new LogEvent('event'));
+        logger.log(new LogEvent('event'));
+        client.checkGate('test_gate');
+        client.checkGate('test_gate');
+        client.checkGate('test_gate');
+        logger.log(new LogEvent('event'));
+        client.getExperiment('test_config');
+        client.getExperiment('test_config');
+        client.getExperiment('test_config');
+        expect(spyOnLog).toHaveBeenCalledTimes(7);
+        client.getExperiment('test_config');
+        for (let i = 0; i < 95; i++) {
+          logger.log(new LogEvent('event'));
+        }
+        expect(spyOnFlush).toHaveBeenCalledTimes(1);
+        expect(spyOnLog).toHaveBeenCalledTimes(102);
+        client.shutdown()
+        await waitAllPromises()
+        const savedLoggingRequest = await fakeAsyncStorage.getItem('STATSIG_LOCAL_STORAGE_LOGGING_REQUEST')
+        expect(JSON.parse(savedLoggingRequest ?? "")).toMatchObject([{ "events": expect.any(Array), "statsigMetadata": expect.any(Object), "time": expect.any(Number) }, { "events": expect.any(Array), "statsigMetadata": expect.any(Object), "time": expect.any(Number) }])
+      });
     });
+
+    it("Retry on restart", async () => {
+      // No events have been dropped yet
+      await client.initializeAsync()
+      expect(spyOnEB).not.toBeCalled()
+      expect(spyOnResend).toBeCalledTimes(1)
+      client.shutdown()
+    })
+
+    it("Drop events when too old when retry at initialization", async () => {
+      const eightDaysLater = Date.now() + 8 * 24 * 60 * 60 * 1000;
+      jest.spyOn(global.Date, 'now').mockImplementation(() => eightDaysLater);
+      await client.initializeAsync()
+      expect(spyOnResend).toBeCalledTimes(1)
+      // Drop 3 batches, 2 from frist session within test and 1 from second session
+      await waitAllPromises()
+      expect(spyOnEB).toBeCalledTimes(3)
+      client.shutdown()
+      await waitAllPromises()
+      const savedLoggingRequest = await fakeAsyncStorage.getItem('STATSIG_LOCAL_STORAGE_LOGGING_REQUEST') ?? ""
+      const parsedSavedLoggingRequest = JSON.parse(savedLoggingRequest) as FailedLogEventBody[]
+      expect(parsedSavedLoggingRequest.length).toBe(1)
+    })
+
+    it("Stop adding events(dropping) if too much", async () => {
+      fakeAsyncStorage.removeItem('STATSIG_LOCAL_STORAGE_LOGGING_REQUEST')
+      for (let i = 0; i < 1005; i++) {
+        client.logEvent("test_event");
+      }
+      client.shutdown()
+      await waitAllPromises()
+      // Dropping last batch because it's too much 
+      expect(spyOnEB).toBeCalledTimes(1)
+      const savedLoggingRequest = await fakeAsyncStorage.getItem('STATSIG_LOCAL_STORAGE_LOGGING_REQUEST') ?? ""
+      const parsedSavedLoggingRequest = JSON.parse(savedLoggingRequest) as FailedLogEventBody[]
+      expect(parsedSavedLoggingRequest.length).toBe(10)
+    })
   });
 
   test('local mode does not set up a flush interval', () => {
