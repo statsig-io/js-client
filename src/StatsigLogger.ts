@@ -8,6 +8,7 @@ import { STATSIG_LOCAL_STORAGE_LOGGING_REQUEST_KEY } from './utils/Constants';
 import Diagnostics, { ContextType, Marker } from './utils/Diagnostics';
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
+import OutputLogger from './utils/OutputLogger';
 
 const INTERNAL_EVENT_PREFIX = 'statsig::';
 const CONFIG_EXPOSURE_EVENT = INTERNAL_EVENT_PREFIX + 'config_exposure';
@@ -291,7 +292,7 @@ export default class StatsigLogger {
   ): void {
     this.logGenericEvent(DEFAULT_VALUE_WARNING, user, message, metadata);
     this.loggedErrors.add(message);
-    this.sdkInternal.getConsoleLogger().error(message);
+    OutputLogger.error(message);
   }
 
   public logAppError(

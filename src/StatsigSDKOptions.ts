@@ -68,6 +68,7 @@ export type StatsigOptions = {
   loggingBufferMaxSize?: number;
   loggingIntervalMillis?: number;
   logLevel?: LogLevel | null;
+  logger?: LoggerInterface;
   overrideStableID?: string;
   prefetchUsers?: StatsigUser[];
   updateUserCompletionCallback?: UpdateUserCompletionCallback | null;
@@ -76,10 +77,20 @@ export type StatsigOptions = {
   evaluationCallback?: EvaluationCallback;
 };
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export interface LoggerInterface {
+  error(message?: any, ...optionalParams: any[]): void;
+  info(message?: any, ...optionalParams: any[]): void;
+  debug?(message?: any, ...optionalParams: any[]): void;
+  warn(message?: any, ...optionalParams: any[]): void;
+}
+
 export enum LogLevel {
-  'NONE',
-  'INFO',
-  'DEBUG',
+  NONE = 'NONE',
+  INFO = 'INFO',
+  DEBUG = 'DEBUG',
+  WARN = 'WARN',
+  ERROR = 'ERROR',
 }
 
 export type FetchMode = 'cache-or-network' | 'network-only';
@@ -112,6 +123,7 @@ export default class StatsigSDKOptions {
   private loggingBufferMaxSize: number;
   private loggingIntervalMillis: number;
   private logLevel: LogLevel;
+  private logger: LoggerInterface;
   private overrideStableID: string | null;
   private prefetchUsers: StatsigUser[];
   private updateCompletionCallback: UpdateUserCompletionCallback | null;
@@ -168,6 +180,7 @@ export default class StatsigSDKOptions {
       options.updateUserCompletionCallback ?? null;
     this.disableDiagnosticsLogging = options.disableDiagnosticsLogging ?? false;
     this.logLevel = options?.logLevel ?? LogLevel.NONE;
+    this.logger = options?.logger ?? console;
     this.ignoreWindowUndefined = options?.ignoreWindowUndefined ?? false;
     this.fetchMode = options.fetchMode ?? 'network-only';
     this.disableLocalOverrides = options?.disableLocalOverrides ?? false;
@@ -221,6 +234,10 @@ export default class StatsigSDKOptions {
 
   getLoggingCopy(): Record<string, unknown> | undefined {
     return this.loggingCopy;
+  }
+
+  getOutputLogger(): LoggerInterface {
+    return this.logger;
   }
 
   getApi(): string {

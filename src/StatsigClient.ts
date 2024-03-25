@@ -28,7 +28,7 @@ import type { AsyncStorage } from './utils/StatsigAsyncStorage';
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
 import Diagnostics from './utils/Diagnostics';
-import ConsoleLogger from './utils/ConsoleLogger';
+import OutputLogger from './utils/OutputLogger';
 import { now } from './utils/Timing';
 import { verifySDKKeyUsed } from './utils/ResponseVerification';
 import FeatureGate from './FeatureGate';
@@ -93,7 +93,6 @@ export interface IHasStatsigInternal {
   getErrorBoundary(): ErrorBoundary;
   getSDKType(): string;
   getSDKVersion(): string;
-  getConsoleLogger(): ConsoleLogger;
   getStableID(): string;
 }
 
@@ -227,11 +226,6 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     );
   }
 
-  private consoleLogger: ConsoleLogger;
-  public getConsoleLogger(): ConsoleLogger {
-    return this.consoleLogger;
-  }
-
   public constructor(
     sdkKey: string,
     user?: StatsigUser | null,
@@ -254,7 +248,8 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     this.errorBoundary = new ErrorBoundary(sdkKey, this.options);
     this.ready = false;
     this.sdkKey = sdkKey;
-    this.consoleLogger = new ConsoleLogger(this.options.getLogLevel());
+    OutputLogger.setLogger(this.options.getOutputLogger());
+    OutputLogger.setLogLevel(this.options.getLogLevel());
     StatsigLocalStorage.disabled = this.options.getDisableLocalStorage();
     this.identity = new StatsigIdentity(
       this.normalizeUser(user ?? null),
@@ -775,13 +770,13 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         );
       }
       if (typeof eventName !== 'string' || eventName.length === 0) {
-        this.consoleLogger.error(
+        OutputLogger.error(
           'Event not logged. No valid eventName passed.',
         );
         return;
       }
       if (this.shouldTrimParam(eventName, MAX_VALUE_SIZE)) {
-        this.consoleLogger.info(
+        OutputLogger.info(
           'eventName is too long, trimming to ' +
             MAX_VALUE_SIZE +
             ' characters.',
@@ -792,13 +787,13 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         typeof value === 'string' &&
         this.shouldTrimParam(value, MAX_VALUE_SIZE)
       ) {
-        this.consoleLogger.info(
+        OutputLogger.info(
           'value is too long, trimming to ' + MAX_VALUE_SIZE + '.',
         );
         value = value.substring(0, MAX_VALUE_SIZE);
       }
       if (this.shouldTrimParam(metadata, MAX_OBJ_SIZE)) {
-        this.consoleLogger.info('metadata is too big. Dropping the metadata.');
+        OutputLogger.info('metadata is too big. Dropping the metadata.');
         metadata = { error: 'not logged due to size too large' };
       }
       const event = new LogEvent(eventName);
@@ -1326,7 +1321,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       return {};
     }
     if (this.shouldTrimParam(user.userID ?? null, MAX_VALUE_SIZE)) {
-      this.consoleLogger.info(
+      OutputLogger.info(
         'User ID is too large, trimming to ' + MAX_VALUE_SIZE + 'characters',
       );
       user.userID = user.userID?.toString().substring(0, MAX_VALUE_SIZE);
@@ -1334,12 +1329,12 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     if (this.shouldTrimParam(user, MAX_OBJ_SIZE)) {
       user.custom = {};
       if (this.shouldTrimParam(user, MAX_OBJ_SIZE)) {
-        this.consoleLogger.info(
+        OutputLogger.info(
           'User object is too large, only keeping the user ID.',
         );
         user = { userID: user.userID };
       } else {
-        this.consoleLogger.info(
+        OutputLogger.info(
           'User object is too large, dropping the custom property.',
         );
       }
@@ -1371,7 +1366,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     const prefetchUsers = args.prefetchUsers ?? [];
     const timeout = args.timeout ?? this.options.getInitTimeoutMs();
     if (prefetchUsers.length > 5) {
-      this.consoleLogger.info('Cannot prefetch more than 5 users.');
+      OutputLogger.info('Cannot prefetch more than 5 users.');
     }
 
     const keyedPrefetchUsers = this.normalizePrefetchUsers(prefetchUsers)
