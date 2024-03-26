@@ -35,14 +35,14 @@ describe('Output logger Interface', () => {
             client.logEvent('');
             if (level === LogLevel.ERROR) {
                 expect(errors).toContainEqual(
-                    'Event not logged. No valid eventName passed.',
+                    'statsigSDK> Event not logged. No valid eventName passed.',
                 );
             }
 
             client.logEvent('a'.repeat(100));
             if (level == LogLevel.INFO) {
                 expect(infos).toContainEqual(
-                    'eventName is too long, trimming to ' + MAX_VALUE_SIZE + ' characters.',
+                    'statsigSDK> eventName is too long, trimming to ' + MAX_VALUE_SIZE + ' characters.',
                 );
             }
         }

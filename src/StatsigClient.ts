@@ -771,13 +771,13 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       }
       if (typeof eventName !== 'string' || eventName.length === 0) {
         OutputLogger.error(
-          'Event not logged. No valid eventName passed.',
+          'statsigSDK> Event not logged. No valid eventName passed.',
         );
         return;
       }
       if (this.shouldTrimParam(eventName, MAX_VALUE_SIZE)) {
         OutputLogger.info(
-          'eventName is too long, trimming to ' +
+          'statsigSDK> eventName is too long, trimming to ' +
             MAX_VALUE_SIZE +
             ' characters.',
         );
@@ -788,12 +788,12 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         this.shouldTrimParam(value, MAX_VALUE_SIZE)
       ) {
         OutputLogger.info(
-          'value is too long, trimming to ' + MAX_VALUE_SIZE + '.',
+          'statsigSDK> value is too long, trimming to ' + MAX_VALUE_SIZE + '.',
         );
         value = value.substring(0, MAX_VALUE_SIZE);
       }
       if (this.shouldTrimParam(metadata, MAX_OBJ_SIZE)) {
-        OutputLogger.info('metadata is too big. Dropping the metadata.');
+        OutputLogger.info('statsigSDK> metadata is too big. Dropping the metadata.');
         metadata = { error: 'not logged due to size too large' };
       }
       const event = new LogEvent(eventName);
@@ -1322,7 +1322,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     }
     if (this.shouldTrimParam(user.userID ?? null, MAX_VALUE_SIZE)) {
       OutputLogger.info(
-        'User ID is too large, trimming to ' + MAX_VALUE_SIZE + 'characters',
+        'statsigSDK> User ID is too large, trimming to ' + MAX_VALUE_SIZE + 'characters',
       );
       user.userID = user.userID?.toString().substring(0, MAX_VALUE_SIZE);
     }
@@ -1330,12 +1330,12 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       user.custom = {};
       if (this.shouldTrimParam(user, MAX_OBJ_SIZE)) {
         OutputLogger.info(
-          'User object is too large, only keeping the user ID.',
+          'statsigSDK> User object is too large, only keeping the user ID.',
         );
         user = { userID: user.userID };
       } else {
         OutputLogger.info(
-          'User object is too large, dropping the custom property.',
+          'statsigSDK> User object is too large, dropping the custom property.',
         );
       }
     }
@@ -1366,7 +1366,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
     const prefetchUsers = args.prefetchUsers ?? [];
     const timeout = args.timeout ?? this.options.getInitTimeoutMs();
     if (prefetchUsers.length > 5) {
-      OutputLogger.info('Cannot prefetch more than 5 users.');
+      OutputLogger.info('statsigSDK> Cannot prefetch more than 5 users.');
     }
 
     const keyedPrefetchUsers = this.normalizePrefetchUsers(prefetchUsers)

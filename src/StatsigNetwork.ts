@@ -3,6 +3,7 @@ import { IHasStatsigInternal } from './StatsigClient';
 import StatsigRuntime from './StatsigRuntime';
 import { StatsigUser } from './StatsigUser';
 import Diagnostics from './utils/Diagnostics';
+import OutputLogger from './utils/OutputLogger';
 
 export enum StatsigEndpoint {
   Initialize = 'initialize',
@@ -159,16 +160,20 @@ export default class StatsigNetwork {
       .then((localRes) => {
         res = localRes;
         if (!res.ok) {
+          const errorMessage = `Request to ${endpointName} failed with status ${res.status}`; 
+          OutputLogger.error(`statsigSDK> ${errorMessage}`);
           return Promise.reject(
             new Error(
-              `Request to ${endpointName} failed with status ${res.status}`,
+              errorMessage,
             ),
           );
         }
 
         if (typeof res.data !== 'object') {
+          const errorMessage = `Request to ${endpointName} received invalid response type. Expected 'object' but got '${typeof res.data}'`;
+          OutputLogger.error(`statsigSDK> ${errorMessage}`);
           const error = new Error(
-            `Request to ${endpointName} received invalid response type. Expected 'object' but got '${typeof res.data}'`,
+            errorMessage,
           );
           this.sdkInternal
             .getErrorBoundary()
@@ -365,6 +370,13 @@ export default class StatsigNetwork {
       })
       .catch((e) => {
         diagnostics?.end(this.getDiagnosticsData(res, attempt, e));
+        const errorMessage = `statsigSDK> Error occurred while posting to endpoint: ${e.message}\n` +
+              `Error Details: ${JSON.stringify(e)}\n` +
+              `Endpoint: ${endpointName}\n` +
+              `Attempt: ${attempt}\n` +
+              `Retry Limit: ${retryLimit}\n` +
+              `Backoff: ${backoff}`;
+        OutputLogger.error(errorMessage);
         if (attempt < retryLimit && isRetryCode) {
           return new Promise<NetworkResponse>((resolve, reject) => {
             setTimeout(() => {

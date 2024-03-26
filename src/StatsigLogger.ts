@@ -292,7 +292,7 @@ export default class StatsigLogger {
   ): void {
     this.logGenericEvent(DEFAULT_VALUE_WARNING, user, message, metadata);
     this.loggedErrors.add(message);
-    OutputLogger.error(message);
+    OutputLogger.error(`statsigSDK> ${message}`);
   }
 
   public logAppError(
@@ -472,7 +472,8 @@ export default class StatsigLogger {
           throw response;
         }
       })
-      .catch(() => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      .catch((error) => {
         this.addFailedRequest({ events: oldQueue, statsigMetadata: this.sdkInternal.getStatsigMetadata(), time: Date.now() });
       })
       .finally(async () => {
@@ -554,6 +555,7 @@ export default class StatsigLogger {
         }
       }
     } catch (e) {
+      OutputLogger.error("statsigSDK> sendSavedRequests ", e as Error);
       this.sdkInternal.getErrorBoundary().logError('sendSavedRequests', e);
     } finally {
       this.clearLocalStorageRequests();
