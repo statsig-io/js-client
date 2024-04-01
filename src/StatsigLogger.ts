@@ -358,26 +358,38 @@ export default class StatsigLogger {
 
     if (typeof window?.addEventListener === 'function' && document?.body) {
       let deepestScroll = 0;
+      let canLogScrollEvent = false;
       window.addEventListener('scroll', () => {
-        const scrollHeight = document.body.scrollHeight || 1;
-        const scrollDepth = Math.min(
-          100,
-          Math.round(
-            ((window.scrollY + window.innerHeight) / scrollHeight) * 100,
-          ),
-        );
-        if (scrollDepth > deepestScroll) {
-          deepestScroll = scrollDepth;
+        if (document?.body == null) {
+          return;
+        }
+        try {
+          const scrollHeight = document.body.scrollHeight || 1;
+          const scrollDepth = Math.min(
+            100,
+            Math.round(
+              ((window.scrollY + window.innerHeight) / scrollHeight) * 100,
+            ),
+          );
+          if (scrollDepth > deepestScroll) {
+            deepestScroll = scrollDepth;
+          }
+          canLogScrollEvent = true;
+        } catch (_) {
+          // best effort for auto metrics
         }
       });
 
       window.addEventListener('beforeunload', () => {
-        this.logGenericEvent(
-          APP_METRICS_SCROLL_DEPTH_EVENT,
-          user,
-          deepestScroll,
-          metadata,
-        );
+        if (canLogScrollEvent) {
+          this.logGenericEvent(
+            APP_METRICS_SCROLL_DEPTH_EVENT,
+            user,
+            deepestScroll,
+            metadata,
+          );
+        }
+        
         this.logGenericEvent(
           APP_METRICS_SESSION_LENGTH_EVENT,
           user,
