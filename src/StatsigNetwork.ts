@@ -102,7 +102,7 @@ export default class StatsigNetwork {
 
     return this.postWithTimeout(StatsigEndpoint.Initialize, input, {
       timeout,
-      retries: 3,
+      retries: this.sdkInternal.getOptions().getInitRequestRetries(),
       diagnostics: Diagnostics.mark.initialize.networkRequest,
     });
   }
@@ -161,7 +161,7 @@ export default class StatsigNetwork {
         res = localRes;
         if (!res.ok) {
           const errorMessage = `Request to ${endpointName} failed with status ${res.status}`; 
-          OutputLogger.error(`statsigSDK> ${errorMessage}`);
+          OutputLogger.error(errorMessage);
           return Promise.reject(
             new Error(
               errorMessage,
@@ -171,7 +171,7 @@ export default class StatsigNetwork {
 
         if (typeof res.data !== 'object') {
           const errorMessage = `Request to ${endpointName} received invalid response type. Expected 'object' but got '${typeof res.data}'`;
-          OutputLogger.error(`statsigSDK> ${errorMessage}`);
+          OutputLogger.error(errorMessage);
           const error = new Error(
             errorMessage,
           );
@@ -370,7 +370,7 @@ export default class StatsigNetwork {
       })
       .catch((e) => {
         diagnostics?.end(this.getDiagnosticsData(res, attempt, e));
-        const errorMessage = `statsigSDK> Error occurred while posting to endpoint: ${e.message}\n` +
+        const errorMessage = `Error occurred while posting to endpoint: ${e.message}\n` +
               `Error Details: ${JSON.stringify(e)}\n` +
               `Endpoint: ${endpointName}\n` +
               `Attempt: ${attempt}\n` +

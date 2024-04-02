@@ -4,6 +4,8 @@ import { LoggerInterface, LogLevel } from '../StatsigSDKOptions';
 let _logger: LoggerInterface = console;
 let _logLevel: LogLevel = LogLevel.WARN;
 export default abstract class OutputLogger {
+    private static readonly LOG_PREFIX = "[Statsig]";
+
     static getLogger(): LoggerInterface {
         return _logger;
 
@@ -11,25 +13,25 @@ export default abstract class OutputLogger {
 
     static debug(message?: any, ...optionalParams: any[]) {
         if (_logLevel !== LogLevel.NONE) {
-            _logger.debug && _logger.debug(message, ...optionalParams);
+            _logger.debug && _logger.debug(`${this.LOG_PREFIX} ${message}`, ...optionalParams);
         }
     }
 
     static info(message?: any, ...optionalParams: any[]) {
         if (_logLevel === LogLevel.INFO) {
-          _logger.info(message, ...optionalParams);
+          _logger.info(`${this.LOG_PREFIX} ${message}`, ...optionalParams);
         }
     }
     
     static warn(message?: any, ...optionalParams: any[]) {
         if (_logLevel === LogLevel.WARN) {
-            _logger.warn(message, ...optionalParams);
+            _logger.warn(`${this.LOG_PREFIX} ${message}`, ...optionalParams);
         }
     }
 
     static error(message?: any, ...optionalParams: any[]) {
         if (_logLevel === LogLevel.ERROR) {
-            _logger.error(message, ...optionalParams);
+            _logger.error(`${this.LOG_PREFIX} ${message}`, ...optionalParams);
         }
     }
 

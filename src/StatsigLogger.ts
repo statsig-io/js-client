@@ -292,7 +292,7 @@ export default class StatsigLogger {
   ): void {
     this.logGenericEvent(DEFAULT_VALUE_WARNING, user, message, metadata);
     this.loggedErrors.add(message);
-    OutputLogger.error(`statsigSDK> ${message}`);
+    OutputLogger.error(message);
   }
 
   public logAppError(
@@ -567,7 +567,7 @@ export default class StatsigLogger {
         }
       }
     } catch (e) {
-      OutputLogger.error("statsigSDK> sendSavedRequests ", e as Error);
+      OutputLogger.error("sendSavedRequests ", e as Error);
       this.sdkInternal.getErrorBoundary().logError('sendSavedRequests', e);
     } finally {
       this.clearLocalStorageRequests();

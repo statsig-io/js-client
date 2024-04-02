@@ -5,6 +5,7 @@ import { StatsigUser } from './StatsigUser';
 
 const DEFAULT_FEATURE_GATE_API = 'https://featuregates.org/v1/';
 const DEFAULT_EVENT_LOGGING_API = 'https://events.statsigapi.net/v1/';
+const DEFAULT_INIT_NETWORK_RETRIES = 3;
 
 export const INIT_TIMEOUT_DEFAULT_MS = 3000;
 
@@ -56,6 +57,7 @@ export type StatsigOptions = {
   disableLocalOverrides?: boolean;
   disableLocalStorage?: boolean;
   disableNetworkKeepalive?: boolean;
+  initRequestRetries?: number;
   environment?: StatsigEnvironment;
   eventLoggingApi?: string;
   fetchMode?: FetchMode;
@@ -111,6 +113,7 @@ export default class StatsigSDKOptions {
   private disableLocalOverrides: boolean;
   private disableLocalStorage: boolean;
   private disableNetworkKeepalive: boolean;
+  private initRequestRetries: number;
   private environment: StatsigEnvironment | null;
   private eventLoggingApi: string;
   private fetchMode: FetchMode;
@@ -159,6 +162,7 @@ export default class StatsigSDKOptions {
     );
 
     this.disableNetworkKeepalive = options.disableNetworkKeepalive ?? false;
+    this.initRequestRetries = options.initRequestRetries ?? DEFAULT_INIT_NETWORK_RETRIES;
     this.overrideStableID = options.overrideStableID ?? null;
     this.localMode = options.localMode ?? false;
     this.initTimeoutMs =
@@ -338,6 +342,10 @@ export default class StatsigSDKOptions {
 
   getDisableHashing(): boolean {
     return this.disableHashing;
+  }
+
+  getInitRequestRetries(): number {
+    return this.initRequestRetries;
   }
 
   isAllLoggingDisabled(): boolean {
