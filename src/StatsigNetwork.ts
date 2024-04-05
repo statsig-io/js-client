@@ -265,6 +265,7 @@ export default class StatsigNetwork {
       };
       useKeepalive?: boolean;
       diagnostics?: typeof Diagnostics.mark.initialize.networkRequest | null;
+      additionalHeaders?: Record<string,string>;
     },
   ): Promise<NetworkResponse> {
     const { useKeepalive = false, diagnostics = null } = options ?? {};
@@ -273,7 +274,6 @@ export default class StatsigNetwork {
       attempt = 1,
       backoff = 1000,
     } = options?.retryOptions ?? {};
-
     const statsigOpts = this.sdkInternal.getOptions();
 
     if (statsigOpts.getLocalModeEnabled()) {
@@ -317,7 +317,6 @@ export default class StatsigNetwork {
       StatsigRuntime.encodeInitializeCall &&
       typeof window !== 'undefined' &&
       typeof window?.btoa === 'function';
-
     let postBody = JSON.stringify(body);
     if (shouldEncode) {
       try {
@@ -327,7 +326,6 @@ export default class StatsigNetwork {
         shouldEncode = false;
       }
     }
-
     const params: RequestInit = {
       method: 'POST',
       body: postBody,
@@ -338,7 +336,8 @@ export default class StatsigNetwork {
         'STATSIG-SDK-TYPE': this.sdkInternal.getSDKType(),
         'STATSIG-SDK-VERSION': this.sdkInternal.getSDKVersion(),
         'STATSIG-ENCODED': shouldEncode ? '1' : '0',
-      },
+        ...options?.additionalHeaders
+      }
     };
 
     if (this.canUseKeepalive && useKeepalive) {

@@ -477,6 +477,7 @@ export default class StatsigLogger {
             backoff: 1000,
           },
           useKeepalive: isClosing,
+          additionalHeaders: {'STATSIG-EVENT-COUNT':String(oldQueue.length)}
         },
       )
       .then((response) => {
@@ -551,7 +552,7 @@ export default class StatsigLogger {
         ) {
           this.sdkInternal
             .getNetwork()
-            .postToEndpoint(StatsigEndpoint.Rgstr, requestBody)
+            .postToEndpoint(StatsigEndpoint.Rgstr, requestBody, {additionalHeaders: {'STATSIG-EVENT-COUNT':String(requestBody.events.length)}})
             .then((response) => {
               if (!response.ok) {
                 throw Error(response.status + '');
