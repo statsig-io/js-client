@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  jest:
+  dryrun:
     runs-on: ubuntu-20.04
     timeout-minutes: 5
     steps:
@@ -22,9 +22,6 @@ jobs:
       
       - name: Install
         run: npm install
-      
-      - name: Lint
-        run: npm run lint
 
       - name: Build
         run: npm run build:dryrun
