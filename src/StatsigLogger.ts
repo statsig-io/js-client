@@ -494,7 +494,7 @@ export default class StatsigLogger {
           time: Date.now(),
         });
       })
-      .finally(async () => {
+      .finally(() => {
         if (isClosing) {
           this.saveFailedRequests();
         }
@@ -673,7 +673,7 @@ export default class StatsigLogger {
     this.sdkInternal
       .getErrorBoundary()
       .logError(LOG_FAILURE_EVENT, new Error(reason), {
-        getExtraData: async () => {
+        getExtraData: () => {
           return {
             eventCount: count,
           };

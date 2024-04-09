@@ -10,26 +10,26 @@ export default abstract class OutputLogger {
     return _logger;
   }
 
-  static debug(message?: any, ...optionalParams: any[]) {
+  static debug(message: string, ...optionalParams: any[]) {
     if (_logLevel !== LogLevel.NONE) {
       _logger.debug &&
         _logger.debug(`${this.LOG_PREFIX} ${message}`, ...optionalParams);
     }
   }
 
-  static info(message?: any, ...optionalParams: any[]) {
+  static info(message: string, ...optionalParams: any[]) {
     if (_logLevel === LogLevel.INFO) {
       _logger.info(`${this.LOG_PREFIX} ${message}`, ...optionalParams);
     }
   }
 
-  static warn(message?: any, ...optionalParams: any[]) {
+  static warn(message: string, ...optionalParams: any[]) {
     if (_logLevel === LogLevel.WARN) {
       _logger.warn(`${this.LOG_PREFIX} ${message}`, ...optionalParams);
     }
   }
 
-  static error(message?: any, ...optionalParams: any[]) {
+  static error(message: string, ...optionalParams: any[]) {
     if (_logLevel === LogLevel.ERROR) {
       _logger.error(`${this.LOG_PREFIX} ${message}`, ...optionalParams);
     }

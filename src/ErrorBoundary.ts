@@ -7,10 +7,11 @@ import {
 } from './Errors';
 import StatsigSDKOptions from './StatsigSDKOptions';
 import Diagnostics from './utils/Diagnostics';
+import OutputLogger from './utils/OutputLogger';
 import parseError from './utils/parseError';
 export const ExceptionEndpoint = 'https://statsigapi.net/v1/sdk_exception';
 
-type ExtraDataExtractor = () => Promise<Record<string, unknown>>;
+type ExtraDataExtractor = () => Record<string, unknown>;
 
 type CaptureOptions = Partial<{
   getExtraData: ExtraDataExtractor;
@@ -89,8 +90,7 @@ export default class ErrorBoundary {
     }
     (async () => {
       try {
-        const extra =
-          typeof getExtraData === 'function' ? await getExtraData() : {};
+        const extra = typeof getExtraData === 'function' ? getExtraData() : {};
         const { name, trace: info } = parseError(error);
         extra['configName'] = configName;
         if (this.seen.has(name)) return;
@@ -180,11 +180,11 @@ export default class ErrorBoundary {
     }
 
     if (error instanceof StatsigInitializationTimeoutError) {
-      console.error('[Statsig] Timeout occured.', error);
+      OutputLogger.error('Timeout occured.', error);
       return recover();
     }
 
-    console.error('[Statsig] An unexpected exception occurred.', error);
+    OutputLogger.error('An unexpected exception occurred.', error);
     this.logError(tag, error, captureOptions);
 
     return recover();

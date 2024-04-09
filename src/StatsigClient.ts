@@ -406,7 +406,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
 
             return;
           })
-          .finally(async () => {
+          .finally(() => {
             this.pendingInitPromise = null;
             this.ready = true;
             this.delayedSetup();
@@ -910,7 +910,10 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
             return Promise.resolve(true);
           })
           .catch((error) => {
-            fireCompletionCallback(false, `Failed to update user: ${error}`);
+            fireCompletionCallback(
+              false,
+              `Failed to update user: ${(error as Error).message}`,
+            );
             return Promise.resolve(false);
           });
       },
@@ -1422,7 +1425,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
             );
         }
       })
-      .then(async (json: Record<string, unknown>) => {
+      .then((json: Record<string, unknown>) => {
         return this.errorBoundary.swallow('fetchAndSaveValues', async () => {
           Diagnostics.mark.initialize.process.start({});
           if (!verifySDKKeyUsed(json, this.sdkKey ?? '', this.errorBoundary)) {

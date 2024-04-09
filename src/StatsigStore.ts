@@ -17,6 +17,7 @@ import {
   sha256Hash,
   UserCacheKey,
 } from './utils/Hashing';
+import OutputLogger from './utils/OutputLogger';
 import { verifySDKKeyUsed } from './utils/ResponseVerification';
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
@@ -239,7 +240,7 @@ export default class StatsigStore {
             this.userPersistentStorageAdapter.load(`${unitID}:${idType}`),
           ) as UserPersistentStorageData;
         } catch (e) {
-          console.warn('Failed to load from user persistent storage.', e);
+          OutputLogger.warn('Failed to load from user persistent storage.', e);
         }
         this.userValues.sticky_experiments = this.userPersistentStorageData
           .experiments as Record<string, APIDynamicConfig>;
@@ -262,7 +263,7 @@ export default class StatsigStore {
             JSON.stringify(data),
           );
         } catch (e) {
-          console.warn(
+          OutputLogger.warn(
             'Failed to save user experiment values to persistent storage.',
             e,
           );
@@ -370,7 +371,7 @@ export default class StatsigStore {
           `StableID changed from ${
             cachedValues.stableIDUsed
           } to ${this.getStableID()},
-            override stableID ${this.sdkInternal.getOptions().getOverrideStableID()}`,
+            override stableID ${this.sdkInternal.getOptions().getOverrideStableID() ?? ''}`,
         ),
       );
     }
@@ -975,7 +976,10 @@ export default class StatsigStore {
     try {
       JSON.stringify(value);
     } catch (e) {
-      console.warn('Failed to stringify given config override.  Dropping', e);
+      OutputLogger.warn(
+        'Failed to stringify given config override.  Dropping',
+        e,
+      );
       return;
     }
     this.overrides.configs[configName] = value;
@@ -989,7 +993,10 @@ export default class StatsigStore {
     try {
       JSON.stringify(value);
     } catch (e) {
-      console.warn('Failed to stringify given layer override.  Dropping', e);
+      OutputLogger.warn(
+        'Failed to stringify given layer override.  Dropping',
+        e,
+      );
       return;
     }
     this.overrides.layers[layerName] = value;
@@ -1039,7 +1046,7 @@ export default class StatsigStore {
         JSON.stringify(this.overrides),
       );
     } catch (e) {
-      console.warn('Failed to persist gate/config overrides');
+      OutputLogger.warn('Failed to persist gate/config overrides');
     }
   }
 

@@ -172,7 +172,7 @@ export default class StatsigNetwork {
           this.sdkInternal
             .getErrorBoundary()
             .logError('postWithTimeoutInvalidRes', error, {
-              getExtraData: async () => {
+              getExtraData: () => {
                 return this.getErrorData(
                   endpointName,
                   body,
@@ -200,7 +200,7 @@ export default class StatsigNetwork {
             return Promise.resolve({});
           },
           {
-            getExtraData: async () => {
+            getExtraData: () => {
               return this.getErrorData(
                 endpointName,
                 body,
@@ -364,7 +364,7 @@ export default class StatsigNetwork {
       .catch((e) => {
         diagnostics?.end(this.getDiagnosticsData(res, attempt, e));
         const errorMessage =
-          `Error occurred while posting to endpoint: ${e.message}\n` +
+          `Error occurred while posting to endpoint: ${(e as Error).message}\n` +
           `Error Details: ${JSON.stringify(e)}\n` +
           `Endpoint: ${endpointName}\n` +
           `Attempt: ${attempt}\n` +
@@ -422,13 +422,13 @@ export default class StatsigNetwork {
     };
   }
 
-  private async getErrorData(
+  private getErrorData(
     endpointName: StatsigEndpoint,
     body: object,
     retries: number,
     backoff: number,
     res: NetworkResponse,
-  ): Promise<Record<string, unknown>> {
+  ): Record<string, unknown> {
     try {
       const headers: Record<string, string> = {};
       (res.headers ?? []).forEach((value: string, key: string) => {
