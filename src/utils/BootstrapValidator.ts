@@ -1,4 +1,4 @@
-import { StatsigUser, getUserHashWithoutStableID } from '../StatsigUser';
+import { getUserHashWithoutStableID, StatsigUser } from '../StatsigUser';
 import { EvaluationReason } from './EvaluationReason';
 
 export default abstract class BootstrapValidator {
@@ -39,8 +39,8 @@ export default abstract class BootstrapValidator {
     return !isValid
       ? EvaluationReason.InvalidBootstrap
       : stableIDMistmatch
-      ? EvaluationReason.BootstrapStableIDMismatch
-      : EvaluationReason.Bootstrap;
+        ? EvaluationReason.BootstrapStableIDMismatch
+        : EvaluationReason.Bootstrap;
   }
 
   private static validate(

@@ -160,21 +160,15 @@ export default class StatsigNetwork {
       .then((localRes) => {
         res = localRes;
         if (!res.ok) {
-          const errorMessage = `Request to ${endpointName} failed with status ${res.status}`; 
+          const errorMessage = `Request to ${endpointName} failed with status ${res.status}`;
           OutputLogger.error(errorMessage);
-          return Promise.reject(
-            new Error(
-              errorMessage,
-            ),
-          );
+          return Promise.reject(new Error(errorMessage));
         }
 
         if (typeof res.data !== 'object') {
           const errorMessage = `Request to ${endpointName} received invalid response type. Expected 'object' but got '${typeof res.data}'`;
           OutputLogger.error(errorMessage);
-          const error = new Error(
-            errorMessage,
-          );
+          const error = new Error(errorMessage);
           this.sdkInternal
             .getErrorBoundary()
             .logError('postWithTimeoutInvalidRes', error, {
@@ -265,7 +259,7 @@ export default class StatsigNetwork {
       };
       useKeepalive?: boolean;
       diagnostics?: typeof Diagnostics.mark.initialize.networkRequest | null;
-      additionalHeaders?: Record<string,string>;
+      additionalHeaders?: Record<string, string>;
     },
   ): Promise<NetworkResponse> {
     const { useKeepalive = false, diagnostics = null } = options ?? {};
@@ -336,8 +330,8 @@ export default class StatsigNetwork {
         'STATSIG-SDK-TYPE': this.sdkInternal.getSDKType(),
         'STATSIG-SDK-VERSION': this.sdkInternal.getSDKVersion(),
         'STATSIG-ENCODED': shouldEncode ? '1' : '0',
-        ...options?.additionalHeaders
-      }
+        ...options?.additionalHeaders,
+      },
     };
 
     if (this.canUseKeepalive && useKeepalive) {
@@ -369,12 +363,13 @@ export default class StatsigNetwork {
       })
       .catch((e) => {
         diagnostics?.end(this.getDiagnosticsData(res, attempt, e));
-        const errorMessage = `Error occurred while posting to endpoint: ${e.message}\n` +
-              `Error Details: ${JSON.stringify(e)}\n` +
-              `Endpoint: ${endpointName}\n` +
-              `Attempt: ${attempt}\n` +
-              `Retry Limit: ${retryLimit}\n` +
-              `Backoff: ${backoff}`;
+        const errorMessage =
+          `Error occurred while posting to endpoint: ${e.message}\n` +
+          `Error Details: ${JSON.stringify(e)}\n` +
+          `Endpoint: ${endpointName}\n` +
+          `Attempt: ${attempt}\n` +
+          `Retry Limit: ${retryLimit}\n` +
+          `Backoff: ${backoff}`;
         OutputLogger.error(errorMessage);
         if (attempt < retryLimit && isRetryCode) {
           return new Promise<NetworkResponse>((resolve, reject) => {

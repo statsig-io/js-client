@@ -4,6 +4,7 @@ import {
   StatsigInvalidArgumentError,
   StatsigUninitializedError,
 } from './Errors';
+import FeatureGate from './FeatureGate';
 import Layer, { LogParameterFunction } from './Layer';
 import LogEvent from './LogEvent';
 import type {
@@ -21,17 +22,16 @@ import StatsigStore, {
   EvaluationDetails,
   StoreGateFetchResult,
 } from './StatsigStore';
-import { EvaluationReason } from './utils/EvaluationReason';
 import { StatsigUser } from './StatsigUser';
-import { UserCacheKey, getUserCacheKey } from './utils/Hashing';
+import Diagnostics from './utils/Diagnostics';
+import { EvaluationReason } from './utils/EvaluationReason';
+import { getUserCacheKey, UserCacheKey } from './utils/Hashing';
+import OutputLogger from './utils/OutputLogger';
+import { verifySDKKeyUsed } from './utils/ResponseVerification';
 import type { AsyncStorage } from './utils/StatsigAsyncStorage';
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
-import Diagnostics from './utils/Diagnostics';
-import OutputLogger from './utils/OutputLogger';
 import { now } from './utils/Timing';
-import { verifySDKKeyUsed } from './utils/ResponseVerification';
-import FeatureGate from './FeatureGate';
 
 const MAX_VALUE_SIZE = 64;
 const MAX_OBJ_SIZE = 2048;
@@ -770,9 +770,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
         );
       }
       if (typeof eventName !== 'string' || eventName.length === 0) {
-        OutputLogger.error(
-          'Event not logged. No valid eventName passed.',
-        );
+        OutputLogger.error('Event not logged. No valid eventName passed.');
         return;
       }
       if (this.shouldTrimParam(eventName, MAX_VALUE_SIZE)) {

@@ -149,13 +149,13 @@ export class DiagnosticsImpl {
 
   addMarker(marker: Marker, overrideContext?: ContextType) {
     const context = overrideContext ?? this.context;
-    if (this.disabled && context === 'api_call' ) {
+    if (this.disabled && context === 'api_call') {
       return false;
     }
     if (
       this.maxMarkers[context] !== undefined &&
       this.markers[context].length >=
-      (this.maxMarkers[context] ?? this.defaultMaxMarkers)
+        (this.maxMarkers[context] ?? this.defaultMaxMarkers)
     ) {
       return false;
     }
@@ -213,8 +213,11 @@ export default abstract class Diagnostics {
       name: this.safeGetField(e, 'name'),
       message: this.safeGetField(e, 'message'),
     };
-  }  
-  private static safeGetField(data: object, field: string): unknown | undefined {
+  }
+  private static safeGetField(
+    data: object,
+    field: string,
+  ): unknown | undefined {
     if (field in data) {
       return (data as Record<string, unknown>)[field];
     }

@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+
 import LogEvent from './LogEvent';
 import { IHasStatsigInternal } from './StatsigClient';
 import { StatsigEndpoint } from './StatsigNetwork';
@@ -6,9 +7,9 @@ import { EvaluationDetails } from './StatsigStore';
 import { StatsigUser } from './StatsigUser';
 import { STATSIG_LOCAL_STORAGE_LOGGING_REQUEST_KEY } from './utils/Constants';
 import Diagnostics, { ContextType, Marker } from './utils/Diagnostics';
+import OutputLogger from './utils/OutputLogger';
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
-import OutputLogger from './utils/OutputLogger';
 
 const INTERNAL_EVENT_PREFIX = 'statsig::';
 const CONFIG_EXPOSURE_EVENT = INTERNAL_EVENT_PREFIX + 'config_exposure';
@@ -148,7 +149,7 @@ export default class StatsigLogger {
   }
 
   public setDebugInfo(debugInfo: Record<string, string>) {
-    this.debugInfo = debugInfo
+    this.debugInfo = debugInfo;
   }
 
   private shouldLogExposure(key: string): boolean {
@@ -193,7 +194,7 @@ export default class StatsigLogger {
       ruleID: ruleID,
       reason: details.reason,
       time: details.time,
-      debugInfo: this.debugInfo
+      debugInfo: this.debugInfo,
     };
 
     if (isManualExposure) {
@@ -225,7 +226,7 @@ export default class StatsigLogger {
       ruleID: ruleID,
       reason: details.reason,
       time: details.time,
-      debugInfo: this.debugInfo
+      debugInfo: this.debugInfo,
     };
 
     if (isManualExposure) {
@@ -271,7 +272,7 @@ export default class StatsigLogger {
       isExplicitParameter: String(isExplicitParameter),
       reason: details.reason,
       time: details.time,
-      debugInfo: this.debugInfo
+      debugInfo: this.debugInfo,
     };
 
     if (isManualExposure) {
@@ -312,7 +313,7 @@ export default class StatsigLogger {
     this.loggedErrors.add(trimmedMessage);
   }
 
-  public logDiagnostics(user: StatsigUser | null, context: ContextType) {  
+  public logDiagnostics(user: StatsigUser | null, context: ContextType) {
     const markers = Diagnostics.getMarkers(context);
     if (markers.length <= 0) {
       return;
@@ -389,7 +390,7 @@ export default class StatsigLogger {
             metadata,
           );
         }
-        
+
         this.logGenericEvent(
           APP_METRICS_SESSION_LENGTH_EVENT,
           user,
@@ -429,7 +430,7 @@ export default class StatsigLogger {
 
     if (this.queue.length === 0) {
       if (isClosing) {
-        this.saveFailedRequests()
+        this.saveFailedRequests();
       }
       return;
     }
@@ -460,7 +461,7 @@ export default class StatsigLogger {
           this.queue = [];
         }
       }
-      this.saveFailedRequests()
+      this.saveFailedRequests();
       return;
     }
     this.sdkInternal
@@ -477,7 +478,7 @@ export default class StatsigLogger {
             backoff: 1000,
           },
           useKeepalive: isClosing,
-          additionalHeaders: {'STATSIG-EVENT-COUNT':String(oldQueue.length)}
+          additionalHeaders: { 'STATSIG-EVENT-COUNT': String(oldQueue.length) },
         },
       )
       .then((response) => {
@@ -487,11 +488,15 @@ export default class StatsigLogger {
       })
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       .catch((error) => {
-        this.addFailedRequest({ events: oldQueue, statsigMetadata: this.sdkInternal.getStatsigMetadata(), time: Date.now() });
+        this.addFailedRequest({
+          events: oldQueue,
+          statsigMetadata: this.sdkInternal.getStatsigMetadata(),
+          time: Date.now(),
+        });
       })
       .finally(async () => {
         if (isClosing) {
-          this.saveFailedRequests()
+          this.saveFailedRequests();
         }
       });
   }
@@ -500,7 +505,10 @@ export default class StatsigLogger {
     if (this.failedLogEvents.length > 0) {
       const requestsCopy = JSON.stringify(this.failedLogEvents);
       if (requestsCopy.length > MAX_LOCAL_STORAGE_SIZE) {
-        this.logDroppedLogEventsException(this.failedLogEventCount, 'Exceeds local storage size')
+        this.logDroppedLogEventsException(
+          this.failedLogEventCount,
+          'Exceeds local storage size',
+        );
         return;
       }
 
@@ -552,7 +560,11 @@ export default class StatsigLogger {
         ) {
           this.sdkInternal
             .getNetwork()
-            .postToEndpoint(StatsigEndpoint.Rgstr, requestBody, {additionalHeaders: {'STATSIG-EVENT-COUNT':String(requestBody.events.length)}})
+            .postToEndpoint(StatsigEndpoint.Rgstr, requestBody, {
+              additionalHeaders: {
+                'STATSIG-EVENT-COUNT': String(requestBody.events.length),
+              },
+            })
             .then((response) => {
               if (!response.ok) {
                 throw Error(response.status + '');
@@ -560,7 +572,10 @@ export default class StatsigLogger {
             })
             .catch(() => {
               if (fireAndForget) {
-                this.logDroppedLogEventsException(requestBody.events.length, 'Flush while shutting down')
+                this.logDroppedLogEventsException(
+                  requestBody.events.length,
+                  'Flush while shutting down',
+                );
                 return;
               }
               this.addFailedRequest(requestBody);
@@ -568,7 +583,7 @@ export default class StatsigLogger {
         }
       }
     } catch (e) {
-      OutputLogger.error("sendSavedRequests ", e as Error);
+      OutputLogger.error('sendSavedRequests ', e as Error);
       this.sdkInternal.getErrorBoundary().logError('sendSavedRequests', e);
     } finally {
       this.clearLocalStorageRequests();
@@ -578,16 +593,19 @@ export default class StatsigLogger {
   private addFailedRequest(requestBody: FailedLogEventBody): void {
     const eventSize = requestBody.events.length;
     if (requestBody.time < Date.now() - MS_RETRY_LOGS_CUTOFF) {
-      this.logDroppedLogEventsException(eventSize, 'Events too old')
+      this.logDroppedLogEventsException(eventSize, 'Events too old');
       return;
     }
     if (this.failedLogEvents.length > MAX_BATCHES_TO_RETRY) {
-      this.logDroppedLogEventsException(eventSize, 'Exceed max batches to retry')
+      this.logDroppedLogEventsException(
+        eventSize,
+        'Exceed max batches to retry',
+      );
       return;
     }
     const additionalEvents = requestBody.events.length;
     if (this.failedLogEventCount + additionalEvents > MAX_FAILED_EVENTS) {
-      this.logDroppedLogEventsException(eventSize, 'Exceeds max failed events')
+      this.logDroppedLogEventsException(eventSize, 'Exceeds max failed events');
       return;
     }
     this.failedLogEvents.push(requestBody);
@@ -652,12 +670,14 @@ export default class StatsigLogger {
   }
 
   private logDroppedLogEventsException(count: number, reason?: string) {
-    this.sdkInternal.getErrorBoundary().logError(LOG_FAILURE_EVENT, new Error(reason), {
-      getExtraData: async () => {
-        return {
-          eventCount: count,
-        };
-      }
-    });
+    this.sdkInternal
+      .getErrorBoundary()
+      .logError(LOG_FAILURE_EVENT, new Error(reason), {
+        getExtraData: async () => {
+          return {
+            eventCount: count,
+          };
+        },
+      });
   }
 }

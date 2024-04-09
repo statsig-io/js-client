@@ -1,12 +1,11 @@
 import { v4 as uuidv4 } from 'uuid';
 
+import { version as SDKVersion } from './SDKVersion';
 import { _SDKPackageInfo } from './StatsigClient';
 import { StatsigUser } from './StatsigUser';
 import { STATSIG_STABLE_ID_KEY } from './utils/Constants';
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
-
-import { version as SDKVersion } from './SDKVersion';
 
 export type DeviceInfo = {
   getVersion(): string | null;

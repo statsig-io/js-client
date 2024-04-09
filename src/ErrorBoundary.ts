@@ -1,8 +1,9 @@
 import { v4 as uuidv4 } from 'uuid';
+
 import {
-  StatsigUninitializedError,
-  StatsigInvalidArgumentError,
   StatsigInitializationTimeoutError,
+  StatsigInvalidArgumentError,
+  StatsigUninitializedError,
 } from './Errors';
 import StatsigSDKOptions from './StatsigSDKOptions';
 import Diagnostics from './utils/Diagnostics';
@@ -23,7 +24,10 @@ export default class ErrorBoundary {
   private statsigMetadata?: Record<string, string | number>;
   private seen = new Set<string>();
 
-  constructor(private sdkKey: string, private sdkOptions: StatsigSDKOptions ) {
+  constructor(
+    private sdkKey: string,
+    private sdkOptions: StatsigSDKOptions,
+  ) {
     const sampling = Math.floor(Math.random() * SAMPLING_RATE);
     this.setupDiagnostics(sampling === 0 ? MAX_DIAGNOSTICS_MARKERS : 0);
   }
@@ -78,7 +82,7 @@ export default class ErrorBoundary {
   public logError(
     tag: string,
     error: unknown,
-    { getExtraData, configName }: CaptureOptions = {}
+    { getExtraData, configName }: CaptureOptions = {},
   ): void {
     if (this.sdkOptions.isAllLoggingDisabled()) {
       return;
@@ -88,13 +92,13 @@ export default class ErrorBoundary {
         const extra =
           typeof getExtraData === 'function' ? await getExtraData() : {};
         const { name, trace: info } = parseError(error);
-        extra["configName"] = configName
+        extra['configName'] = configName;
         if (this.seen.has(name)) return;
         this.seen.add(name);
 
         const metadata = this.statsigMetadata ?? {};
-        if(metadata.sessionID == null) {
-          metadata.sessionID = uuidv4()
+        if (metadata.sessionID == null) {
+          metadata.sessionID = uuidv4();
         }
         const body = JSON.stringify({
           tag,
@@ -102,7 +106,7 @@ export default class ErrorBoundary {
           info,
           statsigMetadata: metadata,
           statsigOptions: this.sdkOptions.getLoggingCopy(),
-          extra: extra 
+          extra: extra,
         });
         return fetch(ExceptionEndpoint, {
           method: 'POST',
@@ -166,7 +170,7 @@ export default class ErrorBoundary {
     tag: string,
     error: unknown,
     recover: () => T,
-    captureOptions: CaptureOptions = {}
+    captureOptions: CaptureOptions = {},
   ): T {
     if (
       error instanceof StatsigUninitializedError ||

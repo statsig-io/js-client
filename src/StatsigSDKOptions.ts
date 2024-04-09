@@ -162,7 +162,8 @@ export default class StatsigSDKOptions {
     );
 
     this.disableNetworkKeepalive = options.disableNetworkKeepalive ?? false;
-    this.initRequestRetries = options.initRequestRetries ?? DEFAULT_INIT_NETWORK_RETRIES;
+    this.initRequestRetries =
+      options.initRequestRetries ?? DEFAULT_INIT_NETWORK_RETRIES;
     this.overrideStableID = options.overrideStableID ?? null;
     this.localMode = options.localMode ?? false;
     this.initTimeoutMs =

@@ -1,6 +1,7 @@
+import { sha256 } from 'js-sha256';
+
 import { StatsigUser } from '../StatsigUser';
 import { Base64 } from './Base64';
-import { sha256 } from 'js-sha256';
 
 const hashLookupTable: Record<string, string> = {};
 

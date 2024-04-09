@@ -1,25 +1,25 @@
 import DynamicConfig, { OnDefaultValueFallback } from './DynamicConfig';
 import Layer, { LogParameterFunction } from './Layer';
 import { IHasStatsigInternal, StatsigOverrides } from './StatsigClient';
-import BootstrapValidator from './utils/BootstrapValidator';
+import { UserPersistentStorageInterface } from './StatsigSDKOptions';
 import { StatsigUser } from './StatsigUser';
+import BootstrapValidator from './utils/BootstrapValidator';
 import {
   INTERNAL_STORE_KEY,
   OVERRIDES_STORE_KEY,
   STICKY_DEVICE_EXPERIMENTS_KEY,
 } from './utils/Constants';
+import { EvaluationReason } from './utils/EvaluationReason';
 import {
   djb2Hash,
-  sha256Hash,
-  getUserCacheKey,
-  UserCacheKey,
   djb2HashForObject,
+  getUserCacheKey,
+  sha256Hash,
+  UserCacheKey,
 } from './utils/Hashing';
+import { verifySDKKeyUsed } from './utils/ResponseVerification';
 import StatsigAsyncStorage from './utils/StatsigAsyncStorage';
 import StatsigLocalStorage from './utils/StatsigLocalStorage';
-import { UserPersistentStorageInterface } from './StatsigSDKOptions';
-import { EvaluationReason } from './utils/EvaluationReason';
-import { verifySDKKeyUsed } from './utils/ResponseVerification';
 
 export type EvaluationDetails = {
   time: number;

@@ -1,17 +1,17 @@
 import DynamicConfig from './DynamicConfig';
 import { StatsigUninitializedError } from './Errors';
+import FeatureGate from './FeatureGate';
 import Layer from './Layer';
-import StatsigClient, { StatsigOverrides } from './StatsigClient';
 import type { CheckGateOptions } from './StatsigClient';
+import StatsigClient, { StatsigOverrides } from './StatsigClient';
 import StatsigRuntime from './StatsigRuntime';
 import { StatsigOptions } from './StatsigSDKOptions';
 import { EvaluationDetails } from './StatsigStore';
 import { StatsigUser } from './StatsigUser';
+import { EvaluationReason } from './utils/EvaluationReason';
 import { default as PolyfillObjectEntries } from './utils/Object.entries';
 import { default as PolyfillObjectFromEntries } from './utils/Object.fromEntries';
 import { default as PolyfillPromiseFinally } from './utils/Promise.finally';
-import { EvaluationReason } from './utils/EvaluationReason';
-import FeatureGate from './FeatureGate';
 
 export { default as FeatureGate } from './FeatureGate';
 export { default as DynamicConfig } from './DynamicConfig';
@@ -98,11 +98,11 @@ export default class Statsig {
     );
   }
 
-  public static getFeatureGate(gateName: string, options: CheckGateOptions | null = null): FeatureGate {
-    return Statsig.getClientX().getFeatureGate(
-      gateName,
-      options,
-    );
+  public static getFeatureGate(
+    gateName: string,
+    options: CheckGateOptions | null = null,
+  ): FeatureGate {
+    return Statsig.getClientX().getFeatureGate(gateName, options);
   }
 
   public static manuallyLogGateExposure(gateName: string) {
@@ -330,12 +330,12 @@ export default class Statsig {
     Statsig.getClientX().flushEvents();
   }
 
-    /**
-    * @params Debug information log with exposure event, and information will be living in metadata
-    */
-    public static setDebugInfo(debugInfo: Record<string,string>): void {
-      Statsig.getClientX().setDebugInfo(debugInfo);
-    }
+  /**
+   * @params Debug information log with exposure event, and information will be living in metadata
+   */
+  public static setDebugInfo(debugInfo: Record<string, string>): void {
+    Statsig.getClientX().setDebugInfo(debugInfo);
+  }
 
   /**
    * Intended to be used in conjunction with StatsigOptions.disableAllLogging.
