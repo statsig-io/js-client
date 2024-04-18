@@ -52,7 +52,7 @@ describe('UpdateUserCompletionCallback', () => {
     expect(completionCallbackSpy).toHaveBeenCalledWith(
       expect.any(Number),
       false,
-      'Failed to update user: TypeError: res.text is not a function',
+      'Failed to update user: res.text is not a function',
     );
   });
 

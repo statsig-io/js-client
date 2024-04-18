@@ -1,5 +1,6 @@
 import { getUserHashWithoutStableID, StatsigUser } from '../StatsigUser';
 import { EvaluationReason } from './EvaluationReason';
+import { djb2HashForObject } from './Hashing';
 
 export default abstract class BootstrapValidator {
   static getEvaluationReasonForBootstrap(
@@ -30,7 +31,10 @@ export default abstract class BootstrapValidator {
       }
       const userHash = values['user_hash'];
       if (userHash && typeof userHash === 'string' && user != null) {
-        isValid = isValid && userHash === getUserHashWithoutStableID(user);
+        const userHashGood =
+          userHash === getUserHashWithoutStableID(user) ||
+          userHash === djb2HashForObject({ ...user, stableID: stableID });
+        isValid = isValid && userHashGood;
       }
     } catch (error) {
       // This is best-effort. If we fail, return true.

@@ -1,5 +1,12 @@
+/**
+ * @jest-environment jsdom
+ */
+
+import StatsigClient from '../../StatsigClient';
 import BootstrapValidator from '../BootstrapValidator';
 import { EvaluationReason } from '../EvaluationReason';
+import * as TestData from '../../__tests__/initialize_response.json';
+import LocalStorageMock from '../../__tests__/LocalStorageMock';
 
 describe('BootstrapValidator', () => {
   it('returns true when no keys are provided', () => {
@@ -182,5 +189,34 @@ describe('BootstrapValidator', () => {
       null,
     );
     expect(result).toBe(EvaluationReason.InvalidBootstrap);
+  });
+  it('returns true when boostrapping from client generated initialize response', async () => {
+    const localStorage = new LocalStorageMock();
+    // @ts-ignore
+    Object.defineProperty(window, 'localStorage', {
+      value: localStorage,
+    });
+    // @ts-ignore
+    global.fetch = jest.fn((url, params) => {
+      if (url.toString().endsWith('/initialize')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          text: () => Promise.resolve(JSON.stringify(TestData)),
+        });
+      }
+    });
+    const user = { userID: 'a-user-id' };
+    const statsig1 = new StatsigClient('client-key', user);
+    await statsig1.initializeAsync();
+    const initializeValues = JSON.parse(
+      statsig1.getInitializeResponseJson().values,
+    );
+    const statsig2 = new StatsigClient('client-key', user, {
+      initializeValues,
+    });
+    const result =
+      statsig2.getInitializeResponseJson().evaluationDetails.reason;
+    expect(result).toBe(EvaluationReason.Bootstrap);
   });
 });

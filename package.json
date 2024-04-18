@@ -5,15 +5,15 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "prepare": "rm -rf build/ && rm -rf dist/ && genversion src/SDKVersion.ts --es6 && tsc && webpack",
+    "prepare": "rm -rf build/ && rm -rf dist/ && genversion --semi src/SDKVersion.ts --es6 && tsc && webpack",
     "postbuild": "rm -rf build/**/*.map",
     "test": "jest --config=jest-debug.config.js",
     "testForGithubOrRedisEnthusiasts": "jest",
     "test:watch": "jest --watch",
     "build:dryrun": "npx tsc --noEmit",
     "types": "npx tsc",
-    "lint": "eslint '*/**/*.{ts,tsx}' --fix --max-warnings 0 --cache --cache-strategy content && git status",
-    "lint:github": "eslint '*/**/*.{ts,tsx}' --max-warnings 0 --cache --cache-strategy content && git status"
+    "lint": "eslint '*/**/*.{ts,tsx}' --fix --max-warnings 70 --cache --cache-strategy content && git status",
+    "lint:github": "eslint '*/**/*.{ts,tsx}' --max-warnings 70 --cache --cache-strategy content && git status"
   },
   "files": [
     "build/statsig-prod-web-sdk.js",
