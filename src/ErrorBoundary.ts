@@ -9,7 +9,7 @@ import StatsigSDKOptions from './StatsigSDKOptions';
 import Diagnostics from './utils/Diagnostics';
 import OutputLogger from './utils/OutputLogger';
 import parseError from './utils/parseError';
-export const ExceptionEndpoint = 'https://statsigapi.net/v1/sdk_exception';
+export const ExceptionEndpoint = 'https://prodregistryv2.org/v1/rgstr_e';
 
 type ExtraDataExtractor = () => Record<string, unknown>;
 

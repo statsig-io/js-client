@@ -8,7 +8,7 @@ import OutputLogger from './utils/OutputLogger';
 export enum StatsigEndpoint {
   Initialize = 'initialize',
   Rgstr = 'rgstr',
-  LogEventBeacon = 'log_event_beacon',
+  LogEventBeacon = 'rgstr_b',
 }
 
 type NetworkResponse = Response & {

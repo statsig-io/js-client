@@ -3,8 +3,8 @@ import FeatureGate from './FeatureGate';
 import Layer from './Layer';
 import { StatsigUser } from './StatsigUser';
 
-const DEFAULT_FEATURE_GATE_API = 'https://featuregates.org/v1/';
-const DEFAULT_EVENT_LOGGING_API = 'https://events.statsigapi.net/v1/';
+const DEFAULT_FEATURE_GATE_API = 'https://featureassets.org/v1/';
+const DEFAULT_EVENT_LOGGING_API = 'https://prodregistryv2.org/v1/';
 const DEFAULT_INIT_NETWORK_RETRIES = 3;
 
 export const INIT_TIMEOUT_DEFAULT_MS = 3000;

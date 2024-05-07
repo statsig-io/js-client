@@ -25,7 +25,7 @@ describe('Verify behavior of StatsigLogger', () => {
   //@ts-ignore
   global.fetch = jest.fn((url) => {
     if (url && typeof url === 'string' && url.includes('rgstr')) {
-      if (url !== 'https://events.statsigapi.net/v1/rgstr') {
+      if (url !== 'https://prodregistryv2.org/v1/rgstr') {
         fail('invalid logevent endpoint');
       }
       return Promise.resolve({
@@ -79,33 +79,32 @@ describe('Verify behavior of StatsigLogger', () => {
   });
 
   describe('Log Events Failure', () => {
-    let client: StatsigClient
-    let networkSpy: jest.SpyInstance<unknown>
-    let spyOnEB:jest.SpyInstance<unknown>
-    let spyOnLog: jest.SpyInstance<unknown>
-    let spyOnFlush: jest.SpyInstance<unknown>
-    let spyOnResend: jest.SpyInstance<unknown>
-    let logger: StatsigLogger
+    let client: StatsigClient;
+    let networkSpy: jest.SpyInstance<unknown>;
+    let spyOnEB: jest.SpyInstance<unknown>;
+    let spyOnLog: jest.SpyInstance<unknown>;
+    let spyOnFlush: jest.SpyInstance<unknown>;
+    let spyOnResend: jest.SpyInstance<unknown>;
+    let logger: StatsigLogger;
     beforeEach(async () => {
       client = new StatsigClient(
         sdkKey,
         { userID: 'user_key' },
         { disableDiagnosticsLogging: true },
       );
-      StatsigClient.setAsyncStorage(fakeAsyncStorage)
-      networkSpy = jest.spyOn(client.getNetwork(), 'postToEndpoint')
+      StatsigClient.setAsyncStorage(fakeAsyncStorage);
+      networkSpy = jest.spyOn(client.getNetwork(), 'postToEndpoint');
       // Mock postToEndpoint directly so we bypass retry to speed up tests
       networkSpy.mockImplementation((endpointName) => {
-        if(endpointName == 'initialize') {
+        if (endpointName == 'initialize') {
           const response = {
             ok: true,
             status: 200,
             headers: requestHeaders,
-          } as Response
-          return  Promise.resolve(
-            {
-             ...response,
-              data:{
+          } as Response;
+          return Promise.resolve({
+            ...response,
+            data: {
               gates: {},
               feature_gates: {
                 'AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=': {
@@ -120,24 +119,23 @@ describe('Verify behavior of StatsigLogger', () => {
                 },
               },
               configs: {},
-            }},
-          )
+            },
+          });
         }
-        return Promise.reject("Sample error")
-      })
-      logger = client.getLogger()
+        return Promise.reject('Sample error');
+      });
+      logger = client.getLogger();
       spyOnFlush = jest.spyOn(logger, 'flush');
       spyOnLog = jest.spyOn(logger, 'log');
-      spyOnResend = jest.spyOn(client.getLogger(), "sendSavedRequests")
-      spyOnEB = jest.spyOn(client.getErrorBoundary(), "logError")
-    })
+      spyOnResend = jest.spyOn(client.getLogger(), 'sendSavedRequests');
+      spyOnEB = jest.spyOn(client.getErrorBoundary(), 'logError');
+    });
 
     afterEach(() => {
-      networkSpy.mockClear()
-    })
+      networkSpy.mockClear();
+    });
 
     it('Save to cache when failure', async () => {
-
       // @ts-ignore access private attribute
       expect(client.getLogger().flushInterval).not.toBeNull();
 
@@ -159,49 +157,72 @@ describe('Verify behavior of StatsigLogger', () => {
         }
         expect(spyOnFlush).toHaveBeenCalledTimes(1);
         expect(spyOnLog).toHaveBeenCalledTimes(102);
-        client.shutdown()
-        await waitAllPromises()
-        const savedLoggingRequest = await fakeAsyncStorage.getItem('STATSIG_LOCAL_STORAGE_LOGGING_REQUEST')
-        expect(JSON.parse(savedLoggingRequest ?? "")).toMatchObject([{ "events": expect.any(Array), "statsigMetadata": expect.any(Object), "time": expect.any(Number) }, { "events": expect.any(Array), "statsigMetadata": expect.any(Object), "time": expect.any(Number) }])
+        client.shutdown();
+        await waitAllPromises();
+        const savedLoggingRequest = await fakeAsyncStorage.getItem(
+          'STATSIG_LOCAL_STORAGE_LOGGING_REQUEST',
+        );
+        expect(JSON.parse(savedLoggingRequest ?? '')).toMatchObject([
+          {
+            events: expect.any(Array),
+            statsigMetadata: expect.any(Object),
+            time: expect.any(Number),
+          },
+          {
+            events: expect.any(Array),
+            statsigMetadata: expect.any(Object),
+            time: expect.any(Number),
+          },
+        ]);
       });
     });
 
-    it("Retry on restart", async () => {
+    it('Retry on restart', async () => {
       // No events have been dropped yet
-      await client.initializeAsync()
-      expect(spyOnEB).not.toBeCalled()
-      expect(spyOnResend).toBeCalledTimes(1)
-      client.shutdown()
-    })
+      await client.initializeAsync();
+      expect(spyOnEB).not.toBeCalled();
+      expect(spyOnResend).toBeCalledTimes(1);
+      client.shutdown();
+    });
 
-    it("Drop events when too old when retry at initialization", async () => {
+    it('Drop events when too old when retry at initialization', async () => {
       const eightDaysLater = Date.now() + 8 * 24 * 60 * 60 * 1000;
       jest.spyOn(global.Date, 'now').mockImplementation(() => eightDaysLater);
-      await client.initializeAsync()
-      expect(spyOnResend).toBeCalledTimes(1)
+      await client.initializeAsync();
+      expect(spyOnResend).toBeCalledTimes(1);
       // Drop 3 batches, 2 from frist session within test and 1 from second session
-      await waitAllPromises()
-      expect(spyOnEB).toBeCalledTimes(3)
-      client.shutdown()
-      await waitAllPromises()
-      const savedLoggingRequest = await fakeAsyncStorage.getItem('STATSIG_LOCAL_STORAGE_LOGGING_REQUEST') ?? ""
-      const parsedSavedLoggingRequest = JSON.parse(savedLoggingRequest) as FailedLogEventBody[]
-      expect(parsedSavedLoggingRequest.length).toBe(1)
-    })
+      await waitAllPromises();
+      expect(spyOnEB).toBeCalledTimes(3);
+      client.shutdown();
+      await waitAllPromises();
+      const savedLoggingRequest =
+        (await fakeAsyncStorage.getItem(
+          'STATSIG_LOCAL_STORAGE_LOGGING_REQUEST',
+        )) ?? '';
+      const parsedSavedLoggingRequest = JSON.parse(
+        savedLoggingRequest,
+      ) as FailedLogEventBody[];
+      expect(parsedSavedLoggingRequest.length).toBe(1);
+    });
 
-    it("Stop adding events(dropping) if too much", async () => {
-      fakeAsyncStorage.removeItem('STATSIG_LOCAL_STORAGE_LOGGING_REQUEST')
+    it('Stop adding events(dropping) if too much', async () => {
+      fakeAsyncStorage.removeItem('STATSIG_LOCAL_STORAGE_LOGGING_REQUEST');
       for (let i = 0; i < 1005; i++) {
-        client.logEvent("test_event");
+        client.logEvent('test_event');
       }
-      client.shutdown()
-      await waitAllPromises()
-      // Dropping last batch because it's too much 
-      expect(spyOnEB).toBeCalledTimes(1)
-      const savedLoggingRequest = await fakeAsyncStorage.getItem('STATSIG_LOCAL_STORAGE_LOGGING_REQUEST') ?? ""
-      const parsedSavedLoggingRequest = JSON.parse(savedLoggingRequest) as FailedLogEventBody[]
-      expect(parsedSavedLoggingRequest.length).toBe(10)
-    })
+      client.shutdown();
+      await waitAllPromises();
+      // Dropping last batch because it's too much
+      expect(spyOnEB).toBeCalledTimes(1);
+      const savedLoggingRequest =
+        (await fakeAsyncStorage.getItem(
+          'STATSIG_LOCAL_STORAGE_LOGGING_REQUEST',
+        )) ?? '';
+      const parsedSavedLoggingRequest = JSON.parse(
+        savedLoggingRequest,
+      ) as FailedLogEventBody[];
+      expect(parsedSavedLoggingRequest.length).toBe(10);
+    });
   });
 
   test('local mode does not set up a flush interval', () => {
@@ -315,7 +336,7 @@ describe('Verify behavior of StatsigLogger', () => {
     event.setMetadata({
       context: 'initialize',
       statsigOptions: {
-        "disableCurrentPageLogging": true,
+        disableCurrentPageLogging: true,
       },
       markers: [
         {

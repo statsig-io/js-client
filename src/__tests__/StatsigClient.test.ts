@@ -39,8 +39,8 @@ describe('Verify behavior of StatsigClient', () => {
   global.fetch = jest.fn((url, params) => {
     if (
       ![
-        'https://featuregates.org/v1/initialize',
-        'https://featuregates.org/v1/initialize_with_deltas',
+        'https://featureassets.org/v1/initialize',
+        'https://featureassets.org/v1/initialize_with_deltas',
       ].includes(url.toString())
     ) {
       return Promise.reject(new Error('invalid initialize endpoint'));
@@ -200,12 +200,12 @@ describe('Verify behavior of StatsigClient', () => {
     await statsig.initializeAsync();
 
     expect(statsig.getOptions().getApi()).toEqual(
-      'https://featuregates.org/v1/',
+      'https://featureassets.org/v1/',
     );
     expect(statsig.getOptions().getLoggingBufferMaxSize()).toEqual(500);
     expect(statsig.getOptions().getLoggingIntervalMillis()).toEqual(1000);
     expect(statsig.getOptions().getEventLoggingApi()).toEqual(
-      'https://events.statsigapi.net/v1/',
+      'https://prodregistryv2.org/v1/',
     );
 
     // Set the stable id, save the configs
@@ -255,7 +255,7 @@ describe('Verify behavior of StatsigClient', () => {
     await statsig.initializeAsync();
 
     expect(statsig.getOptions().getApi()).toEqual(
-      'https://featuregates.org/v1/',
+      'https://featureassets.org/v1/',
     );
     expect(statsig.getOptions().getEventLoggingApi()).toEqual(
       'https://logging.jkw.com/v1/',

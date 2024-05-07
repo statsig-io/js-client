@@ -34,7 +34,7 @@ describe('Init Timeout', () => {
       has_updates: true,
       time: 123456789,
     };
-  
+
     let respObject: any = baseInitResponse;
     const localStorage = new LocalStorageMock();
     // @ts-ignore
@@ -44,12 +44,10 @@ describe('Init Timeout', () => {
 
     // @ts-ignore
     global.fetch = jest.fn((url, params) => {
-      if (
-          url.toString() !== 'https://featuregates.org/v1/initialize'
-      ) {
+      if (url.toString() !== 'https://featureassets.org/v1/initialize') {
         return Promise.reject(new Error('invalid initialize endpoint'));
       }
-  
+
       return Promise.resolve({
         ok: true,
         text: () => Promise.resolve(JSON.stringify(respObject)),
@@ -63,12 +61,15 @@ describe('Init Timeout', () => {
       window.localStorage.clear();
     });
 
-    
     test('that override APIs work', async () => {
       const spy = jest.spyOn(global, 'clearTimeout');
-      const statsig = new StatsigClient(sdkKey, { userID: '123' }, {
-        initTimeoutMs: 9999
-      });
+      const statsig = new StatsigClient(
+        sdkKey,
+        { userID: '123' },
+        {
+          initTimeoutMs: 9999,
+        },
+      );
       await statsig.initializeAsync();
 
       expect(statsig.checkGate('test_gate')).toBe(true);
@@ -103,7 +104,7 @@ describe('Init Timeout', () => {
 
     afterAll(() => {
       jest.resetModules();
-    })
+    });
 
     it('does not throw with updateUser timeout, applies timeout', async () => {
       const start = Date.now();
