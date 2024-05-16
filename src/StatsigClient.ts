@@ -429,7 +429,11 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       'prefetchUsers',
       () => {
         if (!users || users.length == 0) {
-          return;
+          return Promise.resolve();
+        }
+
+        if (this.options.getLocalModeEnabled()) {
+          return Promise.resolve();
         }
 
         return this.fetchAndSaveValues({
