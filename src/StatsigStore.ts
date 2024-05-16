@@ -361,21 +361,6 @@ export default class StatsigStore {
       return null;
     }
 
-    if (
-      cachedValues.stableIDUsed != null &&
-      cachedValues.stableIDUsed !== this.getStableID()
-    ) {
-      this.sdkInternal.getErrorBoundary().logError(
-        'stableIDChanged',
-        new Error(
-          `StableID changed from ${
-            cachedValues.stableIDUsed
-          } to ${this.getStableID()},
-            override stableID ${this.sdkInternal.getOptions().getOverrideStableID() ?? ''}`,
-        ),
-      );
-    }
-
     this.userValues = cachedValues;
     this.reason = isUserPrefetched
       ? EvaluationReason.Prefetch
