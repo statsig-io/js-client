@@ -147,7 +147,6 @@ describe('Statsig ErrorBoundary Usage', () => {
     // @ts-ignore
     localClient.network = 1;
     await localClient.initializeAsync();
-    expectSingleError('network.fetchValues');
     // @ts-ignore
     expect(localClient.ready).toBeTruthy();
   });

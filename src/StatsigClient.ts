@@ -387,10 +387,6 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
             return { success: true, message: null };
           })
           .catch((e) => {
-            this.errorBoundary.logError(
-              'initializeAsync:fetchAndSaveValues',
-              e,
-            );
             Diagnostics.mark.overall.end({
               success: false,
               error: Diagnostics.formatError(e),
