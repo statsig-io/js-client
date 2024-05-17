@@ -271,12 +271,15 @@ export default class StatsigNetwork {
     const statsigOpts = this.sdkInternal.getOptions();
 
     if (statsigOpts.getLocalModeEnabled()) {
-      return Promise.reject('no network requests in localMode');
+      return Promise.resolve({} as NetworkResponse);
     }
 
     if (typeof fetch !== 'function') {
       // fetch is not defined in this environment, short circuit
-      return Promise.reject('fetch is not defined');
+      OutputLogger.error(
+        'Not issuing network request because fetch is not defined',
+      );
+      return Promise.resolve({} as NetworkResponse);
     }
 
     if (
@@ -284,7 +287,10 @@ export default class StatsigNetwork {
       !statsigOpts.getIgnoreWindowUndefined()
     ) {
       // by default, dont issue requests from the server
-      return Promise.reject('window is not defined');
+      OutputLogger.error(
+        'Not issuing network request because window is not defined. To bypass this, set ignoreWindowUndefined in StatsigOptions',
+      );
+      return Promise.resolve({} as NetworkResponse);
     }
 
     const api = [StatsigEndpoint.Initialize].includes(endpointName)
