@@ -112,8 +112,8 @@ describe('Test Statsig options', () => {
     await c.initializeAsync();
 
     expect(typeof initTime).toEqual('number');
-    expect(initTime).toBeGreaterThanOrEqual(10);
-    expect(initTime).toBeLessThanOrEqual(1000);
+    expect(initTime).toBeGreaterThanOrEqual(1);
+    expect(initTime).toBeLessThanOrEqual(15);
     expect(initSuccess).toEqual(false);
     expect(initMessage).toEqual(
       'The initialization timeout of 10ms has been hit before the network request has completed.',

@@ -93,6 +93,13 @@ export type UserCacheValues = APIInitializeDataWithPrefetchedUsers & {
   evaluation_time?: number;
   user_hash?: string;
   stableIDUsed?: string;
+  bootstrapMetadata?: BootstrapMetadata;
+};
+
+export type BootstrapMetadata = {
+  generatorSDKInfo?: Record<string, string>;
+  lcut?: number;
+  user?: Record<string, unknown>;
 };
 
 type UserPersistentStorageData = {
@@ -187,8 +194,8 @@ export default class StatsigStore {
     const key = this.sdkInternal.getCurrentUserCacheKey();
     const user = this.sdkInternal.getCurrentUser();
     const stableID =
-      user?.customIDs?.stableID ??
       this.sdkInternal.getStatsigMetadata().stableID ??
+      user?.customIDs?.stableID ??
       null;
     const reason = BootstrapValidator.getEvaluationReasonForBootstrap(
       user,
@@ -208,10 +215,26 @@ export default class StatsigStore {
       this.userValues.dynamic_configs = values.dynamic_configs ?? {};
       this.userValues.layer_configs = values.layer_configs ?? {};
       this.userValues.evaluation_time = Date.now();
-      this.userValues.time = Date.now();
+      this.userValues.time = values.time ?? Date.now();
       this.userValues.hash_used = values.hash_used;
       this.values[key.v3] = this.userValues;
       this.reason = reason;
+      const generatorSDKInfo = values.sdkInfo as
+        | Record<string, string>
+        | undefined;
+      this.userValues.bootstrapMetadata = {};
+      if (generatorSDKInfo != null) {
+        this.userValues.bootstrapMetadata.generatorSDKInfo = generatorSDKInfo;
+      }
+      if (values.user != null) {
+        this.userValues.bootstrapMetadata.user = values.user as Record<
+          string,
+          unknown
+        >;
+      }
+      if (values.time != null) {
+        this.userValues.bootstrapMetadata.lcut = values.time as number;
+      }
       this.loadOverrides();
     } catch (_e) {
       return;
@@ -392,6 +415,10 @@ export default class StatsigStore {
 
   public setEvaluationReason(evalReason: EvaluationReason) {
     this.reason = evalReason;
+  }
+
+  public getBootstrapMetadata(): BootstrapMetadata | null {
+    return this.userValues.bootstrapMetadata ?? null;
   }
 
   public async save(

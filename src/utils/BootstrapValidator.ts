@@ -36,6 +36,19 @@ export default abstract class BootstrapValidator {
           userHash === djb2HashForObject({ ...user, stableID: stableID });
         isValid = isValid && userHashGood;
       }
+      const bootstrapUser = values['user'];
+      if (bootstrapUser && typeof bootstrapUser === 'object' && user != null) {
+        isValid =
+          isValid &&
+          BootstrapValidator.validate(
+            this.copyObject(bootstrapUser as Record<string, unknown>),
+            this.copyObject(user),
+          ) &&
+          BootstrapValidator.validate(
+            this.copyObject(user),
+            this.copyObject(bootstrapUser as Record<string, unknown>),
+          );
+      }
     } catch (error) {
       // This is best-effort. If we fail, return true.
     }

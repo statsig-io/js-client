@@ -1481,6 +1481,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       gate.secondary_exposures,
       result.evaluationDetails,
       isManualExposure,
+      this.store.getBootstrapMetadata(),
     );
   }
 
@@ -1509,6 +1510,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       localConfig._getSecondaryExposures(),
       localConfig.getEvaluationDetails(),
       isManualExposure,
+      this.store.getBootstrapMetadata(),
     );
   }
 
@@ -1546,6 +1548,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       localConfig._getSecondaryExposures(),
       localConfig.getEvaluationDetails(),
       isManualExposure,
+      this.store.getBootstrapMetadata(),
     );
   }
 
@@ -1591,6 +1594,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
       isExplicit,
       layer._getEvaluationDetails(),
       isManualExposure,
+      this.store.getBootstrapMetadata(),
     );
   };
 

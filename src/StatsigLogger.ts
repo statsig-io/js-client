@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import LogEvent from './LogEvent';
 import { IHasStatsigInternal } from './StatsigClient';
 import { StatsigEndpoint } from './StatsigNetwork';
-import { EvaluationDetails } from './StatsigStore';
+import { BootstrapMetadata, EvaluationDetails } from './StatsigStore';
 import { StatsigUser } from './StatsigUser';
 import { STATSIG_LOCAL_STORAGE_LOGGING_REQUEST_KEY } from './utils/Constants';
 import Diagnostics, { ContextType, Marker } from './utils/Diagnostics';
@@ -182,6 +182,7 @@ export default class StatsigLogger {
     secondaryExposures: Record<string, string>[],
     details: EvaluationDetails,
     isManualExposure: boolean,
+    bootstrapMetadata: BootstrapMetadata | null,
   ) {
     const dedupeKey = gateName + String(gateValue) + ruleID + details.reason;
     if (!this.shouldLogExposure(dedupeKey)) {
@@ -201,6 +202,10 @@ export default class StatsigLogger {
       metadata['isManualExposure'] = 'true';
     }
 
+    if (bootstrapMetadata != null) {
+      metadata['bootstrapMetadata'] = bootstrapMetadata;
+    }
+
     const gateExposure = new LogEvent(GATE_EXPOSURE_EVENT);
     gateExposure.setUser(user);
     gateExposure.setMetadata(metadata);
@@ -215,6 +220,7 @@ export default class StatsigLogger {
     secondaryExposures: Record<string, string>[],
     details: EvaluationDetails,
     isManualExposure: boolean,
+    bootstrapMetadata: BootstrapMetadata | null,
   ) {
     const dedupeKey = configName + ruleID + details.reason;
     if (!this.shouldLogExposure(dedupeKey)) {
@@ -231,6 +237,10 @@ export default class StatsigLogger {
 
     if (isManualExposure) {
       metadata['isManualExposure'] = 'true';
+    }
+
+    if (bootstrapMetadata != null) {
+      metadata['bootstrapMetadata'] = bootstrapMetadata;
     }
 
     const configExposure = new LogEvent(CONFIG_EXPOSURE_EVENT);
@@ -250,6 +260,7 @@ export default class StatsigLogger {
     isExplicitParameter: boolean,
     details: EvaluationDetails,
     isManualExposure: boolean,
+    bootstrapMetadata: BootstrapMetadata | null,
   ) {
     const dedupeKey = [
       configName,
@@ -277,6 +288,10 @@ export default class StatsigLogger {
 
     if (isManualExposure) {
       metadata['isManualExposure'] = 'true';
+    }
+
+    if (bootstrapMetadata != null) {
+      metadata['bootstrapMetadata'] = bootstrapMetadata;
     }
 
     const configExposure = new LogEvent(LAYER_EXPOSURE_EVENT);
