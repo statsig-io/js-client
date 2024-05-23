@@ -827,6 +827,7 @@ export default class StatsigClient implements IHasStatsigInternal, IStatsig {
 
         this.identity.updateUser(this.normalizeUser(user));
         this.store.bootstrap(values);
+        this.logger.resetDedupeKeys();
         fireCompletionCallback(true, null);
         return true;
       },
