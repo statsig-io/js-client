@@ -838,7 +838,6 @@ export default class StatsigStore {
     gateName: string,
     ignoreOverrides = false,
   ): StoreGateFetchResult {
-    const gateNameHash = this.getHashedSpecName(gateName);
     let gateValue: APIFeatureGate = {
       name: gateName,
       value: false,
@@ -846,8 +845,7 @@ export default class StatsigStore {
       secondary_exposures: [],
     };
     let details: EvaluationDetails;
-    const userGateOverride =
-      this.overrides.gates[gateNameHash] ?? this.overrides.gates[gateName];
+    const userGateOverride = this.overrides.gates[gateName];
     if (!ignoreOverrides && userGateOverride != null) {
       gateValue = {
         name: gateName,
@@ -861,8 +859,8 @@ export default class StatsigStore {
       );
     } else {
       const value =
-        this.userValues?.feature_gates[gateNameHash] ??
-        this.userValues?.feature_gates[gateName];
+        this.userValues?.feature_gates[gateName] ??
+        this.userValues?.feature_gates[this.getHashedSpecName(gateName)];
       if (value) {
         gateValue = value;
       }
@@ -873,15 +871,9 @@ export default class StatsigStore {
   }
 
   public getConfig(configName: string, ignoreOverrides = false): DynamicConfig {
-    const configNameHash = this.getHashedSpecName(configName);
     let configValue: DynamicConfig;
     let details: EvaluationDetails;
-    const userConfigValue =
-      this.userValues?.dynamic_configs[configNameHash] ??
-      this.userValues?.dynamic_configs[configName];
-    const userConfigOverride =
-      this.overrides.configs[configNameHash] ??
-      this.overrides.configs[configName];
+    const userConfigOverride = this.overrides.configs[configName];
     if (!ignoreOverrides && userConfigOverride != null) {
       details = this.getEvaluationDetails(
         false,
@@ -898,16 +890,22 @@ export default class StatsigStore {
           this.sdkInternal.getCurrentUser(),
         ),
       );
-    } else if (userConfigValue != null) {
-      details = this.getEvaluationDetails(true);
-      configValue = this.createDynamicConfig(
-        configName,
-        userConfigValue,
-        details,
-      );
     } else {
-      details = this.getEvaluationDetails(false);
-      configValue = new DynamicConfig(configName, {}, '', details);
+      const userConfigValue =
+        this.userValues?.dynamic_configs[configName] ??
+        this.userValues?.dynamic_configs[this.getHashedSpecName(configName)];
+
+      if (userConfigValue != null) {
+        details = this.getEvaluationDetails(true);
+        configValue = this.createDynamicConfig(
+          configName,
+          userConfigValue,
+          details,
+        );
+      } else {
+        details = this.getEvaluationDetails(false);
+        configValue = new DynamicConfig(configName, {}, '', details);
+      }
     }
 
     return configValue;
@@ -920,9 +918,7 @@ export default class StatsigStore {
   ): DynamicConfig {
     let exp: DynamicConfig;
     let details: EvaluationDetails;
-    const expNameHash = this.getHashedSpecName(expName);
-    const userExpOverride =
-      this.overrides.configs[expNameHash] ?? this.overrides.configs[expName];
+    const userExpOverride = this.overrides.configs[expName];
     if (!ignoreOverrides && userExpOverride != null) {
       details = this.getEvaluationDetails(
         false,
@@ -951,10 +947,7 @@ export default class StatsigStore {
     layerName: string,
     keepDeviceValue: boolean,
   ): Layer {
-    const layerHashedName = this.getHashedSpecName(layerName);
-    const userLayerOverride =
-      this.overrides.layers[layerHashedName] ??
-      this.overrides.layers[layerName];
+    const userLayerOverride = this.overrides.layers[layerName];
     if (userLayerOverride != null) {
       const details = this.getEvaluationDetails(
         false,
@@ -1077,10 +1070,9 @@ export default class StatsigStore {
     name: string,
     topLevelKey: 'layer_configs' | 'dynamic_configs',
   ): APIDynamicConfig | undefined {
-    const hash = this.getHashedSpecName(name);
     return (
-      this.userValues?.[topLevelKey]?.[hash] ??
-      this.userValues?.[topLevelKey]?.[name]
+      this.userValues?.[topLevelKey]?.[name] ??
+      this.userValues?.[topLevelKey]?.[this.getHashedSpecName(name)]
     );
   }
 
