@@ -268,7 +268,7 @@ describe('Verify behavior of InternalStore', () => {
     });
   });
 
-  test('Verify checkGate returns the correct value.', () => {
+  test('Verify checkGate returns the correct value with hash.', () => {
     expect.assertions(2);
     const client = new StatsigClient(sdkKey, { userID: 'user_key' });
     return client.initializeAsync().then(() => {
@@ -280,7 +280,7 @@ describe('Verify behavior of InternalStore', () => {
           .getStore()
           .checkGate('AoZS0F06Ub+W2ONx+94rPTS7MRxuxa+GnXro5Q1uaGY=', false).gate
           .value,
-      ).toBe(false);
+      ).toBe(true);
     });
   });
 

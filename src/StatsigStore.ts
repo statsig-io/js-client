@@ -846,10 +846,12 @@ export default class StatsigStore {
       secondary_exposures: [],
     };
     let details: EvaluationDetails;
-    if (!ignoreOverrides && this.overrides.gates[gateName] != null) {
+    const userGateOverride =
+      this.overrides.gates[gateNameHash] ?? this.overrides.gates[gateName];
+    if (!ignoreOverrides && userGateOverride != null) {
       gateValue = {
         name: gateName,
-        value: this.overrides.gates[gateName],
+        value: userGateOverride,
         rule_id: 'override',
         secondary_exposures: [],
       };
@@ -858,7 +860,9 @@ export default class StatsigStore {
         EvaluationReason.LocalOverride,
       );
     } else {
-      const value = this.userValues?.feature_gates[gateNameHash];
+      const value =
+        this.userValues?.feature_gates[gateNameHash] ??
+        this.userValues?.feature_gates[gateName];
       if (value) {
         gateValue = value;
       }
@@ -872,14 +876,20 @@ export default class StatsigStore {
     const configNameHash = this.getHashedSpecName(configName);
     let configValue: DynamicConfig;
     let details: EvaluationDetails;
-    if (!ignoreOverrides && this.overrides.configs[configName] != null) {
+    const userConfigValue =
+      this.userValues?.dynamic_configs[configNameHash] ??
+      this.userValues?.dynamic_configs[configName];
+    const userConfigOverride =
+      this.overrides.configs[configNameHash] ??
+      this.overrides.configs[configName];
+    if (!ignoreOverrides && userConfigOverride != null) {
       details = this.getEvaluationDetails(
         false,
         EvaluationReason.LocalOverride,
       );
       configValue = new DynamicConfig(
         configName,
-        this.overrides.configs[configName],
+        userConfigOverride,
         'override',
         details,
         [],
@@ -888,12 +898,11 @@ export default class StatsigStore {
           this.sdkInternal.getCurrentUser(),
         ),
       );
-    } else if (this.userValues?.dynamic_configs[configNameHash] != null) {
-      const rawConfigValue = this.userValues?.dynamic_configs[configNameHash];
+    } else if (userConfigValue != null) {
       details = this.getEvaluationDetails(true);
       configValue = this.createDynamicConfig(
         configName,
-        rawConfigValue,
+        userConfigValue,
         details,
       );
     } else {
@@ -911,17 +920,15 @@ export default class StatsigStore {
   ): DynamicConfig {
     let exp: DynamicConfig;
     let details: EvaluationDetails;
-    if (!ignoreOverrides && this.overrides.configs[expName] != null) {
+    const expNameHash = this.getHashedSpecName(expName);
+    const userExpOverride =
+      this.overrides.configs[expNameHash] ?? this.overrides.configs[expName];
+    if (!ignoreOverrides && userExpOverride != null) {
       details = this.getEvaluationDetails(
         false,
         EvaluationReason.LocalOverride,
       );
-      exp = new DynamicConfig(
-        expName,
-        this.overrides.configs[expName],
-        'override',
-        details,
-      );
+      exp = new DynamicConfig(expName, userExpOverride, 'override', details);
     } else {
       const latestValue = this.getLatestValue(expName, 'dynamic_configs');
       details = this.getEvaluationDetails(latestValue != null);
@@ -944,14 +951,18 @@ export default class StatsigStore {
     layerName: string,
     keepDeviceValue: boolean,
   ): Layer {
-    if (this.overrides.layers[layerName] != null) {
+    const layerHashedName = this.getHashedSpecName(layerName);
+    const userLayerOverride =
+      this.overrides.layers[layerHashedName] ??
+      this.overrides.layers[layerName];
+    if (userLayerOverride != null) {
       const details = this.getEvaluationDetails(
         false,
         EvaluationReason.LocalOverride,
       );
       return Layer._create(
         layerName,
-        this.overrides.layers[layerName] ?? {},
+        userLayerOverride ?? {},
         'override',
         details,
         logParameterFunction,
