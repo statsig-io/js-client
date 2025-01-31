@@ -6,9 +6,8 @@
 ## Statsig JavaScript Client SDK
 
 > [!IMPORTANT]
-> This version of the SDK is now in maintainance mode and will only receive bug fixes.
-> All new features will be added to the [@statsig/js-client package](https://github.com/statsig-io/js-client-monorepo).
-> Users of the `statsig-js` npm package should migrate to the `@statsig/js-client` package by 1/31/2025.  See [this migration guide](https://docs.statsig.com/client/javascript-sdk/migrating-from-statsig-js?ref=gh_js).
+> Support for this version of the SDK ended January 31, 2025.
+> All users of the `statsig-js` npm package should migrate to the `@statsig/js-client` package for bug fixes, performance improvements, and new features. See [this migration guide](https://docs.statsig.com/client/javascript-sdk/migrating-from-statsig-js?ref=gh_js) for more info.
 
 The JavaScript SDK for single user client environments. If you need a SDK for another language or server environment, check out our [other SDKs](https://docs.statsig.com/#sdks?ref=gh_js).
 
