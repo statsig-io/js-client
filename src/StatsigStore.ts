@@ -1076,7 +1076,7 @@ export default class StatsigStore {
     );
   }
 
-  // Sticky Logic: https://gist.github.com/daniel-statsig/3d8dfc9bdee531cffc96901c1a06a402
+  // Sticky logic
   private getPossiblyStickyValue(
     name: string,
     latestValue: APIDynamicConfig | undefined,
