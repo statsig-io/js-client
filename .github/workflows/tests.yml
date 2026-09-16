@@ -12,10 +12,10 @@ jobs:
     runs-on: ubuntu-20.04
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2
       
       - name: cache .npm
-        uses: actions/cache@v2
+        uses: actions/cache@8492260343ad570701412c2f464a5877dc76bace # v2
         env:
           cache-name: npm
         with:
@@ -28,11 +28,11 @@ jobs:
       runs-on: ubuntu-20.04
       timeout-minutes: 5
       steps:
-        - uses: actions/checkout@v2
+        - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2
           with:
             ref: ${{ github.head_ref }}
         - name: cache .npm
-          uses: actions/cache@v2
+          uses: actions/cache@8492260343ad570701412c2f464a5877dc76bace # v2
           env:
             cache-name: npm
           with:
