@@ -8,7 +8,7 @@ on:
 
 jobs:
   dryrun:
-    runs-on: ubuntu-20.04
+    runs-on: blacksmith-2vcpu-ubuntu-2204
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v2
